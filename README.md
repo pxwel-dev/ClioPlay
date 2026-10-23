@@ -1,6 +1,6 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
-<h1 align="center">CLIOPLAY GLOBAL</h1>
+<h1 align="center">CLIOPLAY</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen and remote.</p>
 
 <p align="center"><a href="src/docs/demo/clioplay-demo.mp4"><img src="src/docs/demo/preview.gif" width="960" alt="ClioPlay: driving, map browsing, trips, Bluetooth and settings"></a></p>
