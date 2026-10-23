@@ -1,0 +1,14 @@
+{
+  "source": "https://github.com/evansiroky/timezone-boundary-builder/releases/tag/2026e",
+  "source_archive_sha256": "a75361c760d6de2fc95c63e97e0b1086d5dfe6fdb2bc6d96efeb3a94673aaa01",
+  "data_sha256": "e769b342359f953fc863010ab4c1234763caffedf2b65e5067d4a6360df8efb5",
+  "release": "2026e",
+  "simplify_degrees": 0.0005,
+  "zones": 419,
+  "license": "ODbL; timezone boundary builder DATA_LICENSE",
+  "tzdata_version": "2026.5",
+  "transition_years": [
+    2020,
+    2061
+  ]
+}

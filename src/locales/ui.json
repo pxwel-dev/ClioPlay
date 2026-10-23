@@ -1,0 +1,600 @@
+{
+  "languages": [
+    "en",
+    "fr",
+    "es",
+    "de",
+    "it",
+    "pt",
+    "nl",
+    "pl",
+    "tr",
+    "el",
+    "uk",
+    "ru",
+    "ar",
+    "zh-Hans",
+    "ja",
+    "ko",
+    "hi",
+    "he"
+  ],
+  "strings": {
+    "Settings": [
+      "Réglages",
+      "Ajustes"
+    ],
+    "Trip": [
+      "Trajet",
+      "Viaje"
+    ],
+    "Destinations and itinerary": [
+      "Destinations et étapes",
+      "Destinos y etapas"
+    ],
+    "Connected and saved phones": [
+      "Téléphones connectés et enregistrés",
+      "Teléfonos conectados y guardados"
+    ],
+    "Display and navigation": [
+      "Affichage et navigation",
+      "Pantalla y navegación"
+    ],
+    "Brightness": [
+      "Luminosité",
+      "Brillo"
+    ],
+    "Theme": [
+      "Thème",
+      "Tema"
+    ],
+    "Day": [
+      "Jour",
+      "Día"
+    ],
+    "Night": [
+      "Nuit",
+      "Noche"
+    ],
+    "Auto": [
+      "Auto",
+      "Auto"
+    ],
+    "Units": [
+      "Unités",
+      "Unidades"
+    ],
+    "Metric": [
+      "Métrique",
+      "Métrico"
+    ],
+    "Imperial": [
+      "Impérial",
+      "Imperial"
+    ],
+    "Auto zoom": [
+      "Zoom auto",
+      "Zoom auto"
+    ],
+    "Camera alerts": [
+      "Alertes radars",
+      "Avisos de radar"
+    ],
+    "Visual": [
+      "Visuel",
+      "Visual"
+    ],
+    "Sound": [
+      "Son",
+      "Sonido"
+    ],
+    "On": [
+      "Oui",
+      "Sí"
+    ],
+    "Off": [
+      "Non",
+      "No"
+    ],
+    "Clock": [
+      "Horloge",
+      "Reloj"
+    ],
+    "Debug log": [
+      "Journal technique",
+      "Registro técnico"
+    ],
+    "Language": [
+      "Langue",
+      "Idioma"
+    ],
+    "Destinations": [
+      "Destinations",
+      "Destinos"
+    ],
+    "Current route": [
+      "Trajet actuel",
+      "Ruta actual"
+    ],
+    "Recents": [
+      "Récents",
+      "Recientes"
+    ],
+    "Favourites": [
+      "Favoris",
+      "Favoritos"
+    ],
+    "No favourites yet": [
+      "Aucun favori",
+      "Sin favoritos"
+    ],
+    "No recent places": [
+      "Aucun lieu récent",
+      "Sin lugares recientes"
+    ],
+    "Choose a destination": [
+      "Choisir une destination",
+      "Elige un destino"
+    ],
+    "from your saved places": [
+      "parmi vos lieux enregistrés",
+      "de tus lugares guardados"
+    ],
+    "Cancel route": [
+      "Annuler le trajet",
+      "Cancelar ruta"
+    ],
+    "Send from phone": [
+      "Envoyer du téléphone",
+      "Enviar desde el móvil"
+    ],
+    "Add stop": [
+      "Ajouter une étape",
+      "Añadir parada"
+    ],
+    "+ Add stop": [
+      "+ Ajouter une étape",
+      "+ Añadir parada"
+    ],
+    "Change destination": [
+      "Changer de destination",
+      "Cambiar destino"
+    ],
+    "Calculating route…": [
+      "Calcul du trajet…",
+      "Calculando ruta…"
+    ],
+    "Saved phone": [
+      "Téléphone enregistré",
+      "Móvil guardado"
+    ],
+    "Reconnect": [
+      "Reconnecter",
+      "Reconectar"
+    ],
+    "Forget": [
+      "Oublier",
+      "Olvidar"
+    ],
+    "Disconnect": [
+      "Déconnecter",
+      "Desconectar"
+    ],
+    "Connected": [
+      "Connecté",
+      "Conectado"
+    ],
+    "No phone connected": [
+      "Aucun téléphone connecté",
+      "Ningún teléfono conectado"
+    ],
+    "Ready to connect": [
+      "Prêt à connecter",
+      "Listo para conectar"
+    ],
+    "Saved phones": [
+      "Téléphones enregistrés",
+      "Teléfonos guardados"
+    ],
+    "Unknown phone": [
+      "Téléphone inconnu",
+      "Teléfono desconocido"
+    ],
+    "Saved": [
+      "Enregistré",
+      "Guardado"
+    ],
+    "+ Pair new phone": [
+      "+ Associer un téléphone",
+      "+ Vincular otro móvil"
+    ],
+    "Enter a name": [
+      "Saisir un nom",
+      "Escribe un nombre"
+    ],
+    "Name favourite": [
+      "Nom du favori",
+      "Nombre del favorito"
+    ],
+    "Add as stop": [
+      "Ajouter comme étape",
+      "Añadir como parada"
+    ],
+    "Route as new": [
+      "Nouveau trajet",
+      "Nueva ruta"
+    ],
+    "Add to favourites": [
+      "Ajouter aux favoris",
+      "Añadir a favoritos"
+    ],
+    "Rename favourite": [
+      "Renommer le favori",
+      "Renombrar favorito"
+    ],
+    "Remove favourite": [
+      "Supprimer le favori",
+      "Eliminar favorito"
+    ],
+    "Remove stop": [
+      "Supprimer l'étape",
+      "Eliminar parada"
+    ],
+    "Move up": [
+      "Monter",
+      "Subir"
+    ],
+    "Move down": [
+      "Descendre",
+      "Bajar"
+    ],
+    "Cancel": [
+      "Annuler",
+      "Cancelar"
+    ],
+    "Yes": [
+      "Oui",
+      "Sí"
+    ],
+    "No": [
+      "Non",
+      "No"
+    ],
+    "Arrived at stop": [
+      "Étape atteinte",
+      "Parada alcanzada"
+    ],
+    "Destination reached": [
+      "Destination atteinte",
+      "Destino alcanzado"
+    ],
+    "Continue in ": [
+      "Suite dans ",
+      "Continuar en "
+    ],
+    "Finish in ": [
+      "Fin dans ",
+      "Finalizar en "
+    ],
+    "Receive destination": [
+      "Recevoir une destination",
+      "Recibir destino"
+    ],
+    "Send a destination": [
+      "Envoyer une destination",
+      "Envía un destino"
+    ],
+    "from ClioPlay Send": [
+      "avec ClioPlay Send",
+      "con ClioPlay Send"
+    ],
+    "Add point as stop?": [
+      "Ajouter ce point comme étape ?",
+      "¿Añadir punto como parada?"
+    ],
+    "Route to point?": [
+      "Aller à ce point ?",
+      "¿Ir a este punto?"
+    ],
+    "Cancel current route?": [
+      "Annuler le trajet actuel ?",
+      "¿Cancelar la ruta actual?"
+    ],
+    "Remove stop?": [
+      "Supprimer cette étape ?",
+      "¿Eliminar parada?"
+    ],
+    "Resume saved trip?": [
+      "Reprendre le trajet enregistré ?",
+      "¿Reanudar viaje guardado?"
+    ],
+    "Recent trip": [
+      "Trajet récent",
+      "Viaje reciente"
+    ],
+    "Favourite": [
+      "Favori",
+      "Favorito"
+    ],
+    "Manage target": [
+      "Gérer la destination",
+      "Gestionar destino"
+    ],
+    "Acquiring GPS": [
+      "Recherche GPS",
+      "Buscando GPS"
+    ],
+    "Last position": [
+      "Dernière position",
+      "Última posición"
+    ],
+    "Map overview": [
+      "Vue de la carte",
+      "Vista del mapa"
+    ],
+    "Map point": [
+      "Point sur la carte",
+      "Punto del mapa"
+    ],
+    "DESTINATION CHANGED": [
+      "DESTINATION MODIFIÉE",
+      "DESTINO CAMBIADO"
+    ],
+    "NO ACTIVE ROUTE": [
+      "AUCUN TRAJET ACTIF",
+      "SIN RUTA ACTIVA"
+    ],
+    "ROUTE STARTED": [
+      "TRAJET LANCÉ",
+      "RUTA INICIADA"
+    ],
+    "STOP ADDED": [
+      "ÉTAPE AJOUTÉE",
+      "PARADA AÑADIDA"
+    ],
+    "STOP NOT ADDED": [
+      "ÉTAPE NON AJOUTÉE",
+      "PARADA NO AÑADIDA"
+    ],
+    "TRIP FULL - STOP NOT ADDED": [
+      "TRAJET PLEIN — ÉTAPE NON AJOUTÉE",
+      "VIAJE LLENO — PARADA NO AÑADIDA"
+    ],
+    "READY": [
+      "PRÊT",
+      "LISTA"
+    ],
+    "CALC": [
+      "CALCUL",
+      "CÁLCULO"
+    ],
+    "NO DATA": [
+      "SANS DONNÉES",
+      "SIN DATOS"
+    ],
+    "NO ROAD": [
+      "SANS ROUTE",
+      "SIN VÍA"
+    ],
+    "NO ROUTE": [
+      "AUCUN TRAJET",
+      "SIN RUTA"
+    ],
+    "MEM FULL": [
+      "MÉM. PLEINE",
+      "MEM. LLENA"
+    ],
+    "ERROR": [
+      "ERREUR",
+      "ERROR"
+    ],
+    "WAIT": [
+      "ATT.",
+      "ESP."
+    ],
+    "Done": [
+      "Fait",
+      "Hecho"
+    ],
+    "Wait": [
+      "Attente",
+      "Espera"
+    ],
+    "ROUNDABOUT": [
+      "ROND-POINT",
+      "ROTONDA"
+    ],
+    "TAKE EXIT ": [
+      "SORTIE ",
+      "SALIDA "
+    ],
+    "SLIGHT LEFT": [
+      "LÉGÈREMENT À GAUCHE",
+      "LEVE IZQUIERDA"
+    ],
+    "TURN LEFT": [
+      "TOURNER À GAUCHE",
+      "GIRA A LA IZQUIERDA"
+    ],
+    "SHARP LEFT": [
+      "VIRAGE SERRÉ À GAUCHE",
+      "GIRO CERRADO IZQUIERDA"
+    ],
+    "SLIGHT RIGHT": [
+      "LÉGÈREMENT À DROITE",
+      "LEVE DERECHA"
+    ],
+    "TURN RIGHT": [
+      "TOURNER À DROITE",
+      "GIRA A LA DERECHA"
+    ],
+    "SHARP RIGHT": [
+      "VIRAGE SERRÉ À DROITE",
+      "GIRO CERRADO DERECHA"
+    ],
+    "U-TURN": [
+      "DEMI-TOUR",
+      "CAMBIO DE SENTIDO"
+    ],
+    "NOW": [
+      "MAINTENANT",
+      "AHORA"
+    ],
+    "RED LIGHT": [
+      "FEU ROUGE",
+      "SEMÁFORO"
+    ],
+    "AVERAGE CHECK": [
+      "CONTRÔLE MOYEN",
+      "RADAR DE TRAMO"
+    ],
+    "SPEED CAMERA": [
+      "RADAR",
+      "RADAR"
+    ],
+    "AVG ": [
+      "MOY. ",
+      "MEDIA "
+    ],
+    "Phone audio": [
+      "Audio téléphone",
+      "Audio del móvil"
+    ],
+    "Manual": [
+      "Manuel",
+      "Manual"
+    ],
+    "Explore": [
+      "Explorer",
+      "Explorar"
+    ],
+    "Adjusted": [
+      "Réglé",
+      "Ajustado"
+    ],
+    "Road unknown": [
+      "Route inconnue",
+      "Vía desconocida"
+    ],
+    "Trying nearby road": [
+      "Autre accès",
+      "Probando otro acceso"
+    ],
+    "Rerouting": [
+      "Nouveau trajet",
+      "Recalculando"
+    ],
+    "Calculating route": [
+      "Calcul du trajet",
+      "Calculando ruta"
+    ],
+    "Routing data missing": [
+      "Données de trajet absentes",
+      "Faltan datos de ruta"
+    ],
+    "No road near point": [
+      "Aucune route près du point",
+      "No hay vía cerca del punto"
+    ],
+    "No connected route": [
+      "Aucun trajet connecté",
+      "No hay ruta conectada"
+    ],
+    "Routing memory full": [
+      "Mémoire de trajet pleine",
+      "Memoria de ruta llena"
+    ],
+    "Routing data error": [
+      "Erreur de données de trajet",
+      "Error en datos de ruta"
+    ],
+    "Space": [
+      "Espace",
+      "Esp."
+    ],
+    "Delete": [
+      "Effacer",
+      "Borrar"
+    ],
+    "Save": [
+      "OK",
+      "OK"
+    ],
+    "Waiting for phone": [
+      "En attente du téléphone",
+      "Esperando al móvil"
+    ],
+    "Phone connection unavailable": [
+      "Connexion téléphone indisponible",
+      "Conexión del móvil no disponible"
+    ],
+    "Pairing phone": [
+      "Association du téléphone",
+      "Vinculando móvil"
+    ],
+    "Back": [
+      "Retour",
+      "Salir"
+    ],
+    "Map data missing": [
+      "Carte absente",
+      "Faltan datos del mapa"
+    ],
+    "GPS active": [
+      "GPS actif",
+      "GPS activo"
+    ],
+    "Outside map area": [
+      "Hors de la carte",
+      "Fuera del mapa"
+    ],
+    "Test map": [
+      "Carte de test",
+      "Mapa de prueba"
+    ],
+    "CTRL": [
+      "CTRL",
+      "CTRL"
+    ],
+    "Phone connection": [
+      "Connexion téléphone",
+      "Conexión del móvil"
+    ],
+    "Phone": [
+      "Tél.",
+      "Móvil"
+    ],
+    "No track information": [
+      "Aucune information sur le titre",
+      "Sin información de la canción"
+    ],
+    "Radio": [
+      "Radio",
+      "Radio"
+    ]
+  },
+  "language_names": {
+    "en": "English",
+    "fr": "Français",
+    "es": "Español",
+    "de": "Deutsch",
+    "it": "Italiano",
+    "pt": "Português",
+    "nl": "Nederlands",
+    "pl": "Polski",
+    "tr": "Türkçe",
+    "el": "Ελληνικά",
+    "uk": "Українська",
+    "ru": "Русский",
+    "ar": "العربية",
+    "zh-Hans": "简体中文",
+    "ja": "日本語",
+    "ko": "한국어",
+    "hi": "हिन्दी",
+    "he": "עברית"
+  },
+  "rtl_languages": [
+    "ar",
+    "he"
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "component": "focusd",
+  "status": "decompiler reference only; not original or rebuildable source",
+  "inputs": [
+    {
+      "file": "focusd.json",
+      "sha256": "263560f068267786965ed4a81707a4db2b7fa17b6dee1e812fa9466555746be2",
+      "record_count": 10,
+      "artifacts": [
+        {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf"
+        }
+      ],
+      "providers": [
+        {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        }
+      ]
+    },
+    {
+      "file": "focusd-assembly.json",
+      "sha256": "2ec0df1e183f5ac614751ff5aca08b018be9f58115d8d14d91f94a3434b2d06f",
+      "record_count": 9,
+      "artifacts": [
+        {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf"
+        }
+      ],
+      "providers": [
+        {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        }
+      ]
+    }
+  ],
+  "inventory_available": true,
+  "inventory_evidence_ids": [
+    "ev_26afb98cff7a05931c9268670ad3a0c4454c68e6526fcb85f0d510c483747c1f"
+  ],
+  "inventory_unique_addresses": 9,
+  "inventory_nonexternal_addresses": 9,
+  "inventory_external_addresses": 0,
+  "covered_inventory_nonexternal_addresses": 9,
+  "all_observed_unique_addresses": 9,
+  "counts_by_status": {
+    "decompiled": 9
+  },
+  "emitted_bodies": 9,
+  "coverage_complete_for_known_nonexternal_inventory": true,
+  "unresolved_record_subjects": [],
+  "limitations": [
+    "Coverage denominator is Ghidra's observed procedure inventory, not a proof of every executable byte or original function.",
+    "Decompiler output can contain bad instructions, unreachable-block removal, unknown types or wrong calling conventions.",
+    "Successful decompilation is a tool result, not semantic correctness or rebuildability.",
+    "External functions are indexed but their bodies are not invented or emitted.",
+    "Unrequested, null and failed procedures remain explicit in the index; no placeholder implementation is generated.",
+    "Aliases are deduplicated by address. Repeated observations remain indexed; the last successful body is emitted.",
+    "A missing inventory means total code coverage is unknown."
+  ]
+}

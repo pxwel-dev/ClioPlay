@@ -1,0 +1,26 @@
+{
+  "format": "clioplay-legacy-artifacts-1",
+  "authorship_note": "Maintainer identifies focusd and the project hidd as their work; original project build trees are unavailable. Upstream notices are retained separately.",
+  "files": {
+    "card-template/clio843/focusd": {
+      "bytes": 10288,
+      "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300",
+      "original_project_source": "not recovered",
+      "installed_as": "clio843/focusd",
+      "references": "clio843/src/recovered/focusd.ghidra.c"
+    },
+    "card-template/clio843/hidd": {
+      "bytes": 18592,
+      "sha256": "6830044438d40b781ddcc49853d14e3291b6b70eda82176596209ce908c0e53d",
+      "original_project_source": "not recovered",
+      "installed_as": "clio843/hidd",
+      "upstream_sources": "third_party/bluez-2.15; upstream archives, not a recovered maintainer project tree"
+    },
+    "legacy-binaries/clioaux-init": {
+      "bytes": 3096,
+      "sha256": "35d046ba6ae04978227f83ecc6cd99367aef4149a711730a69f6e8f26ae52b47",
+      "original_project_source": "not recovered",
+      "installed_as": "embedded byte-for-byte in the installed ttn startup script"
+    }
+  }
+}

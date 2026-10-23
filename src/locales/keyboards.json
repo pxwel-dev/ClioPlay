@@ -1,0 +1,77 @@
+{
+  "layouts": [
+    {
+      "language": "en",
+      "characters": "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    },
+    {
+      "language": "fr",
+      "characters": "ABCDEFGHIJKLMNOPQRSTUVWXYZÀÂÆÇÉÈÊËÎÏÔŒÙÛÜŸ0123456789"
+    },
+    {
+      "language": "es",
+      "characters": "ABCDEFGHIJKLMNOPQRSTUVWXYZÑÁÉÍÓÚÜ0123456789"
+    },
+    {
+      "language": "de",
+      "characters": "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜẞ0123456789"
+    },
+    {
+      "language": "it",
+      "characters": "ABCDEFGHIJKLMNOPQRSTUVWXYZÀÈÉÌÒÙ0123456789"
+    },
+    {
+      "language": "pt",
+      "characters": "ABCDEFGHIJKLMNOPQRSTUVWXYZÁÀÂÃÉÊÍÓÔÕÚÜÇ0123456789"
+    },
+    {
+      "language": "nl",
+      "characters": "ABCDEFGHIJKLMNOPQRSTUVWXYZÉËÏÖÜ0123456789"
+    },
+    {
+      "language": "pl",
+      "characters": "ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻ0123456789"
+    },
+    {
+      "language": "tr",
+      "characters": "ABCDEFGHIJKLMNOPQRSTUVWXYZÇĞİÖŞÜ0123456789"
+    },
+    {
+      "language": "el",
+      "characters": "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΆΈΉΊΌΎΏΪΫ0123456789"
+    },
+    {
+      "language": "uk",
+      "characters": "АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ0123456789"
+    },
+    {
+      "language": "ru",
+      "characters": "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ0123456789"
+    },
+    {
+      "language": "ar",
+      "characters": "ابتثجحخدذرزسشصضطظعغفقكلمنهويءآأؤإئةىًٌٍَُِّْٰ٠١٢٣٤٥٦٧٨٩0123456789"
+    },
+    {
+      "language": "zh-Hans",
+      "characters": "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    },
+    {
+      "language": "ja",
+      "characters": "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽぁぃぅぇぉゃゅょっゔゕゖゐゑアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポァィゥェォャュョッヴヵヶヰヱー・0123456789"
+    },
+    {
+      "language": "ko",
+      "characters": "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ0123456789"
+    },
+    {
+      "language": "hi",
+      "characters": "अआइईउऊऋॠऌॡएऐओऔऍऑकखगघङचछजझञटठडढणतथदधनपफबभमयरलवशषसहळ्ािीुूृॄॢॣेैोौॅॉंःँ़ॐ०१२३४५६७८९0123456789"
+    },
+    {
+      "language": "he",
+      "characters": "אבגדהוזחטיכךלמםנןסעפףצץקרשת0123456789"
+    }
+  ],
+  "input_limit": 40
+}

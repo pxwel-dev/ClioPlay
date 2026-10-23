@@ -1,0 +1,758 @@
+[
+  {
+    "address": "0x20528",
+    "names": [
+      "start_c"
+    ],
+    "procedure": {
+      "external": false,
+      "thunk": false,
+      "thunk_target": null
+    },
+    "inventory_evidence_ids": [
+      "ev_26afb98cff7a05931c9268670ad3a0c4454c68e6526fcb85f0d510c483747c1f"
+    ],
+    "external": false,
+    "status": "decompiled",
+    "pseudocode_observations": [
+      {
+        "status": "ok",
+        "evidence_id": "ev_1576d11ac3dafa7ecb45e82abb28a3ad25bf693376e2ef7f445e300f35cf2c75",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "subject": {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf",
+          "local_path": "card-template/clio843/focusd",
+          "name": "focusd"
+        },
+        "analysis_profile_digest": "e87c132666812361c9c173067536033b1a9e95723147e4ced29d458510cce9ac",
+        "upstream_provider": null,
+        "limitations": [
+          "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+          "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+          "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+          "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+          "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state."
+        ],
+        "item_procedure": null,
+        "body_sha256": "efc53644d64ef0153e1ff5180b741b240be60bde5f664362ab4c96cfe2b272ae"
+      }
+    ],
+    "assembly_observations": [
+      {
+        "status": "ok",
+        "evidence_id": "ev_dead7fd5c47f6dda021fb62fcbbd023214179d3a79d24303d176c286873c2c07",
+        "operation": "procedure_assembly",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "subject": {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf",
+          "local_path": "card-template/clio843/focusd",
+          "name": "focusd"
+        },
+        "analysis_profile_digest": "e87c132666812361c9c173067536033b1a9e95723147e4ced29d458510cce9ac",
+        "upstream_provider": null,
+        "limitations": [
+          "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+          "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+          "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+          "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+          "Assembly is Ghidra Listing text and does not claim textual equivalence with Hopper output.",
+          "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state."
+        ],
+        "item_procedure": null,
+        "body_sha256": "88a503d785ad63f97242ffcccccb4299d01453f7e17dd3bb9469a95f90b1c3ba"
+      }
+    ],
+    "selected_pseudocode_evidence_id": "ev_1576d11ac3dafa7ecb45e82abb28a3ad25bf693376e2ef7f445e300f35cf2c75"
+  },
+  {
+    "address": "0x21884",
+    "names": [
+      "log_line"
+    ],
+    "procedure": {
+      "external": false,
+      "thunk": false,
+      "thunk_target": null
+    },
+    "inventory_evidence_ids": [
+      "ev_26afb98cff7a05931c9268670ad3a0c4454c68e6526fcb85f0d510c483747c1f"
+    ],
+    "external": false,
+    "status": "decompiled",
+    "pseudocode_observations": [
+      {
+        "status": "ok",
+        "evidence_id": "ev_7db67ec460bce2663d01e739510c8ebf504498c0d00d91b2e5b46726beb589bd",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "subject": {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf",
+          "local_path": "card-template/clio843/focusd",
+          "name": "focusd"
+        },
+        "analysis_profile_digest": "e87c132666812361c9c173067536033b1a9e95723147e4ced29d458510cce9ac",
+        "upstream_provider": null,
+        "limitations": [
+          "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+          "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+          "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+          "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+          "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state."
+        ],
+        "item_procedure": null,
+        "body_sha256": "e84e5e620d299dde40253d56c133dbe5261e3036e6b39e42976455d9798e0f85"
+      }
+    ],
+    "assembly_observations": [
+      {
+        "status": "ok",
+        "evidence_id": "ev_8e0c4484faba4f39a4f2621a9a1cc41ccf1fa9c4239b859872e32bb6a28f394c",
+        "operation": "procedure_assembly",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "subject": {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf",
+          "local_path": "card-template/clio843/focusd",
+          "name": "focusd"
+        },
+        "analysis_profile_digest": "e87c132666812361c9c173067536033b1a9e95723147e4ced29d458510cce9ac",
+        "upstream_provider": null,
+        "limitations": [
+          "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+          "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+          "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+          "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+          "Assembly is Ghidra Listing text and does not claim textual equivalence with Hopper output.",
+          "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state."
+        ],
+        "item_procedure": null,
+        "body_sha256": "af4b9850977f872ea1cf48b1eae3bc9dfcf25667d9c84dda2997720038f32e49"
+      }
+    ],
+    "selected_pseudocode_evidence_id": "ev_7db67ec460bce2663d01e739510c8ebf504498c0d00d91b2e5b46726beb589bd"
+  },
+  {
+    "address": "0x21930",
+    "names": [
+      "publish"
+    ],
+    "procedure": {
+      "external": false,
+      "thunk": false,
+      "thunk_target": null
+    },
+    "inventory_evidence_ids": [
+      "ev_26afb98cff7a05931c9268670ad3a0c4454c68e6526fcb85f0d510c483747c1f"
+    ],
+    "external": false,
+    "status": "decompiled",
+    "pseudocode_observations": [
+      {
+        "status": "ok",
+        "evidence_id": "ev_688ffe985b5dd750f5a8b9b561cdd547ac3d31a9fceb5e903f7e60cf9410e12f",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "subject": {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf",
+          "local_path": "card-template/clio843/focusd",
+          "name": "focusd"
+        },
+        "analysis_profile_digest": "e87c132666812361c9c173067536033b1a9e95723147e4ced29d458510cce9ac",
+        "upstream_provider": null,
+        "limitations": [
+          "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+          "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+          "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+          "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+          "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state."
+        ],
+        "item_procedure": null,
+        "body_sha256": "6629b8328365c59f2a7d81717297d21b55d4a8f149e31abcbb0dab0c08823619"
+      }
+    ],
+    "assembly_observations": [
+      {
+        "status": "ok",
+        "evidence_id": "ev_16ba1e10a2f1e755991d89d7e243bde527641e47612b2a6b60b8bba4a066ec0c",
+        "operation": "procedure_assembly",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "subject": {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf",
+          "local_path": "card-template/clio843/focusd",
+          "name": "focusd"
+        },
+        "analysis_profile_digest": "e87c132666812361c9c173067536033b1a9e95723147e4ced29d458510cce9ac",
+        "upstream_provider": null,
+        "limitations": [
+          "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+          "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+          "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+          "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+          "Assembly is Ghidra Listing text and does not claim textual equivalence with Hopper output.",
+          "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state."
+        ],
+        "item_procedure": null,
+        "body_sha256": "3cd2a02e4a33f24bc03fd29cca0ad1b90c746cef8fe2d4a3b5dfa8e97bc6e241"
+      }
+    ],
+    "selected_pseudocode_evidence_id": "ev_688ffe985b5dd750f5a8b9b561cdd547ac3d31a9fceb5e903f7e60cf9410e12f"
+  },
+  {
+    "address": "0x21bbc",
+    "names": [
+      "log_num"
+    ],
+    "procedure": {
+      "external": false,
+      "thunk": false,
+      "thunk_target": null
+    },
+    "inventory_evidence_ids": [
+      "ev_26afb98cff7a05931c9268670ad3a0c4454c68e6526fcb85f0d510c483747c1f"
+    ],
+    "external": false,
+    "status": "decompiled",
+    "pseudocode_observations": [
+      {
+        "status": "ok",
+        "evidence_id": "ev_a899e02ea2a12c37b0ec8c6c89e8384681692626c32781cd4bcd419b24d5fdf8",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "subject": {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf",
+          "local_path": "card-template/clio843/focusd",
+          "name": "focusd"
+        },
+        "analysis_profile_digest": "e87c132666812361c9c173067536033b1a9e95723147e4ced29d458510cce9ac",
+        "upstream_provider": null,
+        "limitations": [
+          "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+          "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+          "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+          "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+          "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state."
+        ],
+        "item_procedure": null,
+        "body_sha256": "11dfa46c553c4ec642ca019c702969387413a7e595b3acc7855dd7a4c8fd70b6"
+      }
+    ],
+    "assembly_observations": [
+      {
+        "status": "ok",
+        "evidence_id": "ev_19a6c711dbda1c0a97b3b118153ea643902346914347a5d216d46231fb612a05",
+        "operation": "procedure_assembly",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "subject": {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf",
+          "local_path": "card-template/clio843/focusd",
+          "name": "focusd"
+        },
+        "analysis_profile_digest": "e87c132666812361c9c173067536033b1a9e95723147e4ced29d458510cce9ac",
+        "upstream_provider": null,
+        "limitations": [
+          "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+          "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+          "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+          "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+          "Assembly is Ghidra Listing text and does not claim textual equivalence with Hopper output.",
+          "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state."
+        ],
+        "item_procedure": null,
+        "body_sha256": "ed1053f8f63a9b09df07740a5c8fa497ef1c824ccce4b2e41a36995110b25c1d"
+      }
+    ],
+    "selected_pseudocode_evidence_id": "ev_a899e02ea2a12c37b0ec8c6c89e8384681692626c32781cd4bcd419b24d5fdf8"
+  },
+  {
+    "address": "0x21d80",
+    "names": [
+      "_start"
+    ],
+    "procedure": {
+      "external": false,
+      "thunk": true,
+      "thunk_target": "0x20528"
+    },
+    "inventory_evidence_ids": [
+      "ev_26afb98cff7a05931c9268670ad3a0c4454c68e6526fcb85f0d510c483747c1f"
+    ],
+    "external": false,
+    "status": "decompiled",
+    "pseudocode_observations": [
+      {
+        "status": "ok",
+        "evidence_id": "ev_05805acdf1ff6bb31677fd16853afe3b15f273612b920ef68eab6cbd3198bf08",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "subject": {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf",
+          "local_path": "card-template/clio843/focusd",
+          "name": "focusd"
+        },
+        "analysis_profile_digest": "e87c132666812361c9c173067536033b1a9e95723147e4ced29d458510cce9ac",
+        "upstream_provider": null,
+        "limitations": [
+          "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+          "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+          "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+          "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+          "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state."
+        ],
+        "item_procedure": null,
+        "body_sha256": "a6fe3c3f41d16cdd458a22c523de29b61130d2a4f49ea0944f90e301b4aa729f"
+      }
+    ],
+    "assembly_observations": [
+      {
+        "status": "ok",
+        "evidence_id": "ev_7330c921f7279c8feb6e170caaea2f114795e4af74ada39abbed64db4ee79013",
+        "operation": "procedure_assembly",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "subject": {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf",
+          "local_path": "card-template/clio843/focusd",
+          "name": "focusd"
+        },
+        "analysis_profile_digest": "e87c132666812361c9c173067536033b1a9e95723147e4ced29d458510cce9ac",
+        "upstream_provider": null,
+        "limitations": [
+          "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+          "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+          "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+          "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+          "Assembly is Ghidra Listing text and does not claim textual equivalence with Hopper output.",
+          "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state."
+        ],
+        "item_procedure": null,
+        "body_sha256": "d99998f2242501102170e47971d140f305c69fb7021adb9a19c65c74171bbc8b"
+      }
+    ],
+    "selected_pseudocode_evidence_id": "ev_05805acdf1ff6bb31677fd16853afe3b15f273612b920ef68eab6cbd3198bf08"
+  },
+  {
+    "address": "0x21d84",
+    "names": [
+      "dec_append"
+    ],
+    "procedure": {
+      "external": false,
+      "thunk": false,
+      "thunk_target": null
+    },
+    "inventory_evidence_ids": [
+      "ev_26afb98cff7a05931c9268670ad3a0c4454c68e6526fcb85f0d510c483747c1f"
+    ],
+    "external": false,
+    "status": "decompiled",
+    "pseudocode_observations": [
+      {
+        "status": "ok",
+        "evidence_id": "ev_8e0cd105a55e797336133e1a6d053031954a5c3119c4a19ffd55e13a2a992e4c",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "subject": {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf",
+          "local_path": "card-template/clio843/focusd",
+          "name": "focusd"
+        },
+        "analysis_profile_digest": "e87c132666812361c9c173067536033b1a9e95723147e4ced29d458510cce9ac",
+        "upstream_provider": null,
+        "limitations": [
+          "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+          "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+          "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+          "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+          "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state."
+        ],
+        "item_procedure": null,
+        "body_sha256": "a19cc793fd2d75e29d259ff8e758904a78b131a018b12ffb4caa8fd0b5ec3521"
+      }
+    ],
+    "assembly_observations": [
+      {
+        "status": "ok",
+        "evidence_id": "ev_f6aae8dcf683c5254ca15dd721ba3b48b08864a4224b38654feb50a3f804e849",
+        "operation": "procedure_assembly",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "subject": {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf",
+          "local_path": "card-template/clio843/focusd",
+          "name": "focusd"
+        },
+        "analysis_profile_digest": "e87c132666812361c9c173067536033b1a9e95723147e4ced29d458510cce9ac",
+        "upstream_provider": null,
+        "limitations": [
+          "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+          "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+          "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+          "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+          "Assembly is Ghidra Listing text and does not claim textual equivalence with Hopper output.",
+          "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state."
+        ],
+        "item_procedure": null,
+        "body_sha256": "5bcc1e9151e079e723b0291e79486939865f5c5d147f577ed340728e9fa03f05"
+      }
+    ],
+    "selected_pseudocode_evidence_id": "ev_8e0cd105a55e797336133e1a6d053031954a5c3119c4a19ffd55e13a2a992e4c"
+  },
+  {
+    "address": "0x21e10",
+    "names": [
+      "log_tx"
+    ],
+    "procedure": {
+      "external": false,
+      "thunk": false,
+      "thunk_target": null
+    },
+    "inventory_evidence_ids": [
+      "ev_26afb98cff7a05931c9268670ad3a0c4454c68e6526fcb85f0d510c483747c1f"
+    ],
+    "external": false,
+    "status": "decompiled",
+    "pseudocode_observations": [
+      {
+        "status": "ok",
+        "evidence_id": "ev_91bd0f3e64c60424f4be4d793aebc2a2bb905c539d6aea9cde394350e244c581",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "subject": {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf",
+          "local_path": "card-template/clio843/focusd",
+          "name": "focusd"
+        },
+        "analysis_profile_digest": "e87c132666812361c9c173067536033b1a9e95723147e4ced29d458510cce9ac",
+        "upstream_provider": null,
+        "limitations": [
+          "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+          "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+          "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+          "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+          "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state."
+        ],
+        "item_procedure": null,
+        "body_sha256": "a06ffb6629706666958f9a160a71ed8e6807c69fc02b7c98b3e35ebf3d4525b1"
+      }
+    ],
+    "assembly_observations": [
+      {
+        "status": "ok",
+        "evidence_id": "ev_52652b22360ac624f8ad170e7d4ed8bc38b61748c824dccd226010a6fb3e46ec",
+        "operation": "procedure_assembly",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "subject": {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf",
+          "local_path": "card-template/clio843/focusd",
+          "name": "focusd"
+        },
+        "analysis_profile_digest": "e87c132666812361c9c173067536033b1a9e95723147e4ced29d458510cce9ac",
+        "upstream_provider": null,
+        "limitations": [
+          "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+          "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+          "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+          "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+          "Assembly is Ghidra Listing text and does not claim textual equivalence with Hopper output.",
+          "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state."
+        ],
+        "item_procedure": null,
+        "body_sha256": "4d9cb643597e16bed80fb34b7fdd7991d5a3022dbbb026d4568d6385bf933d87"
+      }
+    ],
+    "selected_pseudocode_evidence_id": "ev_91bd0f3e64c60424f4be4d793aebc2a2bb905c539d6aea9cde394350e244c581"
+  },
+  {
+    "address": "0x21f64",
+    "names": [
+      "log_text"
+    ],
+    "procedure": {
+      "external": false,
+      "thunk": false,
+      "thunk_target": null
+    },
+    "inventory_evidence_ids": [
+      "ev_26afb98cff7a05931c9268670ad3a0c4454c68e6526fcb85f0d510c483747c1f"
+    ],
+    "external": false,
+    "status": "decompiled",
+    "pseudocode_observations": [
+      {
+        "status": "ok",
+        "evidence_id": "ev_f733e52f0477bb9a9ee1cab82974baf9a1d3898dce6fc3c9c6f52edad3b534c6",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "subject": {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf",
+          "local_path": "card-template/clio843/focusd",
+          "name": "focusd"
+        },
+        "analysis_profile_digest": "e87c132666812361c9c173067536033b1a9e95723147e4ced29d458510cce9ac",
+        "upstream_provider": null,
+        "limitations": [
+          "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+          "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+          "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+          "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+          "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state."
+        ],
+        "item_procedure": null,
+        "body_sha256": "e598ba16263ceb8ddcb509ed42041ef6258ec10d8bd8f491eb6ac06eda92fe3a"
+      }
+    ],
+    "assembly_observations": [
+      {
+        "status": "ok",
+        "evidence_id": "ev_a46f9fbd38852a7c39e49c5af47ac50ff1ac1fc069cd9cc98cab51ba45421e9f",
+        "operation": "procedure_assembly",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "subject": {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf",
+          "local_path": "card-template/clio843/focusd",
+          "name": "focusd"
+        },
+        "analysis_profile_digest": "e87c132666812361c9c173067536033b1a9e95723147e4ced29d458510cce9ac",
+        "upstream_provider": null,
+        "limitations": [
+          "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+          "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+          "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+          "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+          "Assembly is Ghidra Listing text and does not claim textual equivalence with Hopper output.",
+          "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state."
+        ],
+        "item_procedure": null,
+        "body_sha256": "620d721ed904e5fa0ca6f824fdac93d88818dfa0bd75889fa2ba60ae9b767848"
+      }
+    ],
+    "selected_pseudocode_evidence_id": "ev_f733e52f0477bb9a9ee1cab82974baf9a1d3898dce6fc3c9c6f52edad3b534c6"
+  },
+  {
+    "address": "0x2208c",
+    "names": [
+      "hexbyte_append"
+    ],
+    "procedure": {
+      "external": false,
+      "thunk": false,
+      "thunk_target": null
+    },
+    "inventory_evidence_ids": [
+      "ev_26afb98cff7a05931c9268670ad3a0c4454c68e6526fcb85f0d510c483747c1f"
+    ],
+    "external": false,
+    "status": "decompiled",
+    "pseudocode_observations": [
+      {
+        "status": "ok",
+        "evidence_id": "ev_078f574b6bbdd256645d34516f6f0fc6d0c9f51f686cc1fea26d8350bafcd13c",
+        "operation": "procedure_pseudo_code",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "subject": {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf",
+          "local_path": "card-template/clio843/focusd",
+          "name": "focusd"
+        },
+        "analysis_profile_digest": "e87c132666812361c9c173067536033b1a9e95723147e4ced29d458510cce9ac",
+        "upstream_provider": null,
+        "limitations": [
+          "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+          "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+          "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+          "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+          "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+          "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+          "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state."
+        ],
+        "item_procedure": null,
+        "body_sha256": "f61e653b85e50ccc618331c67a1c3fec243f8e2ed6507af0ef643baa56b61a3d"
+      }
+    ],
+    "assembly_observations": [
+      {
+        "status": "ok",
+        "evidence_id": "ev_5fd865d6379867409930b6d48705c2636b4684e899041ecead46e03e17f5fb62",
+        "operation": "procedure_assembly",
+        "provider": {
+          "id": "ghidra",
+          "name": "Ghidra",
+          "version": "12.1.4"
+        },
+        "subject": {
+          "architecture": "arm",
+          "digest": {
+            "sha256": "31145f8bebc5a35503bda94ee071b7ad1bf7b62727ed84c6887eba1600da1300"
+          },
+          "format": "elf",
+          "local_path": "card-template/clio843/focusd",
+          "name": "focusd"
+        },
+        "analysis_profile_digest": "e87c132666812361c9c173067536033b1a9e95723147e4ced29d458510cce9ac",
+        "upstream_provider": null,
+        "limitations": [
+          "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+          "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+          "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+          "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+          "Assembly is Ghidra Listing text and does not claim textual equivalence with Hopper output.",
+          "macOS sessions require a matching executable Ghidra native decompiler; REA checks for it but does not build native components or change Gatekeeper quarantine state."
+        ],
+        "item_procedure": null,
+        "body_sha256": "2c4e035fca599de2f170a4f21e4c32590f9134b556be5e0d46fd8280d8c1b611"
+      }
+    ],
+    "selected_pseudocode_evidence_id": "ev_078f574b6bbdd256645d34516f6f0fc6d0c9f51f686cc1fea26d8350bafcd13c"
+  }
+]

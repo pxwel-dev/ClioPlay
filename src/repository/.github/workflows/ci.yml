@@ -1,0 +1,37 @@
+name: ClioPlay checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  host-checks:
+    name: Host and publication checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check clean publication and host regressions
+        run: python3 src/tools/verify_ci.py
+
+  windows-launcher:
+    name: Windows launcher checks
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Parse launcher and check WSL command boundaries
+        shell: pwsh
+        run: ./src/tests/test_windows_launcher.ps1

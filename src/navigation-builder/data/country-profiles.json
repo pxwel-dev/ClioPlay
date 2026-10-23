@@ -1,0 +1,1320 @@
+{
+  "schema": 1,
+  "retrieved": "2026-10-19",
+  "source": "https://github.com/rapideditor/country-coder",
+  "source_sha256": "1b7bcaec215f7a7df5404d633f193cf069befbf55316deeae2e1178a96a6db3c",
+  "license": "ISC; COUNTRY-CODER-LICENSE.txt",
+  "countries": {
+    "AC": {
+      "name": "Ascension Island",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "AD": {
+      "name": "Andorra",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "AE": {
+      "name": "United Arab Emirates",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "AF": {
+      "name": "Afghanistan",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "AG": {
+      "name": "Antigua and Barbuda",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "AI": {
+      "name": "Anguilla",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "AL": {
+      "name": "Albania",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "AM": {
+      "name": "Armenia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "AO": {
+      "name": "Angola",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "AQ": {
+      "name": "Antarctica",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "AR": {
+      "name": "Argentina",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "AS": {
+      "name": "American Samoa",
+      "speed_unit": "mph",
+      "driving_side": "right"
+    },
+    "AT": {
+      "name": "Austria",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "AU": {
+      "name": "Australia",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "AW": {
+      "name": "Aruba",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "AX": {
+      "name": "Åland Islands",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "AZ": {
+      "name": "Azerbaijan",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "BA": {
+      "name": "Bosnia and Herzegovina",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "BB": {
+      "name": "Barbados",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "BD": {
+      "name": "Bangladesh",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "BE": {
+      "name": "Belgium",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "BF": {
+      "name": "Burkina Faso",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "BG": {
+      "name": "Bulgaria",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "BH": {
+      "name": "Bahrain",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "BI": {
+      "name": "Burundi",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "BJ": {
+      "name": "Benin",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "BL": {
+      "name": "Saint-Barthélemy",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "BM": {
+      "name": "Bermuda",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "BN": {
+      "name": "Brunei",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "BO": {
+      "name": "Bolivia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "BQ": {
+      "name": "Caribbean Netherlands",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "BR": {
+      "name": "Brazil",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "BS": {
+      "name": "The Bahamas",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "BT": {
+      "name": "Bhutan",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "BV": {
+      "name": "Bouvet Island",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "BW": {
+      "name": "Botswana",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "BY": {
+      "name": "Belarus",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "BZ": {
+      "name": "Belize",
+      "speed_unit": "mph",
+      "driving_side": "right"
+    },
+    "CA": {
+      "name": "Canada",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "CC": {
+      "name": "Cocos (Keeling) Islands",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "CD": {
+      "name": "Democratic Republic of the Congo",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "CF": {
+      "name": "Central African Republic",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "CG": {
+      "name": "Republic of the Congo",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "CH": {
+      "name": "Switzerland",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "CI": {
+      "name": "Côte d'Ivoire",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "CK": {
+      "name": "Cook Islands",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "CL": {
+      "name": "Chile",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "CM": {
+      "name": "Cameroon",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "CN": {
+      "name": "People's Republic of China",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "CO": {
+      "name": "Colombia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "CP": {
+      "name": "Clipperton Island",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "CQ": {
+      "name": "Sark",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "CR": {
+      "name": "Costa Rica",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "CU": {
+      "name": "Cuba",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "CV": {
+      "name": "Cape Verde",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "CW": {
+      "name": "Curaçao",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "CX": {
+      "name": "Christmas Island",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "CY": {
+      "name": "Republic of Cyprus",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "CZ": {
+      "name": "Czechia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "DE": {
+      "name": "Germany",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "DG": {
+      "name": "Diego Garcia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "DJ": {
+      "name": "Djibouti",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "DK": {
+      "name": "Kingdom of Denmark",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "DM": {
+      "name": "Dominica",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "DO": {
+      "name": "Dominican Republic",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "DZ": {
+      "name": "Algeria",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "EA": {
+      "name": "Ceuta, Melilla",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "EC": {
+      "name": "Ecuador",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "EE": {
+      "name": "Estonia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "EG": {
+      "name": "Egypt",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "EH": {
+      "name": "Western Sahara",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "ER": {
+      "name": "Eritrea",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "ES": {
+      "name": "Spain",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "ET": {
+      "name": "Ethiopia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "EU": {
+      "name": "European Union",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "FI": {
+      "name": "Finland",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "FJ": {
+      "name": "Fiji",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "FK": {
+      "name": "Falkland Islands",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "FM": {
+      "name": "Federated States of Micronesia",
+      "speed_unit": "mph",
+      "driving_side": "right"
+    },
+    "FO": {
+      "name": "Faroe Islands",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "FR": {
+      "name": "France",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "FX": {
+      "name": "Metropolitan France",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "GA": {
+      "name": "Gabon",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "GB": {
+      "name": "United Kingdom",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "GD": {
+      "name": "Grenada",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "GE": {
+      "name": "Georgia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "GF": {
+      "name": "French Guiana",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "GG": {
+      "name": "Bailiwick of Guernsey",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "GH": {
+      "name": "Ghana",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "GI": {
+      "name": "Gibraltar",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "GL": {
+      "name": "Greenland",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "GM": {
+      "name": "The Gambia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "GN": {
+      "name": "Guinea",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "GP": {
+      "name": "Guadeloupe",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "GQ": {
+      "name": "Equatorial Guinea",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "GR": {
+      "name": "Greece",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "GS": {
+      "name": "South Georgia and South Sandwich Islands",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "GT": {
+      "name": "Guatemala",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "GU": {
+      "name": "Guam",
+      "speed_unit": "mph",
+      "driving_side": "right"
+    },
+    "GW": {
+      "name": "Guinea-Bissau",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "GY": {
+      "name": "Guyana",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "HK": {
+      "name": "Hong Kong",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "HM": {
+      "name": "Heard Island and McDonald Islands",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "HN": {
+      "name": "Honduras",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "HR": {
+      "name": "Croatia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "HT": {
+      "name": "Haiti",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "HU": {
+      "name": "Hungary",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "IC": {
+      "name": "Canary Islands",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "ID": {
+      "name": "Indonesia",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "IE": {
+      "name": "Republic of Ireland",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "IL": {
+      "name": "Israel",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "IM": {
+      "name": "Isle of Man",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "IN": {
+      "name": "India",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "IO": {
+      "name": "British Indian Ocean Territory",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "IQ": {
+      "name": "Iraq",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "IR": {
+      "name": "Iran",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "IS": {
+      "name": "Iceland",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "IT": {
+      "name": "Italy",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "JE": {
+      "name": "Bailiwick of Jersey",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "JM": {
+      "name": "Jamaica",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "JO": {
+      "name": "Jordan",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "JP": {
+      "name": "Japan",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "KE": {
+      "name": "Kenya",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "KG": {
+      "name": "Kyrgyzstan",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "KH": {
+      "name": "Cambodia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "KI": {
+      "name": "Kiribati",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "KM": {
+      "name": "Comoros",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "KN": {
+      "name": "St. Kitts and Nevis",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "KP": {
+      "name": "North Korea",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "KR": {
+      "name": "South Korea",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "KW": {
+      "name": "Kuwait",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "KY": {
+      "name": "Cayman Islands",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "KZ": {
+      "name": "Kazakhstan",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "LA": {
+      "name": "Laos",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "LB": {
+      "name": "Lebanon",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "LC": {
+      "name": "St. Lucia",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "LI": {
+      "name": "Liechtenstein",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "LK": {
+      "name": "Sri Lanka",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "LR": {
+      "name": "Liberia",
+      "speed_unit": "mph",
+      "driving_side": "right"
+    },
+    "LS": {
+      "name": "Lesotho",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "LT": {
+      "name": "Lithuania",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "LU": {
+      "name": "Luxembourg",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "LV": {
+      "name": "Latvia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "LY": {
+      "name": "Libya",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "MA": {
+      "name": "Morocco",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "MC": {
+      "name": "Monaco",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "MD": {
+      "name": "Moldova",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "ME": {
+      "name": "Montenegro",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "MF": {
+      "name": "Saint-Martin",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "MG": {
+      "name": "Madagascar",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "MH": {
+      "name": "Marshall Islands",
+      "speed_unit": "mph",
+      "driving_side": "right"
+    },
+    "MK": {
+      "name": "North Macedonia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "ML": {
+      "name": "Mali",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "MM": {
+      "name": "Myanmar",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "MN": {
+      "name": "Mongolia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "MO": {
+      "name": "Macau",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "MP": {
+      "name": "Northern Mariana Islands",
+      "speed_unit": "mph",
+      "driving_side": "right"
+    },
+    "MQ": {
+      "name": "Martinique",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "MR": {
+      "name": "Mauritania",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "MS": {
+      "name": "Montserrat",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "MT": {
+      "name": "Malta",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "MU": {
+      "name": "Mauritius",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "MV": {
+      "name": "Maldives",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "MW": {
+      "name": "Malawi",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "MX": {
+      "name": "Mexico",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "MY": {
+      "name": "Malaysia",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "MZ": {
+      "name": "Mozambique",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "NA": {
+      "name": "Namibia",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "NC": {
+      "name": "New Caledonia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "NE": {
+      "name": "Niger",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "NF": {
+      "name": "Norfolk Island",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "NG": {
+      "name": "Nigeria",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "NI": {
+      "name": "Nicaragua",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "NL": {
+      "name": "Kingdom of the Netherlands",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "NO": {
+      "name": "Norway",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "NP": {
+      "name": "Nepal",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "NR": {
+      "name": "Nauru",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "NU": {
+      "name": "Niue",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "NZ": {
+      "name": "New Zealand",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "OM": {
+      "name": "Oman",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "PA": {
+      "name": "Panama",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "PE": {
+      "name": "Peru",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "PF": {
+      "name": "French Polynesia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "PG": {
+      "name": "Papua New Guinea",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "PH": {
+      "name": "Philippines",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "PK": {
+      "name": "Pakistan",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "PL": {
+      "name": "Poland",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "PM": {
+      "name": "Saint Pierre and Miquelon",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "PN": {
+      "name": "Pitcairn Islands",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "PR": {
+      "name": "Puerto Rico",
+      "speed_unit": "mph",
+      "driving_side": "right"
+    },
+    "PS": {
+      "name": "Palestine",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "PT": {
+      "name": "Portugal",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "PW": {
+      "name": "Palau",
+      "speed_unit": "mph",
+      "driving_side": "right"
+    },
+    "PY": {
+      "name": "Paraguay",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "QA": {
+      "name": "Qatar",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "RE": {
+      "name": "Réunion",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "RO": {
+      "name": "Romania",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "RS": {
+      "name": "Serbia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "RU": {
+      "name": "Russia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "RW": {
+      "name": "Rwanda",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "SA": {
+      "name": "Saudi Arabia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "SB": {
+      "name": "Solomon Islands",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "SC": {
+      "name": "Seychelles",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "SD": {
+      "name": "Sudan",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "SE": {
+      "name": "Sweden",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "SG": {
+      "name": "Singapore",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "SH": {
+      "name": "Saint Helena, Ascension and Tristan da Cunha",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "SI": {
+      "name": "Slovenia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "SJ": {
+      "name": "Svalbard and Jan Mayen",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "SK": {
+      "name": "Slovakia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "SL": {
+      "name": "Sierra Leone",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "SM": {
+      "name": "San Marino",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "SN": {
+      "name": "Senegal",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "SO": {
+      "name": "Somalia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "SR": {
+      "name": "Suriname",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "SS": {
+      "name": "South Sudan",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "ST": {
+      "name": "São Tomé and Principe",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "SV": {
+      "name": "El Salvador",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "SX": {
+      "name": "Sint Maarten",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "SY": {
+      "name": "Syria",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "SZ": {
+      "name": "Eswatini",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "TA": {
+      "name": "Tristan da Cunha",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "TC": {
+      "name": "Turks and Caicos Islands",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "TD": {
+      "name": "Chad",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "TF": {
+      "name": "French Southern Territories",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "TG": {
+      "name": "Togo",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "TH": {
+      "name": "Thailand",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "TJ": {
+      "name": "Tajikistan",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "TK": {
+      "name": "Tokelau",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "TL": {
+      "name": "East Timor",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "TM": {
+      "name": "Turkmenistan",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "TN": {
+      "name": "Tunisia",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "TO": {
+      "name": "Tonga",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "TR": {
+      "name": "Turkey",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "TT": {
+      "name": "Trinidad and Tobago",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "TV": {
+      "name": "Tuvalu",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "TW": {
+      "name": "Taiwan",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "TZ": {
+      "name": "Tanzania",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "UA": {
+      "name": "Ukraine",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "UG": {
+      "name": "Uganda",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "UM": {
+      "name": "United States Minor Outlying Islands",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "UN": {
+      "name": "United Nations",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "US": {
+      "name": "United States of America",
+      "speed_unit": "mph",
+      "driving_side": "right"
+    },
+    "UY": {
+      "name": "Uruguay",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "UZ": {
+      "name": "Uzbekistan",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "VA": {
+      "name": "Vatican City",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "VC": {
+      "name": "St. Vincent and the Grenadines",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "VE": {
+      "name": "Venezuela",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "VG": {
+      "name": "British Virgin Islands",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "VI": {
+      "name": "United States Virgin Islands",
+      "speed_unit": "mph",
+      "driving_side": "left"
+    },
+    "VN": {
+      "name": "Vietnam",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "VU": {
+      "name": "Vanuatu",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "WF": {
+      "name": "Wallis and Futuna",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "WS": {
+      "name": "Samoa",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "XK": {
+      "name": "Kosovo",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "YE": {
+      "name": "Yemen",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "YT": {
+      "name": "Mayotte",
+      "speed_unit": "km/h",
+      "driving_side": "right"
+    },
+    "ZA": {
+      "name": "South Africa",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "ZM": {
+      "name": "Zambia",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    },
+    "ZW": {
+      "name": "Zimbabwe",
+      "speed_unit": "km/h",
+      "driving_side": "left"
+    }
+  },
+  "overrides": {
+    "GG": {
+      "speed_unit": "mph",
+      "driving_side": "left",
+      "source": "https://www.gov.gg/driving"
+    },
+    "LR": {
+      "speed_unit": "mph",
+      "source": "https://www.rss.gov.lr/sites/default/files/documents/Vehicle-and-Traffic-Law.pdf"
+    }
+  }
+}

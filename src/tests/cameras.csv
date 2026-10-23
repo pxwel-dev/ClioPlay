@@ -1,0 +1,4 @@
+id,latitude,longitude,type,maxspeed,heading,end_latitude,end_longitude
+spain-fixed,40.4168,-3.7038,fixed,50,0,,
+spain-average,40.4170,-3.6900,average,90,0,40.4200,-3.6900
+france-excluded,48.8566,2.3522,fixed,50,0,,

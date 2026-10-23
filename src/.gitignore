@@ -1,0 +1,28 @@
+**/.DS_Store
+**/__pycache__/
+*.pyc
+build/
+build-work/
+dist/
+navigation-output/
+navigation-builder/.venv/
+navigation-builder/.cache
+navigation-builder/.build
+navigation-builder/output/
+navigation-builder/tools/build_qadj
+build-status/
+LOCAL-PROPRIETARY-FILES/
+*.cab
+*.osm.pbf
+# Current prebuilt programs and default bootstrap are deliberately published.
+
+# Local validation output is not publication material.
+/docs/next-release/*
+!/docs/next-release/hardware-trial.md
+*.log
+*.rgb565
+*.dSYM/
+.env
+.env.*
+/clio843/prefs.ini
+/clio843/routing-status.txt

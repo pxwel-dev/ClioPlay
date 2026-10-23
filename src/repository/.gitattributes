@@ -1,0 +1,17 @@
+# Keep checksummed text identical on every checkout, including Windows.
+* text=auto eol=lf
+*.bin binary
+*.cpf binary
+*.png binary
+*.gif binary
+*.mp4 binary
+*.gz binary
+*.ttf binary
+clio040 binary
+cliospl binary
+clioa2dp binary
+focusd binary
+hidd binary
+clioaux-init binary
+# Batch entry points are stored as CRLF; preserve checksum bytes.
+*.cmd -text
