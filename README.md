@@ -7,8 +7,7 @@
 <p align="center"><a href="src/docs/demo/clioplay-demo.mp4">Watch the 6:48 demo</a> · <a href="#install">Install</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
 **Preview release** for **non-LIVE Carminat TomTom units without factory Bluetooth**.
-Designed for the factory 480 × 272 screen and physical remote. Factory
-Bluetooth/hands-free coexistence is outside this edition.
+Designed for the factory 480 × 272 screen and physical remote.
 
 ## What it does
 
@@ -18,12 +17,12 @@ Bluetooth/hands-free coexistence is outside this edition.
 - Day/Night themes, automatic units and time zones, and 18 interface languages.
 - Mapped speed limits and camera alerts where the bundled country policy allows them.
 
-Optional phone destinations use the separate [ClioPlay Send website](https://pxwel-dev.github.io/ClioPlay-Send/).
+For phone destinations use the separate [ClioPlay Send website](https://pxwel-dev.github.io/ClioPlay-Send/).
 Its website and source are maintained separately from this repository.
 
 ## Install
 
-You need an SD card for the head unit (minimum 8GB, ensuring that it’s formatted to FAT32) and an `.osm.pbf` map extract covering your
+You need an SD card for the head unit (minimum 8GB, ensuring that it’s already formatted to FAT32) and an `.osm.pbf` map extract covering your
 journeys. Get the map extract from [Geofabrik Downloads](https://download.geofabrik.de/)
 by choosing your region and downloading its `.osm.pbf` file. Download and extract
 this repository, then follow your desktop setup:
@@ -56,12 +55,6 @@ Map building can take substantial time for large extracts.
 | **BACK** | Return; toggle phone playback controls on the driving screen |
 
 See the [user guide](src/README.md) for trips, pairing and settings.
-
-## Status and development
-
-This is a preview, with host-tested builds. Boot, physical controls, audio,
-wireless behaviour, routing speed, frame timing and memory still require
-head-unit validation.
 
 Some legacy helper sources remain unavailable: see [source status](SOURCE_STATUS.md).
 Original ClioPlay contributions use the [MIT licence](LICENSE); dependencies and
