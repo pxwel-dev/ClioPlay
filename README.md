@@ -23,7 +23,7 @@ Its website and source are maintained separately from this repository.
 
 ## Install
 
-You need an SD card for the head unit and an `.osm.pbf` map extract covering your
+You need an SD card for the head unit (minimum 8GB, ensuring that it’s formatted to FAT32) and an `.osm.pbf` map extract covering your
 journeys. Get the map extract from [Geofabrik Downloads](https://download.geofabrik.de/)
 by choosing your region and downloading its `.osm.pbf` file. Download and extract
 this repository, then follow your desktop setup:
