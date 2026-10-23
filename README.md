@@ -68,7 +68,6 @@ Original ClioPlay contributions use the [MIT licence](LICENSE); dependencies and
 map data retain their [own licences and notices](THIRD_PARTY_NOTICES.md).
 ClioPlay is independent of Renault and TomTom.
 
-For development, see [contributing](CONTRIBUTING.md), [building](src/BUILDING.md)
-and [repository launch instructions](src/docs/github-launch.md).
+For development, see [contributing](CONTRIBUTING.md), [building](src/BUILDING.md).
 
 <sub>Release files refreshed 23 October 2026 (Europe/London).</sub>
