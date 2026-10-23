@@ -61,8 +61,7 @@ See the [user guide](src/README.md) for trips, pairing and settings.
 
 This is a preview, with host-tested builds. Boot, physical controls, audio,
 wireless behaviour, routing speed, frame timing and memory still require
-head-unit validation. Full France and expanded country-policy validation remain
-outstanding; build one extract covering the intended journey.
+head-unit validation.
 
 Some legacy helper sources remain unavailable: see [source status](SOURCE_STATUS.md).
 Original ClioPlay contributions use the [MIT licence](LICENSE); dependencies and
@@ -71,8 +70,5 @@ ClioPlay is independent of Renault and TomTom.
 
 For development, see [contributing](CONTRIBUTING.md), [building](src/BUILDING.md)
 and [repository launch instructions](src/docs/github-launch.md).
-Firmware, map extracts, generated navigation, personal settings and build caches
-are excluded from Git. The included demo uses the production renderer with
-controlled host inputs; it does not establish vehicle performance.
 
 <sub>Release files refreshed 23 October 2026 (Europe/London).</sub>
