@@ -6,10 +6,10 @@
 <p align="center"><a href="src/docs/demo/clioplay-demo.mp4"><img src="src/docs/demo/preview.gif" width="960" alt="ClioPlay: driving, map browsing, trips, Bluetooth and settings"></a></p>
 <p align="center"><a href="src/docs/demo/clioplay-demo.mp4">Watch the 6:48 demo</a> · <a href="#install">Install</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-**Preview release** for **non-LIVE Carminat TomTom units without factory Bluetooth**.
+**Preview release** for **vehicles with a non-Bluetooth radio unit AND a non-LIVE Carminat TomTom unit operated by a bluetooth remote**.
 Designed for the factory 480 × 272 screen and physical remote.
 
-## What it does
+## Features
 
 - Offline OpenStreetMap navigation, routing and rerouting.
 - Browse the map, choose destinations, manage stops, recents and favourites.
