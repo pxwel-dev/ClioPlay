@@ -41,10 +41,10 @@ this repository, then follow your desktop setup:
 1. Choose your PBF and confirm its region.
 2. Let the installer build and check navigation data.
 3. Select the SD-card root and confirm installation.
-4. Keep the car off while preparing the card. Safely eject it before use.
+4. Safely eject it before use and insert into your car. 
 
 The installer downloads and checks the required official TomTom firmware.
-It does not format the card. Replaced files are backed up; existing preferences,
+It does not format the card. Replaced files are backed up. Any existing ClioPlay preferences,
 pairings and saved places are preserved. No previous ClioPlay install is needed.
 Map building can take substantial time for large extracts.
 
