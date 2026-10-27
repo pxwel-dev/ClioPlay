@@ -8,7 +8,7 @@
 
 ## Compatibility
 
-This preview release of ClioPlay is for vehicles that have the following: 
+This preview release of ClioPlay is verified to work on vehicles that have the following: 
 
 - Non-Bluetooth radio with a CD player
 - Non-live Carminat TomTom head unit
