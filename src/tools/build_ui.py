@@ -69,6 +69,8 @@ def main():
     a=ap.parse_args()
     import build_thin_coverage
     build_thin_coverage.main()
+    import build_roundabout_icon
+    build_roundabout_icon.main()
     import build_keyboard_data
     build_keyboard_data.main([])
     import build_speed_defaults
@@ -82,7 +84,7 @@ def main():
                                       '/opt/homebrew/opt/llvm/bin/ld.lld'))
     out=a.out.expanduser().resolve();out.parent.mkdir(parents=True,exist_ok=True)
     # The iCloud conflict copy is unused; only ui_translations.h is included.
-    inputs=sorted(p for p in (ROOT/'clio843/src').rglob('*') if p.is_file() and 'recovered' not in p.parts and '__pycache__' not in p.parts and p.name not in ('.DS_Store','ui_translations 2.h'))+[Path(__file__).resolve(),ROOT/'tools/text_engine.py',ROOT/'tools/build_translations.py',ROOT/'tools/build_splash_icon.py',ROOT/'tools/build_keyboard_data.py',ROOT/'tools/build_speed_defaults.py',ROOT/'tools/build_thin_coverage.py',ROOT/'navigation-builder/tools/global_speeds.py',ROOT/'navigation-builder/data/speed-contexts.json']+sorted((ROOT/'locales').rglob('*.json'))
+    inputs=sorted(p for p in (ROOT/'clio843/src').rglob('*') if p.is_file() and 'recovered' not in p.parts and '__pycache__' not in p.parts and p.name not in ('.DS_Store','ui_translations 2.h'))+[Path(__file__).resolve(),ROOT/'tools/text_engine.py',ROOT/'tools/build_translations.py',ROOT/'tools/build_splash_icon.py',ROOT/'tools/build_keyboard_data.py',ROOT/'tools/build_speed_defaults.py',ROOT/'tools/build_roundabout_icon.py',ROOT/'tools/build_thin_coverage.py',ROOT/'navigation-builder/tools/global_speeds.py',ROOT/'navigation-builder/data/speed-contexts.json']+sorted((ROOT/'locales').rglob('*.json'))
     before=hashlib.sha256(b''.join(str(p.relative_to(ROOT)).encode()+b'\0'+p.read_bytes() for p in inputs)).hexdigest()
     for source,destination in ((SOURCE,out),(ROOT/'clio843/src/cliospl.c',out.with_name('cliospl')),(ROOT/'clio843/src/clioa2dp.c',out.with_name('clioa2dp'))):
         with tempfile.TemporaryDirectory(prefix='clioplay-arm-build-') as tmp:

@@ -1,6 +1,6 @@
 # ClioPlay Global showcase
 
-[Watch the video](index.html) or [download the MP4](clioplay-demo.mp4) — 6:48, 1280×720, 30 fps, silent.
+[Watch the video](index.html) or [download the MP4](clioplay-demo.mp4) — 6:53, 1280×720, 30 fps, silent.
 
 A dark-led tour of everyday remote controls, destinations/favourites, itinerary actions, Bluetooth/audio, useful settings, camera alerts and arrivals. The Day and Auto theme options are shown briefly. Characters, setting values, languages, scrolling and boundary cases are not exhaustively repeated.
 
@@ -34,10 +34,4 @@ From `src/`:
 python3 tools/render_demo.py --maps navigation-output --sender-captures /path/to/private-browser-captures
 ```
 
-Requires Pillow, a host C/C++ compiler, FFmpeg (`ffmpeg` on PATH, `imageio-ffmpeg`, or `--ffmpeg /path/to/ffmpeg`). NumPy optionally speeds up RGB565 decoding. Companion browser captures are external inputs from the private phone-website project; its source and capture tooling are not published here. Map files are read-only. The plan in `tools/render_demo.py` selects the showcase; `tools/render_gallery.py` captures only its chosen scenes in the Night starting theme.
-
-The existing MP4, poster and looping preview were retained byte-for-byte when
-the companion website source was separated. Its historical capture-tool hashes
-remain recorded in the manifest. Native runtime sources, executable hashes and
-all published media hashes are still verified; private browser-source hashes
-are provenance records, not a claim that those sources are included here.
+Requires Pillow, a host C/C++ compiler, FFmpeg (`ffmpeg` on PATH, `imageio-ffmpeg`, or `--ffmpeg /path/to/ffmpeg`). NumPy optionally speeds up RGB565 decoding. Companion browser captures must be supplied using `--sender-captures PATH`; their source and capture tooling live in the separate private project. Map files are read-only. The plan in `tools/render_demo.py` selects the showcase; `tools/render_gallery.py` captures only its chosen scenes in the Night starting theme.

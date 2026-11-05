@@ -212,6 +212,7 @@ def showcase_plan():
         ('action','debug-0',4,'Turn logging off for normal use'),
       ]),
       ('On the road', [
+        ('state','roundabout-guidance',5,'Follow the roundabout arrow and take the numbered exit'),
         ('state','limit-estimated',5,'A question mark identifies an estimated road limit'),
         ('state','gps-lost',4,'GPS status remains visible when reception is lost'),
         ('state','route-rerouting',4,'ClioPlay shows when it is recalculating the route'),

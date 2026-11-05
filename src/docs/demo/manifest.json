@@ -1,8 +1,17 @@
 {
   "schema": "clioplay-curated-framebuffer-demo-3",
   "video": "clioplay-demo.mp4",
-  "video_sha256": "62ba2e555e49233fd39598ec3ffabf55993558bae78d18689f48f3f84f12faf5",
+  "video_sha256": "e580c58c032064d510e38d6d9a1d1254fda82d262bfb32f0c794f7f746db3253",
   "poster_sha256": "ef969bf08cb0b4f311f89be2b9bb221c025c1fdd5686d5a0fc263934355d39d4",
+  "generator_inputs": {
+    "tools/render_demo.py": "ec5c2157d2ddd56cb321d255ed71ce36b2fd812288436a184346aaf8290e1424",
+    "tools/render_gallery.py": "2be107ab94197ea853a35129905dd0e86a2bb35740cb67c2a33f8100a14a294d",
+    "tests/native.c": "d34bfec734f2571b00068896bd9ac2787b91f3954fea8562b99dc7762bb861d2",
+    "tests/splash.c": "2255599ec0165dc893d3f19728310bf9761b95751fb2299523679a26b2e08fd9",
+    "tests/fixtures/route.h": "8d4a20c13f4bc6d04e0815eb77917f5e5129285cb1138c8f2a2df1d27816e22f",
+    "fonts/Vera.ttf": "c4c45690b345435b2cba52ecabe275f05e49b389b39fe68ad03afbb551288d3d",
+    "fonts/VeraBd.ttf": "cc037385e4d55bfde89b13e03091ee93bf40c0c52ddd391ff031ab276f13b8e9"
+  },
   "capture_provenance": {
     "schema": "clioplay-framebuffer-gallery-1",
     "renderer": "Production C draw(), key_handle(), cliospl; native Unicode engine; host UBSan",
@@ -35,9 +44,10 @@
       "clio843/src/global_text.cc": "45b454fa97ec49eaaca230e4578da4361138ff2c5c410e0e552edd5629231858",
       "clio843/src/ui_raster.h": "bfee466fd28969cdbb8d1a391f15d1a8fcfdd278204c5414ff4ae7aad7ba82f8",
       "clio843/src/keyboard.h": "4aad61cd2a1f3e3c6ec0071806d7b98739909cc256be75d978ae1316d083de15",
+      "clio843/src/nav_roundabout.h": "470390303a8f18184a020710012ea0353d0425c26a1381bbaa4064ca2d7f39be",
       "clio843/src/global_cameras.h": "7b2fa7432f49fdcaafee2f650ed880150869a473a56470d00c480d495a5b1585",
       "clio843/src/urban_speed_defaults.h": "a719a3d065f16bc39727b01d7ed73f412beeb4d8703b5bde73a8c6ff1c35ac10",
-      "clio843/src/clio040.c": "cafbfd5ad2eed6fbc9de1d08707f05c5c7ce45775251a97cad6994b40a88982c",
+      "clio843/src/clio040.c": "fa085be531530127e4e308995667431dfc9ab031b23da1b92e725974ebebd4f4",
       "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
       "clio843/src/audio_chime.h": "184c222e448db2707fc752bc38f7f6c735b6cb1f4d168d88ddc7da7cf20f4d75",
       "clio843/src/utf8.h": "e6e172fb98b7f4c9e958322d13296190fd003025562c05146bcc9a3d50af8b7c",
@@ -498,7 +508,7 @@
       "clio843/src/vendor/sheenbidi/Headers/SheenBidi/SheenBidi.h": "44a644a72edf2300838d32c3e32aa14a7cb66b584fb9da643b8311aa21991cbe"
     },
     "executables": {
-      "clio040": "40275a338859229d75d519d927e97fd50d68566b045ddad79f95c437ad0e8400",
+      "clio040": "f707e13035d16e260aa6655ae2e47544b4ac4cff72433195acca4d5b0ce806aa",
       "cliospl": "8a993aff742a4197785994740d18f9ffb65f1a10ad9ad772885e86feb597fe70",
       "clioa2dp": "5936718d9c20abcaa0a7361cd80880cddacde25984219ba0174abccaf0dc1980"
     },
@@ -1201,6 +1211,14 @@
       },
       {
         "group": "Navigation states",
+        "id": "roundabout-guidance",
+        "title": "Roundabout circulation and exit number",
+        "note": "Controlled third-exit guidance state; production clockwise HUD glyph.",
+        "kind": "state",
+        "remote_events": []
+      },
+      {
+        "group": "Navigation states",
         "id": "gps-lost",
         "title": "Acquiring GPS",
         "note": "Simulated GPS/road/route state rendered by production draw().",
@@ -1876,6 +1894,12 @@
       "night/route-rerouting.png": {
         "rgb565_sha256": "4dba41de6c4670b078a6be96306f65d890ee75030b4bd4ea3cb922b79a130072",
         "png_sha256": "1d759bef410793499233f2dad2d527a97811f2d729cdf0682bfa7210c17a38d2",
+        "width": 480,
+        "height": 272
+      },
+      "night/roundabout-guidance.png": {
+        "rgb565_sha256": "92ac2417024864e11fa25d367d9b49856736762be1bebd2511b711e0a852e9a1",
+        "png_sha256": "10be3e8bc11ebfcb07466460f68a6997a129678d507e35a4aa5e99cff09e4b6f",
         "width": 480,
         "height": 272
       },
@@ -3073,6 +3097,12 @@
         "width": 480,
         "height": 272
       },
+      "night/steps/roundabout-guidance-before.png": {
+        "rgb565_sha256": "92ac2417024864e11fa25d367d9b49856736762be1bebd2511b711e0a852e9a1",
+        "png_sha256": "10be3e8bc11ebfcb07466460f68a6997a129678d507e35a4aa5e99cff09e4b6f",
+        "width": 480,
+        "height": 272
+      },
       "night/steps/destination-0-result-000.png": {
         "rgb565_sha256": "8e6a286e0363bb3d734a511262dd64b6d54cb0a637b11cbf9e55801babd2c77d",
         "png_sha256": "0242675efaa132e5562594561ec42b018653c0d457171636435d12bac22013cc",
@@ -3616,6 +3646,7 @@
       "night/recent-active-0-result.png",
       "night/remove-stop-0-result.png",
       "night/resume-trip-0-result.png",
+      "night/roundabout-guidance.png",
       "night/route-rerouting.png",
       "night/saved-phone-0-result.png",
       "night/saved-phone-1-result.png",
@@ -3746,7 +3777,7 @@
         "id": "sender-stop-finished",
         "title": "Transfer finished; the stop is added to the itinerary",
         "frame": "sender-stop-finished.png",
-        "png_sha256": "9be29b5da7cd4a911cdc94f1bed2840977abc57214b9e2f723c070e3a4772995",
+        "png_sha256": "508668e781881634041de6fa14c2d28ae2808c4539ccc5df0a0f343bfef7833d",
         "width": 390,
         "height": 552,
         "head": "sender-stop-result",
@@ -3776,7 +3807,7 @@
         "id": "sender-invalid-coordinate",
         "title": "Invalid coordinates keep sending disabled",
         "frame": "sender-invalid-coordinate.png",
-        "png_sha256": "5a104e634d44589897900a3683cf6ca9c06575e4c94ec72c64071d7a7128ee8f",
+        "png_sha256": "6e63f86d04980f5b997190772a086dee683b7794caf415bb4e5b7aeb4969995a",
         "width": 390,
         "height": 552,
         "head": "driving",
@@ -4047,6 +4078,7 @@
     "night/debug-1.png": "8147508c0137f5d8fef3ce66e7b8b3eb57db06af3d6b8251d9f69498477a2dd5",
     "night/steps/debug-0-000.png": "d4e6ff530b8fcec7d7014ac241a749cbfa5df0785b031f2ad62e6e031d3ccd5f",
     "night/debug-0.png": "d4e6ff530b8fcec7d7014ac241a749cbfa5df0785b031f2ad62e6e031d3ccd5f",
+    "night/roundabout-guidance.png": "10be3e8bc11ebfcb07466460f68a6997a129678d507e35a4aa5e99cff09e4b6f",
     "night/limit-estimated.png": "e5f635a4e14fc419e44b4b1381df8d277cf2f472dbb8ba813f8b80b87599397d",
     "night/gps-lost.png": "2fa8f037b4f7889b2f1d8d142a021e7b5195d2030804c934e68e0e9c4c08d91a",
     "night/route-rerouting.png": "1d759bef410793499233f2dad2d527a97811f2d729cdf0682bfa7210c17a38d2",
@@ -5987,6 +6019,18 @@
     },
     {
       "theme": "night",
+      "scene": "roundabout-guidance",
+      "chapter": "On the road",
+      "frame": "night/roundabout-guidance.png",
+      "seconds": 5,
+      "stage": "EXAMPLE STATE",
+      "key": null,
+      "caption": "Follow the roundabout arrow and take the numbered exit",
+      "start_seconds": 349.1,
+      "duration_frames": 150
+    },
+    {
+      "theme": "night",
       "scene": "limit-estimated",
       "chapter": "On the road",
       "frame": "night/limit-estimated.png",
@@ -5994,7 +6038,7 @@
       "stage": "EXAMPLE STATE",
       "key": null,
       "caption": "A question mark identifies an estimated road limit",
-      "start_seconds": 349.1,
+      "start_seconds": 354.1,
       "duration_frames": 150
     },
     {
@@ -6006,7 +6050,7 @@
       "stage": "EXAMPLE STATE",
       "key": null,
       "caption": "GPS status remains visible when reception is lost",
-      "start_seconds": 354.1,
+      "start_seconds": 359.1,
       "duration_frames": 120
     },
     {
@@ -6018,7 +6062,7 @@
       "stage": "EXAMPLE STATE",
       "key": null,
       "caption": "ClioPlay shows when it is recalculating the route",
-      "start_seconds": 358.1,
+      "start_seconds": 363.1,
       "duration_frames": 120
     },
     {
@@ -6030,7 +6074,7 @@
       "stage": "EXAMPLE STATE",
       "key": null,
       "caption": "Speed-camera alerts show the camera limit and distance",
-      "start_seconds": 362.1,
+      "start_seconds": 367.1,
       "duration_frames": 150
     },
     {
@@ -6042,7 +6086,7 @@
       "stage": "EXAMPLE STATE",
       "key": null,
       "caption": "Red-light alerts show the type and distance",
-      "start_seconds": 367.1,
+      "start_seconds": 372.1,
       "duration_frames": 150
     },
     {
@@ -6054,7 +6098,7 @@
       "stage": "EXAMPLE STATE",
       "key": null,
       "caption": "Average-speed sections show your measured average",
-      "start_seconds": 372.1,
+      "start_seconds": 377.1,
       "duration_frames": 150
     },
     {
@@ -6066,7 +6110,7 @@
       "stage": "EXAMPLE STATE",
       "key": null,
       "caption": "Arrival at a stop offers a short confirmation countdown",
-      "start_seconds": 377.1,
+      "start_seconds": 382.1,
       "duration_frames": 120
     },
     {
@@ -6078,7 +6122,7 @@
       "stage": "REMOTE INPUT",
       "key": "K_ENTER",
       "caption": "Confirm to continue to the next stop",
-      "start_seconds": 381.1,
+      "start_seconds": 386.1,
       "duration_frames": 16
     },
     {
@@ -6090,7 +6134,7 @@
       "stage": "ACTION RESULT",
       "key": null,
       "caption": "Confirm to continue to the next stop",
-      "start_seconds": 381.633333,
+      "start_seconds": 386.633333,
       "duration_frames": 104
     },
     {
@@ -6102,7 +6146,7 @@
       "stage": "EXAMPLE STATE",
       "key": null,
       "caption": "The final destination has its own arrival confirmation",
-      "start_seconds": 385.1,
+      "start_seconds": 390.1,
       "duration_frames": 120
     },
     {
@@ -6114,7 +6158,7 @@
       "stage": "REMOTE INPUT",
       "key": "K_ENTER",
       "caption": "Confirm arrival to finish the trip",
-      "start_seconds": 389.1,
+      "start_seconds": 394.1,
       "duration_frames": 16
     },
     {
@@ -6126,7 +6170,7 @@
       "stage": "ACTION RESULT",
       "key": null,
       "caption": "Confirm arrival to finish the trip",
-      "start_seconds": 389.633333,
+      "start_seconds": 394.633333,
       "duration_frames": 104
     },
     {
@@ -6138,7 +6182,7 @@
       "stage": "REMOTE INPUT",
       "key": "K_ENTER",
       "caption": "Resume a saved trip after restarting ClioPlay",
-      "start_seconds": 393.1,
+      "start_seconds": 398.1,
       "duration_frames": 16
     },
     {
@@ -6150,7 +6194,7 @@
       "stage": "ACTION RESULT",
       "key": null,
       "caption": "Resume a saved trip after restarting ClioPlay",
-      "start_seconds": 393.633333,
+      "start_seconds": 398.633333,
       "duration_frames": 134
     },
     {
@@ -6162,7 +6206,7 @@
       "stage": "REMOTE INPUT",
       "key": "K_ENTER",
       "caption": "Cancel the route from the Trip workspace",
-      "start_seconds": 398.1,
+      "start_seconds": 403.1,
       "duration_frames": 16
     },
     {
@@ -6174,7 +6218,7 @@
       "stage": "ACTION RESULT",
       "key": null,
       "caption": "Cancel the route from the Trip workspace",
-      "start_seconds": 398.633333,
+      "start_seconds": 403.633333,
       "duration_frames": 104
     },
     {
@@ -6186,7 +6230,7 @@
       "stage": "EXAMPLE STATE",
       "key": null,
       "caption": "ClioPlay Global",
-      "start_seconds": 402.1,
+      "start_seconds": 407.1,
       "duration_frames": 180
     }
   ],
@@ -6315,6 +6359,7 @@
     "night/showcase-language-en",
     "night/debug-1",
     "night/debug-0",
+    "night/roundabout-guidance",
     "night/limit-estimated",
     "night/gps-lost",
     "night/route-rerouting",
@@ -6872,6 +6917,12 @@
       [
         [
           "state",
+          "roundabout-guidance",
+          5,
+          "Follow the roundabout arrow and take the numbered exit"
+        ],
+        [
+          "state",
           "limit-estimated",
           5,
           "A question mark identifies an estimated road limit"
@@ -6954,15 +7005,15 @@
   "width": 1280,
   "height": 720,
   "fps": 30,
-  "duration_seconds": 408.1,
+  "duration_seconds": 413.1,
   "codec": "H.264 / yuv420p",
   "audio": false,
   "remote_reference": "Original drawing based on the user-supplied remote photo; white direction ring, soft keys below it, central BACK, lower MAP/MENU. Photograph not redistributed.",
   "limits": "Selected everyday actions and settings, night starting theme with brief Day/Auto examples. No exhaustive character/value/scroll/boundary matrix. Independent host examples; phone/vehicle/GPS fixtures and simulated radio hop. Explore at native 100ms cadence; other inputs paced for readability.",
   "readme_preview": {
     "file": "preview.gif",
-    "sha256": "456d4a36f265f31b94a1a320ce6c6c36dcd7de3b3313a6a803ca339b5ebbeb2c",
-    "source_video_sha256": "62ba2e555e49233fd39598ec3ffabf55993558bae78d18689f48f3f84f12faf5",
+    "sha256": "294d502791b2edf2412376c0adac7068262c33f98fa0ff9ca0b81873fc6a8751",
+    "source_video_sha256": "e580c58c032064d510e38d6d9a1d1254fda82d262bfb32f0c794f7f746db3253",
     "generator": "tools/build_readme_preview.py",
     "generator_sha256": "c04f181695aca18840775d631fa7758db9c0ad49f4e3730b4acf458def31a6e0",
     "width": 960,
@@ -6970,7 +7021,7 @@
     "fps": 10,
     "frames": 175,
     "seconds": 17.5,
-    "bytes": 1309510,
+    "bytes": 1317306,
     "clips": [
       {
         "scene": "driving",
@@ -7004,22 +7055,9 @@
       },
       {
         "scene": "camera-1",
-        "start_seconds": 362.1,
+        "start_seconds": 367.1,
         "duration_seconds": 2.5
       }
     ]
-  },
-  "historical_capture_tools": {
-    "tools/render_demo.py": "18eddbae3ac5d49a04ab154162d16bda87746465e2a0d43ce757b09222749b5a",
-    "tools/render_gallery.py": "1e221fecf48e2815be679a9ffeec5ab3b6b9bc5d82a32e65e30e1d39c4d25120",
-    "tools/capture_sender.cjs": "ef9af77db6b5bfe002fd1527d67f9ea45ebd23545e4a7cb24438cf12c6dc9c31",
-    "tools/verify_bluetooth_text.py": "6b5b2cff46816f2cc0ef0801b4c7b7bd32d89db57f38c042f7f71a61c43aa923",
-    "tests/native.c": "d34bfec734f2571b00068896bd9ac2787b91f3954fea8562b99dc7762bb861d2",
-    "tests/splash.c": "2255599ec0165dc893d3f19728310bf9761b95751fb2299523679a26b2e08fd9",
-    "tests/fixtures/route.h": "8d4a20c13f4bc6d04e0815eb77917f5e5129285cb1138c8f2a2df1d27816e22f",
-    "fonts/Vera.ttf": "c4c45690b345435b2cba52ecabe275f05e49b389b39fe68ad03afbb551288d3d",
-    "fonts/VeraBd.ttf": "cc037385e4d55bfde89b13e03091ee93bf40c0c52ddd391ff031ab276f13b8e9"
-  },
-  "generator_inputs": {},
-  "capture_pipeline_note": "Original showcase retained byte-for-byte. Historical capture-tool and companion-browser source hashes record the private capture pipeline; those sources are not shipped. Native runtime source, executable, frame, movie and preview hashes remain independently checked."
+  }
 }

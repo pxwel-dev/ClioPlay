@@ -1748,7 +1748,24 @@ static void nav_maneuver_find(void){nav_maneuver_reset();if(route_status!=R_READ
 static const char* nav_man_text(void){static char exit_text[64];if(nav_man_type==MAN_ROUNDABOUT){if(!nav_man_exit)return ui_tr("ROUNDABOUT");copystr(exit_text,sizeof(exit_text),ui_tr("TAKE EXIT "));append_int(exit_text,sizeof(exit_text),nav_man_exit);return exit_text;}switch(nav_man_type){case MAN_SLIGHT_LEFT:return ui_tr("SLIGHT LEFT");case MAN_LEFT:return ui_tr("TURN LEFT");case MAN_SHARP_LEFT:return ui_tr("SHARP LEFT");case MAN_SLIGHT_RIGHT:return ui_tr("SLIGHT RIGHT");case MAN_RIGHT:return ui_tr("TURN RIGHT");case MAN_SHARP_RIGHT:return ui_tr("SHARP RIGHT");case MAN_UTURN:return ui_tr("U-TURN");default:return"";}}
 static void append_nav_distance(char*b,unsigned cap,u32 m){if(!display_imperial()){append_metric_distance(b,cap,m,1);return;}if(m<70u){appendstr(b,cap,ui_tr("NOW"));return;}if(m<1000u){u32 yd=udiv32(m*1094u+500u,1000u);yd=udiv32(yd+5u,10u)*10u;append_int(b,cap,(int)yd);appendstr(b,cap," YD");return;}u32 mi10=udiv32(m*10u+804u,1609u);append_int(b,cap,(int)(mi10/10u));appendstr(b,cap,".");char d[2]={(char)('0'+mi10%10u),0};appendstr(b,cap,d);appendstr(b,cap," MI");}
 static void nav_arrow_head(int x,int y,int dx,int dy,u16 c){/* Tiny HUD arrow head. */int px=-dy,py=dx;line1(x,y,x-dx*4+px*3,y-dy*4+py*3,c,1);line1(x,y,x-dx*4-px*3,y-dy*4-py*3,c,1);}
-static void draw_manoeuvre_icon(int cx,int cy,int t){u16 c=C_CYAN;if(t==MAN_ROUNDABOUT){for(int k=0;k<36;k++){int n=(k+1)%36;line1(cx+(SIN36[k]*8>>15),cy-(COS36[k]*8>>15),cx+(SIN36[n]*8>>15),cy-(COS36[n]*8>>15),c,1);}line1(cx,cy+12,cx,cy+7,c,1);int clockwise=(region_flags&4)!=0;nav_arrow_head(cx+7,cy-4,clockwise?1:-1,clockwise?1:-1,c);if(nav_man_exit){char n[8];n[0]=0;append_int(n,sizeof(n),nav_man_exit);compact_center(cx,cy-5,13,0,n,c);}return;}if(t==MAN_UTURN){int side=(region_flags&4)?-1:1;line1(cx+side*4,cy+7,cx+side*4,cy-4,c,2);line1(cx+side*4,cy-4,cx+side,cy-7,c,2);line1(cx+side,cy-7,cx-side*5,cy-7,c,2);line1(cx-side*5,cy-7,cx-side*7,cy-4,c,2);line1(cx-side*7,cy-4,cx-side*7,cy+3,c,2);nav_arrow_head(cx-side*7,cy+3,0,1,c);return;}int left=t==MAN_SLIGHT_LEFT||t==MAN_LEFT||t==MAN_SHARP_LEFT;int slight=t==MAN_SLIGHT_LEFT||t==MAN_SLIGHT_RIGHT;int sharp=t==MAN_SHARP_LEFT||t==MAN_SHARP_RIGHT;line1(cx,cy+8,cx,cy,c,2);if(slight){int ex=cx+(left?-8:8),ey=cy-7;line1(cx,cy,ex,ey,c,2);nav_arrow_head(ex,ey,left?-1:1,-1,c);}else if(sharp){int mx=cx+(left?-4:4),my=cy-1,ex=cx+(left?-8:8),ey=cy+4;line1(cx,cy,mx,my,c,2);line1(mx,my,ex,ey,c,2);nav_arrow_head(ex,ey,left?-1:1,1,c);}else{int ex=cx+(left?-9:9),ey=cy;line1(cx,cy,ex,ey,c,2);nav_arrow_head(ex,ey,left?-1:1,0,c);}}
+#include "nav_roundabout.h"
+static void draw_roundabout_icon(int cx,int cy){
+ int clockwise=(region_flags&4)!=0;
+ for(int y=0;y<23;y++)for(int x=0;x<23;x++){
+  int alpha=nav_roundabout_alpha[y*23+(clockwise?x:22-x)];
+  if(alpha)blend_pixel(cx+x-11,cy+y-11,C_CYAN,alpha);
+ }
+ /* A high-contrast count stays upright when the circulation glyph mirrors.
+  * No count is invented when entering a roundabout midway. */
+ if(nav_man_exit>0&&nav_man_exit<10){char n[2]={(char)('0'+nav_man_exit),0};compact_center(cx,cy-7,13,0,n,C_WHITE);}
+ else if(nav_man_exit>=10&&nav_man_exit<100){
+  int digits[2]={nav_man_exit/10,nav_man_exit%10};
+  for(int i=0;i<2;i++)for(int y=0;y<7;y++)for(int x=0;x<5;x++){
+   int a=nav_roundabout_digits[digits[i]][y*5+x];if(a)blend_pixel(cx-5+i*6+x,cy-5+y,C_WHITE,a);
+  }
+ }
+}
+static void draw_manoeuvre_icon(int cx,int cy,int t){u16 c=C_CYAN;if(t==MAN_ROUNDABOUT){draw_roundabout_icon(cx,cy);return;}if(t==MAN_UTURN){int side=(region_flags&4)?-1:1;line1(cx+side*4,cy+7,cx+side*4,cy-4,c,2);line1(cx+side*4,cy-4,cx+side,cy-7,c,2);line1(cx+side,cy-7,cx-side*5,cy-7,c,2);line1(cx-side*5,cy-7,cx-side*7,cy-4,c,2);line1(cx-side*7,cy-4,cx-side*7,cy+3,c,2);nav_arrow_head(cx-side*7,cy+3,0,1,c);return;}int left=t==MAN_SLIGHT_LEFT||t==MAN_LEFT||t==MAN_SHARP_LEFT;int slight=t==MAN_SLIGHT_LEFT||t==MAN_SLIGHT_RIGHT;int sharp=t==MAN_SHARP_LEFT||t==MAN_SHARP_RIGHT;line1(cx,cy+8,cx,cy,c,2);if(slight){int ex=cx+(left?-8:8),ey=cy-7;line1(cx,cy,ex,ey,c,2);nav_arrow_head(ex,ey,left?-1:1,-1,c);}else if(sharp){int mx=cx+(left?-4:4),my=cy-1,ex=cx+(left?-8:8),ey=cy+4;line1(cx,cy,mx,my,c,2);line1(mx,my,ex,ey,c,2);nav_arrow_head(ex,ey,left?-1:1,1,c);}else{int ex=cx+(left?-9:9),ey=cy;line1(cx,cy,ex,ey,c,2);nav_arrow_head(ex,ey,left?-1:1,0,c);}}
 static void draw_manoeuvre_card(void){if(nav_man_type==MAN_NONE||nav_man_idx<0||nav_man_m>ROUTE_MAN_SHOW_M)return;char d[20];d[0]=0;append_nav_distance(d,sizeof(d),nav_man_m);/* Compact raised navigation card. */int mw=textw(d,1)+38;if(mw<62)mw=62;if(mw>92)mw=92;ui_surface(8,48,mw,24,C_PANEL2);fill(9,48,mw-2,2,C_CYAN);draw_manoeuvre_icon(22,60,nav_man_type);text(39,54,d,C_WHITE,1);}
 static u32 route_path_m(void){return sat_add32(route_result_m,atlas_future_m);}
 static void append_miles(char*b,unsigned cap,u32 m){if(!display_imperial()){append_metric_distance(b,cap,m,0);return;}u32 mi10=udiv32(m*10u+804u,1609u);append_int(b,cap,(int)(mi10/10u));appendstr(b,cap,".");char d[2]={(char)('0'+mi10%10u),0};appendstr(b,cap,d);appendstr(b,cap," MI");}
