@@ -1,29 +1,33 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
-<h1 align="center">CLIOPLAY GLOBAL</h1>
+<h1 align="center">CLIOPLAY</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen and remote.</p>
 
 <p align="center"><a href="src/docs/demo/clioplay-demo.mp4"><img src="src/docs/demo/preview.gif" width="960" alt="ClioPlay: driving, map browsing, trips, Bluetooth and settings"></a></p>
 <p align="center"><a href="src/docs/demo/clioplay-demo.mp4">Watch the 6:48 demo</a> · <a href="#install">Install</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-**Preview release** for **non-LIVE Carminat TomTom units without factory Bluetooth**.
-Designed for the factory 480 × 272 screen and physical remote. Factory
-Bluetooth/hands-free coexistence is outside this edition.
+## Compatibility
 
-## What it does
+This preview release of ClioPlay currently only supports vehicles that have the following: 
+
+- Non-Bluetooth radio with a CD player
+- Non-live Carminat TomTom head unit
+- Bluetooth remote control used to operate the Carminat
+
+## Features
 
 - Offline OpenStreetMap navigation, routing and rerouting.
 - Browse the map, choose destinations, manage stops, recents and favourites.
 - Bluetooth phone audio with track information and remote playback controls.
+- Working steering wheel controls
 - Day/Night themes, automatic units and time zones, and 18 interface languages.
 - Mapped speed limits and camera alerts where the bundled country policy allows them.
 
-Optional phone destinations use the separate [ClioPlay Send website](https://pxwel-dev.github.io/ClioPlay-Send/).
-Its website and source are maintained separately from this repository.
+For new stops/destinations that aren’t already in ClioPlay’s recents/favourites list, use the separate [ClioPlay Send website](https://pxwel-dev.github.io/ClioPlay-Send/) to send the new route to ClioPlay from your phone via Bluetooth. For ease of use, add the website to your Home Screen as a web app. 
 
 ## Install
 
-You need an SD card for the head unit and an `.osm.pbf` map extract covering your
+You need an SD card for the head unit (minimum 8GB, ensuring that it’s already formatted to FAT32) and an `.osm.pbf` map extract covering your
 journeys. Get the map extract from [Geofabrik Downloads](https://download.geofabrik.de/)
 by choosing your region and downloading its `.osm.pbf` file. Download and extract
 this repository, then follow your desktop setup:
@@ -37,10 +41,10 @@ this repository, then follow your desktop setup:
 1. Choose your PBF and confirm its region.
 2. Let the installer build and check navigation data.
 3. Select the SD-card root and confirm installation.
-4. Keep the car off while preparing the card. Safely eject it before use.
+4. Safely eject it before use and insert into your car. 
 
 The installer downloads and checks the required official TomTom firmware.
-It does not format the card. Replaced files are backed up; existing preferences,
+It does not format the card. Replaced files are backed up. Any existing ClioPlay preferences,
 pairings and saved places are preserved. No previous ClioPlay install is needed.
 Map building can take substantial time for large extracts.
 
@@ -57,22 +61,11 @@ Map building can take substantial time for large extracts.
 
 See the [user guide](src/README.md) for trips, pairing and settings.
 
-## Status and development
-
-This is a preview, with host-tested builds. Boot, physical controls, audio,
-wireless behaviour, routing speed, frame timing and memory still require
-head-unit validation. Full France and expanded country-policy validation remain
-outstanding; build one extract covering the intended journey.
-
 Some legacy helper sources remain unavailable: see [source status](SOURCE_STATUS.md).
 Original ClioPlay contributions use the [MIT licence](LICENSE); dependencies and
 map data retain their [own licences and notices](THIRD_PARTY_NOTICES.md).
 ClioPlay is independent of Renault and TomTom.
 
-For development, see [contributing](CONTRIBUTING.md), [building](src/BUILDING.md)
-and [repository launch instructions](src/docs/github-launch.md).
-Firmware, map extracts, generated navigation, personal settings and build caches
-are excluded from Git. The included demo uses the production renderer with
-controlled host inputs; it does not establish vehicle performance.
+For development, see [contributing](CONTRIBUTING.md), [building](src/BUILDING.md).
 
 <sub>Release files refreshed 23 October 2026 (Europe/London).</sub>
