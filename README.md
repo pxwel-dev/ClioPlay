@@ -4,7 +4,7 @@
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen and remote.</p>
 
 <p align="center"><a href="src/docs/demo/clioplay-demo.mp4"><img src="src/docs/demo/preview.gif" width="960" alt="ClioPlay: driving, map browsing, trips, Bluetooth and settings"></a></p>
-<p align="center"><a href="src/docs/demo/clioplay-demo.mp4">Watch the 6:48 demo</a> · <a href="#install">Install</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
+<p align="center"><a href="src/docs/demo/clioplay-demo.mp4">Watch the 6:53 demo</a> · <a href="#install">Install</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
 ## Compatibility
 
@@ -20,7 +20,7 @@ This preview release of ClioPlay currently only supports vehicles that have the 
 - Browse the map, choose destinations, manage stops, recents and favourites.
 - Bluetooth phone audio with track information and remote playback controls.
 - Working steering wheel controls
-- Day/Night themes, automatic units and time zones, and 18 interface languages.
+- Day/Night themes with seasonal sunrise/sunset in Auto, automatic units and time zones, and 18 interface languages.
 - Mapped speed limits and camera alerts where the bundled country policy allows them.
 
 For new stops/destinations that aren’t already in ClioPlay’s recents/favourites list, use the separate [ClioPlay Send website](https://pxwel-dev.github.io/ClioPlay-Send/) to send the new route to ClioPlay from your phone via Bluetooth. For ease of use, add the website to your Home Screen as a web app. 
@@ -61,6 +61,13 @@ Map building can take substantial time for large extracts.
 
 See the [user guide](src/README.md) for trips, pairing and settings.
 
+## Status and development
+
+This is a preview, with host-tested builds. Boot, physical controls, audio,
+wireless behaviour, routing speed, frame timing and memory still require
+head-unit validation. Full France and expanded country-policy validation remain
+outstanding; build one extract covering the intended journey.
+
 Some legacy helper sources remain unavailable: see [source status](SOURCE_STATUS.md).
 Original ClioPlay contributions use the [MIT licence](LICENSE); dependencies and
 map data retain their [own licences and notices](THIRD_PARTY_NOTICES.md).
@@ -68,4 +75,8 @@ ClioPlay is independent of Renault and TomTom.
 
 For development, see [contributing](CONTRIBUTING.md), [building](src/BUILDING.md).
 
-<sub>Release files refreshed 23 October 2026 (Europe/London).</sub>
+Firmware, map extracts, generated navigation, personal settings and build caches
+are excluded from Git. The included demo uses the production renderer with
+controlled host inputs; it does not establish vehicle performance.
+
+<sub>Release files refreshed 06 November 2026 (Europe/London).</sub>

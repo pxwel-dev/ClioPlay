@@ -1,1 +1,34 @@
-.DS_Store
+# Personal/local installation inputs and generated outputs
+**/LOCAL-PROPRIETARY-FILES/
+*.cab
+*.osm.pbf
+**/.DS_Store
+**/__pycache__/
+*.pyc
+**/.venv/
+**/.cache
+**/.build
+**/node_modules/
+**/navigation-output/
+**/build/
+**/build-work/
+**/dist/
+**/bond.dat
+**/faves.dat
+**/recent.dat
+**/trip.dat
+**/audlast.dat
+**/*.log
+**/*.rgb565
+**/*.dSYM/
+**/.env
+**/.env.*
+# Local hardware-test reports/captures; retain the trial instructions.
+/src/docs/next-release/*
+!/src/docs/next-release/hardware-trial.md
+/src/clio843/prefs.ini
+/src/clio843/routing-status.txt
+# Proprietary outputs, even if imported into a runtime tree locally
+**/ttsystem
+**/PNDNavigator
+**/vehicledaemon

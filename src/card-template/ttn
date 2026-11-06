@@ -17,7 +17,15 @@ if [ "$DEBUG" = "1" ]; then
 else
   rm -f "$CD"/*.log "$CD"/maps/*.log >/dev/null 2>&1
 fi
-log(){ if [ "$DEBUG" = "1" ]; then echo "$1" >> "$STATE"; fi; }
+log(){
+  if [ "$DEBUG" = "1" ]; then
+    if read BOOT_UP BOOT_IDLE < /proc/uptime; then
+      printf '[uptime %ss] %s\n' "$BOOT_UP" "$1" >> "$STATE"
+    else
+      echo "$1" >> "$STATE"
+    fi
+  fi
+}
 log "CLIOPLAY 0.4.0-dev9.4 START"
 
 # Clear volatile state from any previous runtime without touching audlast.dat.
@@ -112,8 +120,8 @@ fi
 # 2) Start Bluetooth immediately after AUX initialization. This is
 # intentionally BEFORE Focus/vehicle/GPS readiness so HCI/HID/A2DP setup and
 # saved-phone reconnect can proceed in parallel with vehicle/GPS acquisition.
-# btstart preserves its own Renault-HID quiet window and publishes /tmp/clbtrdy
-# only when the Bluetooth core is safe for the daemon to reconnect.
+# btstart launches the Renault HID listener without waiting for the remote to
+# wake, and publishes /tmp/clbtrdy once the Bluetooth core is ready to reconnect.
 CLIO_DEBUG=$DEBUG /bin/sh $SD/clio843/btstart.sh >/dev/null 2>&1 &
 log "BT START REQUESTED EARLY (GPS-INDEPENDENT)"
 
@@ -122,6 +130,7 @@ log "BT START REQUESTED EARLY (GPS-INDEPENDENT)"
 killall focusd >/dev/null 2>&1
 $SD/clio843/focusd >/dev/null 2>&1 &
 log "FOCUS START REQUESTED"
+start_vehicle(){
 N=0
 while [ $N -lt 8 ]; do
   if [ -e /tmp/cfready ]; then
@@ -131,11 +140,18 @@ while [ $N -lt 8 ]; do
   sleep 1
   N=`expr $N + 1`
 done
+if [ ! -e /tmp/cfready ]; then log "FOCUS READY TIMEOUT"; fi
 killall -TERM vehicledaemon >/dev/null 2>&1
 /bin/vehicledaemon >/dev/null 2>&1 &
 log "VEHICLEDAEMON RESTARTED"
+}
+# Only vehicledaemon depends on the Focus socket. The UI already tolerates
+# missing /tmp/cfstate and /tmp/cfbus and polls them again as they appear.
+# Keep the existing readiness barrier/timeout, but overlap it with UI loading.
+start_vehicle &
 
 # 4) Foreground UI. Bluetooth may already be connected by this point.  clio040
 # owns audlast.dat persistence and later publishes /tmp/clbt solely as the
 # Bluetooth-audio source gate; it is not a reconnect readiness dependency.
+log "UI EXEC (FOCUS/VEHICLE STARTUP IN PARALLEL)"
 exec $SD/clio843/clio040

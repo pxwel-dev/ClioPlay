@@ -26,9 +26,11 @@ static void icon_checks(int night){
  }
  assert(soft_outer>40&&soft_arrow>40); // Both independent contours have coverage.
 }
-static void run_case(int mode,int minute,const char*saved,int night){
+static void run_case(int mode,long utc,const char*saved,int night,int valid_fix){
  char pref[128];snprintf(pref,sizeof(pref),"theme=%d\nbright=50\nhoff=1\nmoff=0\n",mode);put(SPLASH_PREF,pref);put(SPLASH_THEME,saved);put(SPLASH_BL_MAX,"255");put(SPLASH_BL_VAL,"");put(SPLASH_FB,"");
- spl_theme=2;spl_bright=50;spl_hoff=1;spl_moff=0;spl_test_minutes=minute;
+ struct LastFixDisk fix={{'L','G','P','1'},5497548,-164050,0,0,0};fix.check=lastfix_check(fix.lat,fix.lon,fix.course);
+ if(valid_fix){if(valid_fix<0)fix.check++;FILE*f=fopen(SPLASH_LASTGPS,"wb");assert(f&&fwrite(&fix,sizeof(fix),1,f)==1);fclose(f);}else unlink(SPLASH_LASTGPS);
+ spl_theme=2;spl_bright=50;spl_test_utc=utc;
  assert(spl_run()==0);unsigned actual=check();spl_render(night);assert(actual==check());
  FILE*f=fopen(SPLASH_THEME,"rb");assert(f);char b[32];size_t n=fread(b,1,sizeof(b),f);fclose(f);assert(n==strlen(saved)&&!memcmp(b,saved,n));
  f=fopen(SPLASH_BL_VAL,"rb");assert(f);n=fread(b,1,sizeof(b),f);fclose(f);assert(n==3&&!memcmp(b,"128",3));
@@ -36,16 +38,17 @@ static void run_case(int mode,int minute,const char*saved,int night){
 }
 int main(int argc,char**argv){
  assert(argc==2);
- assert(clio_boot_minutes(0,1,0)==-1);
- assert(clio_boot_minutes(1577836800L,1,0)==60);
- assert(clio_boot_minutes(1577836800L,0,-30)==1410);
- assert(clio_boot_minutes(1577836800L+23*3600L,1,30)==30);
  icon_checks(0);icon_checks(1);
- run_case(0,0,"1",0);snapshot(argv[1],"splash-day");
- run_case(1,720,"0",1);snapshot(argv[1],"splash-night");
- run_case(2,419,"0",1);run_case(2,420,"1",0);run_case(2,1139,"1",0);run_case(2,1140,"0",1);
- run_case(2,-1,"0",0);run_case(2,-1,"1",1);run_case(2,-1,"invalid",1);
- run_case(8,720,"1",0);
- puts("Native splash passed: antialiased symmetric icon contours, no out-of-icon writes, Day/Night, AUTO boundaries, UTC offsets, saved fallback, brightness, exact framebuffer write, and no theme-state mutation.");
+ run_case(0,1793984400L,"1",0,1);snapshot(argv[1],"splash-day");
+ run_case(1,1793966400L,"0",1,1);snapshot(argv[1],"splash-night");
+ // Newcastle, 6 November: sunrise/sunset replace the old 07:00..19:00 window.
+ run_case(2,1793923200L+7*3600,"0",1,1);run_case(2,1793923200L+8*3600,"1",0,1);
+ run_case(2,1793923200L+15*3600,"1",0,1);run_case(2,1793923200L+17*3600,"0",1,1);
+ run_case(2,1793923200L+16*3600,"1",0,1);run_case(2,1793923200L+16*3600+15*60,"0",1,1);
+ run_case(2,1782000000L+20*3600,"1",0,1);run_case(2,1782000000L+22*3600,"0",1,1);
+ run_case(2,-1,"0",0,1);run_case(2,-1,"1",1,1);run_case(2,-1,"invalid",1,1);
+ run_case(2,1793966400L,"1",1,0);run_case(2,1793966400L,"1",1,-1);
+ run_case(8,1793966400L,"1",0,1);
+ puts("Native splash passed: antialiased icon, seasonal AUTO with saved location/UTC clock, missing/corrupt fix fallback, Day/Night overrides, brightness, exact framebuffer write and unchanged saved theme.");
  return 0;
 }

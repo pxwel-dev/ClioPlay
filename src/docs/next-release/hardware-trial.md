@@ -9,6 +9,16 @@ results against the executable SHA-256 values and navigation `build.json`.
 
 1. Cold boot in daylight and darkness: theme-aware splash, remote discovery,
    first frame, GPS acquisition, no blank/reboot loop. Measure seconds to each.
+   Include time from power-on to splash, usable map, first accepted remote key
+   and phone audio. Repeat with Debug enabled to collect uptime-stamped
+   `state.log`/`bt.log`; compare AUX, UI exec, Focus and Bluetooth milestones.
+   UI loading now overlaps Focus readiness. Confirm vehicle source/temperature
+   still appear and AUX/radio work when Focus becomes ready, including a slow
+   startup. Compare with Debug off to separate logging overhead.
+   For Auto theme, compare winter dusk with summer evenings. Check splash and
+   first UI palette using a saved location before GPS lock, then live GPS;
+   confirm manual Day/Night overrides and display clock offsets do not alter
+   solar switching. Weather/tunnels have no light-sensor input.
 2. Parked remote: menu → Trip/Phone connection/Settings; scrolling settings; Auto/Metric/
    Imperial, Clock Auto/manual and all available languages; saved favourites/trip;
    smooth freecam entry/exit. Check long/native names and the speed-limit circle, including estimated values
@@ -19,7 +29,10 @@ results against the executable SHA-256 values and navigation `build.json`.
    metadata covering radio. Record any source or focus delay.
 4. Pair and reconnect a real phone, restart car/phone, pause/resume/skip and send
    a named destination with accents/non-Latin text. Confirm the remote stays
-   connected. Factory Bluetooth/hands-free coexistence is outside this build.
+   connected. Boot with the remote asleep, allow the phone to reconnect, then
+   wake the remote with a button and confirm control and audio coexist. Repeat
+   with a remote button pressed during phone startup. Phone setup has no fixed
+   three-second remote wait. Factory Bluetooth/hands-free coexistence is outside this build.
 5. On a recorded passenger-observed drive: motorway/urban roads, an active route,
    roundabout exits, recalculation, bridge-over-water drawing, day/night changes.
    Measure frame interval and route calculation time; log memory/underrun symptoms.

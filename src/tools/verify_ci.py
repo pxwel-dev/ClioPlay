@@ -26,16 +26,19 @@ def main():
     run(sys.executable, ROOT/'tools/refresh_latest.py', '--check')
     run(sys.executable, ROOT/'tools/verify_publication.py')
     for name in ('test_vendor_download.py', 'test_clean_install.py',
-                 'test_bundle_layout.py', 'test_publication.py'):
+                 'test_bundle_layout.py', 'test_publication.py', 'test_bootstrap.py'):
         run(sys.executable, '-m', 'unittest', 'discover', '-s', ROOT/'tests', '-p', name)
     with tempfile.TemporaryDirectory(prefix='clioplay-ci-') as temp:
-        for name in ('map-antialias', 'map-areas', 'map-layers', 'roundabout', 'audio-chime'):
+        (Path(temp)/'clio843').mkdir()
+        for name in ('map-antialias', 'map-areas', 'map-layers', 'roundabout', 'audio-chime', 'auto-theme', 'splash'):
             exe = Path(temp)/name
             run('cc', '-O1', '-g', '-fsanitize=undefined',
-                '-fno-sanitize-recover=all', ROOT/'tests'/f'{name}.c', '-lm', '-o', exe)
+                '-fno-sanitize-recover=all', '-DCLIO_HOST_ROOT="'+temp+'/"', ROOT/'tests'/f'{name}.c', '-lm', '-o', exe)
             args = [exe]
             if name == 'audio-chime':
                 args.append(Path(temp)/'cue.pcm')
+            if name == 'splash':
+                args.append(temp)
             run(*args)
     run(sys.executable, ROOT/'tools/refresh_latest.py', '--check')
     print('ClioPlay publication and host checks passed; no hardware validation claimed.')

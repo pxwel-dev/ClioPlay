@@ -13,7 +13,10 @@ def collect(card,out):
  card=Path(card).resolve();out=Path(out).resolve()
  if not (card/'ttn').is_file() or not (card/'clio843').is_dir():raise ValueError('Choose the SD-card root')
  if out==card or card in out.parents:raise ValueError('Collect outside the card')
- out.mkdir(parents=True,exist_ok=True);report={'hardware_status':'unverified until observations are supplied','executables':{},'logs':{}}
+ out.mkdir(parents=True,exist_ok=True);report={'hardware_status':'unverified until observations are supplied','executables':{},'bootstrap':{},'logs':{}}
+ for name in ('ttn','clio843/btstart.sh'):
+  p=card/name
+  if p.is_file():report['bootstrap'][name]={'bytes':p.stat().st_size,'sha256':sha(p)}
  for name in ('clio040','cliospl','clioa2dp','focusd','hidd'):
   p=card/'clio843'/name
   if p.is_file():report['executables'][name]={'bytes':p.stat().st_size,'sha256':sha(p)}

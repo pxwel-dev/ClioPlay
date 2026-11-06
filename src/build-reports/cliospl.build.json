@@ -1,38 +1,38 @@
 {
   "machine": "ARM7TDMI / ARMv4T",
   "abi": "ELF32 EABI5 soft-float; Linux OABI syscalls",
-  "entry": "0x3316c",
-  "bytes": 82572,
-  "sha256": "8a993aff742a4197785994740d18f9ffb65f1a10ad9ad772885e86feb597fe70",
+  "entry": "0x338e0",
+  "bytes": 86104,
+  "sha256": "db5e594cb6f46440d16581af2d348f937c75d23b045e063b5ccbd6fca8fd0f41",
   "sections": {
     ".text": {
-      "address": "0x3316c",
-      "bytes": 3280
+      "address": "0x338e0",
+      "bytes": 4588
     },
     ".rodata": {
       "address": "0x10104",
-      "bytes": 77928
+      "bytes": 79836
     },
     ".data": {
-      "address": "0x43e3c",
+      "address": "0x44acc",
       "bytes": 8
     },
     ".bss": {
-      "address": "0x43e44",
-      "bytes": 261128
+      "address": "0x44ad4",
+      "bytes": 261120
     }
   },
   "source": "clio843/src/cliospl.c",
-  "source_tree_sha256": "bfadcb7e8b964c97859bced8801ef3627e81329637b0304f68e226d0219dbd37",
+  "source_tree_sha256": "b003da790cc6aba2a24c3a0b19e0afb9cda1547098af449d64e68c50c8990cd2",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "b0045a10c40374f77a1865d57be226f40dd313a23c5c38c68b60c3870f42a52b",
     "clio843/src/atlas_router.h": "ae13e0cb3de1c5c75a377abced3f4332cecd1ca0ff124e9d3074c555d9068eb5",
     "clio843/src/audio_chime.h": "184c222e448db2707fc752bc38f7f6c735b6cb1f4d168d88ddc7da7cf20f4d75",
-    "clio843/src/boot_theme.h": "dbe0c5092f7151be7a40e4781194671aa4a76c7f5db6aa5cf10ed94f38f0bce4",
-    "clio843/src/clio040.c": "fa085be531530127e4e308995667431dfc9ab031b23da1b92e725974ebebd4f4",
+    "clio843/src/boot_theme.h": "a319575ec4e9f348725e11629378425c7265b64e12a6a8c3f3f1fec7d8e9ff5a",
+    "clio843/src/clio040.c": "80187d8409dbdc01ee2a99a35f4d4ff860146101afbc3c7e346d7cdbbf0a38a4",
     "clio843/src/clioa2dp.c": "26e837f6056c99987410be5182cc8995f32e66fc7f8433c936ab896c45a1e46a",
-    "clio843/src/cliospl.c": "d93aeed486d16525418c022e8dea79baae17354d1aa88d14cce9046a333b92bd",
+    "clio843/src/cliospl.c": "3de7949f9f637c490ee26ece04ee57612f6a7a6a5bed9db58def531fb94a11e7",
     "clio843/src/font_atlas.h": "0989a1e455dd2a047dfea49d3e4d2a66a30b178960b80a2c31603ee80ffc4ffc",
     "clio843/src/global_cameras.h": "7b2fa7432f49fdcaafee2f650ed880150869a473a56470d00c480d495a5b1585",
     "clio843/src/global_clock.h": "7d2e1ea55f19f1577d51d584ed5be882fc15116af65bd1cc294eadd2d884e893",
@@ -45,6 +45,7 @@
     "clio843/src/keyboard-data/pinyin.h": "790948587decc97f934f36a06c1bf35ce537c96bfd2d18c833da5b94323b0001",
     "clio843/src/keyboard-data/pinyin.json": "25230af0cc85c9f9efe285151fc9633cd7bdcff3769351797e47a3f6d271dd14",
     "clio843/src/keyboard.h": "4aad61cd2a1f3e3c6ec0071806d7b98739909cc256be75d978ae1316d083de15",
+    "clio843/src/last_fix.h": "eaf9a30204c7b146bf83ea6ea6f2f4a9c25486dcbf69bc366824888426668cca",
     "clio843/src/map_raster.h": "adaeff9088a4c17f6f63a5a60a08ffcd7589396848c9e68b35f0c85fa981988d",
     "clio843/src/map_thin_coverage.h": "d4632a1dd789176be35ded06a21b84d272d69910532f31e05dc03fbfc092e5fb",
     "clio843/src/nav_roundabout.h": "470390303a8f18184a020710012ea0353d0425c26a1381bbaa4064ca2d7f39be",

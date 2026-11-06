@@ -209,6 +209,62 @@ checks theme/brightness behaviour and icon compositing under UBSan, and writes
 previews to `docs/next-release/splash-antialias/`. Its optional before captures
 are historical reference data; they are not needed to build the splash.
 
+## Seasonal Auto theme
+
+`clio843/src/boot_theme.h` shares the offline sunrise/sunset calculation between
+the splash and UI. It interpolates the existing latitude/date tables generated
+from the [NOAA solar equations](https://gml.noaa.gov/grad/solcalc/solareqns.PDF).
+The device uses integer arithmetic, with no runtime trigonometry or network.
+UTC date, latitude and longitude determine daylight; display timezone/DST
+offsets do not affect it. These are approximate astronomical boundaries and
+cannot detect cloud cover, tunnels or vehicle lighting.
+Night begins 15 minutes before estimated sunset; Day begins at estimated
+sunrise. The same dusk margin applies at boot and during driving.
+
+The UI loads the checksum-validated `gpslast.dat` before resolving its initial
+palette. The splash reads the same existing record through `last_fix.h`.
+Before a GPS fix, Auto uses the saved coordinates with GPS UTC date/time when
+available, otherwise the unit's UTC wall clock. A live fix takes priority.
+If date or location is unavailable, retain the saved palette (Night by default).
+There is no fixed 07:00–19:00 daylight fallback. Manual Day/Night always wins.
+
+`tests/auto-theme.c` checks the production resolver against independent
+floating-point solar equations, plus winter/summer, hemispheres, polar seasons,
+leap dates, time-only RMC, saved/live positions, clock fallback and overrides.
+`tests/splash.c` verifies actual framebuffer output and saved-position handling.
+Both run under UBSan in `tools/verify_ci.py`; host checks are not vehicle trials.
+
+## Boot measurements
+
+The bootstrap runs AUX initialization first, draws the splash, then starts
+Bluetooth and Focus. UI loading overlaps Focus readiness; only the vehicle
+daemon waits for `/tmp/cfready` (with the existing eight-second fallback).
+Bluetooth launches the HID listener and starts phone setup immediately, without
+waiting for the button-woken remote. The remote listener remains available for
+later connections. Service-readiness waits are separate from kernel/firmware boot.
+
+With Settings → Debug log enabled before a cold restart, `clio843/state.log`
+and `clio843/bt.log` prefix startup stages with kernel uptime in seconds.
+Compare bootstrap entry, AUX completion, splash, UI exec, Focus readiness,
+HCI setup, HID listener launch and the Bluetooth boot barrier. These
+timestamps use the existing Debug-only logs; no additional persistent boot
+status file is created. UI exec is the process handoff, not a first-frame or
+remote-ready measurement. Record those visible milestones separately.
+
+For a host breakdown of the actual loaders and first map frame:
+
+```sh
+python3 tools/profile_boot.py --maps /path/to/installed/clio843/maps
+```
+
+Use `--lat` and `--lon` to select a representative saved map view. Map inputs
+are read-only and state/framebuffer outputs are temporary. This reports host
+time and page faults, not predicted 400 MHz timings. Atlas loading currently
+validates every graph record before the first frame; its cost grows with the
+catalog. QAD7 and Unicode loading read headers/catalogs and leave their large
+data to be read on demand. Hardware timing is needed before changing validation
+or the proven Bluetooth initialization sequence.
+
 ## Automatic Navcore download
 
 The clean-card installer downloads the official 8.843 CAB from TomTom, verifies

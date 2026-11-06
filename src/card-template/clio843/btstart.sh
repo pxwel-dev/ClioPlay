@@ -1,7 +1,8 @@
 #!/bin/sh
-# CLIOPLAY Bluetooth bootstrap - AUTORECONNECT2 EARLYBOOT + PAIRFIX26 DEBUGGATE + MULTI-DEVICE+KEYVAULT+AVRCP-SDP+PIN0000 REMOTE-FIRST
-# Preserve the exact known-good Renault HID startup path. A2DP/phone pairing
-# is layered on only after hidd has started. Phone pairing uses TomTom's factory blueserver/hcid runtime pairing gate; hcid/hidd are never restarted for pairing.
+# CLIOPLAY Bluetooth bootstrap - AUTORECONNECT2 EARLYBOOT + PAIRFIX26 DEBUGGATE + MULTI-DEVICE+KEYVAULT+AVRCP-SDP+PIN0000 NO-REMOTE-WAIT
+# Launch the Renault HID listener, then start phone setup immediately. The
+# remote can connect whenever a button wakes it. Phone pairing uses TomTom's
+# factory blueserver/hcid runtime pairing gate; hcid/hidd are never restarted for pairing.
 LOG=/media/sdcard/clio843/bt.log
 DEBUG=${CLIO_DEBUG:-0}
 SD=/mnt/sdcard/clio843
@@ -28,9 +29,17 @@ else
   rm -f "$LOG" >/dev/null 2>&1
   OUT=/dev/null
 fi
-log(){ if debug_now; then echo "$1" >> "$LOG"; fi; }
+log(){
+  if debug_now; then
+    if read BOOT_UP BOOT_IDLE < /proc/uptime; then
+      printf '[uptime %ss] %s\n' "$BOOT_UP" "$1" >> "$LOG"
+    else
+      echo "$1" >> "$LOG"
+    fi
+  fi
+}
 
-log "BT START AUTORECONNECT2 EARLYBOOT PAIRFIX26 DEBUGGATE MULTI-DEVICE+KEYVAULT+AVRCP-SDP+PIN0000 REMOTE-FIRST"
+log "BT START AUTORECONNECT2 EARLYBOOT PAIRFIX26 DEBUGGATE MULTI-DEVICE+KEYVAULT+AVRCP-SDP+PIN0000 NO-REMOTE-WAIT"
 
 if [ -r /proc/barcelona/export_hw_var ]; then
   . /proc/barcelona/export_hw_var
@@ -77,6 +86,7 @@ if [ "$READY" != "1" ]; then
 else
   log "BT REUSE HCI0"
 fi
+log "HCI SETUP COMPLETE"
 
 # This is the critical remote path from the original working CLIOPLAY script.
 if ! pidof hidd >/dev/null 2>&1; then
@@ -86,17 +96,10 @@ else
   log "HIDD ALREADY"
 fi
 
-# Give the Renault HID server a quiet window to accept/reconnect the remote
-# before adding any phone-facing profile/service work.
-sleep 3
-if [ "$DEBUG" = "1" ]; then
-  "$SD/hidd" --show >> "$OUT" 2>&1
-fi
-log "REMOTE WINDOW COMPLETE"
-
 # ---- PHONE/A2DP LAYER: never bounce HCI, hcid or hidd ----
-# Present the adapter as an actual car-audio renderer once the Renault HID
-# remote has had its quiet reconnect window.  sdptool does NOT update CoD.
+# The remote wakes on a button press, so waiting for it would delay every
+# phone reconnect. Keep hidd listening and begin phone setup without a timer.
+# Present the adapter as a car-audio renderer; sdptool does NOT update CoD.
 # 0x240420 = Audio + Rendering service, Audio/Video major, Car Audio minor.
 hciconfig hci0 class 0x240420 >> "$OUT" 2>&1 && log "BT CLASS CAR-AUDIO 0x240420" || log "BT CLASS SET WARN"
 # Stock rc.bluetooth normally already owns hcid+sdpd.  If sdpd alone is absent,
@@ -109,7 +112,7 @@ fi
 
 # Ensure TomTom's own Bluetooth policy server is available.  The stock UI uses
 # /var/run/bluesock to toggle hcid pairing acceptance with PAIRING ENABLE/DISABLE.
-# Starting this after the HID quiet window does not reset hci0 or touch hidd.
+# Starting this does not reset hci0 or touch hidd.
 if ! pidof blueserver.a >/dev/null 2>&1; then
   rm -f /var/run/bluesock >/dev/null 2>&1
   /bin/blueserver.a /var/run/bluesock >> "$OUT" 2>&1 &
@@ -119,7 +122,7 @@ else
   log "BLUESERVER READY"
 fi
 
-# Advertise our sink only after the remote startup window.
+# Advertise the phone-audio sink while the HID listener remains available.
 sdptool add A2SNK >> "$OUT" 2>&1 || log "A2SNK SDP ADD WARN"
 log "A2DP SBC CAPS 44K1 STEREO+JOINT BITPOOL2-53"
 # This old sdptool has no AVRCT template. clioa2dp registers the AVRCP
@@ -232,4 +235,7 @@ else
   log "BT BOOT BARRIER INCOMPLETE - AUTO RECONNECT SKIPPED"
 fi
 
-log "BT READY EARLYBOOT+REMOTE-FIRST+A2DP+AVRCP-SDP+MULTIDEVICE+KEYVAULT+PAIRFIX23"
+log "BT READY EARLYBOOT+NO-REMOTE-WAIT+A2DP+AVRCP-SDP+MULTIDEVICE+KEYVAULT+PAIRFIX23"
+if [ "$DEBUG" = "1" ]; then
+  "$SD/hidd" --show >> "$OUT" 2>&1
+fi

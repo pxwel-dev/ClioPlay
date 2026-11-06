@@ -161,8 +161,9 @@ enum { PROT_READ_=1,PROT_WRITE_=2,MAP_SHARED_=1,MAP_PRIVATE_=2,MAP_ANONYMOUS_=32
 #define FB_PIX (W*H)
 #define FONT_BYTES 9120
 
-/* Tiny persisted AUTO-theme hint shared with cliospl. It is only a fallback
- * when neither live GPS time nor a valid wall clock is available at boot. */
+#include "boot_theme.h"
+#include "last_fix.h"
+/* Persisted AUTO hint, used only when date or position is unavailable. */
 static int read_theme_state_raw(void){char c=0;long fd=s_open(THEME_STATE_PATH,O_RDONLY_,0);if(fd<0)return-1;long n=s_read((int)fd,&c,1);s_close((int)fd);return n==1&&c=='0'?0:(n==1&&c=='1'?1:-1);}
 static void write_theme_state_raw(int night){char c=night?'1':'0',old=0;long fd=s_open(THEME_STATE_PATH,O_RDONLY_,0);if(fd>=0){long n=s_read((int)fd,&old,1);s_close((int)fd);if(n==1&&old==c)return;}fd=s_open(THEME_STATE_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd>=0){s_write((int)fd,&c,1);s_close((int)fd);}}
 
@@ -307,17 +308,8 @@ static int manual_zoom=5;
 static int prefs_dirty=0,prefs_delay=0;
 static void parse_pref_line(char*ln){char*eq=ln;while(*eq&&*eq!='=')eq++;if(!*eq)return;*eq++=0;int v=atoi0(eq);if(streq(ln,"bright"))pref.bright=v;else if(streq(ln,"hoff"))pref.hoff=v;else if(streq(ln,"moff"))pref.moff=v;else if(streq(ln,"autozoom"))pref.autozoom=v?1:0;else if(streq(ln,"debug"))pref.debug=v?1:0;else if(streq(ln,"theme"))pref.theme=v;else if(streq(ln,"units"))pref.units=v;else if(streq(ln,"cameras"))pref.cameras=v>=0&&v<=2?v:1;else if(streq(ln,"clockauto"))pref.clock_auto=v?1:0;else if(streq(ln,"language"))pref.language=v>=0&&v<UI_LANGUAGE_COUNT?v:0;else if(streq(ln,"manualzoom"))manual_zoom=v;else if(streq(ln,"keyboardlanguage"))pref_keyboard_language=v>=0&&v<UI_LANGUAGE_COUNT?v:-1;}
 static void load_prefs(void){char b[512],ln[96];unsigned u=0;long fd=s_open(PREF_PATH,O_RDONLY_,0);if(fd>=0){long n=s_read((int)fd,b,sizeof(b));s_close((int)fd);if(n>0){for(long i=0;i<n;i++){char c=b[i];if(c=='\r'||c=='\n'){if(u){ln[u]=0;parse_pref_line(ln);u=0;}}else if(u+1<sizeof(ln))ln[u++]=c;}if(u){ln[u]=0;parse_pref_line(ln);}}}if(pref.bright<10)pref.bright=10;if(pref.bright>100)pref.bright=100;if(pref.theme<THEME_DAY||pref.theme>THEME_AUTO)pref.theme=THEME_AUTO;if(pref.units<0||pref.units>2)pref.units=0;if(pref.hoff*60+pref.moff< -720||pref.hoff*60+pref.moff>840)pref.hoff=pref.moff=0;if(manual_zoom<0)manual_zoom=0;if(manual_zoom>6)manual_zoom=6;}
-/* Seed AUTO before the first NMEA sentence arrives, so cliospl -> first UI frame
- * never falls through the old hard-coded NIGHT default. GPS later refines this
- * with the normal solar calculation. */
-static int boot_wall_clock_minutes(void){long sec=-1;
-#ifndef HOST_TEST
- struct ktv v;if(sc2(78,(long)&v,0)>=0&&v.sec>=1577836800L)sec=v.sec;
-#else
- time_t t=time(0);if(t!=(time_t)-1&&t>=1577836800L)sec=(long)t;
-#endif
- if(sec<0)return-1;sec%=86400L;if(sec<0)sec+=86400L;int mt=(int)(sec/60L)+pref.hoff*60+pref.moff;while(mt<0)mt+=1440;while(mt>=1440)mt-=1440;return mt;}
-static void seed_boot_theme(void){int night;if(pref.theme==THEME_NIGHT)night=1;else if(pref.theme==THEME_DAY)night=0;else{int mt=boot_wall_clock_minutes();if(mt>=0)night=mt<420||mt>=1140;else{int saved=read_theme_state_raw();night=saved>=0?saved:1;}}apply_palette(night);}
+/* Shared with the splash; the definition follows the saved-position model. */
+static void seed_boot_theme(void);
 static void save_prefs(void){char b[384];b[0]=0;appendstr(b,sizeof(b),"version=6\nbright=");append_int(b,sizeof(b),pref.bright);appendstr(b,sizeof(b),"\nhoff=");append_int(b,sizeof(b),pref.hoff);appendstr(b,sizeof(b),"\nmoff=");append_int(b,sizeof(b),pref.moff);appendstr(b,sizeof(b),"\nautozoom=");append_int(b,sizeof(b),pref.autozoom);appendstr(b,sizeof(b),"\ndebug=");append_int(b,sizeof(b),pref.debug);appendstr(b,sizeof(b),"\ntheme=");append_int(b,sizeof(b),pref.theme);appendstr(b,sizeof(b),"\nunits=");append_int(b,sizeof(b),pref.units);appendstr(b,sizeof(b),"\ncameras=");append_int(b,sizeof(b),pref.cameras);appendstr(b,sizeof(b),"\nclockauto=");append_int(b,sizeof(b),pref.clock_auto);appendstr(b,sizeof(b),"\nlanguage=");append_int(b,sizeof(b),pref.language);appendstr(b,sizeof(b),"\nmanualzoom=");append_int(b,sizeof(b),manual_zoom);appendstr(b,sizeof(b),"\nkeyboardlanguage=");append_int(b,sizeof(b),pref_keyboard_language);appendstr(b,sizeof(b),"\n");long fd=s_open(PREF_TMP_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd>=0){s_write((int)fd,b,slen(b));s_close((int)fd);s_sync();if(s_rename(PREF_TMP_PATH,PREF_PATH)<0){fd=s_open(PREF_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd>=0){s_write((int)fd,b,slen(b));s_close((int)fd);}}s_sync();}prefs_dirty=0;prefs_delay=0;}
 static void prefs_mark_dirty(void){prefs_dirty=1;prefs_delay=10;}
 static void prefs_service(void){if(!prefs_dirty)return;if(prefs_delay>0){prefs_delay--;return;}save_prefs();}
@@ -345,11 +337,22 @@ static struct GPS gps;static u32 gps_fix_ms=0;
 /* DEV5.24: persist one tiny trusted last-fix record so a cold start can show
  * useful map context while the receiver reacquires satellites.  This is never
  * exposed as live GPS: speed/road/car marker remain suppressed until gps.fix. */
-struct LastFixDisk {char magic[4];s32 lat,lon;u16 course,pad;u32 check;};
 static int lastfix_valid=0,lastfix_live_seen=0;
 static s32 lastfix_lat=0,lastfix_lon=0;static int lastfix_course=0;
-static u32 lastfix_check(s32 lat,s32 lon,u16 course){return 0x43504731u^(u32)lat^((u32)lon*2654435761u)^((u32)course<<16);}
-static int load_last_fix(void){struct LastFixDisk d;long fd=s_open(LASTGPS_PATH,O_RDONLY_,0);if(fd<0)return 0;long n=s_read((int)fd,&d,sizeof(d));s_close((int)fd);if(n!=(long)sizeof(d))return 0;if(d.magic[0]!='L'||d.magic[1]!='G'||d.magic[2]!='P'||d.magic[3]!='1')return 0;if(d.lat<-9000000||d.lat>9000000||d.lon<-18000000||d.lon>18000000||d.course>359)return 0;if(!d.lat&&!d.lon)return 0;if(d.check!=lastfix_check(d.lat,d.lon,d.course))return 0;lastfix_lat=d.lat;lastfix_lon=d.lon;lastfix_course=(int)d.course;lastfix_valid=1;return 1;}
+static int load_last_fix(void){struct LastFixDisk d;if(!lastfix_read(LASTGPS_PATH,&d))return 0;lastfix_lat=d.lat;lastfix_lon=d.lon;lastfix_course=(int)d.course;lastfix_valid=1;return 1;}
+#ifdef CLIO_THEME_TEST
+static long theme_test_utc=-1;
+#endif
+static long theme_wall_clock_utc(void){
+#ifdef CLIO_THEME_TEST
+ return theme_test_utc;
+#elif !defined(HOST_TEST)
+ struct ktv v;return sc2(78,(long)&v,0)>=0?v.sec:-1;
+#else
+ time_t t=time(0);return t==(time_t)-1?-1:(long)t;
+#endif
+}
+static void seed_boot_theme(void){apply_palette(clio_boot_night(pref.theme,theme_wall_clock_utc(),lastfix_valid,lastfix_lat,lastfix_lon,read_theme_state_raw()));}
 static int save_last_fix(void){if(!lastfix_valid)return 0;struct LastFixDisk d;d.magic[0]='L';d.magic[1]='G';d.magic[2]='P';d.magic[3]='1';d.lat=lastfix_lat;d.lon=lastfix_lon;d.course=(u16)(lastfix_course>=0&&lastfix_course<=359?lastfix_course:0);d.pad=0;d.check=lastfix_check(d.lat,d.lon,d.course);long fd=s_open(LASTGPS_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd<0)return-1;long n=s_write((int)fd,&d,sizeof(d));s_close((int)fd);return n==(long)sizeof(d)?1:-1;}
 static void remember_live_fix(void){if(!gps.fix)return;lastfix_lat=gps.lat;lastfix_lon=gps.lon;/* Preserve the last trustworthy moving orientation instead of overwriting it with stationary GPS-course noise. */if(!lastfix_valid||gps.mph10>=DISPLAY_COURSE_UPDATE_MPH10)lastfix_course=gps.course;lastfix_valid=1;if(!lastfix_live_seen){save_last_fix();lastfix_live_seen=1;}}
 static int parse_dec10(const char*s){int v=0,frac=0,neg=0;if(*s=='-'){neg=1;s++;}while(*s>='0'&&*s<='9'){v=v*10+(*s-'0');s++;}if(*s=='.'&&s[1]>='0'&&s[1]<='9')frac=s[1]-'0';return neg?-(v*10+frac):(v*10+frac);}
@@ -357,26 +360,18 @@ static s32 nmea_coord_e5(const char*s,int islon,char hemi){int deg=0;int digs=is
 static void parse_hhmmss(const char*s){if(slen(s)<6)return;gps.hour=(s[0]-'0')*10+s[1]-'0';gps.min=(s[2]-'0')*10+s[3]-'0';gps.sec=(s[4]-'0')*10+s[5]-'0';}
 static void parse_ddmmyy(const char*s){if(slen(s)<6)return;gps.day=(s[0]-'0')*10+s[1]-'0';gps.mon=(s[2]-'0')*10+s[3]-'0';gps.year=2000+(s[4]-'0')*10+s[5]-'0';}
 
-/* Offline AUTO theme. SUN_HALF contains sunrise/sunset half-day lengths in
- * minutes for UK latitude bands 49..61N at 15-day anchors. Runtime linearly
- * interpolates by date, then shifts solar noon by longitude. GPS time/date is
- * UTC, so daylight detection is independent of DST and the display offset. */
-#include "global_solar.h"
-static int leap_year(int y){return(y%4)==0&&((y%100)!=0||(y%400)==0);}
-static int day_of_year0(void){static const u16 cum[12]={0,31,59,90,120,151,181,212,243,273,304,334};if(gps.mon<1||gps.mon>12||gps.day<1||gps.day>31)return-1;int d=cum[gps.mon-1]+gps.day-1;if(gps.mon>2&&leap_year(gps.year))d++;return d;}
+/* UTC solar decisions are independent of timezone/DST and display offsets. */
+static int leap_year(int y){return clio_leap_year(y);}
+static int day_of_year0(void){return clio_day_of_year(gps.year,gps.mon,gps.day);}
 #include "global_clock.h"
-static int solar_day_index=0,solar_day_frac=0,solar_day_span=15;
-static int solar_interp(const u16*row){int a=row[solar_day_index],b=row[solar_day_index+1];return a+(b-a)*solar_day_frac/solar_day_span;}
-static int sun_half_minutes(void){int d=day_of_year0();if(d<0)return-1;if(d>365)d=365;int i=d/15;if(i>24)i=24;solar_day_index=i;solar_day_frac=d-i*15;solar_day_span=i==24?5:15;int latitude=gps.lat+8500000;if(latitude<0)latitude=0;if(latitude>=17000000)latitude=16999999;int row=latitude/500000,f=latitude%500000;int a=solar_interp(GLOBAL_SUN_HALF[row]),b=solar_interp(GLOBAL_SUN_HALF[row+1]);return a+(b-a)*(f/100)/5000;}
 static int local_clock_minutes(void){if(gps.hour<0||gps.hour>23||gps.min<0||gps.min>59)return-1;int mt=gps.hour*60+gps.min+pref.hoff*60+pref.moff;while(mt<0)mt+=1440;while(mt>=1440)mt-=1440;return mt;}
 static int auto_is_night(void){
-  if(gps.hour<0||gps.hour>23||gps.min<0||gps.min>59)return theme_resolved;
-  /* Preferred AUTO path: GPS UTC date + position gives an offline solar
-   * sunrise/sunset decision. If the receiver has supplied time but not yet an
-   * RMC date/position, fall back to a deterministic local-clock window rather
-   * than freezing AUTO in whichever palette happened to be active at boot. */
-  if(gps.year>=2020&&(gps.fix||lastfix_valid)){int half=sun_half_minutes();if(half>=0){if(half<=0)return 1;if(half>=720)return 0;int lon4=gps.lon/25000;int eot=GLOBAL_EOT[solar_day_index]+(GLOBAL_EOT[solar_day_index+1]-GLOBAL_EOT[solar_day_index])*solar_day_frac/solar_day_span;int now=(gps.hour*60+gps.min+lon4+eot+1440)%1440;return now<720-half||now>=720+half;}}
-  {int mt=local_clock_minutes();if(mt<0)return theme_resolved;return mt<420||mt>=1140;} /* 07:00..19:00 fallback */
+  int known=gps.fix||lastfix_valid;if(!known)return theme_resolved;
+  s32 lat=gps.fix?gps.lat:lastfix_lat,lon=gps.fix?gps.lon:lastfix_lon;
+  int minute=gps.hour>=0&&gps.hour<24&&gps.min>=0&&gps.min<60?gps.hour*60+gps.min:-1;
+  int night=clio_solar_night(gps.year,gps.mon,gps.day,minute,lat,lon);
+  if(night<0)night=clio_solar_from_utc(theme_wall_clock_utc(),lat,lon);
+  return night>=0?night:theme_resolved;
 }
 static void refresh_theme(void){int night=pref.theme==THEME_NIGHT?1:(pref.theme==THEME_DAY?0:auto_is_night());if(night!=theme_resolved)apply_palette(night);}
 static int split_csv(char*s,char**f,int max){int n=0;f[n++]=s;while(*s&&n<max){if(*s==','){*s=0;f[n++]=s+1;}s++;}return n;}
@@ -2356,7 +2351,7 @@ static void run(void){
  cliou_load("/mnt/sdcard/clio843/maps/fonts.cpf");
 #endif
 #endif
- load_prefs();debug_state_write();seed_boot_theme();if(!pref.debug)remove_stale_logs();load_last_audio();load_last_fix();nrecents=read_places(RECENT_PATH,recents,RECENT_MAX);nfaves=read_places(FAVES_PATH,faves,FAVE_MAX);load_trip();apply_brightness();load_map();load_timezones();load_regions();load_cameras();seed_boot_map_view();load_route_data();s_unlink(BT_CMD_PATH);bt_write_small(BT_ACTIVE_PATH,"0\n");bt_active_written=0;bt_name_cache_load();bt_poll_status();if(trip.active){modal=MOD_RESUME_TRIP;modal_choice=0;}open_inputs();
+ load_prefs();debug_state_write();load_last_fix();seed_boot_theme();if(!pref.debug)remove_stale_logs();load_last_audio();nrecents=read_places(RECENT_PATH,recents,RECENT_MAX);nfaves=read_places(FAVES_PATH,faves,FAVE_MAX);load_trip();apply_brightness();load_map();load_timezones();load_regions();load_cameras();seed_boot_map_view();load_route_data();s_unlink(BT_CMD_PATH);bt_write_small(BT_ACTIVE_PATH,"0\n");bt_active_written=0;bt_name_cache_load();bt_poll_status();if(trip.active){modal=MOD_RESUME_TRIP;modal_choice=0;}open_inputs();
   int wdfd=(int)s_open(WD_PATH,O_WRONLY_,0);debug_log(STATE_LOG,"CLIOPLAY GLOBAL 1.1.0-rc.1 COMPACT REV16 LOWCAM224 ROADTRACE1 BTNAMECACHE1 LOWCAM224 AUTOZOOM654 PERF8 NAV QAD7+UI6+MEDIA3+FREECAM-BIDIR-ANIM+PACKETS+MMAP+STALL+REPAIRSAFE TRIPFLOW GPSRESUME BTMEDIA CPR2-v5 ATLAS1 CLOCK1 CAMERA2 ROUTE RUNTIME");debug_log(STATE_LOG,qadjmode==7?(qadj_map_ok?"QAD7 PACKET+MMAP QUERY ENABLED":"QAD7 PAGED QUERY ENABLED"):(qadjmode==6?(qadj_map_ok?"QAD6 GEOMMETA+MMAP QUERY ENABLED":"QAD6 PAGED QUERY ENABLED"):(qadjmode==5?(qadj_map_ok?"QAD5 MMAP+STALL QUERY ENABLED":"QAD5 PAGED+STALL QUERY ENABLED"):(qadjmode==4?"QAD4 LOCAL-RECON QUERY ENABLED":(qadjmode==3?"QAD3 GROUP QUERY+RECON ENABLED":(qadjmode==2?"QAD2 NODE-BLOCK QUERY ENABLED (PAGED INDEX)":(qadjmode==1?"QAD1 FAST QUERY ENABLED":"QADJ FAST QUERY FALLBACK CPR2")))))));if(qadjmode==6&&qadj6_legacy_header)debug_log(STATE_LOG,"QAD6 DEV5.31 HEADER COMPAT ENABLED");{char mb[96];mb[0]=0;appendstr(mb,sizeof(mb),"MMAP QAD=");append_int(mb,sizeof(mb),qadj_map_ok);appendstr(mb,sizeof(mb)," GEOM=");append_int(mb,sizeof(mb),route_geom_map_ok);debug_log(STATE_LOG,mb);}u32 tick=0,next_frame=s_now_ms();
   for(;;){
     next_frame+=ROUTE_FRAME_MS;
@@ -2388,7 +2383,7 @@ static void run(void){
 }
 __attribute__((noreturn))void _start(void){run();s_exit(0);}
 #else
-int main(void){memzero(&gps,sizeof(gps));gps.fix=1;gps.sats=8;gps.lat=5498200;gps.lon=-165638;gps.mph10=380;gps.course=70;gps.hour=13;gps.min=8;gps.day=15;gps.mon=9;gps.year=2026;copystr(car.source,sizeof(car.source),"FM BBC R1");copystr(car.volume,sizeof(car.volume),"VOL 12");car.temp=18;car.tempok=1;load_font();load_prefs();
+int main(void){memzero(&gps,sizeof(gps));gps.fix=1;gps.sats=8;gps.lat=5498200;gps.lon=-165638;gps.mph10=380;gps.course=70;gps.hour=13;gps.min=8;gps.day=15;gps.mon=9;gps.year=2026;copystr(car.source,sizeof(car.source),"FM BBC R1");copystr(car.volume,sizeof(car.volume),"VOL 12");car.temp=18;car.tempok=1;load_font();load_prefs();load_last_fix();
 #ifdef PREVIEW_FORCE_DAY
  pref.theme=THEME_DAY;apply_palette(0);
 #elif defined(PREVIEW_FORCE_NIGHT)

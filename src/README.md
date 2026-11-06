@@ -81,6 +81,11 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
 - **Clock:** offline automatic timezone and DST from GPS, with a manual fallback.
   Settings → Clock: Enter toggles Auto/manual; Left/Right selects a manual offset
   in 15-minute steps. Rules span 2020–2060 and retain the last offset at boot.
+- **Auto theme:** seasonal sunrise/sunset from UTC date and position, switching
+  to Night 15 minutes before estimated sunset to reduce dusk glare. The splash
+  and UI use the saved location and unit clock before GPS is ready, then follow
+  live GPS. Day/Night overrides remain available. With no usable date or position,
+  Auto retains the last theme, defaulting to Night on a fresh installation.
 - **Language:** 18 options in Settings, including Arabic, Simplified Chinese,
   Japanese, Korean, Hindi, Hebrew, Greek and Cyrillic languages. See
   [the complete language list](locales/README.md). Native destination and
