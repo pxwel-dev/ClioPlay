@@ -1,5 +1,6 @@
 @echo off
 setlocal
+rem Run the bundled Windows setup from this repository.
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0src\tools\install_windows.ps1"
 set "install_exit=%ERRORLEVEL%"
 echo.

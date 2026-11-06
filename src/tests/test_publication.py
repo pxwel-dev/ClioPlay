@@ -1,5 +1,7 @@
 """Git boundaries must exclude private/local outputs and detect stray files."""
 from pathlib import Path
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -8,8 +10,32 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
 from publication import gitignore
 from verify_publication import verify_git_candidates
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 class PublicationTest(unittest.TestCase):
+    def test_windows_launchers_keep_exact_bytes_through_git(self):
+        # A working tree can contain CRLF while an older tracked Git blob is
+        # LF. Exercise real Git storage/checkout with the published attributes,
+        # including autocrlf=true, rather than checking only local file bytes.
+        names = ('.gitattributes','Install.cmd','src/repository/Install.cmd')
+        with tempfile.TemporaryDirectory(prefix='clioplay-git-bytes-') as temp:
+            work, checkout = Path(temp)/'work', Path(temp)/'checkout'
+            work.mkdir();checkout.mkdir()
+            for name in names:
+                destination=work/name;destination.parent.mkdir(parents=True,exist_ok=True)
+                shutil.copyfile(ROOT.parent/name,destination)
+            for name in names[1:]:
+                raw=(work/name).read_bytes()
+                self.assertGreater(raw.count(b'\r\n'),0)
+                self.assertEqual(raw.count(b'\n'),raw.count(b'\r\n'))
+            subprocess.run(['git','init','--quiet',str(work)],check=True)
+            command=['git','-C',str(work),'-c','core.autocrlf=true']
+            subprocess.run([*command,'add','--',*names],check=True)
+            subprocess.run([*command,'checkout-index','--all','--prefix='+str(checkout)+'/'],check=True)
+            for name in names:
+                self.assertEqual((work/name).read_bytes(),(checkout/name).read_bytes(),name)
+
     def fixture(self, root):
         (root/'.gitignore').write_bytes(gitignore())
         (root/'latest.json').write_text('{}')

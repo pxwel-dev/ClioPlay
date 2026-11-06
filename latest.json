@@ -1,6 +1,6 @@
 {
   "format": "clioplay-latest-1",
-  "updated_at": "2026-11-06T14:18:03+00:00",
+  "updated_at": "2026-11-06T14:32:03+00:00",
   "edition": "Global",
   "payload": "Clean-install source package, current binaries, legacy bootstrap, CAB-based installer; no vendor firmware, navigation packs or companion website",
   "executables": {
@@ -1137,7 +1137,7 @@
     "tests/test_bundle_layout.py": "c694b6d10d6a2be8b5793eeb2d029e26490eab720d046bc3a27f70417de03bf6",
     "tests/test_cameras.py": "e65098e74abf2e8e63dddb4b38755cae5dd213e59a54eefba7061c5be9b7c1c7",
     "tests/test_clean_install.py": "e6ea7ffc310d13f7c6acc0c9524ba79b321dea56b5b91e38f9f2ce43b1ff5bce",
-    "tests/test_publication.py": "94f38820ba43d5fee45222f60a2ba7d730504a7c362bbf70b2c19e6d15c48241",
+    "tests/test_publication.py": "df63955f88e876e160bd5e38df05ea1ef60bebd1384013e86317ee28e4789b31",
     "tests/test_routing_policy.py": "a094184af9de76e1fad7b9b7b358b7ec36db9a9e5f456cd81e9c779426ae2b3b",
     "tests/test_speed_import.py": "8652e8db7c9a341c7058b362c1bdf76af587fed7fc87b57480c0b0499c596d75",
     "tests/test_vendor_download.py": "b753ccaaee389024a9a111b6f521e4b36185902aee0065b551c6c38455c05cf9",
@@ -1151,7 +1151,7 @@
     "repository/.github/pull_request_template.md": "5992aa9a07f51fdafe6a43425c82d600db23f7f95d441b71ea885b44d6280297",
     "repository/.github/workflows/ci.yml": "c522026d75ddc1061b781f099f17a28e279c7ea92fec7e46c95b94c89b787b49",
     "repository/CONTRIBUTING.md": "f3c19550fdc4a264102bdb49d90c42857fdad10cdcac0235232ed270a1df423a",
-    "repository/Install.cmd": "c74b7d6dc29c204e8570ec6e741283e02004b209e333a0b042842e35cfb06aae",
+    "repository/Install.cmd": "b504a77b6d13c036d2e027a9759f06fa8a30c677144f1ee286f56953d2020fa6",
     "repository/SECURITY.md": "b43d12880ffcdae4b835c085739c5b7781edede3ceb6d0b2f74275df8e232740",
     "repository/WINDOWS.md": "19c24c7891e24f95d3fc7cc06405037f6fe02441cafee447e80a14e7410b29c9",
     "fonts/LGPL-2.1.txt": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95",
@@ -1227,7 +1227,7 @@
     ".github/workflows/ci.yml": "c522026d75ddc1061b781f099f17a28e279c7ea92fec7e46c95b94c89b787b49",
     ".gitignore": "93b1283923808a181119c02096daf3170d10970beb2678099bc32fb1fdd6cdd6",
     "CONTRIBUTING.md": "f3c19550fdc4a264102bdb49d90c42857fdad10cdcac0235232ed270a1df423a",
-    "Install.cmd": "c74b7d6dc29c204e8570ec6e741283e02004b209e333a0b042842e35cfb06aae",
+    "Install.cmd": "b504a77b6d13c036d2e027a9759f06fa8a30c677144f1ee286f56953d2020fa6",
     "Install.command": "5a3df10333b2db1c445eccf5c2875f9d1051c90b9b86ffacc4da1b1e4d1e3d9a",
     "LICENSE": "b04ac8d0e455fe1b4c2f8b0e42531cd7b67add31f3b06c05d58e600feda6f464",
     "README.md": "332e324b3649e4f62db85b6b38815fdd7b34ec227d3ab13ed079a628dc114221",
@@ -2346,7 +2346,7 @@
     "src/repository/.github/pull_request_template.md": "5992aa9a07f51fdafe6a43425c82d600db23f7f95d441b71ea885b44d6280297",
     "src/repository/.github/workflows/ci.yml": "c522026d75ddc1061b781f099f17a28e279c7ea92fec7e46c95b94c89b787b49",
     "src/repository/CONTRIBUTING.md": "f3c19550fdc4a264102bdb49d90c42857fdad10cdcac0235232ed270a1df423a",
-    "src/repository/Install.cmd": "c74b7d6dc29c204e8570ec6e741283e02004b209e333a0b042842e35cfb06aae",
+    "src/repository/Install.cmd": "b504a77b6d13c036d2e027a9759f06fa8a30c677144f1ee286f56953d2020fa6",
     "src/repository/SECURITY.md": "b43d12880ffcdae4b835c085739c5b7781edede3ceb6d0b2f74275df8e232740",
     "src/repository/WINDOWS.md": "19c24c7891e24f95d3fc7cc06405037f6fe02441cafee447e80a14e7410b29c9",
     "src/tests/atlas-chain.c": "d0b1aa6586236e4b8f6d4f7c5471c9024448e01c9faebf7d6616b955db9fc881",
@@ -2383,7 +2383,7 @@
     "src/tests/test_bundle_layout.py": "c694b6d10d6a2be8b5793eeb2d029e26490eab720d046bc3a27f70417de03bf6",
     "src/tests/test_cameras.py": "e65098e74abf2e8e63dddb4b38755cae5dd213e59a54eefba7061c5be9b7c1c7",
     "src/tests/test_clean_install.py": "e6ea7ffc310d13f7c6acc0c9524ba79b321dea56b5b91e38f9f2ce43b1ff5bce",
-    "src/tests/test_publication.py": "94f38820ba43d5fee45222f60a2ba7d730504a7c362bbf70b2c19e6d15c48241",
+    "src/tests/test_publication.py": "df63955f88e876e160bd5e38df05ea1ef60bebd1384013e86317ee28e4789b31",
     "src/tests/test_routing_policy.py": "a094184af9de76e1fad7b9b7b358b7ec36db9a9e5f456cd81e9c779426ae2b3b",
     "src/tests/test_speed_import.py": "8652e8db7c9a341c7058b362c1bdf76af587fed7fc87b57480c0b0499c596d75",
     "src/tests/test_vendor_download.py": "b753ccaaee389024a9a111b6f521e4b36185902aee0065b551c6c38455c05cf9",
@@ -2444,7 +2444,7 @@
     "src/tools/verify_splash.py": "b288101d4d082f64a79279dd8a3f13c72c055d6cf69d82c2af088a9e7e1609eb",
     "src/tools/verify_text_cache.py": "aa5cad2c209ae1e03e8cf28b60e4b2d5888a484b6a25475d2c2efd4d90b1f80a",
     "src/tools/verify_unicode.py": "146d50e150f0671aad6a70de4bb41a869da4ce6f52b4f0708d7d43e0d7ce0bf1",
-    "SHA256SUMS": "f41e9409483de04d0d8c9d66f2a3df026dd6f14f88e812e8c24e5d9437aed284"
+    "SHA256SUMS": "9daa4ac7a97a9c3948f1b12e46eac9f1a81e2e5c53f20e7bd9faf564aace69c9"
   },
   "checks": {
     "publication": {
