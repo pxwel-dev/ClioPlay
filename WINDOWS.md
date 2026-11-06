@@ -77,6 +77,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\src\tools\install_windows.
 ```
 
 The script's execution-policy override applies only to that PowerShell process.
-The public Windows CI checks its syntax, prerequisite failures, path forwarding
-and installer exit codes with a mocked WSL command. An actual Windows/WSL card
-installation and vehicle boot still require manual validation.
+The optional local check `src/tests/test_windows_launcher.ps1` checks syntax,
+prerequisite failures, path forwarding and installer exit codes with a mocked
+WSL command. Run it manually in PowerShell; no automatic GitHub Actions workflow
+is included. An actual Windows/WSL card installation and vehicle boot still
+require manual validation.

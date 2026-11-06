@@ -63,11 +63,6 @@ See the [user guide](src/README.md) for trips, pairing and settings.
 
 ## Status and development
 
-This is a preview, with host-tested builds. Boot, physical controls, audio,
-wireless behaviour, routing speed, frame timing and memory still require
-head-unit validation. Full France and expanded country-policy validation remain
-outstanding; build one extract covering the intended journey.
-
 Some legacy helper sources remain unavailable: see [source status](SOURCE_STATUS.md).
 Original ClioPlay contributions use the [MIT licence](LICENSE); dependencies and
 map data retain their [own licences and notices](THIRD_PARTY_NOTICES.md).

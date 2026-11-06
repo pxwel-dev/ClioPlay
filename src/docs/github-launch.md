@@ -35,11 +35,11 @@ Add the new repository's actual URL as `origin`, then push `main`. No remote,
 repository or release is created by the local checks. Do not add the private
 phone website or local data to this Git history.
 
-Enable Issues and private vulnerability reporting. After the first Actions run,
-require **Host and publication checks** and **Windows launcher checks** for pull requests to the default branch.
-The workflow has read-only repository permissions, a SHA-pinned checkout and no
-publish/deploy job. It needs no secrets or paid external services. GitHub workflow
-configuration and dependency updates follow the [GitHub Actions security guidance](https://docs.github.com/en/actions/reference/security/secure-use).
+Enable Issues and private vulnerability reporting if wanted. No GitHub Actions
+workflow is included: pushes and pull requests do not automatically run the host
+or Windows launcher checks. The local verification commands above remain
+available for manual use. Do not require the removed **Host and publication
+checks** or **Windows launcher checks** as branch-protection status checks.
 
 ## Release status
 
