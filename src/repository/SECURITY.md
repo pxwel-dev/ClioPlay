@@ -1,6 +1,6 @@
 # Security reports
 
-Only the current Global preview is maintained. No security support period or
+Only the current Global release is maintained. No security support period or
 response deadline is promised.
 
 For a sensitive vulnerability, use **Security → Report a vulnerability** on the

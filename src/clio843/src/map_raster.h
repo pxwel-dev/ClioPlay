@@ -1,4 +1,4 @@
-/* Integer coverage rasterization for the existing 480x202 RGB565 map.
+/* Integer coverage rasterization for the full-screen RGB565 map.
  * No supersampled framebuffer, floating point, extra map reads or heap storage. */
 #ifndef CLIO_MAP_RASTER_H
 #define CLIO_MAP_RASTER_H
@@ -10,12 +10,12 @@
  * once. This prevents bright/dark blobs at shared endpoints and road junctions.
  * The plane is reused for context strokes, roads, route and vehicle outline. */
 #if MAP_ANTIALIAS
-static u32 map_coverage[W*(MAP_STRIP_Y-40)];
-static int map_dirty_lo[MAP_STRIP_Y-40],map_dirty_hi[MAP_STRIP_Y-40];
+static u32 map_coverage[W*(MAP_BOTTOM-MAP_TOP)];
+static int map_dirty_lo[MAP_BOTTOM-MAP_TOP],map_dirty_hi[MAP_BOTTOM-MAP_TOP];
 static u16 map_coverage_cols[6];
 static int map_mask_active=0,map_mask_shift=0,map_mask_count=0;
 static void map_mask_begin(int kind){
- for(int y=0;y<MAP_STRIP_Y-40;y++){map_dirty_lo[y]=W;map_dirty_hi[y]=-1;}
+ for(int y=0;y<MAP_BOTTOM-MAP_TOP;y++){map_dirty_lo[y]=W;map_dirty_hi[y]=-1;}
  map_mask_active=1;map_mask_shift=0;
  if(kind==0){map_mask_count=3;map_coverage_cols[0]=C_WATER;map_coverage_cols[1]=C_GREEN;map_coverage_cols[2]=C_BLUE;}
  else if(kind==1){map_mask_count=6;map_coverage_cols[0]=C_ROAD;map_coverage_cols[1]=C_DIM;map_coverage_cols[2]=C_MUTED;map_coverage_cols[3]=C_WHITE;map_coverage_cols[4]=C_BLUE;map_coverage_cols[5]=C_CYAN;}
@@ -29,10 +29,10 @@ static void map_mask_select(int slot){map_mask_shift=slot*5;}
 #endif
 /* Packed red/blue lanes have guard bits for the weighted sum. */
 static void map_blend(int x,int y,u16 c,int a){
- if(a<=0||(unsigned)x>=W||y<40||y>=MAP_STRIP_Y)return;
+ if(a<=0||(unsigned)x>=W||y<MAP_TOP||y>=MAP_BOTTOM)return;
 #if MAP_ANTIALIAS
  if(map_mask_active){
-  int row=y-40;u32*p=&map_coverage[row*W+x],value=(u32)((a*31+16)>>5),old=(*p>>map_mask_shift)&31u;
+  int row=y-MAP_TOP;u32*p=&map_coverage[row*W+x],value=(u32)((a*31+16)>>5),old=(*p>>map_mask_shift)&31u;
   if(value>old)*p=(*p&~(31u<<map_mask_shift))|(value<<map_mask_shift);
   if(x<map_dirty_lo[row])map_dirty_lo[row]=x;if(x>map_dirty_hi[row])map_dirty_hi[row]=x;return;
  }
@@ -45,24 +45,24 @@ static void map_blend(int x,int y,u16 c,int a){
 #if MAP_ANTIALIAS
 static void map_mask_end(void){
  map_mask_active=0;
- for(int row=0;row<MAP_STRIP_Y-40;row++)for(int x=map_dirty_lo[row];x<=map_dirty_hi[row];x++){
+ for(int row=0;row<MAP_BOTTOM-MAP_TOP;row++)for(int x=map_dirty_lo[row];x<=map_dirty_hi[row];x++){
   u32*p=&map_coverage[row*W+x],bits=*p;if(!bits)continue;*p=0;
   /* Blend active classes locally, loading/storing the framebuffer once. */
-  u16 out=fb[(row+40)*W+x];int slot=0;
+  u16 out=fb[(row+MAP_TOP)*W+x];int slot=0;
   while(bits){int a=(int)(bits&31u);if(a){u16 c=map_coverage_cols[slot];
     if(a==31)out=c;
     else{a+=a>>4;u32 rb=(((out&0xf81fu)*(u32)(32-a)+(c&0xf81fu)*(u32)a)>>5)&0xf81fu;
       u32 g=(((out&0x07e0u)*(u32)(32-a)+(c&0x07e0u)*(u32)a)>>5)&0x07e0u;out=(u16)(rb|g);}
    }bits>>=5;slot++;
-  }fb[(row+40)*W+x]=out;
+  }fb[(row+MAP_TOP)*W+x]=out;
  }
 }
 #endif
 static void map_solid(int x,int y,int w,int h,u16 c){
- if(x<0){w+=x;x=0;}if(y<40){h+=y-40;y=40;}if(x+w>W)w=W-x;if(y+h>MAP_STRIP_Y)h=MAP_STRIP_Y-y;if(w<=0||h<=0)return;
+ if(x<0){w+=x;x=0;}if(y<MAP_TOP){h+=y-MAP_TOP;y=MAP_TOP;}if(x+w>W)w=W-x;if(y+h>MAP_BOTTOM)h=MAP_BOTTOM-y;if(w<=0||h<=0)return;
 #if MAP_ANTIALIAS
  if(map_mask_active){u32 bits=31u<<map_mask_shift;
-  for(int row=y-40;row<y-40+h;row++){if(x<map_dirty_lo[row])map_dirty_lo[row]=x;if(x+w-1>map_dirty_hi[row])map_dirty_hi[row]=x+w-1;
+  for(int row=y-MAP_TOP;row<y-MAP_TOP+h;row++){if(x<map_dirty_lo[row])map_dirty_lo[row]=x;if(x+w-1>map_dirty_hi[row])map_dirty_hi[row]=x+w-1;
    u32*p=&map_coverage[row*W+x];for(int i=0;i<w;i++)p[i]|=bits;
   }return;
  }
@@ -95,7 +95,7 @@ static int map_ratio_q16(u32 n,u32 d){
 /* Minor-road tables already contain the low five-bit coverage lane. Bounds
  * are clipped by the caller; avoid generic blend/colour/slot work per fringe. */
 static inline __attribute__((always_inline)) void map_minor_store(int x,int y,int a){
- int row=y-40;u32*p=&map_coverage[row*W+x];
+ int row=y-MAP_TOP;u32*p=&map_coverage[row*W+x];
  if((unsigned)a>(*p&31u))*p=(*p&~31u)|(u32)a;
  if(x<map_dirty_lo[row])map_dirty_lo[row]=x;if(x>map_dirty_hi[row])map_dirty_hi[row]=x;
 }
@@ -122,8 +122,8 @@ static void map_line_q8(int x0,int y0,int x1,int y1,u16 c,int wid){
   for(int j=-3;j<=3;j++)for(int i=-3;i<=3;i++){
    int a=map_minor_cap((cx+i)*256-x0,(cy+j)*256-y0);
    if(!a)continue;
-   if(steep){if((unsigned)(cy+j)<W&&cx+i>=40&&cx+i<MAP_STRIP_Y)map_minor_store(cy+j,cx+i,a);}
-   else if((unsigned)(cx+i)<W&&cy+j>=40&&cy+j<MAP_STRIP_Y)map_minor_store(cx+i,cy+j,a);
+   if(steep){if((unsigned)(cy+j)<W&&cx+i>=MAP_TOP&&cx+i<MAP_BOTTOM)map_minor_store(cy+j,cx+i,a);}
+   else if((unsigned)(cx+i)<W&&cy+j>=MAP_TOP&&cy+j<MAP_BOTTOM)map_minor_store(cx+i,cy+j,a);
   }return;
  }
  if(!dx){if(steep)map_dot_q8(y0,x0,c,stroke_width);else map_dot_q8(x0,y0,c,stroke_width);return;}
@@ -132,7 +132,7 @@ static void map_line_q8(int x0,int y0,int x1,int y1,u16 c,int wid){
   if(steep){map_solid((y0>>8)-r,x0>>8,stroke_width,(dx>>8)+1,c);map_dot_q8(y0,x0,c,stroke_width);map_dot_q8(y1,x1,c,stroke_width);}
   else{map_solid(x0>>8,(y0>>8)-r,(dx>>8)+1,stroke_width,c);map_dot_q8(x0,y0,c,stroke_width);map_dot_q8(x1,y1,c,stroke_width);}return;
  }
- int first=(x0>>8)-(soft?2:cap),last=(x1>>8)+(soft?2:cap),majorlo=steep?40:0,majorhi=steep?MAP_STRIP_Y-1:W-1;
+ int first=(x0>>8)-(soft?2:cap),last=(x1>>8)+(soft?2:cap),majorlo=steep?MAP_TOP:0,majorhi=steep?MAP_BOTTOM-1:W-1;
  if(first<majorlo)first=majorlo;if(last>majorhi)last=majorhi;if(first>last)return;
  int slope=map_ratio_q16((u32)(dy<0?-dy:dy),(u32)dx),step=dy<0?-slope:slope;
  static const u16 norm[17]={256,256,257,260,263,268,273,279,286,293,301,310,320,329,340,350,362};
@@ -141,7 +141,7 @@ static void map_line_q8(int x0,int y0,int x1,int y1,u16 c,int wid){
   * for slope instead of repeatedly stamping overlapping square pixels. */
  int half=stroke_width*length*128;
  long long pos=(long long)y0*256+(((long long)first*256-x0)*step>>8);
- int minorlo=steep?0:40,minorhi=steep?W-1:MAP_STRIP_Y-1;
+ int minorlo=steep?0:MAP_TOP,minorhi=steep?W-1:MAP_BOTTOM-1;
  /* One-pixel roads need the area on both axes: a centre-column sample
   * overstates diagonal centres and snaps their shoulders into visible steps.
   * Minor roads additionally use a broader, isotropic reconstruction filter:
@@ -219,7 +219,7 @@ static void map_stroke_polyline(const int*x,const int*y,int n,u16 col,int wid){
   }
  }
  int prev=0;for(int i=1;i<n;i++)if(keep[i]){
-  if(!((x[prev]<-20*256&&x[i]<-20*256)||(x[prev]>(W+20)*256&&x[i]>(W+20)*256)||(y[prev]<35*256&&y[i]<35*256)||(y[prev]>(MAP_STRIP_Y+3)*256&&y[i]>(MAP_STRIP_Y+3)*256)))map_line_q8(x[prev],y[prev],x[i],y[i],col,wid);
+  if(!((x[prev]<-20*256&&x[i]<-20*256)||(x[prev]>(W+20)*256&&x[i]>(W+20)*256)||(y[prev]<(MAP_TOP-5)*256&&y[i]<(MAP_TOP-5)*256)||(y[prev]>(MAP_BOTTOM+3)*256&&y[i]>(MAP_BOTTOM+3)*256)))map_line_q8(x[prev],y[prev],x[i],y[i],col,wid);
   prev=i;
  }
 }

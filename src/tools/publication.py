@@ -8,8 +8,9 @@ EXCLUDED_PARTS = {'.git', '.venv', '.cache', '.build', '__pycache__', 'node_modu
 EXCLUDED_NAMES = {'.DS_Store', 'build_qadj', 'build_uk.command',
                   'bond.dat', 'faves.dat', 'recent.dat', 'trip.dat', 'audlast.dat',
                   'ui_translations 2.h'}
+PREVIEW_GIFS = ('driving.gif', 'menus.gif', 'bluetooth.gif', 'phone-destination.gif')
 
-def source_files(root):
+def source_files(root, reports):
     files = {}
     for directory in SOURCE_ROOTS:
         for path in sorted((root / directory).rglob('*')):
@@ -21,7 +22,7 @@ def source_files(root):
                 raise ValueError('Source contains a redirected file: ' + str(relative))
             if path.is_file():
                 files['src/' + relative.as_posix()] = path
-    names = ('README.md', 'BUILDING.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md',
+    names = ('README.md', 'VERSION', 'BUILDING.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md',
              '.gitignore', 'Install.command', 'install.py', 'bootstrap-SHA256.json',
              'docs/source-status.md', 'docs/camera-support.md', 'docs/repository-readme.md',
              'docs/next-release/hardware-trial.md', 'docs/github-launch.md', 'legacy-binaries/clioaux-init',
@@ -33,14 +34,11 @@ def source_files(root):
     for name in ('clio040', 'cliospl', 'clioa2dp'):
         for directory in ('clio843',):
             files['src/' + directory + '/' + name] = root / directory / name
-        report = root / 'build' / (name + '.build.json')
-        if not report.exists():
-            report = root / 'build-reports' / (name + '.build.json')
+        report = reports[name]
         files['src/build-reports/' + report.name] = report
     demo = root/'docs/demo'
-    if (demo/'manifest.json').is_file():
-        for name in ('README.md', 'index.html', 'manifest.json', 'poster.png', 'preview.gif', 'clioplay-demo.mp4'):
-            files['src/docs/demo/'+name] = demo/name
+    for name in ('README.md', 'manifest.json', *PREVIEW_GIFS):
+        files['src/docs/demo/'+name] = demo/name
     return files
 
 def gitignore():

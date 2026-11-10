@@ -1,14 +1,23 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
-<h1 align="center">CLIOPLAY</h1>
+<h1 align="center">CLIOPLAY 2.0.0</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen and remote.</p>
 
-<p align="center"><a href="src/docs/demo/clioplay-demo.mp4"><img src="src/docs/demo/preview.gif" width="960" alt="ClioPlay: driving, map browsing, trips, Bluetooth and settings"></a></p>
-<p align="center"><a href="src/docs/demo/clioplay-demo.mp4">Watch the 6:53 demo</a> · <a href="#install">Install</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
+<p align="center"><a href="#install">Install</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
+
+## UI previews
+
+| Driving and camera alerts | Trip, favourites and settings |
+| --- | --- |
+| ![Driving with a temporary road name and a camera warning](src/docs/demo/driving.gif) | ![Opening Trip, browsing favourites and switching themes](src/docs/demo/menus.gif) |
+
+| Bluetooth playback and volume | Receiving a phone destination |
+| --- | --- |
+| ![Temporary volume notice and Bluetooth playback controls](src/docs/demo/bluetooth.gif) | ![Receiving a destination from the phone on the head unit](src/docs/demo/phone-destination.gif) |
 
 ## Compatibility
 
-This preview release of ClioPlay currently only supports vehicles that have the following: 
+This preview release of ClioPlay currently only supports vehicles that have the following:
 
 - Non-Bluetooth radio with a CD player
 - Non-live Carminat TomTom head unit
@@ -19,7 +28,8 @@ This preview release of ClioPlay currently only supports vehicles that have the 
 - Offline OpenStreetMap navigation, routing and rerouting.
 - Browse the map, choose destinations, manage stops, recents and favourites.
 - Bluetooth phone audio with track information and remote playback controls.
-- Working steering wheel controls
+- Steering wheel audio controls.
+- Full-screen maps with animated, frosted notices for road names, camera alerts, route progress and audio changes.
 - Day/Night themes with seasonal sunrise/sunset in Auto, automatic units and time zones, and 18 interface languages.
 - Mapped speed limits and camera alerts where the bundled country policy allows them.
 
@@ -56,7 +66,7 @@ Map building can take substantial time for large extracts.
 | **Direction pad** | Browse the map or move through menus |
 | **Soft keys** | Zoom the map; follow the on-screen actions in menus |
 | **Centre / OK** | Select or confirm |
-| **MENU** | Open Trip, Bluetooth or Settings |
+| **MENU** | Open the menu for Trip, Bluetooth and Settings |
 | **BACK** | Return; toggle phone playback controls on the driving screen |
 
 See the [user guide](src/README.md) for trips, pairing and settings.
@@ -68,10 +78,10 @@ Original ClioPlay contributions use the [MIT licence](LICENSE); dependencies and
 map data retain their [own licences and notices](THIRD_PARTY_NOTICES.md).
 ClioPlay is independent of Renault and TomTom.
 
-For development, see [contributing](CONTRIBUTING.md), [building](src/BUILDING.md).
+For development, see [contributing](CONTRIBUTING.md) and [building](src/BUILDING.md).
 
 Firmware, map extracts, generated navigation, personal settings and build caches
-are excluded from Git. The included demo uses the production renderer with
-controlled host inputs; it does not establish vehicle performance.
+are excluded from Git. The [UI previews](src/docs/demo/README.md) use the
+production renderer with controlled host inputs; it does not establish vehicle performance.
 
-<sub>Release files refreshed 06 November 2026 (Europe/London).</sub>
+<sub>Release files refreshed 10 November 2026 (Europe/London).</sub>

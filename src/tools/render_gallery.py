@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Capture the current UI's remote actions and distinct states for the full demo.
+"""Capture the current UI's remote actions and distinct states.
 
 Uses an existing Global map/atlas read-only. No device/phone/personal state is read.
 Raw RGB565 captures and host binaries stay temporary; only PNGs and the gallery
-catalog can be consumed by render_demo.py in a temporary directory. Intermediate
+catalog can be consumed by render_previews.py in a temporary directory. Intermediate
 frames record each actual handler invocation, including loops/repeated presses.
 """
 import argparse
@@ -21,6 +21,18 @@ from text_engine import build as build_text
 
 ROOT = Path(__file__).resolve().parents[1]
 SCENES = []
+TWEEN_STEPS = (0, 64, 128, 192, 256, 320)
+BLUETOOTH_EVENTS = (
+    (0, 'set_volume(16);'),
+    (650, 'key_handle(K_BACK);assert(bt_control_mode);'),
+    (1800, ''),  # First volume notice expires.
+    (2100, 'set_volume(18);'),
+    (2770, 'key_handle(K_ENTER);command_is(" PAUSE");'),
+    (3500, 'key_handle(K_BACK);assert(!bt_control_mode);'),
+    (3900, ''),  # Second volume notice expires.
+)
+BLUETOOTH_SAMPLES = sorted({at + step for at, _ in BLUETOOTH_EVENTS for step in TWEEN_STEPS})
+PHONE_CALC_SAMPLES = range(0, 1280, 80)
 
 
 def add(group, name, title, setup='', action='', check='', note=''):
@@ -33,9 +45,66 @@ def key(group, name, title, setup, action, check='', note=''):
     add(group, name, title, setup, action, check, note)
 
 
+def motion(group, name, title, setup, events, samples):
+    for elapsed in samples:
+        source, previous = setup, 0
+        for at, action in events:
+            if at > elapsed:
+                break
+            source += f'hud_capture_ms+={at-previous}u;{action}draw();'
+            previous = at
+        add(group, f'{name}-{elapsed:04d}', f'{title} · {elapsed} ms',
+            source + f'hud_capture_ms+={elapsed-previous}u;gallery_motion=1;')
+
+
 def catalog(sender_receipts=None):
     SCENES.clear()
     add('Overview', 'driving', 'Driving with a route')
+    add('Prototype HUD','hud-volume','Volume adjustment','set_volume(16);')
+    add('Prototype HUD','hud-volume-ended','Volume notice cleared','settle();hud_capture_ms+=4300;')
+    add('Prototype HUD','hud-route-volume','Volume during route calculation','route_status=R_CALC;set_volume(16);')
+    add('Prototype HUD','hud-source','Source change','set_band("FM");copystr(af.station,sizeof(af.station),"BBC Radio 1");copystr(af.freq,sizeof(af.freq),"98.8");rebuild_source();')
+    add('Prototype HUD','hud-eta','Route overview','key_handle(K_ENTER);')
+    add('Prototype HUD','hud-media-volume','Volume during Bluetooth control','key_handle(K_BACK);set_volume(16);')
+    add('Prototype HUD','hud-media-calc','Route calculation, Bluetooth control and volume','key_handle(K_BACK);route_status=R_CALC;set_volume(16);')
+    add('Prototype HUD','hud-road-centred','Centred road notice without guidance','trip.active=0;route_status=R_IDLE;')
+    add('Prototype HUD','hud-road-expired','Road notice expires','settle();hud_capture_ms+=4400;')
+    add('Prototype HUD','hud-estimated-limit','Estimated limit has no speed pulse','roadctx.speed_flags|=1;gps.mph10=390;')
+    add('Prototype HUD','hud-clock-only','Clock before temperature is available','car_read_temperature("temp=999");')
+    add('Prototype HUD','hud-clock-temperature','Clock and validated temperature','car_read_temperature("temp=-4");')
+    add('Prototype HUD','hud-phone-connected','Named phone connection on the Bluetooth page',
+        'screen=SCR_BT;show_phone_connection();')
+    add('Prototype HUD','hud-phone-route-volume','Phone connection alongside route progress, volume and Bluetooth controls',
+        'key_handle(K_BACK);route_status=R_CALC;set_volume(18);show_phone_connection();copystr(btui.title,sizeof(btui.title),"Night Drive");')
+    add('Prototype HUD','hud-setting-changed','Brightness updates in its row','screen=SCR_SET;set_focus=0;key_handle(K_RIGHT);')
+    add('Prototype HUD','hud-menu-audio-connection','Audio and connection notices stay above settings',
+        'screen=SCR_SET;set_band("FM");copystr(af.station,sizeof(af.station),"BBC Radio 1");rebuild_source();set_volume(18);show_phone_connection();')
+    for elapsed in (0,80,160,240,320):
+        add('Prototype motion',f'hud-temperature-{elapsed:04d}',f'Temperature arrives · {elapsed} ms',
+            f'car_read_temperature("temp=--");settle();car_read_temperature("temp=-4");draw();hud_capture_ms+={elapsed}u;gallery_motion=1;')
+    for elapsed in (0,80,160,240,320,1750,1800,1880,1960,2040,2120):
+        # Establish expiration at 1800 ms, then advance its existing exit tween.
+        step = 'hud_capture_ms+=1800u;draw();' if elapsed >= 1800 else ''
+        delta = elapsed-1800 if elapsed >= 1800 else elapsed
+        add('Prototype motion',f'hud-volume-{elapsed:04d}',f'Volume notice · {elapsed} ms',
+            f'settle();set_volume(16);draw();{step}hud_capture_ms+={delta}u;gallery_motion=1;')
+    for elapsed in (0,80,160,240,320,440,600,760,920,1080,1260,1440,1620,1800,1980,2160):
+        add('Prototype motion',f'hud-speed-{elapsed:04d}',f'Confirmed limit · {elapsed} ms',
+            f'settle();gps.mph10=390;draw();hud_capture_ms+={elapsed}u;gallery_motion=1;')
+    road_cleared = 'settle();hud_capture_ms+=4000u;draw();hud_capture_ms+=320u;draw();'
+    new_road = 'copystr(roadctx.street,sizeof(roadctx.street),"Sandgate");'
+    camera_on = 'show_camera(1,0);'
+    road_sequences = (
+        ('road-only', 'New road only', ((100, new_road), (4100, ''))),
+        ('camera-only', 'Camera only', ((100, camera_on), (1700, 'camera_clear();'))),
+        ('camera-then-road', 'Camera, then new road', ((100, camera_on), (1100, new_road), (5100, ''))),
+        ('road-then-camera', 'New road, then camera', ((100, new_road), (1100, camera_on), (4100, ''))),
+    )
+    for name, title, events in road_sequences:
+        samples = [0] + [at + delta for at, _ in events for delta in TWEEN_STEPS]
+        motion('HUD motion', f'hud-{name}', title, road_cleared, events, samples)
+    motion('HUD motion', 'hud-bluetooth', 'Bluetooth controls and volume', road_cleared,
+           BLUETOOTH_EVENTS, BLUETOOTH_SAMPLES)
     for name, title, setup in [('explore','Explore map','explore();'), ('menu','Main menu','screen=SCR_MENU;'), ('trip-recents','Recent destinations','screen=SCR_TRIP;'), ('trip-favourites','Favourite destinations','screen=SCR_TRIP;trip_tab=1;'), ('itinerary','Current itinerary','screen=SCR_TRIP;trip_pane=1;'), ('phone','Phone connection','screen=SCR_BT;'), ('settings','Settings','screen=SCR_SET;'), ('keyboard','Name a favourite','name_keyboard();')]:
         add('Overview',name,title,setup)
     for i,title in enumerate(('Destinations','Bluetooth','Settings')):
@@ -64,6 +133,7 @@ def catalog(sender_receipts=None):
     for name,code,expect in [('previous','K_LEFT','PREV'),('next','K_RIGHT','NEXT'),('pause','K_ENTER','PAUSE')]:
         key('Audio',f'transport-{name}',f'Phone audio · {name}','key_handle(K_BACK);',f'key_handle({code});',f'command_is(" {expect}");', 'The real handler queues a command in isolated host I/O; phone acknowledgement/audio output is simulated.')
     key('Audio','transport-play','Phone audio · play','btui.playing=0;key_handle(K_BACK);','key_handle(K_ENTER);','command_is(" PLAY");')
+    add('Audio','audio-paused-controls','Paused phone audio with controls visible','btui.playing=0;key_handle(K_BACK);')
     key('Audio','transport-enter','Enter phone transport controls','','key_handle(K_BACK);','assert(bt_control_mode);')
     key('Audio','transport-leave','Leave phone transport controls','key_handle(K_BACK);','key_handle(K_BACK);','assert(!bt_control_mode);')
     for direction in ('K_UP','K_DOWN'):
@@ -135,6 +205,18 @@ def catalog(sender_receipts=None):
         key('Phone destinations',f'phone-wait-{name}-back','Cancel waiting · '+name,state,'key_handle(K_BACK);','assert(modal==MOD_NONE);')
         add('Phone destinations',f'phone-received-{name}','Received destination · '+name,state+'incoming("Central Station",\'N\');',note='A validated incoming destination is injected at the daemon/UI boundary, then production phone_destination_apply() runs.')
     add('Phone destinations','incoming-native-name','Received native destination name','screen=SCR_TRIP;modal=MOD_WAIT_PHONE;phone_wait_action=DEST_PICK_CHANGE_DEST;incoming("東京駅 · محطة",\'N\');')
+    phone_received = ('screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;modal=MOD_WAIT_PHONE;'
+                      'incoming_sender("Central Station",1,\'N\',5497370,-161331);'
+                      'assert(modal==MOD_NONE&&trip.active&&streq(trip.target[0].name,"Central Station"));'
+                      'trip_service();trip_service();')
+    add('Phone destinations','phone-preview-received','Calculate the route to the received destination',
+        phone_received, check='assert(route_status==R_CALC);')
+    motion('Phone destinations', 'phone-preview-calculating', 'Route calculation',
+           phone_received + 'assert(route_status==R_CALC);', ((0, ''),), PHONE_CALC_SAMPLES)
+    add('Phone destinations','phone-preview-trip','The received destination in Trip',
+        phone_received + 'u32 deadline=s_now_ms()+120000;'
+        'while(route_status==R_CALC&&time_before_u32(s_now_ms(),deadline))route_service_until(s_now_ms()+12);'
+        'screen=SCR_TRIP;trip_pane=1;', check='assert(route_status==R_READY);')
     add('Phone destinations','incoming-full','Phone stop rejected: itinerary full','screen=SCR_TRIP;four_stops();incoming("Extra stop",\'S\');')
     add('Phone destinations','incoming-no-route','Phone stop rejected: no active route','screen=SCR_TRIP;trip.active=0;trip.count=0;incoming("Extra stop",\'S\');')
     for choice,title,command in [(0,'Disconnect','DISCONNECT'),(1,'Forget connected phone','UNPAIR')]:
@@ -188,8 +270,8 @@ def catalog(sender_receipts=None):
     states=[('gps-lost','Acquiring GPS','gps.fix=0;'),('route-calculating','Calculating route','route_status=R_CALC;'),('route-rerouting','Rerouting','route_status=R_CALC;route_rerouting=1;'),('route-error','No route available','route_status=R_UNREACHABLE;'),('no-route','Driving without a route','route_status=R_IDLE;route_n=0;trip.active=0;'),('limit-estimated','Estimated speed limit','roadctx.speed_flags=3;'),('limit-unknown','Unknown speed limit','roadctx.valid=0;roadctx.speed=0;'),('limit-variable','Variable speed limit','roadctx.speed=0;roadctx.speed_flags=8;'),('limit-unrestricted','Unrestricted speed context','roadctx.speed=0;roadctx.speed_flags=4;'),('limit-three-digit','Three-digit metric speed and limit','pref.units=1;gps.mph10=810;roadctx.speed=130;roadctx.speed_flags=0;'),('limit-metric','Metric speed and road limit','pref.units=1;roadctx.speed=50;roadctx.speed_flags=0;'),('limit-imperial','Imperial speed and road limit','pref.units=2;roadctx.speed=30;roadctx.speed_flags=2;'),('route-long-name','Long street name','copystr(roadctx.street,sizeof(roadctx.street),"A long example street name for fitting");'),('map-missing','Missing navigation data','mapok=0;'),('map-outside','Position outside installed coverage','gps.lat=track_lat=3500000;gps.lon=track_lon=-2000000;')]
     for name,title,setup in states:add('Navigation states',name,title,setup,note='Simulated GPS/road/route state rendered by production draw().')
     for kind,title in [(1,'Fixed speed camera'),(2,'Red-light camera'),(3,'Average-speed entry')]:
-        add('Camera states',f'camera-{kind}',title,f'show_camera({kind},0);',note='Illustrative camera state at sample GPS coordinates; not a claim that a camera exists there.')
-    add('Camera states','camera-average','Average-speed section in progress','show_camera(3,1);')
+        add('Camera states',f'camera-{kind}',title,road_cleared+f'show_camera({kind},0);',note='Illustrative camera state at sample GPS coordinates; not a claim that a camera exists there.')
+    add('Camera states','camera-average','Average-speed section in progress',road_cleared+'show_camera(3,1);')
     add('Camera states','camera-overspeed','Camera limit exceeded','show_camera(1,0);gps.mph10=450;')
     add('Camera states','camera-hidden-gps','Camera alert suppressed after GPS loss','show_camera(1,0);gps.fix=0;')
     # Complete the actionable choices beyond the original overview catalog.
@@ -283,7 +365,7 @@ def catalog(sender_receipts=None):
 
 
 HELPERS = r'''
-static int gallery_night;
+static int gallery_night,gallery_motion;
 static int saved_n;static u32 saved_m,saved_cost;
 static s32 saved_lat[ROUTE_PATH_MAX],saved_lon[ROUTE_PATH_MAX];
 static u32 saved_node[ROUTE_PATH_MAX],saved_arc[ROUTE_PATH_MAX],saved_phys[ROUTE_PATH_MAX],saved_seg_m[ROUTE_PATH_MAX],saved_seg_cost[ROUTE_PATH_MAX];
@@ -298,7 +380,15 @@ static void four_stops(void){three_stops();trip.count=5;trip.target[4]=trip.targ
 static void incoming(const char*name,char action){phone_dest.valid=1;phone_dest.action=action;phone_dest.lat=5497370;phone_dest.lon=-161331;copystr(phone_dest.name,sizeof(phone_dest.name),name);phone_destination_apply();}
 static void incoming_sender(const char*name,int seq,char action,int lat,int lon){char packet[512];int n=snprintf(packet,sizeof(packet),"SEQ=%d\nACTION=%c\nLAT=%d\nLON=%d\nNAME=%s\n",seq,action,lat,lon,name);long fd=s_open(BT_NAV_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);assert(fd>=0);assert(s_write((int)fd,packet,n)==n);s_close((int)fd);poll_phone_destination();assert(phone_dest.valid);phone_destination_apply();}
 static void show_camera(int kind,int avg){camera_visible=1;camera_average=avg;camera_current.kind=kind;camera_current.speed=30;camera_current.flags=2;camera_distance=avg?850:180;camera_average_speed=42;}
+static void show_phone_connection(void){
+ FILE*f=fopen(BT_STATUS_PATH,"w");assert(f);fputs("BT CONNECTED\n",f);fclose(f);
+ f=fopen(BT_META_PATH,"w");assert(f);fputs("DEVICE=Example iPhone\nCONNECTED=1\n",f);fclose(f);
+ f=fopen(BT_DEVLIST_PATH,"w");assert(f);fputs("COUNT=1\nDEV=00:11:22:33:44:55|1|Example iPhone\n",f);fclose(f);
+ bt_poll_status();assert(hud_connection.kind==HUD_CONNECTION);
+}
 static void gallery_reset(int night){
+ hud_capture_clock=1;hud_capture_ms=s_now_ms();gallery_motion=0;
+ bt_hud_link=0;bt_hud_peer[0]=0;
  route_cancel();fixture();restore_route();atlas_active=0;atlas_future_m=atlas_future_cost=0;
  pref=(struct Prefs){50,1,0,0,0,night?THEME_NIGHT:THEME_DAY,0,1,0,0};apply_palette(night);
  mapok=1;screen=SCR_MAP;trip_pane=trip_tab=trip_focus=trip_right_focus=0;menu_focus=set_focus=0;
@@ -387,13 +477,13 @@ def main():
 #undef key_handle
 static int gallery_record, gallery_step;
 static const char*gallery_scene;
-static void gallery_step_frame(const char*suffix){char name[240];snprintf(name,sizeof(name),"%s/steps/%s-%s",gallery_night?"night":"day",gallery_scene,suffix);draw();snapshot(name);}
+static void gallery_step_frame(const char*suffix){char name[240];snprintf(name,sizeof(name),"%s/steps/%s-%s",gallery_night?"night":"day",gallery_scene,suffix);settle();snapshot(name);}
 static void gallery_record_start(void){gallery_step=0;if(GALLERY_INPUTS){gallery_step_frame("before");gallery_record=1;}}
 static void key_handle(int code){gallery_production_key_handle(code);if(gallery_record){char suffix[24];snprintf(suffix,sizeof(suffix),"%03d",gallery_step);gallery_step_frame(suffix);printf("INPUT|%s|%s|%03d|%d\n",gallery_night?"night":"day",gallery_scene,gallery_step++,code);}}
 '''.replace('GALLERY_INPUTS',str(int(args.record_inputs)))
         program='#define key_handle gallery_production_key_handle\n'+harness+HELPERS+wrappers+'''
 int main(int argc,char**argv){assert(argc==2);outdir=argv[1];setbuf(stdout,0);fixture();assert(load_font());assert(cliou_load(CLIO_HOST_ROOT "clio843/maps/fonts.cpf"));assert(load_regions());assert(load_timezones());assert(load_map());assert(load_route_data());assert(route_start(5497370,-161331));u32 deadline=s_now_ms()+120000;while(route_status==R_CALC&&time_before_u32(s_now_ms(),deadline))route_service_until(s_now_ms()+12);assert(route_status==R_READY&&route_n>1);save_route();printf("Baseline real route: %d points, %u m, %u ds\\n",saved_n,saved_m,saved_cost);static const char*names[]={NAMES};
-for(int night=0;night<2;night++){THEME_FILTER gallery_night=night;for(unsigned i=0;i<sizeof(names)/sizeof(names[0]);i++){gallery_reset(night);gallery_scene=names[i];switch(i){CASES}draw();char name[180];snprintf(name,sizeof(name),"%s/%s",night?"night":"day",names[i]);snapshot(name);printf("%s %s\\n",night?"night":"day",names[i]);}}return 0;}
+for(int night=0;night<2;night++){THEME_FILTER gallery_night=night;for(unsigned i=0;i<sizeof(names)/sizeof(names[0]);i++){gallery_reset(night);gallery_scene=names[i];switch(i){CASES}if(gallery_motion)draw();else settle();char name[180];snprintf(name,sizeof(name),"%s/%s",night?"night":"day",names[i]);snapshot(name);printf("%s %s\\n",night?"night":"day",names[i]);}}return 0;}
 '''.replace('NAMES',names).replace('CASES',cases).replace('THEME_FILTER',('if(night==0)continue;' if args.themes==['night'] else 'if(night==1)continue;' if args.themes==['day'] else ''))
         c=temp/'gallery.c';c.write_text(program)
         flags=['-O1','-g','-fsanitize=undefined','-fno-sanitize-recover=all','-Wno-unused-function','-DCLIO_UNICODE=1','-DCLIO_SOURCE="'+str(ROOT/'clio843/src/clio040.c')+'"','-DCLIO_HOST_ROOT="'+str(host)+'/"']

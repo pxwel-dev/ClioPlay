@@ -14,11 +14,17 @@ python3 src/tools/refresh_latest.py --check
 python3 src/tools/verify_ci.py
 ```
 
-The verifier checks source/binary correspondence, demo provenance, licences and
+The verifier checks source/binary correspondence, GIF provenance, licences and
 hashes, high-confidence credential patterns and the exact files Git would include.
 Local caches, test reports, navigation, firmware and settings must stay ignored.
 Use Git rather than uploading the entire local working directory as a ZIP.
 GitHub's source ZIP after a clean commit contains the committed files only.
+
+## Update an existing checkout
+
+Copy the verified release contents into the repository working tree and include
+deletions for files retired by the new release. Review the changed files and
+run the checks above from the checkout before committing and pushing.
 
 ## First push
 
@@ -28,7 +34,7 @@ Create an empty **public** GitHub repository. From the publication folder:
 git init -b main
 git add .
 git diff --cached --stat
-git commit -m "Initial ClioPlay Global preview"
+git commit -m "Initial ClioPlay Global release"
 ```
 
 Add the new repository's actual URL as `origin`, then push `main`. No remote,
@@ -43,8 +49,8 @@ checks** or **Windows launcher checks** as branch-protection status checks.
 
 ## Release status
 
-Keep this labelled a **preview**. Record physical-unit results separately from
-host results. Remaining navigation validation is described in the main README;
+The release number is in [VERSION](../VERSION). Record physical-unit results
+separately from host results. Remaining navigation validation is described in the main README;
 legacy helper source/correspondence limitations are in
 [SOURCE_STATUS.md](../../SOURCE_STATUS.md). Resolve the documented corresponding-
 source question before a public binary release containing the affected helper.

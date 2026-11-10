@@ -22,7 +22,7 @@ int main(int argc,char**argv){
  for(int night=0;night<2;night++)for(int explore=0;explore<2;explore++)for(int z=4;z<=6;z++){
   fixture();pref.theme=night?THEME_NIGHT:THEME_DAY;apply_palette(night);screen=SCR_MAP;manual_zoom=freecam_zoom=z;
   if(explore){enter_freecam();for(int i=0;i<5;i++)freecam_orientation_anim_step();}
-  draw();char name[64];snprintf(name,sizeof(name),"%s-%s-z%d",night?"night":"day",explore?"explore":"drive",z);snapshot(name);
+  settle();char name[64];snprintf(name,sizeof(name),"%s-%s-z%d",night?"night":"day",explore?"explore":"drive",z);snapshot(name);
   double samples[5];for(int sample=0;sample<5;sample++){double start=seconds();for(int i=0;i<20;i++)draw_map();samples[sample]=(seconds()-start)*1000.0/20.0;}
   printf("%s",name);for(int i=0;i<5;i++)printf(" %.6f",samples[i]);puts("");
  }

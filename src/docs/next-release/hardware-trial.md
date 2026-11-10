@@ -1,4 +1,4 @@
-# Global release-candidate vehicle trial
+# ClioPlay Global vehicle trial
 
 No head unit is attached to the development environment. Every item below is
 **unverified on hardware**, even where host tests have passed.
@@ -19,14 +19,14 @@ results against the executable SHA-256 values and navigation `build.json`.
    first UI palette using a saved location before GPS lock, then live GPS;
    confirm manual Day/Night overrides and display clock offsets do not alter
    solar switching. Weather/tunnels have no light-sensor input.
-2. Parked remote: menu → Trip/Phone connection/Settings; scrolling settings; Auto/Metric/
+2. Parked remote: Menu → Trip/Bluetooth/Settings; scrolling settings; Auto/Metric/
    Imperial, Clock Auto/manual and all available languages; saved favourites/trip;
-   smooth freecam entry/exit. Check long/native names and the speed-limit circle, including estimated values
+   smooth map browsing entry/exit. Check long/native names and the frosted speed-limit inset, including estimated values
    with `?`. Compare mapped and estimated limits against signs across urban/rural
    transitions and local zones; an estimate is not a verified posted limit.
-3. Confirm physical AUX still initializes. Cycle FM/MW/LW/CD-Bluetooth/AUX:
-   correct current source, radio text and controls, volume/mute, no stale music
-   metadata covering radio. Record any source or focus delay.
+3. Confirm physical AUX still initializes. Cycle FM/MW/LW/CD-Bluetooth/AUX and
+   check the temporary source and volume notices, radio text, mute and playback
+   control highlights. Record any source or focus delay.
 4. Pair and reconnect a real phone, restart car/phone, pause/resume/skip and send
    a named destination with accents/non-Latin text. Confirm the remote stays
    connected. Boot with the remote asleep, allow the phone to reconnect, then
@@ -41,8 +41,9 @@ results against the executable SHA-256 values and navigation `build.json`.
    leaving/rejoining the planned route near a pack boundary. Check turn cues
    close to a boundary and handover with highway-speed/sparse GPS updates.
 7. At a known permitted camera in a reviewed enabled country: approach direction and road identity,
-   visual strip on radio, Phone audio during playing/paused Bluetooth, no repeat
-   flood or clipping. For an average section, verify observed entry/exit and GPS
+   centred camera pill on radio and phone audio during playing/paused Bluetooth.
+   Check the road name fades while the camera warning persists. For an average
+   section, verify observed entry/exit and GPS
    loss cancellation. France/DE/CH must have no exact camera warnings/data.
 8. Confirm local time against a trusted clock, retain it across restart, then
    check automatic offset on an actual timezone change when practical. Host

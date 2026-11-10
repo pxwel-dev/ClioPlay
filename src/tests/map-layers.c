@@ -53,7 +53,7 @@ static unsigned verify(int z,unsigned*water,unsigned*green){
    * have soft centres too, so an oracle requiring opaque cores misses them. */
   visible_lines(z,1);memcpy(roads_on_marker,fb,sizeof(fb));
   unsigned hidden=0;*water=*green=0;
-  for(int y=40;y<MAP_STRIP_Y;y++)for(int x=0;x<W;x++){
+  for(int y=MAP_TOP;y<MAP_BOTTOM;y++)for(int x=0;x<W;x++){
     int i=y*W+x;
     if(roads_on_marker[i]==background[i])continue;
     if(background[i]==C_WATER)(*water)++;

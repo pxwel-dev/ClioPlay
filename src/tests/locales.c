@@ -10,6 +10,15 @@ static void whole_utf8(const char*s){const unsigned char*p=(const unsigned char*
 int main(int argc,char**argv){assert(argc==3&&load_font()&&cliou_load(argv[1]));
  for(int lang=0;lang<UI_LANGUAGE_COUNT;lang++){
   pref.language=lang;assert(ui_language_rtl()==(streq(ui_language_codes[lang],"ar")||streq(ui_language_codes[lang],"he")));assert(cliou_width(ui_language_name(),1)>0);assert(width(ui_language_name(),0)<=180);
+  for(int page=SCR_MENU;page<=SCR_KEY;page++){
+   screen=page;
+   for(int action=KBD_NAME_FAVE;action<=(page==SCR_KEY?KBD_RENAME_FAVE:KBD_NAME_FAVE);action++){
+    kbd_action=action;hud_menu_title_prepare();
+    whole_utf8(hud_menu_title.first);whole_utf8(hud_menu_title.second);
+    assert(width(hud_menu_title.first,hud_menu_title.face)<=hud_menu_title.w);
+    assert(width(hud_menu_title.second,hud_menu_title.face)<=hud_menu_title.w);
+   }
+  }
   assert(width(bt_source_label(),0)<=52);assert(width(bt_label(),3)<=440);assert(streq(bt_source_label(),"BT"));assert(streq(bt_label(),lang?ui_tr("Phone connection"):"Bluetooth"));assert(width(ui_tr("Phone audio"),1)<=180);
   copystr(btui.status,sizeof(btui.status),"BT DAEMON ERROR");pref.debug=0;assert(streq(bt_status_text(),lang?ui_tr("Phone connection unavailable"):"Bluetooth unavailable"));btui.status[0]=0;
   for(unsigned i=0;i<sizeof(locale_cases)/sizeof(locale_cases[0]);i++){assert(streq(ui_tr(locale_cases[i][0]),locale_cases[i][lang]));whole_utf8(locale_cases[i][lang]);assert(cliou_width(locale_cases[i][lang],1)>0);}

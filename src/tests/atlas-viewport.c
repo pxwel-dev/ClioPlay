@@ -10,9 +10,9 @@ static u16 outside_pixels[W*H];
 static const char*out;
 static void shot(const char*name){char p[1024];snprintf(p,sizeof(p),"%s/%s.rgb565",out,name);FILE*f=fopen(p,"wb");assert(f&&fwrite(fb,1,sizeof(fb),f)==sizeof(fb));fclose(f);}
 static int outside_frame(int z){
- fill(0,40,W,MAP_STRIP_Y-40,C_BG);text_center(240,116,ui_tr("Outside map area"),C_MUTED,1);memcpy(outside_pixels,fb,sizeof(fb));
+ fill(0,MAP_TOP,W,MAP_BOTTOM-MAP_TOP,C_BG);text_center(240,116,ui_tr("Outside map area"),C_MUTED,1);memcpy(outside_pixels,fb,sizeof(fb));
  perspective_scale_update();draw_map_geometry(z);
- return !memcmp(fb+40*W,outside_pixels+40*W,(MAP_STRIP_Y-40)*W*sizeof(u16));
+ return !memcmp(fb+MAP_TOP*W,outside_pixels+MAP_TOP*W,(MAP_BOTTOM-MAP_TOP)*W*sizeof(u16));
 }
 static void position(s32 lat,s32 lon){gps.lat=track_lat=cam_lat=lat;gps.lon=track_lon=cam_lon=lon;track_valid=1;}
 int main(int argc,char**argv){

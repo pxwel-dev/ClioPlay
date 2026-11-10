@@ -12,6 +12,7 @@ import tempfile
 from pathlib import Path, PurePosixPath
 from urllib.parse import unquote, urlsplit
 from prepare_vendor import VENDOR
+from publication import PREVIEW_GIFS
 
 def sha(path):
     digest = hashlib.sha256()
@@ -58,7 +59,7 @@ def verify_text_and_links(folder, paths):
             if re.search(pattern, raw):
                 raise ValueError(name+' pattern in publication: '+str(path.relative_to(folder)))
     docs = ('README.md', 'CONTRIBUTING.md', 'SECURITY.md', 'src/README.md',
-            'src/BUILDING.md', 'src/docs/github-launch.md', 'WINDOWS.md')
+            'src/BUILDING.md', 'src/docs/github-launch.md', 'src/docs/demo/README.md', 'WINDOWS.md')
     for name in docs:
         path = folder/name
         text = path.read_text()
@@ -73,6 +74,39 @@ def verify_text_and_links(folder, paths):
                 raise ValueError('Broken/local-only documentation link in '+name+': '+link)
     return {'credential_patterns': 'no high-confidence matches; not an exhaustive secret audit',
             'owned_documentation_links': 'verified local targets'}
+
+
+def verify_previews(source, readme):
+    demo = source / 'docs/demo'
+    manifest = json.loads((demo / 'manifest.json').read_text())
+    previews = manifest['previews']
+    if manifest['schema'] != 'clioplay-readme-previews-1' or set(previews) != set(PREVIEW_GIFS):
+        raise ValueError('Missing or unexpected README previews')
+    native_paths = {p.relative_to(source).as_posix() for p in (source / 'clio843/src').rglob('*')
+                    if p.is_file() and p.suffix in ('.c', '.h', '.cc') and 'recovered' not in p.parts}
+    if set(manifest['native_sources']) != native_paths:
+        raise ValueError('Preview native source list changed; run tools/render_previews.py')
+    for group in ('native_sources', 'generator_inputs'):
+        for relative, digest in manifest[group].items():
+            path = Path(relative)
+            if path.is_absolute() or '..' in path.parts or sha(source / path) != digest:
+                raise ValueError('Preview input changed; run tools/render_previews.py: ' + relative)
+    programs = manifest['executables']
+    if set(programs) != {'clio040', 'cliospl', 'clioa2dp'} or any(
+            sha(source / 'clio843' / name) != digest for name, digest in programs.items()):
+        raise ValueError('Preview executables are stale; run tools/render_previews.py')
+    for name, report in previews.items():
+        if f'](src/docs/demo/{name})' not in readme:
+            raise ValueError('README is missing a preview: ' + name)
+        path = demo / name
+        with path.open('rb') as stream:
+            header = stream.read(10)
+        if (sha(path) != report['sha256'] or header[:6] != b'GIF89a'
+                or struct.unpack('<HH', header[6:]) != (480, 272)
+                or report['frames'] < 2 or not 0 < report['duration_ms'] < 10000):
+            raise ValueError('Invalid or changed preview: ' + name)
+    return {name: {'duration_ms': report['duration_ms'], 'frames': report['frames']}
+            for name, report in previews.items()}
 
 
 def verify_tree(folder):
@@ -138,87 +172,13 @@ def verify_tree(folder):
         raise ValueError('Missing available hidd upstream source')
     if not (source / 'clio843/src/recovered/focusd.ghidra.c').is_file():
         raise ValueError('Missing available focusd reference')
-    if (source/'docs/screenshots').exists():
-        raise ValueError('Obsolete screenshot gallery; publication now contains the full video only')
-    demo = source/'docs/demo'
-    demo_report = None
-    if (demo/'manifest.json').is_file():
-        film = json.loads((demo/'manifest.json').read_text())
-        captures = film['capture_provenance']
-        for name,digest in {**film.get('historical_capture_tools',{}), **film['sender_browser']['inputs']}.items():
-            if Path(name).is_absolute() or '..' in Path(name).parts or not re.fullmatch('[0-9a-f]{64}',digest):
-                raise ValueError('Invalid external capture provenance')
-        scenes = captures['scenes']
-        scene_by_id = {scene['id']:scene for scene in scenes}
-        expected = {theme+'/'+scene['id'] for theme in captures['themes'] for scene in scenes}
-        if (len(scene_by_id) != len(scenes) or set(film['covered_scenes']) != expected
-                or set(captures['final_frames']) != {name+'.png' for name in expected}):
-            raise ValueError('Showcase is missing a catalog action/theme')
-        for relative, digest in {**captures['native_sources'], **film['generator_inputs']}.items():
-            path = Path(relative)
-            if path.is_absolute() or '..' in path.parts or sha(source/path) != digest:
-                raise ValueError('Showcase inputs changed; run tools/render_demo.py: '+relative)
-        for name, digest in captures['executables'].items():
-            if name not in ('clio040','cliospl','clioa2dp') or sha(source/'clio843'/name) != digest:
-                raise ValueError('Showcase executable version is stale')
-        if (sha(demo/'clioplay-demo.mp4') != film['video_sha256']
-                or sha(demo/'poster.png') != film['poster_sha256']):
-            raise ValueError('Showcase asset checksum mismatch')
-        preview = film.get('readme_preview', {})
-        if (preview.get('file') != 'preview.gif'
-                or sha(demo/'preview.gif') != preview.get('sha256')
-                or preview.get('source_video_sha256') != film['video_sha256']
-                or preview.get('generator') != 'tools/build_readme_preview.py'
-                or sha(source/preview['generator']) != preview.get('generator_sha256')
-                or preview.get('frames') != 175 or preview.get('seconds') != 17.5):
-            raise ValueError('Missing/stale README preview; regenerate the demo preview')
-        for relative, digest in film['source_frames'].items():
-            if relative not in captures['frames'] or captures['frames'][relative]['png_sha256'] != digest:
-                raise ValueError('Demo framebuffer provenance mismatch: '+relative)
-        input_keys = {event['frame']:event['key'] for events in captures['inputs'].values() for event in events}
-        required_inputs = {event['frame'] for name,events in captures['inputs'].items()
-                           if scene_by_id[name.split('/',1)[1]]['group'] != 'Animations' for event in events}
-        shown_inputs = set();shown_frames = set();shown_browser = set();total_frames = 0
-        browser_ids = {sid for _,entries in film['selection'] for kind,sid,_,_ in entries if kind=='browser'}
-        for shot in film['timeline']:
-            if (shot['frame'] not in film['source_frames'] or shot['duration_frames'] <= 0
-                    or abs(shot['start_seconds']-total_frames/film['fps']) > .00001):
-                raise ValueError('Invalid showcase timeline')
-            shown_frames.add(shot['frame'])
-            if shot.get('browser_scene'):
-                if shot['key'] or shot['browser_scene'] not in browser_ids:
-                    raise ValueError('Unexpected browser input highlight')
-                shown_browser.add((shot['theme'],shot['browser_scene']))
-            if shot['stage'] == 'REMOTE INPUT':
-                if input_keys.get(shot['frame']) != shot['key']:
-                    raise ValueError('Demo key differs from recorded native event')
-                shown_inputs.add(shot['frame'])
-            elif shot['key'] and not (shot['stage']=='NATIVE ANIMATION' and shot['key']=='K_MAP'
-                                      and scene_by_id[shot['scene']]['group']=='Animations'):
-                raise ValueError('Unexpected key highlight without an input event')
-            total_frames += shot['duration_frames']
-        if (not required_inputs <= shown_inputs or not set(captures['final_frames']) <= shown_frames
-                or shown_browser != {(theme,sid) for theme in captures['themes'] for sid in browser_ids}
-                or abs(total_frames/film['fps']-film['duration_seconds']) > .00001):
-            raise ValueError('Showcase omits an action result or individual remote step')
-        with (demo/'clioplay-demo.mp4').open('rb') as stream:
-            if stream.read(12)[4:8] != b'ftyp':raise ValueError('Invalid MP4 container')
-        demo_report = {'seconds':film['duration_seconds'], 'dimensions':'1280x720',
-                       'selected_native_scenes':len(scenes),'starting_themes':captures['themes'],
-                       'individual_native_inputs':len(input_keys),
-                       'actual_sender_browser_states':len(browser_ids),
-                       'readme_preview':'verified extract of current demo; 17.5 seconds',
-                       'remote_highlights':'verified against actual handler invocations',
-                       'selected_actions_results_and_steps':'verified; no exhaustive matrix',
-                       'asset_and_source_hashes':'native runtime and published media verified',
-                       'companion_capture_sources':'recorded hashes only; private inputs not included',
-                       'hardware':'not tested'}
+    preview_report = verify_previews(source, (folder / 'README.md').read_text())
     return {'source_files': sum(str(p.relative_to(folder)).startswith('src/') for p in paths),
             'text_and_links': text_report,
             'runtime_source_inputs': 'all present and match supplied build reports',
             'bootstrap': 'default scripts, focusd, hidd and extracted AUX verified',
             'vendor_and_personal_data': 'excluded from managed publication files',
-            'framebuffer_demo': demo_report,
+            'framebuffer_previews': preview_report,
             'git_publication': verify_git_candidates(folder, managed) if managed else 'staged export; no Git index',
             'hardware': 'not tested'}
 

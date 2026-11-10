@@ -225,6 +225,8 @@ static void fill(int x,int y,int w,int h,u16 c){int yy,xx;if(x<0){w+=x;x=0;}if(y
 static void rect(int x,int y,int w,int h,u16 c){int i;for(i=0;i<w;i++){px(x+i,y,c);px(x+i,y+h-1,c);}for(i=0;i<h;i++){px(x,y+i,c);px(x+w-1,y+i,c);}}
 /* The compact skin shares only font/shape primitives with Next. The original
  * map geometry, six screens and input state machine remain the UI baseline. */
+#define CLIO_UI_ALPHA 1
+static int hud_ink_alpha=16;
 #include "ui_raster.h"
 /* Fit complete UTF-8 code points, adding an ellipsis inside the measured cell. */
 static void compact_fit(int x,int y,int w,int face,const char*s,u16 c){
@@ -252,27 +254,18 @@ void*cliou_map(int fd,unsigned off,unsigned len){unsigned pagesize=4096;
 void cliou_pixel(int x,int y,unsigned short colour,int alpha){blend_pixel(x,y,colour,alpha);}
 #endif
 static void compact_center(int cx,int y,int w,int face,const char*s,u16 c){int tw=width(s,face);compact_fit(cx-(tw<w?tw:w)/2,y,w,face,s,c);}
-/* Lightweight HMI surfaces: one-pixel cut corners, a top highlight and bottom
- * shadow give depth without alpha blending or expensive effects. */
 static void ui_surface(int x,int y,int w,int h,u16 c){round_rect(x,y,w,h,4,c,15);}
-static void ui_panel(int x,int y,int w,int h,int active){ui_surface(x,y,w,h,C_PANEL);if(active)fill(x+6,y,w-12,2,C_CYAN);}
-static void ui_choice(int x,int y,int w,int h,int selected){ui_surface(x,y,w,h,selected?C_ACTIVE:C_PANEL2);if(selected)fill(x+2,y+4,2,h-8,C_CYAN);}
+static void ui_panel(int x,int y,int w,int h,int active){ui_surface(x,y,w,h,C_PANEL);if(active)round_rect(x+6,y,w-12,2,1,C_CYAN,15);}
+static void ui_choice(int x,int y,int w,int h,int selected){ui_surface(x,y,w,h,selected?C_ACTIVE:C_PANEL2);if(selected)round_rect(x+2,y+4,2,h-8,1,C_CYAN,15);}
 static u16 ui_choice_text(int selected){return selected?C_ACTIVE_TEXT:C_WHITE;}
 static void ui_modal(int x,int y,int w,int h){round_rect(x-1,y-1,w+2,h+2,6,C_BORDER,15);round_rect(x,y,w,h,5,C_PANEL,15);}
 static void line1(int x0,int y0,int x1,int y1,u16 c,int wid){int dx=x1>x0?x1-x0:x0-x1,sx=x0<x1?1:-1;int dy=-(y1>y0?y1-y0:y0-y1),sy=y0<y1?1:-1,err=dx+dy;for(;;){int a,b,r=wid/2;for(a=-r;a<=r;a++)for(b=-r;b<=r;b++)px(x0+a,y0+b,c);if(x0==x1&&y0==y1)break;int e2=2*err;if(e2>=dy){err+=dy;x0+=sx;}if(e2<=dx){err+=dx;y0+=sy;}}}
 
 static int load_font(void){long fd=s_open(FONT_PATH,O_RDONLY_,0);if(fd<0)return 0;long n=s_read((int)fd,font,FONT_BYTES);s_close((int)fd);font_ok=(n==FONT_BYTES);return font_ok;}
-static void glyph(int x,int y,char ch,u16 c,int scale){int gx,gy,sx,sy;unsigned idx;if(ch<32||ch>126)ch='?';idx=(unsigned)(ch-32)*96;if(!font_ok)return;for(gy=0;gy<12;gy++)for(gx=0;gx<8;gx++){if(font[idx+(unsigned)gy*8u+(unsigned)gx]>64){for(sy=0;sy<scale;sy++)for(sx=0;sx<scale;sx++)px(x+gx*scale+sx,y+gy*scale+sy,c);}}}
 static void text(int x,int y,const char*s,u16 c,int scale){
-#if CLIO_UNICODE
- if(cliou_ready()&&utf8_native(s)){cliou_draw(x,y,scale<=1?0:1,s,c,0);return;}
-#endif
- int adv=8*scale;while(*s){glyph(x,y,*s++,c,scale);x+=adv;}}
-static int textw(const char*s,int scale){
-#if CLIO_UNICODE
- if(cliou_ready()&&utf8_native(s))return cliou_width(s,scale<=1?0:1);
-#endif
- return(int)slen(s)*8*scale;}
+ label(x,y,scale<=1?0:1,s,c,0);
+}
+static int textw(const char*s,int scale){return width(s,scale<=1?0:1);}
 static void text_center(int cx,int y,const char*s,u16 c,int scale){text(cx-textw(s,scale)/2,y,s,c,scale);}
 /* Fixed-width font helper used by the global header.  Metadata is shortened
  * before drawing so malformed/very long AVRCP strings can never enter the
@@ -357,7 +350,12 @@ static int save_last_fix(void){if(!lastfix_valid)return 0;struct LastFixDisk d;d
 static void remember_live_fix(void){if(!gps.fix)return;lastfix_lat=gps.lat;lastfix_lon=gps.lon;/* Preserve the last trustworthy moving orientation instead of overwriting it with stationary GPS-course noise. */if(!lastfix_valid||gps.mph10>=DISPLAY_COURSE_UPDATE_MPH10)lastfix_course=gps.course;lastfix_valid=1;if(!lastfix_live_seen){save_last_fix();lastfix_live_seen=1;}}
 static int parse_dec10(const char*s){int v=0,frac=0,neg=0;if(*s=='-'){neg=1;s++;}while(*s>='0'&&*s<='9'){v=v*10+(*s-'0');s++;}if(*s=='.'&&s[1]>='0'&&s[1]<='9')frac=s[1]-'0';return neg?-(v*10+frac):(v*10+frac);}
 static s32 nmea_coord_e5(const char*s,int islon,char hemi){int deg=0;int digs=islon?3:2;for(int i=0;i<digs;i++){if(s[i]<'0'||s[i]>'9')return 0;deg=deg*10+s[i]-'0';}s+=digs;int min10k=0;int whole=0;while(*s>='0'&&*s<='9'){whole=whole*10+(*s-'0');s++;}min10k=whole*10000;if(*s=='.'){s++;int m=1000;while(*s>='0'&&*s<='9'&&m){min10k+=(*s-'0')*m;m/=10;s++;}}s32 e5=(s32)deg*100000+(s32)(min10k/6);if(hemi=='S'||hemi=='W')e5=-e5;return e5;}
-static void parse_hhmmss(const char*s){if(slen(s)<6)return;gps.hour=(s[0]-'0')*10+s[1]-'0';gps.min=(s[2]-'0')*10+s[3]-'0';gps.sec=(s[4]-'0')*10+s[5]-'0';}
+static void parse_hhmmss(const char*s){
+ for(int i=0;i<6;i++)if(s[i]<'0'||s[i]>'9')return;
+ int hour=(s[0]-'0')*10+s[1]-'0',minute=(s[2]-'0')*10+s[3]-'0',second=(s[4]-'0')*10+s[5]-'0';
+ if(hour>23||minute>59||second>60)return;
+ gps.hour=hour;gps.min=minute;gps.sec=second;
+}
 static void parse_ddmmyy(const char*s){if(slen(s)<6)return;gps.day=(s[0]-'0')*10+s[1]-'0';gps.mon=(s[2]-'0')*10+s[3]-'0';gps.year=2000+(s[4]-'0')*10+s[5]-'0';}
 
 /* UTC solar decisions are independent of timezone/DST and display offsets. */
@@ -382,7 +380,37 @@ else if(starts(ln,"$GPGGA,")||starts(ln,"$GNGGA,")){n=split_csv(ln,f,20);if(n>7)
 static char gpsbuf[1024],gpsline[256];static unsigned gpsused=0;static int gpsfd=-1;
 static void poll_gps(void){if(gpsfd<0)gpsfd=(int)s_open(GPS_PATH,O_RDONLY_|O_NONBLOCK_,0);if(gpsfd<0)return;for(;;){long n=s_read(gpsfd,gpsbuf,sizeof(gpsbuf));if(n<=0)break;for(long i=0;i<n;i++){char c=gpsbuf[i];if(c=='\n'||c=='\r'){if(gpsused){gpsline[gpsused]=0;parse_nmea(gpsline);gpsused=0;}}else if(gpsused+1<sizeof(gpsline))gpsline[gpsused++]=c;else gpsused=0;}}}
 
+/* One current transient per domain; repeated knob events replace the value
+ * without replaying the entrance animation. Millisecond subtraction wraps. */
+enum {HUD_NONE,HUD_SOURCE,HUD_VOLUME,HUD_ZOOM,HUD_JOURNEY,HUD_HEADING,HUD_FAILURE,HUD_MEDIA,HUD_CALC,HUD_NOTICE,HUD_CONNECTION,HUD_BT_FEEDBACK};
+#ifdef HOST_TEST
+static int hud_capture_clock;
+static u32 hud_capture_ms;
+static u32 hud_now_ms(void){return hud_capture_clock?hud_capture_ms:s_now_ms();}
+#else
+#define hud_now_ms s_now_ms
+#endif
+struct HudPulse {u32 since,changed,until;int kind;};
+static struct HudPulse hud_audio,hud_source,hud_navigation,hud_connection,hud_bt_feedback;
+static char hud_connected_name[33],hud_bt_text[96];
+static int hud_pulse_live(const struct HudPulse*p,u32 now){return p->kind&&(s32)(p->until-now)>0;}
+static void hud_pulse_at(struct HudPulse*p,int kind,u32 now,u32 ms){
+ if(!hud_pulse_live(p,now))p->since=now;
+ p->kind=kind;p->changed=now;p->until=now+ms;
+}
+static void hud_pulse(struct HudPulse*p,int kind,u32 ms){hud_pulse_at(p,kind,hud_now_ms(),ms);}
+static void hud_bt_notice(const char*message){
+ copystr(hud_bt_text,sizeof(hud_bt_text),message);
+ hud_pulse(&hud_bt_feedback,HUD_BT_FEEDBACK,2500);
+}
+
 struct Car {char source[32],volume[16];int temp,tempok;};static struct Car car;
+static int car_temp_valid(int c){return c>=-60&&c<=85;}
+static int reading_present(const char*s){
+ if(!s)return 0;
+ while(*s==' '||*s=='\t'||*s=='-'||*s=='\r'||*s=='\n')s++;
+ return *s!=0;
+}
 
 /* Direct Focus audio-state consumer. This is the former clioaudio parsing logic
  * folded into the main runtime: no helper process, /tmp/cpaudio, or state.log
@@ -391,28 +419,107 @@ struct Car {char source[32],volume[16];int temp,tempok;};static struct Car car;
  * display state directly to audlast.dat on orderly power-down. */
 struct AudioFeed {char band[8],freq[16],station[24];};static struct AudioFeed af;
 static int audio_source_live=0;
+static int audio_source_detected(void){return audio_source_live&&reading_present(af.band);}
 static int audiofd=-1;static char audiobuf[4096],audioline[512];static unsigned audioused=0;
 static char upc(char c){return(c>='a'&&c<='z')?(char)(c-32):c;}
 static void copy_trim(char*out,unsigned cap,const u8*p,unsigned n){unsigned a=0,b=n,k=0;while(a<b&&(p[a]==' '||p[a]=='\t'||p[a]==0))a++;while(b>a&&(p[b-1]==' '||p[b-1]=='\t'||p[b-1]==0))b--;while(a<b&&k+1<cap){u8 c=p[a++];out[k++]=(c>=32&&c<127)?(char)c:' ';}out[k]=0;}
 static int setstrx(char*dst,unsigned cap,const char*src,int upper){char t[40];unsigned i=0;while(src[i]&&i+1<cap&&i+1<sizeof(t)){t[i]=upper?upc(src[i]):src[i];i++;}t[i]=0;if(streq(dst,t))return 0;copystr(dst,cap,t);return 1;}
-static int set_band(const char*b){audio_source_live=1;if(streq(af.band,b))return 0;setstrx(af.band,sizeof(af.band),b,1);af.freq[0]=0;af.station[0]=0;return 1;}
+static int set_band(const char*b){
+ if(!reading_present(b)){
+  audio_source_live=0;
+  af.band[0]=af.freq[0]=af.station[0]=car.source[0]=0;
+  hud_source.kind=hud_audio.kind=HUD_NONE;
+  return 0;
+ }
+ int changed=setstrx(af.band,sizeof(af.band),b,1);
+ if(!audio_source_live||changed)hud_pulse(&hud_source,HUD_SOURCE,2300);
+ audio_source_live=1;
+ if(changed)af.freq[0]=af.station[0]=0;
+ return changed;
+}
 static int parse_uint_tail(const char*s){int v=-1,cur=0,seen=0;unsigned i=0;while(s[i]){if(s[i]>='0'&&s[i]<='9'){cur=cur*10+(s[i]-'0');seen=1;}else if(seen){v=cur;cur=0;seen=0;}i++;}if(seen)v=cur;return v;}
 static int looks_tuning_label(const char*s){return s[0]=='<'||s[0]=='>'||s[0]=='[';}
-static void rebuild_source(void){char out[32];unsigned k=0,i=0;if(!af.band[0])return;while(af.band[i]&&k+1<sizeof(out))out[k++]=af.band[i++];if((streq(af.band,"FM")||streq(af.band,"MW")||streq(af.band,"LW"))&&k+1<sizeof(out)){const char*d=af.station[0]?af.station:af.freq;if(d[0]){out[k++]=' ';i=0;while(d[i]&&k+1<sizeof(out)){out[k++]=af.station[0]?upc(d[i]):d[i];i++;}}}out[k]=0;setstrx(car.source,sizeof(car.source),out,0);}
-static void set_volume(int v){char out[16];unsigned k=0;const char*p="VOL ";while(*p)out[k++]=*p++;if(v<0)v=0;if(v>99)v=99;if(v>=10)out[k++]=(char)('0'+v/10);out[k++]=(char)('0'+v%10);out[k]=0;setstrx(car.volume,sizeof(car.volume),out,0);}
+static void rebuild_source(void){
+ if(!reading_present(af.band))return;
+ char out[32];copystr(out,sizeof(out),af.band);
+ if(streq(af.band,"FM")||streq(af.band,"MW")||streq(af.band,"LW")){
+  const char*detail=reading_present(af.station)?af.station:af.freq;
+  if(reading_present(detail)){appendstr(out,sizeof(out)," ");appendstr(out,sizeof(out),detail);}
+ }
+ if(setstrx(car.source,sizeof(car.source),out,0)&&audio_source_detected())
+  hud_pulse(&hud_source,HUD_SOURCE,2300);
+}
+static void set_volume(int v){
+ char out[16]="VOL ";
+ if(v<0)v=0;if(v>99)v=99;
+ append_int(out,sizeof(out),v);
+ if(setstrx(car.volume,sizeof(car.volume),out,0)&&audio_source_detected())
+  hud_pulse(&hud_audio,HUD_VOLUME,1800);
+}
 static int valid_saved_char(u8 c){return c==0||(c>=32&&c<127);}
 static void infer_band_from_source(void){if(starts(car.source,"FM"))setstrx(af.band,sizeof(af.band),"FM",1);else if(starts(car.source,"MW"))setstrx(af.band,sizeof(af.band),"MW",1);else if(starts(car.source,"LW"))setstrx(af.band,sizeof(af.band),"LW",1);else if(starts(car.source,"CD"))setstrx(af.band,sizeof(af.band),"CD",1);else if(starts(car.source,"AUX"))setstrx(af.band,sizeof(af.band),"AUX",1);}
 static int load_last_audio(void){u8 rec[48];unsigned i;long fd=s_open(LAST_PATH,O_RDONLY_,0);if(fd<0)return 0;long n=s_read((int)fd,rec,sizeof(rec));s_close((int)fd);if(n!=(long)sizeof(rec))return 0;for(i=0;i<sizeof(rec);i++)if(!valid_saved_char(rec[i]))return 0;for(i=0;i<31&&rec[i];i++)car.source[i]=(char)rec[i];car.source[i]=0;for(i=0;i<15&&rec[32+i];i++)car.volume[i]=(char)rec[32+i];car.volume[i]=0;if(!car.source[0]&&!car.volume[0])return 0;infer_band_from_source();return 1;}
 static int save_last_audio(void){u8 rec[48];unsigned i;memzero(rec,sizeof(rec));for(i=0;i<31&&car.source[i];i++)rec[i]=(u8)car.source[i];for(i=0;i<15&&car.volume[i];i++)rec[32+i]=(u8)car.volume[i];if(!car.source[0]&&!car.volume[0])return 0;long fd=s_open(LAST_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd<0)return-1;long n=s_write((int)fd,rec,sizeof(rec));s_close((int)fd);return n==(long)sizeof(rec)?1:-1;}
 static int hexv(char c){if(c>='0'&&c<='9')return c-'0';if(c>='a'&&c<='f')return c-'a'+10;if(c>='A'&&c<='F')return c-'A'+10;return-1;}
 static unsigned decode_rx(const char*line,u8*out,unsigned cap){unsigned i=0,n=0;while(line[i]&&line[i]!=':')i++;if(line[i]!=':')return 0;i++;while(line[i]){while(line[i]==' '||line[i]=='\t')i++;int a=hexv(line[i]),b=hexv(line[i+1]);if(a<0||b<0)break;if(n<cap)out[n++]=(u8)((a<<4)|b);else break;i+=2;}return n;}
-static void process_property(unsigned id,const u8*p,unsigned n,int*srcchg){char t[40];copy_trim(t,sizeof(t),p,n);if(!t[0])return;if(id==100||id==40){if(starts(t,"AUDIO VOLUME")||starts(t,"NAV VOLUME")){int v=parse_uint_tail(t);if(v>=0)set_volume(v);return;}if(streq(t,"FM RADIO")||streq(t,"RADIO FM")){*srcchg|=set_band("FM");return;}if(streq(t,"MW RADIO")||streq(t,"RADIO MW")){*srcchg|=set_band("MW");return;}if(streq(t,"LW RADIO")||streq(t,"RADIO LW")){*srcchg|=set_band("LW");return;}if(streq(t,"MONO CD")||streq(t,"<NO CD>")||streq(t,"CD")){*srcchg|=set_band("CD");return;}if(streq(t,"AUX")||streq(t,"AUXILIARY")){*srcchg|=set_band("AUX");return;}}if(id==60){if(streq(t,"RADIO FM")){*srcchg|=set_band("FM");return;}if(streq(t,"RADIO MW")){*srcchg|=set_band("MW");return;}if(streq(t,"RADIO LW")){*srcchg|=set_band("LW");return;}}if(id==65){*srcchg|=setstrx(af.freq,sizeof(af.freq),t,0);return;}if(id==66){if(looks_tuning_label(t)){if(af.station[0]){af.station[0]=0;*srcchg=1;}return;}*srcchg|=setstrx(af.station,8,t,1);}}
+static int process_audio_source(const char*t){
+ if(!t[0])return 0;
+ if(!reading_present(t)||streq(t,"UNKNOWN")||streq(t,"unknown"))return set_band("");
+ if(starts(t,"AUDIO VOLUME")||starts(t,"NAV VOLUME")){
+  int v=parse_uint_tail(t);if(v>=0)set_volume(v);
+  return 0;
+ }
+ if(streq(t,"FM RADIO")||streq(t,"RADIO FM"))return set_band("FM");
+ if(streq(t,"MW RADIO")||streq(t,"RADIO MW"))return set_band("MW");
+ if(streq(t,"LW RADIO")||streq(t,"RADIO LW"))return set_band("LW");
+ if(streq(t,"MONO CD")||streq(t,"<NO CD>")||streq(t,"CD"))return set_band("CD");
+ if(streq(t,"AUX")||streq(t,"AUXILIARY"))return set_band("AUX");
+ return 0;
+}
+static void process_property(unsigned id,const u8*p,unsigned n,int*srcchg){
+ char t[40];copy_trim(t,sizeof(t),p,n);
+ if(id==100||id==40||id==60){*srcchg|=process_audio_source(t);return;}
+ if(!reading_present(t))return;
+ if(id==65)*srcchg|=setstrx(af.freq,sizeof(af.freq),t,0);
+ if(id==66){
+  if(looks_tuning_label(t)){if(af.station[0]){af.station[0]=0;*srcchg=1;}return;}
+  *srcchg|=setstrx(af.station,8,t,1);
+ }
+}
 static void process_rx_line(const char*line){u8 b[192];unsigned n=decode_rx(line,b,sizeof(b));if(n<5)return;unsigned i=0;int changed=0;while(i+5<=n){if((b[i]&0x7f)==13&&i+5<=n){unsigned len=b[i+4];if(i+5+len<=n){if(b[i+3]==1)process_property(b[i+2],b+i+5,len,&changed);i+=5+len;continue;}}i++;}if(changed)rebuild_source();}
 static const char* after_text(const char*line){const char*k="text=\"";unsigned i=0,j;while(line[i]){j=0;while(k[j]&&line[i+j]==k[j])j++;if(!k[j])return line+i+j;i++;}return 0;}
-static void process_decoded_line(const char*line){if(!(starts(line,"SOURCE_STATUS")||starts(line,"SOURCE_TEXT")||starts(line,"SOURCE_MODE")))return;const char*s=after_text(line);if(!s)return;char t[40],z[40];unsigned k=0;while(s[k]&&s[k]!='\"'&&k+1<sizeof(t)){t[k]=s[k];k++;}t[k]=0;copy_trim(z,sizeof(z),(const u8*)t,k);if(starts(z,"AUDIO VOLUME")||starts(z,"NAV VOLUME")){int v=parse_uint_tail(z);if(v>=0)set_volume(v);return;}int changed=0;if(streq(z,"FM RADIO")||streq(z,"RADIO FM"))changed=set_band("FM");else if(streq(z,"MW RADIO")||streq(z,"RADIO MW"))changed=set_band("MW");else if(streq(z,"LW RADIO")||streq(z,"RADIO LW"))changed=set_band("LW");else if(streq(z,"MONO CD")||streq(z,"<NO CD>")||streq(z,"CD"))changed=set_band("CD");else if(streq(z,"AUX")||streq(z,"AUXILIARY"))changed=set_band("AUX");if(changed)rebuild_source();}
+static void process_decoded_line(const char*line){
+ if(!(starts(line,"SOURCE_STATUS")||starts(line,"SOURCE_TEXT")||starts(line,"SOURCE_MODE")))return;
+ const char*s=after_text(line);if(!s)return;
+ unsigned n=0;while(n<39&&s[n]&&s[n]!='"')n++;
+ char text[40];copy_trim(text,sizeof(text),(const u8*)s,n);
+ if(process_audio_source(text))rebuild_source();
+}
 static void process_audio_line(char*line){if(pref.debug)log_append(FOCUS_LOG,line);if(line[0]=='R'&&line[1]=='X'&&line[2]=='#')process_rx_line(line);else process_decoded_line(line);}
 static void poll_audio(void){if(audiofd<0){audiofd=(int)s_open(FOCUS_BUS,O_RDONLY_|O_NONBLOCK_,0);if(audiofd<0)return;}for(;;){long n=s_read(audiofd,audiobuf,sizeof(audiobuf));if(n<=0){if(n<0){s_close(audiofd);audiofd=-1;audioused=0;}break;}for(long i=0;i<n;i++){char c=audiobuf[i];if(c=='\r'||c=='\n'){if(audioused){audioline[audioused]=0;process_audio_line(audioline);audioused=0;}}else if(audioused+1<sizeof(audioline))audioline[audioused++]=c;else audioused=0;}}}
-static void poll_car(void){char b[256];long fd=s_open(CAR_PATH,O_RDONLY_,0);if(fd<0)return;long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n<=0)return;b[n]=0;for(long i=0;i+5<n;i++)if(b[i]=='t'&&b[i+1]=='e'&&b[i+2]=='m'&&b[i+3]=='p'&&b[i+4]=='='){car.temp=atoi0(b+i+5);car.tempok=1;break;}}
+static void car_read_temperature(const char*b){
+ car.tempok=0;
+ while(*b&&!starts(b,"temp=")){while(*b&&*b!='\n')b++;if(*b)b++;}
+ if(!*b)return;
+ b+=5;
+ while(*b==' '||*b=='\t')b++;
+ int sign=*b=='-'?-1:1;
+ if(*b=='-'||*b=='+')b++;
+ if(*b<'0'||*b>'9')return;
+ int value=0;
+ do{value=value*10+(*b++-'0');if(value>85)return;}while(*b>='0'&&*b<='9');
+ while(*b==' '||*b=='\t')b++;
+ if(*b&&*b!='\r'&&*b!='\n')return;
+ value*=sign;
+ if(car_temp_valid(value)){car.temp=value;car.tempok=1;}
+}
+static void poll_car(void){
+ char b[256];long fd=s_open(CAR_PATH,O_RDONLY_,0);
+ if(fd<0){car.tempok=0;return;}
+ long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);
+ if(n<=0){car.tempok=0;return;}
+ b[n]=0;car_read_temperature(b);
+}
 
 /* DEV5.34 Bluetooth media UI/daemon boundary.
  *
@@ -428,6 +535,8 @@ static void poll_car(void){char b[256];long fd=s_open(CAR_PATH,O_RDONLY_,0);if(f
  *   /tmp/clbtmeta  : KEY=VALUE lines (DEVICE/TITLE/ARTIST/ALBUM/...)
  *   /tmp/clbtcmd   : monotonically sequenced "<n> <COMMAND>" command record
  */
+enum {SCR_MAP=0,SCR_MENU=1,SCR_TRIP=2,SCR_BT=3,SCR_SET=4,SCR_KEY=5};static int screen=SCR_MAP;
+enum {MENU_BODY_Y=42};
 struct BtUi {
   char status[28],device[33],title[193],artist[161],album[161];
   int paired,connected,playing,pos,dur;
@@ -441,16 +550,59 @@ static struct BtNameCache btname_cache[BT_UI_MAX_DEVICES];
 static int nbtdev=0,nbtname_cache=0;
 static int bt_active_written=-1;
 static u32 bt_cmd_seq=1;
+static char bt_forget_addr[18];
+static u32 bt_forget_at;
 /* Temporary remote-control context used only by the normal navigation map. */
 static int bt_control_mode=0;
+enum {BT_TRANSPORT_PREVIOUS=1,BT_TRANSPORT_PLAY_PAUSE,BT_TRANSPORT_NEXT};
+enum {BT_PRESS_MS=420,BT_PLAYBACK_REPLY_MS=1500};
+static struct HudPulse bt_transport_press;
+static int bt_playback_request=-1;
+static u32 bt_playback_requested_at;
 
-static int bt_source_selected(void){return audio_source_live&&streq(af.band,"CD");}
-static void bt_write_small(const char*path,const char*s){long fd=s_open(path,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd>=0){s_write((int)fd,s,slen(s));s_close((int)fd);}}
+static int bt_source_selected(void){return audio_source_detected()&&streq(af.band,"CD");}
+static int bt_controls_available(void){return btui.connected&&bt_source_selected();}
+static int bt_write_small(const char*path,const char*s){
+ long fd=s_open(path,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);
+ if(fd<0)return 0;
+ unsigned length=slen(s);
+ long written=s_write((int)fd,s,length);
+ s_close((int)fd);
+ return written==(long)length;
+}
 static void bt_source_service(void){int on=bt_source_selected();if(on==bt_active_written)return;bt_write_small(BT_ACTIVE_PATH,on?"1\n":"0\n");bt_active_written=on;if(pref.debug)debug_log(STATE_LOG,on?"BT SOURCE ACTIVE (CD)":"BT SOURCE INACTIVE");}
-static void bt_command(const char*cmd){char b[48];b[0]=0;append_int(b,sizeof(b),(int)bt_cmd_seq++);appendstr(b,sizeof(b)," ");appendstr(b,sizeof(b),cmd);appendstr(b,sizeof(b),"\n");bt_write_small(BT_CMD_PATH,b);if(pref.debug){char l[64];l[0]=0;appendstr(l,sizeof(l),"BT CMD ");appendstr(l,sizeof(l),cmd);debug_log(STATE_LOG,l);}}
+static int bt_command(const char*cmd){
+ char record[48]="";
+ append_int(record,sizeof(record),(int)bt_cmd_seq++);
+ appendstr(record,sizeof(record)," ");
+ appendstr(record,sizeof(record),cmd);
+ appendstr(record,sizeof(record),"\n");
+ int written=bt_write_small(BT_CMD_PATH,record);
+ if(pref.debug){
+  char line[64]="BT CMD ";
+  appendstr(line,sizeof(line),cmd);debug_log(STATE_LOG,line);
+ }
+ return written;
+}
+static int bt_transport_playing(u32 now){
+ if(btui.connected&&bt_playback_request>=0&&now-bt_playback_requested_at<BT_PLAYBACK_REPLY_MS)
+  return bt_playback_request;
+ return btui.playing;
+}
+static void bt_transport_command(int button){
+ u32 now=hud_now_ms();
+ hud_pulse_at(&bt_transport_press,button,now,BT_PRESS_MS);
+ if(button==BT_TRANSPORT_PLAY_PAUSE){
+  int play=!bt_transport_playing(now);
+  if(bt_command(play?"PLAY":"PAUSE")&&btui.connected){
+   bt_playback_request=play;
+   bt_playback_requested_at=now;
+  }
+ }else bt_command(button==BT_TRANSPORT_PREVIOUS?"PREV":"NEXT");
+}
 static void bt_command_arg(const char*cmd,const char*arg){char b[80];b[0]=0;append_int(b,sizeof(b),(int)bt_cmd_seq++);appendstr(b,sizeof(b)," ");appendstr(b,sizeof(b),cmd);if(arg&&arg[0]){appendstr(b,sizeof(b)," ");appendstr(b,sizeof(b),arg);}appendstr(b,sizeof(b),"\n");bt_write_small(BT_CMD_PATH,b);if(pref.debug){char l[96];l[0]=0;appendstr(l,sizeof(l),"BT CMD ");appendstr(l,sizeof(l),cmd);if(arg&&arg[0]){appendstr(l,sizeof(l)," ");appendstr(l,sizeof(l),arg);}debug_log(STATE_LOG,l);}}
 static void bt_copy_value(char*d,unsigned cap,const char*s){char b[1024];unsigned i=0;while(s[i]&&s[i]!='\r'&&s[i]!='\n'&&i+1<sizeof(b)){b[i]=s[i];i++;}b[i]=0;copystr(d,cap,b);}
-static int bt_name_unknown(const char*s){return !s||!s[0]||streq(s,"UNKNOWN DEVICE")||streq(s,"PHONE");}
+static int bt_name_unknown(const char*s){return !reading_present(s)||streq(s,"UNKNOWN DEVICE")||streq(s,"PHONE");}
 static int bt_name_cache_idx(const char*addr){for(int i=0;i<nbtname_cache;i++)if(streq(btname_cache[i].addr,addr))return i;return-1;}
 static const char* bt_name_cache_get(const char*addr){int i=bt_name_cache_idx(addr);return i>=0?btname_cache[i].name:0;}
 static void bt_name_cache_remember(const char*addr,const char*name){if(!addr||!addr[0]||bt_name_unknown(name))return;int i=bt_name_cache_idx(addr);if(i<0){if(nbtname_cache>=BT_UI_MAX_DEVICES)return;i=nbtname_cache++;copystr(btname_cache[i].addr,sizeof(btname_cache[i].addr),addr);}copystr(btname_cache[i].name,sizeof(btname_cache[i].name),name);}
@@ -466,16 +618,93 @@ static void bt_parse_meta_line(char*ln){
   if(starts(ln,"POS=")){btui.pos=atoi0(ln+4);if(btui.pos<0)btui.pos=0;return;}
   if(starts(ln,"DUR=")){btui.dur=atoi0(ln+4);if(btui.dur<0)btui.dur=0;return;}
 }
-static void bt_poll_devices(void){nbtdev=0;char b[1280];long fd=s_open(BT_DEVLIST_PATH,O_RDONLY_,0);if(fd<0)return;long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n<=0)return;b[n]=0;char*ln=b;for(long i=0;i<=n&&nbtdev<BT_UI_MAX_DEVICES;i++){if(b[i]=='\r'||b[i]=='\n'||b[i]==0){char save=b[i];b[i]=0;if(starts(ln,"DEV=")){char*p=ln+4,*a=p,*c=0,*nm=0;while(*p&&*p!='|')p++;if(*p=='|'){*p=0;c=p+1;p=c;while(*p&&*p!='|')p++;if(*p=='|'){*p=0;nm=p+1;bt_copy_value(btdev[nbtdev].addr,sizeof(btdev[nbtdev].addr),a);btdev[nbtdev].connected=atoi0(c)?1:0;bt_copy_value(btdev[nbtdev].name,sizeof(btdev[nbtdev].name),nm);if(bt_name_unknown(btdev[nbtdev].name)){const char*cn=bt_name_cache_get(btdev[nbtdev].addr);if(cn)copystr(btdev[nbtdev].name,sizeof(btdev[nbtdev].name),cn);else if(btdev[nbtdev].connected&&!bt_name_unknown(btui.device)){copystr(btdev[nbtdev].name,sizeof(btdev[nbtdev].name),btui.device);bt_name_cache_remember(btdev[nbtdev].addr,btui.device);}}else bt_name_cache_remember(btdev[nbtdev].addr,btdev[nbtdev].name);if(!btdev[nbtdev].name[0])copystr(btdev[nbtdev].name,sizeof(btdev[nbtdev].name),"UNKNOWN DEVICE");nbtdev++;}}}if(!save)break;ln=b+i+1;}}}
+static int bt_poll_devices(void){nbtdev=0;char b[1280];long fd=s_open(BT_DEVLIST_PATH,O_RDONLY_,0);if(fd<0)return 0;long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n<=0)return 0;int complete=b[n-1]=='\n';b[n]=0;char*ln=b;for(long i=0;i<=n&&nbtdev<BT_UI_MAX_DEVICES;i++){if(b[i]=='\r'||b[i]=='\n'||b[i]==0){char save=b[i];b[i]=0;if(starts(ln,"DEV=")){char*p=ln+4,*a=p,*c=0,*nm=0;while(*p&&*p!='|')p++;if(*p=='|'){*p=0;c=p+1;p=c;while(*p&&*p!='|')p++;if(*p=='|'){*p=0;nm=p+1;bt_copy_value(btdev[nbtdev].addr,sizeof(btdev[nbtdev].addr),a);btdev[nbtdev].connected=atoi0(c)?1:0;bt_copy_value(btdev[nbtdev].name,sizeof(btdev[nbtdev].name),nm);if(bt_name_unknown(btdev[nbtdev].name)){const char*cn=bt_name_cache_get(btdev[nbtdev].addr);if(cn)copystr(btdev[nbtdev].name,sizeof(btdev[nbtdev].name),cn);else if(btdev[nbtdev].connected&&!bt_name_unknown(btui.device)){copystr(btdev[nbtdev].name,sizeof(btdev[nbtdev].name),btui.device);bt_name_cache_remember(btdev[nbtdev].addr,btui.device);}}else bt_name_cache_remember(btdev[nbtdev].addr,btdev[nbtdev].name);if(!btdev[nbtdev].name[0])copystr(btdev[nbtdev].name,sizeof(btdev[nbtdev].name),"UNKNOWN DEVICE");nbtdev++;}}}if(!save)break;ln=b+i+1;}}return complete&&starts(b,"COUNT=")&&atoi0(b+6)==nbtdev;}
 static int bt_connected_idx(void){for(int i=0;i<nbtdev;i++)if(btdev[i].connected)return i;return-1;}
 static int bt_saved_count(void){int c=0;for(int i=0;i<nbtdev;i++)if(!btdev[i].connected)c++;return c;}
 static int bt_saved_idx(int ord){for(int i=0;i<nbtdev;i++)if(!btdev[i].connected){if(!ord)return i;ord--;}return-1;}
+static char bt_hud_peer[18];
+static u32 bt_hud_link_at;
+static int bt_hud_link,bt_hud_reported;
+static void bt_hud_status(const char*before,u32 now,int devices_complete){
+ int idx=bt_connected_idx();
+ const char*peer=idx>=0?btdev[idx].addr:"";
+ if(btui.connected){
+  if(!bt_hud_link||(peer[0]&&bt_hud_peer[0]&&!streq(peer,bt_hud_peer))){
+   bt_hud_link_at=now;bt_hud_reported=0;hud_connection.kind=HUD_NONE;
+  }
+  bt_hud_link=1;
+  if(peer[0])copystr(bt_hud_peer,sizeof(bt_hud_peer),peer);
+  const char*name=idx>=0&&!bt_name_unknown(btdev[idx].name)?btdev[idx].name:btui.device;
+  if(!bt_name_unknown(name)){
+   if(bt_hud_reported<2){
+    copystr(hud_connected_name,sizeof(hud_connected_name),name);
+    hud_pulse_at(&hud_connection,HUD_CONNECTION,now,3200);bt_hud_reported=2;
+   }
+  }else if(!bt_hud_reported&&now-bt_hud_link_at>=1000u){
+   hud_connected_name[0]=0;
+   hud_pulse_at(&hud_connection,HUD_CONNECTION,now,3200);bt_hud_reported=1;
+  }
+ }else{
+  if(bt_hud_link){hud_connection.kind=HUD_NONE;hud_bt_notice(ui_tr("Disconnected"));}
+  bt_hud_link=0;bt_hud_peer[0]=0;
+ }
+ if(bt_forget_addr[0]){
+  if(now-bt_forget_at>=5000u)bt_forget_addr[0]=0;
+  else if(devices_complete&&streq(btui.status,"BT DEVICE FORGOTTEN")){
+   int i=0;while(i<nbtdev&&!streq(btdev[i].addr,bt_forget_addr))i++;
+   if(i==nbtdev){bt_forget_addr[0]=0;hud_bt_notice(ui_tr("Device forgotten"));}
+  }
+ }
+ if(!streq(before,btui.status)){
+  if((starts(before,"BT PAIRING")&&streq(hud_bt_text,ui_tr("Pairing phone")))||
+     (streq(before,"BT RECONNECTING")&&streq(hud_bt_text,ui_tr("Reconnecting"))))hud_bt_feedback.kind=HUD_NONE;
+  if(starts(btui.status,"BT PAIRING"))hud_bt_notice(ui_tr("Pairing phone"));
+  else if(streq(btui.status,"BT RECONNECTING")&&screen==SCR_BT)hud_bt_notice(ui_tr("Reconnecting"));
+ }
+}
+static void bt_forget_device(const char*addr){
+ copystr(bt_forget_addr,sizeof(bt_forget_addr),addr);bt_forget_at=hud_now_ms();
+ bt_command_arg("UNPAIR",addr);
+}
 static void bt_poll_status(void){
-  char b[1024];long fd=s_open(BT_STATUS_PATH,O_RDONLY_,0);if(fd<0){copystr(btui.status,sizeof(btui.status),"BT DAEMON OFFLINE");btui.connected=0;btui.playing=0;return;}long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n<=0){copystr(btui.status,sizeof(btui.status),"BT WAIT PHONE");return;}b[n]=0;bt_copy_value(btui.status,sizeof(btui.status),b);
+  char before[sizeof(btui.status)];copystr(before,sizeof(before),btui.status);
+  int was_playing=btui.playing;
+  char b[1024];long fd=s_open(BT_STATUS_PATH,O_RDONLY_,0);
+  if(fd>=0){
+   long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);
+   if(n<=0)return;
+   b[n]=0;bt_copy_value(btui.status,sizeof(btui.status),b);
+  }else copystr(btui.status,sizeof(btui.status),"BT DAEMON OFFLINE");
+  if(fd<0||!reading_present(btui.status)||streq(btui.status,"BT DISCONNECTED")){
+   btui.connected=0;btui.playing=0;bt_playback_request=-1;
+   btui.device[0]=btui.title[0]=btui.artist[0]=btui.album[0]=0;btui.pos=btui.dur=0;
+   for(int i=0;i<nbtdev;i++)btdev[i].connected=0;
+   bt_hud_link=0;bt_hud_peer[0]=0;hud_connection.kind=hud_bt_feedback.kind=HUD_NONE;
+   return;
+  }
   if(starts(btui.status,"BT STREAMING")){btui.connected=1;btui.paired=1;btui.playing=1;}
   else if(starts(btui.status,"BT CONNECTED")||starts(btui.status,"BT OPEN")||starts(btui.status,"BT BUFFERING")||starts(btui.status,"BT PAUSED")){btui.connected=1;btui.paired=1;if(starts(btui.status,"BT PAUSED"))btui.playing=0;}
   else{btui.connected=0;btui.playing=0;btui.title[0]=0;btui.artist[0]=0;btui.album[0]=0;btui.pos=btui.dur=0;}
-  fd=s_open(BT_META_PATH,O_RDONLY_,0);if(fd>=0){n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n>0){b[n]=0;char*ln=b;for(long i=0;i<=n;i++){if(b[i]=='\r'||b[i]=='\n'||b[i]==0){char save=b[i];b[i]=0;if(ln[0])bt_parse_meta_line(ln);if(!save)break;ln=b+i+1;}}}}bt_poll_devices();
+  fd=s_open(BT_META_PATH,O_RDONLY_,0);
+  if(fd>=0){
+   long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);
+   if(n>0){
+    b[n]=0;char*line=b;
+    for(long i=0;i<=n;i++)if(b[i]=='\r'||b[i]=='\n'||b[i]==0){
+     char end=b[i];b[i]=0;
+     if(line[0])bt_parse_meta_line(line);
+     if(!end)break;
+     line=b+i+1;
+    }
+   }
+  }
+  int devices_complete=bt_poll_devices();
+  if(!btui.connected)btui.device[0]=0;
+  u32 now=hud_now_ms();
+  /* Hold the requested icon through stale reports, then trust the phone again. */
+  if(!btui.connected||now-bt_playback_requested_at>=BT_PLAYBACK_REPLY_MS||
+     (btui.playing!=was_playing&&btui.playing==bt_playback_request))bt_playback_request=-1;
+  bt_hud_status(before,now,devices_complete);
 }
 static const char* bt_action_label(void){if(btui.connected)return"DISCONNECT PHONE";if(btui.paired)return"RECONNECT PHONE";return"PAIR PHONE";}
 static void bt_action_connection(void){if(btui.connected)bt_command("DISCONNECT");else if(btui.paired)bt_command("CONNECT");else bt_command("PAIR");}
@@ -555,14 +784,14 @@ static s32 view_lat(void){return freecam?cam_lat:car_lat();}static s32 view_lon(
 static int view_course_valid(void){if(freecam_anim_mode==FC_ANIM_TO_CAR)return freecam_course_valid;return freecam?freecam_course_valid:display_course_valid;}
 static int view_course(void){if(freecam_anim_mode==FC_ANIM_TO_CAR&&freecam_course_valid)return freecam_course;return freecam&&freecam_course_valid?freecam_course:map_course();}
 static int view_rotates(void){return view_course_valid();}
+#define MAP_TOP 0
+#define MAP_BOTTOM H
+#define HUD_BOTTOM_Y 220
 #define MAP_ANCHOR_X 240
 #define FREECAM_ANCHOR_Y 160
-#define DRIVE_ANCHOR_Y 224
-/* The extra 24 px freed by REV14 makes room for a lower driving anchor.
- * In REV16 the car sits at y=224, still 18 px above the y=242 driver strip.
- * During the existing five-frame Freecam orientation/tilt transition, also
- * interpolate the camera's vertical anchor: no position snap on mode changes.
- * The inverse tile-coverage calculation shares this same animated anchor. */
+#define DRIVE_ANCHOR_Y 211
+/* Keep the car clear of the floating lower cards. The inverse coverage
+ * calculation uses the same animated anchor. */
 static int view_anchor_y(void){
   if(freecam_anim_mode!=FC_ANIM_NONE){
     int q=map_tilt_q8;
@@ -581,7 +810,9 @@ static int view_anchor_y(void){
 /* Keep the full projected footprint within the 96-entry tile cache even
  * after moving the camera 20 px lower.  A slightly higher horizon offset
  * avoids excessive far-field tile requests without losing the view ahead. */
-#define PERSPECTIVE_BASE 536u
+/* A gentler far-field compression keeps the tile footprint close to the old
+ * inset viewport after revealing the map behind the former header. */
+#define PERSPECTIVE_BASE 620u
 #define PERSPECTIVE_LUT_MAX 4096
 #define PERSPECTIVE_LUT_STEP 4
 #define PERSPECTIVE_LUT_SIZE (PERSPECTIVE_LUT_MAX/PERSPECTIVE_LUT_STEP+1)
@@ -639,7 +870,7 @@ static void screen_to_world_coverage(int sx,int sy,int z,s32*lat,s32*lon){
 }
 static void map_visible_tile_bounds(int z,int sourcez,int*tx0,int*tx1,int*ty0,int*ty1){
   s32 minlat=0x7fffffff,maxlat=(-2147483647-1),minlon=0x7fffffff,maxlon=(-2147483647-1);
-  const int xs[2]={-24,W+24},ys[3]={32,view_anchor_y(),256};
+  const int xs[2]={-24,W+24},ys[3]={MAP_TOP-8,view_anchor_y(),MAP_BOTTOM+8};
   for(int i=0;i<3;i++)for(int j=0;j<2;j++){
     s32 lat,lon;screen_to_world_coverage(xs[j],ys[i],z,&lat,&lon);
     if(lat<minlat)minlat=lat;if(lat>maxlat)maxlat=lat;
@@ -667,7 +898,6 @@ static int map_view_covered(s32 lat,s32 lon){
 }
 static void road_style(int cls,u16*col,int*wid){switch(cls){case 1:*col=C_CYAN;*wid=4;break;case 2:*col=C_BLUE;*wid=3;break;case 3:*col=C_WHITE;*wid=3;break;case 4:*col=C_MUTED;*wid=2;break;case 5:*col=C_DIM;*wid=2;break;default:*col=C_ROAD;*wid=1;break;}}
 static void geom_style(int layer,int style,u16*col,int*wid){if(layer==0){road_style(style,col,wid);return;}if(layer==1){*col=C_WATER;*wid=style==1?2:1;return;}if(layer==2){*col=C_GREEN;*wid=1;return;}*col=C_BLUE;*wid=1;}
-#define MAP_STRIP_Y 242
 #include "map_raster.h"
 /* Keep road/route vertices below pixel precision until rasterization. The
  * driving camera and route engine are unchanged; only drawing gains precision. */
@@ -686,7 +916,7 @@ static void map_project_q8(s32 lat,s32 lon,int z,int*ox,int*oy){
 }
 
 /* The top-centred journey/zoom card reserves only its actual footprint. */
-static int nav_card_x=0,nav_card_w=0,nav_card_h=0;
+static int nav_card_x=0,nav_card_y=0,nav_card_w=0,nav_card_h=0;
 /* Existing CPM packs store boundary polylines. Only fill a complete closed
  * water/green ring; clipped/open fragments and river centre lines stay lines.
  * This deliberately needs no map rebuild and does not guess missing topology.
@@ -705,7 +935,7 @@ static void draw_closed_area(struct Tile*t,int span,int layer,int style,int np,c
   style&=127;
   if(!MAP_AREA_FILLS||np<4||np>255||(layer!=2&&!(layer==1&&(style==4||style==5))))return;
   if(rd16(p)!=rd16(p+(np-1)*4)||rd16(p+2)!=rd16(p+(np-1)*4+2))return;
-  struct MapAreaEdge edges[254];int ne=0,lo=MAP_STRIP_Y,hi=40;
+  struct MapAreaEdge edges[254];int ne=0,lo=MAP_BOTTOM,hi=MAP_TOP;
   int x0=0,y0=0;
   for(int i=0;i<np;i++){
     s32 lon=(s32)t->tx*span+((s32)rd16(p+i*4)*span)/4095;
@@ -714,7 +944,7 @@ static void draw_closed_area(struct Tile*t,int span,int layer,int style,int np,c
     if(i&&y0!=y1){
       int ax=x0,ay=y0,bx=x1,by=y1;
       if(ay>by){int tmp=ax;ax=bx;bx=tmp;tmp=ay;ay=by;by=tmp;}
-      int first=ay<40?40:ay,last=by>MAP_STRIP_Y?MAP_STRIP_Y:by;
+      int first=ay<MAP_TOP?MAP_TOP:ay,last=by>MAP_BOTTOM?MAP_BOTTOM:by;
       if(first<last){
         int dy=by-ay,dx=bx-ax,numerator=dx*(2*first+1-2*ay),denominator=2*dy;
         int whole=numerator/denominator,remain=numerator%denominator;
@@ -803,9 +1033,33 @@ static struct LBox lbox[LABEL_BOXES];static int nlbox=0;
 static char ltxt[LABEL_TEXTS][113];static int nltxt=0;
 static int label_text_seen(const char*s){for(int i=0;i<nltxt;i++)if(streq(ltxt[i],s))return 1;return 0;}
 static void label_text_add(const char*s){if(nltxt<LABEL_TEXTS)copystr(ltxt[nltxt++],29,s);}
-static int label_free(int x0,int y0,int x1,int y1){if(x0<4||x1>W-4||y1<43||y1>MAP_STRIP_Y-3)return 0;if(nav_card_w>0&&x1>=nav_card_x-3&&x0<=nav_card_x+nav_card_w+3&&y1>=45&&y0<=48+nav_card_h+3)return 0;for(int i=0;i<nlbox;i++)if(!(x1<lbox[i].x0||x0>lbox[i].x1||y1<lbox[i].y0||y0>lbox[i].y1))return 0;if(nlbox<LABEL_BOXES){lbox[nlbox].x0=x0;lbox[nlbox].y0=y0;lbox[nlbox].x1=x1;lbox[nlbox].y1=y1;nlbox++;}return 1;}
+static int label_free(int x0,int y0,int x1,int y1){
+ if(x0<4||x1>W-4||y1<MAP_TOP+3||y1>MAP_BOTTOM-3)return 0;
+ if(x1>=350&&y0<=38)return 0; /* clock and temperature */
+ if(!freecam&&y1>=HUD_BOTTOM_Y-2)return 0;
+ if(freecam&&x1>=390&&y1>=HUD_BOTTOM_Y+5)return 0;
+ if(nav_card_w&&x1>=nav_card_x-3&&x0<=nav_card_x+nav_card_w+3&&y1>=nav_card_y-3&&y0<=nav_card_y+nav_card_h+3)return 0;
+ for(int i=0;i<nlbox;i++)if(!(x1<lbox[i].x0||x0>lbox[i].x1||y1<lbox[i].y0||y0>lbox[i].y1))return 0;
+ if(nlbox<LABEL_BOXES){lbox[nlbox].x0=x0;lbox[nlbox].y0=y0;lbox[nlbox].x1=x1;lbox[nlbox].y1=y1;nlbox++;}
+ return 1;
+}
 static u16 label_color(int kind){if(kind==3)return C_CYAN;if(kind==4)return C_WHITE;if(kind==5)return C_MUTED;if(kind>=6)return C_WARN;if(kind==1)return C_WHITE;return C_MUTED;}
-static void poi_icon(int kind,int x,int y){u16 c=kind==6?C_WARN:(kind==8?C_WHITE:C_MUTED);if(kind==6){fill(x-4,y-5,7,9,C_PANEL2);rect(x-4,y-5,7,9,c);fill(x-2,y-3,3,2,c);line1(x+3,y-2,x+6,y+1,c,1);line1(x+6,y+1,x+6,y+5,c,1);}else if(kind==8){fill(x-5,y-1,11,3,c);fill(x-1,y-5,3,11,c);}else{rect(x-5,y-6,11,12,c);text(x-3,y-5,"P",c,1);}}
+static void poi_icon(int kind,int x,int y){
+ if(kind==6){
+  round_rect(x-4,y-5,7,9,2,C_WARN,15);
+  round_rect(x-3,y-4,5,7,1,C_PANEL2,15);
+  round_rect(x-2,y-3,3,2,1,C_WARN,15);
+  map_line(x+3,y-2,x+6,y+1,C_WARN,1);
+  map_line(x+6,y+1,x+6,y+5,C_WARN,1);
+ }else if(kind==8){
+  round_rect(x-5,y-1,11,3,1,C_WHITE,15);
+  round_rect(x-1,y-5,3,11,1,C_WHITE,15);
+ }else{
+  round_rect(x-5,y-6,11,12,2,C_MUTED,15);
+  round_rect(x-4,y-5,9,10,1,C_PANEL2,15);
+  centered(x,y-8,0,"P",C_MUTED);
+ }
+}
 static void draw_tile_labels(struct Tile*t,int viewz,int plo,int phi){if(mapfmt<2||!t)return;const u8*p=t->data,*end=t->data+t->len;int hs=mapfmt>=3?8:4;if(t->len<(u32)hs)return;u16 ng=rd16(p),nl=rd16(p+2);p+=hs;for(u16 f=0;f<ng&&p+4<=end;f++){int np=p[2];p+=4+(unsigned)np*4;if(p>end)return;}int span=span_for_level((int)t->lvl);for(u16 i=0;i<nl&&p+8<=end;i++){int kind=p[0],prio=p[1];u16 lx=rd16(p+2),ly=rd16(p+4);int tl=p[6];p+=8;if(p+tl>end)return;if(prio>=plo&&prio<=phi&&tl>0&&tl<113){char b[113];int n=tl;for(int j=0;j<n;j++)b[j]=(char)p[j];b[n]=0;s32 lon=(s32)t->tx*span+((s32)lx*span)/4095;s32 lat=(s32)t->ty*span+((s32)ly*span)/4095;int x,y;world_to_screen(lat,lon,viewz,&x,&y);if(!freecam)drive_label_offer(x,y,kind,prio,b);else if(kind>=6){if(label_free(x-8,y-8,x+8,y+8))poi_icon(kind,x,y);}else{int w=textw(b,1),x0=x-w/2,y0=y-6;if(!label_text_seen(b)&&label_free(x0-2,y0-2,x0+w+2,y0+14)){u16 c=label_color(kind);text(x0+1,y0+1,b,C_BG,1);text(x0,y0,b,c,1);label_text_add(b);}}}p+=tl;}}
 
 /* Current road context: at Z6 each road geometry may reference tile-local
@@ -1773,7 +2027,7 @@ static void draw_route_overlay(int z){
  map_mask_begin(2);
  for(int i=s;i<=e;i++){
   map_project_q8(route_lat[i],route_lon[i],z,&x[n],&y[n]);
-  int visible=!((x[n-1]<-20*256&&x[n]<-20*256)||(x[n-1]>(W+20)*256&&x[n]>(W+20)*256)||(y[n-1]<35*256&&y[n]<35*256)||(y[n-1]>(MAP_STRIP_Y+3)*256&&y[n]>(MAP_STRIP_Y+3)*256));
+  int visible=!((x[n-1]<-20*256&&x[n]<-20*256)||(x[n-1]>(W+20)*256&&x[n]>(W+20)*256)||(y[n-1]<(MAP_TOP-3)*256&&y[n]<(MAP_TOP-3)*256)||(y[n-1]>(MAP_BOTTOM+3)*256&&y[n]>(MAP_BOTTOM+3)*256));
   if(visible&&!freecam&&ndrive_route_segs<DRIVE_ROUTE_SEGS&&x[n-1]>-2048*256&&x[n-1]<2048*256&&y[n-1]>-2048*256&&y[n-1]<2048*256&&x[n]>-2048*256&&x[n]<2048*256&&y[n]>-2048*256&&y[n]<2048*256){
    struct DriveRouteSeg*r=&drive_route_segs[ndrive_route_segs++];r->x0=(s16)(x[n-1]>>8);r->y0=(s16)(y[n-1]>>8);r->x1=(s16)(x[n]>>8);r->y1=(s16)(y[n]>>8);
   }
@@ -1890,45 +2144,6 @@ static void drive_label_render(void){
 }
 static void append_miles_hud(char*b,unsigned cap,u32 m){if(!display_imperial()){append_metric_distance(b,cap,m,0);return;}u32 mi10=udiv32(m*10u+804u,1609u);if(mi10>=100u){append_int(b,cap,(int)udiv32(mi10+5u,10u));appendstr(b,cap,"MI");}else{append_int(b,cap,(int)(mi10/10u));appendstr(b,cap,".");char d[2]={(char)('0'+mi10%10u),0};appendstr(b,cap,d);appendstr(b,cap,"MI");}}
 static void append_eta_hud(char*b,unsigned cap,u32 ds){u32 min=udiv32(ds+300u,600u);if(min>=60u){append_int(b,cap,(int)(min/60u));appendstr(b,cap,"H");if(min%60u<10u)appendstr(b,cap,"0");append_int(b,cap,(int)(min%60u));}else{append_int(b,cap,(int)min);appendstr(b,cap,"M");}}
-/* REV15: one centred, single-line navigation card replaces the lower-right
- * zoom badge. Build once before map labels so the collision filter knows the
- * real card bounds, including the width of the active route text. */
-static char nav_journey[160],nav_zoom[48];
-static u16 nav_journey_col,nav_zoom_col;
-static int nav_calc=0;
-static void nav_status_prepare(int z){
- nav_journey[0]=nav_zoom[0]=0;nav_calc=0;nav_journey_col=C_WHITE;nav_zoom_col=C_CYAN;
- if(freecam)appendstr(nav_zoom,sizeof(nav_zoom),ui_tr("Explore"));
- else if(pref.autozoom&&zoom_override>=0){appendstr(nav_zoom,sizeof(nav_zoom),ui_tr("Adjusted"));nav_zoom_col=C_WARN;}
- else appendstr(nav_zoom,sizeof(nav_zoom),pref.autozoom?ui_tr("Auto"):ui_tr("Manual"));
- if(pref.debug){appendstr(nav_zoom,sizeof(nav_zoom)," Z");append_int(nav_zoom,sizeof(nav_zoom),z);}
- if(route_status==R_READY&&route_n-route_head>1){
-  appendstr(nav_journey,sizeof(nav_journey),"~");
-  u32 min=udiv32(sat_add32(sat_add32(route_result_cost,atlas_future_cost),300u),600u);
-  if(min>=60u){append_int(nav_journey,sizeof(nav_journey),min/60u);appendstr(nav_journey,sizeof(nav_journey),"h ");min%=60u;}
-  append_int(nav_journey,sizeof(nav_journey),min);appendstr(nav_journey,sizeof(nav_journey)," min  ");
-  append_miles_hud(nav_journey,sizeof(nav_journey),route_path_m());
-  for(char*p=nav_journey;*p;p++){if(*p=='M')*p='m';else if(*p=='I')*p='i';else if(*p=='K')*p='k';}
- }else if(route_status==R_CALC){copystr(nav_journey,sizeof(nav_journey),route_dest_idx>0?ui_tr("Trying nearby road"):(route_rerouting?ui_tr("Rerouting"):ui_tr("Calculating route")));nav_calc=1;}
- else if(route_status==R_NOFILE){copystr(nav_journey,sizeof(nav_journey),ui_tr("Routing data missing"));nav_journey_col=C_WARN;}
- else if(route_status>=R_NOROAD){const char*m=route_status==R_NOROAD?ui_tr("No road near point"):(route_status==R_UNREACHABLE?ui_tr("No connected route"):(route_status==R_MEMORY?ui_tr("Routing memory full"):ui_tr("Routing data error")));copystr(nav_journey,sizeof(nav_journey),m);nav_journey_col=C_WARN;}
- int tw=width(nav_zoom,0);if(nav_journey[0])tw+=width(nav_journey,1)+16;
- nav_card_w=tw+16;if(nav_card_w<64)nav_card_w=64;if(nav_card_w>W-16)nav_card_w=W-16;
- nav_card_x=(W-nav_card_w)/2;nav_card_h=nav_calc?30:24;
-}
-static int map_notice_error_active(void);
-static const char* map_notice_error_text(void);
-static void draw_route_status(void){
- int y=48;
- if(map_notice_error_active()){const char*msg=map_notice_error_text();int w=width(msg,0)+24;if(w<150)w=150;if(w>W-16)w=W-16;ui_surface((W-w)/2,y,w,24,C_PANEL2);compact_center(240,y+5,w-16,0,msg,C_WARN);return;}
- ui_surface(nav_card_x,y,nav_card_w,nav_card_h,C_PANEL2);
- int lw=nav_journey[0]?width(nav_journey,1):0,zw=width(nav_zoom,0),total=lw+(lw?16:0)+zw;
- int x=nav_card_x+(nav_card_w-total)/2;
- if(lw){label(x,y+4,1,nav_journey,nav_journey_col,lw);x+=lw;fill(x+7,y+6,1,12,C_BORDER);x+=16;}
- label(x,y+5,0,nav_zoom,nav_zoom_col,zw);
- if(nav_calc){int barx=nav_card_x+10,barw=nav_card_w-20,travel=barw-36;if(travel<1)travel=1;u32 phase=(ui_anim_tick*8u)%(u32)(travel*2);int off=(int)(phase<=(u32)travel?phase:(u32)(travel*2)-phase);fill(barx,y+23,barw,2,C_BORDER);fill(barx+off,y+23,36,2,C_CYAN);}
-}
-
 static int freecam_transition_active(void){return freecam_anim_mode!=FC_ANIM_NONE;}
 /* Hard recenter is reserved for programmatic state changes (arrival/trip/etc.).
  * User MAP toggling uses leave_freecam() below so it gets the reverse animation. */
@@ -1966,10 +2181,34 @@ static int pan_step_for_zoom(int z){if(z<=6)return 80<<(6-z);z-=6;return 80>>z;}
  * the screen rather than suddenly becoming world-north/world-east controls. */
 static s32 freecam_east_to_lon(s32 east,int cq){if(!east)return 0;if(cq<=0)return east;u32 a=(u32)(east<0?-east:east);u32 q=udiv32((a<<15)+(u32)(cq>>1),(u32)cq);return east<0?-(s32)q:(s32)q;}
 static void pan_freecam(int code){if(!gps.fix&&!freecam&&!track_valid)return;enter_freecam();if(!freecam)return;int z=active_zoom();int step=pan_step_for_zoom(z);if(step<1)step=1;int course=freecam_course_valid?freecam_course:0;int k=((course+5)/10)%36;int ss=SIN36[k],c=COS36[k];s32 de=0,dn=0;if(code==103){de=(s32)(((s32)step*ss)>>15);dn=(s32)(((s32)step*c)>>15);}else if(code==108){de=-(s32)(((s32)step*ss)>>15);dn=-(s32)(((s32)step*c)>>15);}else if(code==106){de=(s32)(((s32)step*c)>>15);dn=-(s32)(((s32)step*ss)>>15);}else if(code==105){de=-(s32)(((s32)step*c)>>15);dn=(s32)(((s32)step*ss)>>15);}int cq=coslat_q15(cam_lat);cam_lat+=dn;if(cam_lat>8500000)cam_lat=8500000;if(cam_lat< -8500000)cam_lat=-8500000;cam_lon=lon_delta(cam_lon+freecam_east_to_lon(de,cq));}
-static void fill_car_triangle(int nx,int ny,int lx,int ly,int rx,int ry){for(int i=0;i<=12;i++){int x0=lx+((nx-lx)*i)/12,y0=ly+((ny-ly)*i)/12;int x1=rx+((nx-rx)*i)/12,y1=ry+((ny-ry)*i)/12;line1(x0,y0,x1,y1,C_CAR,1);}}
-static void draw_car_marker(int z){if(!gps.fix)return;int cx,cy;world_to_screen(car_lat(),car_lon(),z,&cx,&cy);if(cx<-15||cx>W+15||cy<35||cy>250)return;int carc=map_course(),vc=view_course();int rel=view_rotates()?carc-vc:carc;while(rel<0)rel+=360;while(rel>=360)rel-=360;int k=((rel+5)/10)%36,ss=SIN36[k],c=COS36[k];int nx=cx+(ss*10>>15),ny=cy-(c*10>>15);int lx=cx+((-c*7)>>15),ly=cy+((-ss*7)>>15);int rx=cx+((c*7)>>15),ry=cy+((ss*7)>>15);fill_car_triangle(nx,ny,lx,ly,rx,ry);map_mask_begin(3);map_line(nx,ny,lx,ly,C_CAR,2);map_line(nx,ny,rx,ry,C_CAR,2);map_line(lx,ly,rx,ry,C_CAR,2);map_mask_end();}
-static void draw_explore_crosshair(void){if(!freecam)return;int x=240,y=160;line1(x-12,y,x-4,y,C_DIM,1);line1(x+4,y,x+12,y,C_DIM,1);line1(x,y-12,x,y-4,C_DIM,1);line1(x,y+4,x,y+12,C_DIM,1);rect(x-2,y-2,5,5,C_DIM);}
-static void draw_map_geometry(int z){fill(0,40,W,MAP_STRIP_Y-40,C_BG);if(!mapok){text_center(240,116,ui_tr("Map data missing"),C_MUTED,1);text_center(240,134,gps.fix?ui_tr("GPS active"):ui_tr("Acquiring GPS"),gps.fix?C_CYAN:C_WARN,1);return;}if(!gps.fix&&!freecam&&!track_valid){text_center(240,125,ui_tr("Acquiring GPS"),C_WARN,1);return;}s32 vl=view_lat(),vo=view_lon();if(!map_view_covered(vl,vo)){text_center(240,116,ui_tr("Outside map area"),C_MUTED,1);return;}int sourcez=z>6?6:clamp_map_zoom(z),tx0,tx1,ty0,ty1;
+static void fill_car_triangle(int nx,int ny,int lx,int ly,int rx,int ry){
+ const int x[3]={nx,lx,rx},y[3]={ny,ly,ry};
+ struct {int top,bottom,x,step;} edges[3];
+ int count=0,first=MAP_BOTTOM,last=MAP_TOP;
+ for(int i=0;i<3;i++){
+  int a=i,b=(i+1)%3;
+  if(y[a]==y[b])continue;
+  if(y[a]>y[b]){int swap=a;a=b;b=swap;}
+  edges[count].top=y[a];edges[count].bottom=y[b];edges[count].x=x[a]*4096;
+  edges[count++].step=(x[b]-x[a])*4096/(y[b]-y[a]);
+  if(y[a]<first)first=y[a];if(y[b]>last)last=y[b];
+ }
+ if(first<MAP_TOP)first=MAP_TOP;if(last>MAP_BOTTOM)last=MAP_BOTTOM;
+ for(int row=first;row<last;row++){
+  int cuts[2],steps[2],n=0;
+  for(int i=0;i<count&&n<2;i++)if(row>=edges[i].top&&row<edges[i].bottom){
+   steps[n]=edges[i].step;
+   cuts[n++]=edges[i].x+edges[i].step*(row-edges[i].top)+edges[i].step/2;
+  }
+  if(n==2){
+   int a=cuts[0]>cuts[1];
+   map_area_span(row,cuts[a],cuts[1-a],steps[a],steps[1-a],C_CAR);
+  }
+ }
+}
+static void draw_car_marker(int z){if(!gps.fix)return;int cx,cy;world_to_screen(car_lat(),car_lon(),z,&cx,&cy);if(cx<-15||cx>W+15||cy<MAP_TOP-12||cy>MAP_BOTTOM+12)return;int carc=map_course(),vc=view_course();int rel=view_rotates()?carc-vc:carc;while(rel<0)rel+=360;while(rel>=360)rel-=360;int k=((rel+5)/10)%36,ss=SIN36[k],c=COS36[k];int nx=cx+(ss*10>>15),ny=cy-(c*10>>15);int lx=cx+((-c*7)>>15),ly=cy+((-ss*7)>>15);int rx=cx+((c*7)>>15),ry=cy+((ss*7)>>15);fill_car_triangle(nx,ny,lx,ly,rx,ry);map_mask_begin(3);map_line(nx,ny,lx,ly,C_CAR,2);map_line(nx,ny,rx,ry,C_CAR,2);map_line(lx,ly,rx,ry,C_CAR,2);map_mask_end();}
+static void draw_explore_crosshair(void){if(!freecam)return;int x=240,y=160;map_line(x-12,y,x-4,y,C_DIM,1);map_line(x+4,y,x+12,y,C_DIM,1);map_line(x,y-12,x,y-4,C_DIM,1);map_line(x,y+4,x,y+12,C_DIM,1);rect(x-2,y-2,5,5,C_DIM);}
+static void draw_map_geometry(int z){fill(0,MAP_TOP,W,MAP_BOTTOM-MAP_TOP,C_BG);if(!mapok){text_center(240,116,ui_tr("Map data missing"),C_MUTED,1);text_center(240,134,gps.fix?ui_tr("GPS active"):ui_tr("Acquiring GPS"),gps.fix?C_CYAN:C_WARN,1);return;}if(!gps.fix&&!freecam&&!track_valid){text_center(240,125,ui_tr("Acquiring GPS"),C_WARN,1);return;}s32 vl=view_lat(),vo=view_lon();if(!map_view_covered(vl,vo)){text_center(240,116,ui_tr("Outside map area"),C_MUTED,1);return;}int sourcez=z>6?6:clamp_map_zoom(z),tx0,tx1,ty0,ty1;
   map_visible_tile_bounds(z,sourcez,&tx0,&tx1,&ty0,&ty1);
   /* Ocean polygons retain close-zoom precision in shared Z0..Z3 tiles.
    * Reuse Z3 at closer zooms to avoid millions of redundant offshore tiles.
@@ -1999,83 +2238,8 @@ static void draw_map_geometry(int z){fill(0,40,W,MAP_STRIP_Y-40,C_BG);if(!mapok)
       if(map_tile_in_pack(sourcez,tx,ty))draw_tile_labels(get_tile((u8)sourcez,tx,ty),z,cuts[b],cuts[b+1]-1);
   }}
 
-/* DEV5.35 global information header.  The left side is a two-line source/
- * metadata region; the right side is three equal-width, centre-aligned cells.
- * Header metadata is always constrained to x<285 so it cannot collide with
- * volume, temperature or time. */
-#define HDR_META_X 64
-#define HDR_META_END 285
-#define HDR_VOL_CX 317
-#define HDR_TEMP_CX 382
-#define HDR_TIME_CX 447
-static void header(void){
-  fill(0,0,W,40,C_HEADER);fill(0,39,W,1,C_SHADOW);
-  char source[64],primary[193],secondary[96];source[0]=primary[0]=secondary[0]=0;
-  if(streq(af.band,"CD")){
-    copystr(source,sizeof(source),bt_source_label());
-    if(btui.title[0])copystr(primary,sizeof(primary),btui.title);
-    else if(btui.connected)copystr(primary,sizeof(primary),ui_tr("No track information"));
-    else copystr(primary,sizeof(primary),bt_label());
-    if(btui.artist[0])appendstr(secondary,sizeof(secondary),btui.artist);
-    if(btui.album[0]){if(secondary[0])appendstr(secondary,sizeof(secondary)," - " );appendstr(secondary,sizeof(secondary),btui.album);}
-  }else if(streq(af.band,"FM")||streq(af.band,"MW")||streq(af.band,"LW")){
-    copystr(source,sizeof(source),af.band);
-    if(af.station[0])copystr(primary,sizeof(primary),af.station);
-    else if(af.freq[0])copystr(primary,sizeof(primary),af.freq);
-    else copystr(primary,sizeof(primary),car.source[0]?car.source:ui_tr("Radio"));
-    if(af.station[0]&&af.freq[0])copystr(secondary,sizeof(secondary),af.freq);
-  }else if(streq(af.band,"AUX")){copystr(source,sizeof(source),"AUX");}
-  else{copystr(source,sizeof(source),af.band[0]?af.band:"--");copystr(primary,sizeof(primary),car.source[0]?car.source:"--");}
-  /* A rich Bluetooth context earns the two-line metadata layout. Otherwise
-   * keep the audio content vertically centred, but preserve the exact same
-   * horizontal columns: source/status at x=8 and metadata at HDR_META_X.
-   * This prevents the left block shifting sideways as its content changes. */
-  int rich_bt=streq(af.band,"CD")&&(bt_control_mode||btui.title[0]||btui.artist[0]||btui.album[0]);
-  if(streq(af.band,"CD")){
-    if(bt_control_mode){
-      compact_fit(8,5,52,0,source,C_CYAN);
-      label(8,22,0,ui_tr("CTRL"),C_CYAN,52);
-    }else{
-      char badge[16];copystr(badge,sizeof(badge),source);appendstr(badge,sizeof(badge)," ");
-      appendstr(badge,sizeof(badge),!btui.connected?"--":(btui.playing?">":"II"));
-      compact_center(34,13,52,0,badge,C_CYAN);
-    }
-  }
-  if(rich_bt){
-    compact_fit(HDR_META_X,3,HDR_META_END-HDR_META_X-4,1,primary,C_WHITE);
-    compact_fit(HDR_META_X,22,HDR_META_END-HDR_META_X-4,0,secondary,C_MUTED);
-  }else{
-    char single[320];single[0]=0;
-    if(primary[0])appendstr(single,sizeof(single),primary);
-    if(secondary[0]){if(single[0])appendstr(single,sizeof(single),"  ");appendstr(single,sizeof(single),secondary);}
-    if(!streq(af.band,"CD"))label(8,12,0,source,C_CYAN,52);
-    if(single[0])compact_fit(HDR_META_X,11,HDR_META_END-HDR_META_X-4,1,single,C_WHITE);
-  }
-  compact_center(HDR_VOL_CX,12,58,0,car.volume[0]?car.volume:"--",C_MUTED);
-  char t[12];t[0]=0;if(car.tempok){int fahrenheit=pref.units==2||(pref.units==0&&region_iso[0]=='U'&&region_iso[1]=='S');append_int(t,sizeof(t),fahrenheit?car.temp*9/5+32:car.temp);appendstr(t,sizeof(t),fahrenheit?"°F":"°C");}else copystr(t,sizeof(t),"--°");compact_center(HDR_TEMP_CX,11,58,1,t,C_MUTED);
-  char tm[8]="--:--";if(gps.hour>=0){int mt=gps.hour*60+gps.min+pref.hoff*60+pref.moff;while(mt<0)mt+=1440;mt%=1440;int h=mt/60,m=mt%60;tm[0]=(char)('0'+h/10);tm[1]=(char)('0'+h%10);tm[2]=':';tm[3]=(char)('0'+m/10);tm[4]=(char)('0'+m%10);tm[5]=0;}compact_center(HDR_TIME_CX,10,62,3,tm,C_WHITE);
-}
-static const char* compass_name(int d){static const char*n[8]={"N","NE","E","SE","S","SW","W","NW"};return n[((d+22)/45)&7];}
-static void draw_driver_strip(void){
- fill(0,MAP_STRIP_Y,W,30,C_HEADER);fill(0,MAP_STRIP_Y,W,1,C_SHADOW);fill(132,MAP_STRIP_Y+5,1,20,C_BORDER);fill(374,MAP_STRIP_Y+5,1,20,C_BORDER);
- if(!gps.fix){label(10,251,0,ui_tr("Acquiring GPS"),C_WARN,114);compact_center(253,250,226,1,lastfix_valid?ui_tr("Last position"):ui_tr("Map overview"),C_MUTED);return;}
- char sp[16];sp[0]=0;append_int(sp,sizeof(sp),display_speed());appendstr(sp,sizeof(sp)," / ");append_road_limit(sp,sizeof(sp),&roadctx);
- /* Keep the unit five pixels after the measured speed/limit group. The
-  * shared face shrinks only when the whole group exceeds its compact cell. */
- const char*unit=display_imperial()?"mph":"km/h";int face=4,unitw=width(unit,0);if(width(sp,face)+5+unitw>116)face=3;
- int speedw=width(sp,face);label(8,face==4?246:248,face,sp,C_WHITE,116-unitw-5);label(8+speedw+5,253,0,unit,C_MUTED,unitw);
- const char*r=(roadctx.valid&&roadctx.street[0])?roadctx.street:ui_tr("Road unknown");compact_center(253,249,226,1,r,roadctx.valid?C_CYAN:C_MUTED);
- if(route_status==R_READY&&nav_man_type!=MAN_NONE&&nav_man_idx>=0){char d[20];d[0]=0;append_nav_distance(d,sizeof(d),nav_man_m);draw_manoeuvre_icon(391,257,nav_man_type);compact_fit(406,250,68,1,d,C_WHITE);}
- else{char hd[16];hd[0]=0;int mc=map_course();appendstr(hd,sizeof(hd),compass_name(mc));appendstr(hd,sizeof(hd)," ");append_int(hd,sizeof(hd),mc);appendstr(hd,sizeof(hd),"°");compact_center(427,249,96,1,hd,C_WHITE);}
-}
-/* Keep the synthetic-map warning that used to be piggybacked on the
- * footer, without resurrecting a permanent bottom bar. */
-static void draw_dev_map_mark(void){if(!(mh.flags&1))return;ui_surface(8,186,132,22,C_PANEL2);text(16,192,ui_tr("Test map"),C_WARN,1);}
 #include "global_cameras.h"
 
-static void draw_map(void){int z=active_zoom();perspective_scale_update();nav_status_prepare(z);if(!freecam)drive_label_prepare(z);draw_map_geometry(z);draw_route_overlay(z);if(!freecam)drive_label_render();draw_car_marker(z);draw_explore_crosshair();draw_route_status();draw_dev_map_mark();draw_driver_strip();header();}
-
-enum {SCR_MAP=0,SCR_MENU=1,SCR_TRIP=2,SCR_BT=3,SCR_SET=4,SCR_KEY=5};static int screen=SCR_MAP;
 /* The device keyboard is intentionally naming-only. Destination discovery is
  * handled by ClioPlay Send; the on-device UI keeps only favourite naming and
  * renaming so no search sidecar/database is required. */
@@ -2126,17 +2290,29 @@ static u32 arrival_modal_deadline=0;
 #define NOTICE_MS 1800u
 static char notice_text[40];static u32 notice_deadline=0;static int notice_error=0;
 
+#include "hud.h"
+
+static void draw_map(void){
+ int z=active_zoom();perspective_scale_update();u32 now=hud_now_ms();hud_prepare(z,now,1);hud_driver_prepare(now);
+ if(!freecam)drive_label_prepare(z);
+ draw_map_geometry(z);draw_route_overlay(z);if(!freecam)drive_label_render();
+ draw_car_marker(z);draw_explore_crosshair();
+ if(mh.flags&1){hud_glass((struct HudBox){8,186,108,22,256},0);compact_fit(16,191,92,0,ui_tr("Test map"),C_WARN);}
+ hud_draw_all(now,1);
+}
+
 static int read_places(const char*path,struct SavedPlace*a,int cap){long fd=s_open(path,O_RDONLY_,0);if(fd<0)return 0;u32 magic=0,count=0;if(s_read((int)fd,&magic,4)!=4||s_read((int)fd,&count,4)!=4||(magic!=0x31504c43u&&magic!=0x32504c43u)){s_close((int)fd);return 0;}if(count>(u32)cap)count=(u32)cap;int got=0;for(u32 i=0;i<count;i++){if(magic==0x31504c43u){struct LegacyPlace o;if(s_read((int)fd,&o,sizeof(o))!=(long)sizeof(o))break;o.name[31]=0;a[i].lat=o.lat;a[i].lon=o.lon;copystr(a[i].name,sizeof(a[i].name),o.name);}else{if(s_read((int)fd,&a[i],sizeof(a[i]))!=(long)sizeof(a[i]))break;a[i].name[160]=0;char n[161];copystr(n,sizeof(n),a[i].name);copystr(a[i].name,sizeof(a[i].name),n);}got++;}s_close((int)fd);return got;}
 static void write_places(const char*path,const struct SavedPlace*a,int n){long fd=s_open(path,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd<0)return;u32 magic=0x32504c43u,count=(u32)n;s_write((int)fd,&magic,4);s_write((int)fd,&count,4);if(n>0)s_write((int)fd,a,(unsigned)n*sizeof(*a));s_close((int)fd);}
 static int same_place(const struct SavedPlace*a,s32 lat,s32 lon){return iabs32(a->lat-lat)<=8&&iabs32(a->lon-lon)<=8;}
 static void add_recent(const char*name,s32 lat,s32 lon){int found=-1;for(int i=0;i<nrecents;i++)if(same_place(&recents[i],lat,lon)){found=i;break;}struct SavedPlace p;p.lat=lat;p.lon=lon;copystr(p.name,sizeof(p.name),name&&name[0]?name:"MAP POINT");if(found>=0){for(int i=found;i>0;i--)recents[i]=recents[i-1];recents[0]=p;}else{if(nrecents<RECENT_MAX)nrecents++;for(int i=nrecents-1;i>0;i--)recents[i]=recents[i-1];recents[0]=p;}write_places(RECENT_PATH,recents,nrecents);}
 static int fave_contains(s32 lat,s32 lon){for(int i=0;i<nfaves;i++)if(same_place(&faves[i],lat,lon))return i;return-1;}
-static void add_fave_place(const char*name,s32 lat,s32 lon){struct SavedPlace p;p.lat=lat;p.lon=lon;copystr(p.name,sizeof(p.name),name&&name[0]?name:"MAP POINT");if(fave_contains(lat,lon)>=0)return;if(nfaves<FAVE_MAX)faves[nfaves++]=p;else{for(int i=1;i<FAVE_MAX;i++)faves[i-1]=faves[i];faves[FAVE_MAX-1]=p;}write_places(FAVES_PATH,faves,nfaves);}
+static void notice_success(const char*s);
+static void add_fave_place(const char*name,s32 lat,s32 lon){struct SavedPlace p;p.lat=lat;p.lon=lon;copystr(p.name,sizeof(p.name),name&&name[0]?name:"MAP POINT");if(fave_contains(lat,lon)>=0)return;if(nfaves<FAVE_MAX)faves[nfaves++]=p;else{for(int i=1;i<FAVE_MAX;i++)faves[i-1]=faves[i];faves[FAVE_MAX-1]=p;}write_places(FAVES_PATH,faves,nfaves);notice_success(ui_tr("Favourite saved"));}
 static int fave_needs_name(const char*name){return !name||!name[0]||streq(name,"MAP POINT");}
 static void add_fave_or_name(const char*name,s32 lat,s32 lon){if(fave_needs_name(name)){keyboard_open_fave_name(lat,lon);screen=SCR_KEY;}else add_fave_place(name,lat,lon);}
 static void add_fave(const struct SavedPlace*p){if(p)add_fave_or_name(p->name,p->lat,p->lon);}
-static void remove_fave(int idx){if(idx<0||idx>=nfaves)return;for(int i=idx+1;i<nfaves;i++)faves[i-1]=faves[i];nfaves--;write_places(FAVES_PATH,faves,nfaves);}
-static void rename_fave(int idx,const char*name){if(idx<0||idx>=nfaves||!name||!name[0])return;copystr_limit(faves[idx].name,sizeof(faves[idx].name),name,40);write_places(FAVES_PATH,faves,nfaves);}
+static void remove_fave(int idx){if(idx<0||idx>=nfaves)return;for(int i=idx+1;i<nfaves;i++)faves[i-1]=faves[i];nfaves--;write_places(FAVES_PATH,faves,nfaves);notice_success(ui_tr("Favourite removed"));}
+static void rename_fave(int idx,const char*name){if(idx<0||idx>=nfaves||!name||!name[0])return;char next[sizeof(faves[0].name)];copystr_limit(next,sizeof(next),name,40);if(streq(faves[idx].name,next))return;copystr(faves[idx].name,sizeof(faves[idx].name),next);write_places(FAVES_PATH,faves,nfaves);notice_success(ui_tr("Favourite renamed"));}
 static void keyboard_open_fave_rename(int idx){if(idx<0||idx>=nfaves)return;kbd_action=KBD_RENAME_FAVE;kbd_fave_idx=idx;kbd_place_lat=faves[idx].lat;kbd_place_lon=faves[idx].lon;copystr_limit(kbd_text,sizeof(kbd_text),faves[idx].name,40);keyboard_begin();}
 
 /* clioa2dp publishes validated CLP2 packets here. The packet carries a default
@@ -2144,7 +2320,10 @@ static void keyboard_open_fave_rename(int idx){if(idx<0||idx>=nfaves)return;kbd_
  * ADD STOP / CHANGE DESTINATION -> SEND FROM PHONE on the Carminat, that local
  * action takes precedence for the next received destination. */
 static void notice_set(const char*s,int is_error){copystr(notice_text,sizeof(notice_text),s&&s[0]?s:ui_tr("Done"));notice_deadline=s_now_ms()+NOTICE_MS;notice_error=is_error?1:0;}
-static void notice_success(const char*s){if(screen==SCR_MAP){notice_text[0]=0;notice_deadline=0;notice_error=0;return;}notice_set(s,0);}
+static void notice_success(const char*s){
+ if(screen==SCR_MAP){notice_text[0]=0;notice_deadline=0;notice_error=0;}
+ else notice_set(s,0);
+}
 static void notice_fail(const char*s){notice_set(s,1);}
 static int notice_active(void){return notice_text[0]&&time_before_u32(s_now_ms(),notice_deadline);}
 static int map_notice_error_active(void){return screen==SCR_MAP&&modal==MOD_NONE&&notice_error&&notice_active();}
@@ -2159,27 +2338,26 @@ static void save_trip(void){long fd=s_open(TRIP_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_
 static void load_trip(void){memzero(&trip,sizeof(trip));long fd=s_open(TRIP_PATH,O_RDONLY_,0);if(fd<0)return;u32 magic=0;if(s_read((int)fd,&magic,4)==4){if(magic==0x33525443u){if(s_read((int)fd,&trip,sizeof(trip))!=(long)sizeof(trip))memzero(&trip,sizeof(trip));}else if(magic==0x32525443u){struct LegacyTripState o;memzero(&o,sizeof(o));if(s_read((int)fd,&o,sizeof(o))==(long)sizeof(o)){trip.active=o.active;trip.count=o.count;trip.active_idx=o.active_idx;trip.paused=o.paused;for(int i=0;i<o.count&&i<TRIP_MAX_TARGETS;i++){trip.target[i].lat=o.target[i].lat;trip.target[i].lon=o.target[i].lon;o.target[i].name[31]=0;copystr(trip.target[i].name,sizeof(trip.target[i].name),o.target[i].name);}}}else if(magic==0x31525443u){struct OldTripState o;memzero(&o,sizeof(o));if(s_read((int)fd,&o,sizeof(o))==(long)sizeof(o)&&o.active){trip.active=1;trip.count=1;trip.active_idx=0;trip.target[0].lat=o.dest_lat;trip.target[0].lon=o.dest_lon;copystr(trip.target[0].name,sizeof(trip.target[0].name),o.dest_name[0]?o.dest_name:"MAP POINT");}}}s_close((int)fd);if(trip.count>TRIP_MAX_TARGETS)trip.count=TRIP_MAX_TARGETS;if(!trip.count)trip.active=0;if(trip.active_idx>=trip.count)trip.active_idx=trip.count?trip.count-1:0;for(int i=0;i<trip.count;i++)trip.target[i].name[160]=0;trip.paused=0;}
 static void trip_schedule_route(void){arrival_ticks=0;trip_need_route=1;trip_route_defer=1;route_cancel();}
 static void trip_request_route(void){struct TripTarget*t=trip_current();arrival_ticks=0;if(!t||trip.paused){trip_need_route=0;trip_route_defer=0;return;}if(!gps.fix){trip_need_route=1;route_cancel();return;}trip_need_route=0;trip_route_defer=0;route_start(t->lat,t->lon);}
-static void set_destination(const char*name,s32 lat,s32 lon){memzero(&trip,sizeof(trip));trip.active=1;trip.count=1;trip.active_idx=0;trip.target[0].lat=lat;trip.target[0].lon=lon;copystr(trip.target[0].name,sizeof(trip.target[0].name),name&&name[0]?name:"MAP POINT");save_trip();add_recent(trip.target[0].name,lat,lon);trip_schedule_route();}
+static void set_destination(const char*name,s32 lat,s32 lon){memzero(&trip,sizeof(trip));trip.active=1;trip.count=1;trip.active_idx=0;trip.target[0].lat=lat;trip.target[0].lon=lon;copystr(trip.target[0].name,sizeof(trip.target[0].name),name&&name[0]?name:"MAP POINT");save_trip();add_recent(trip.target[0].name,lat,lon);trip_schedule_route();notice_success(ui_tr("ROUTE STARTED"));}
 static void clear_trip(void){memzero(&trip,sizeof(trip));save_trip();arrival_ticks=0;trip_need_route=trip_route_defer=0;route_cancel();}
-static int trip_add_stop(const char*name,s32 lat,s32 lon){if(!trip.active||trip.count<1||trip.count>=TRIP_MAX_TARGETS)return 0;int ins=trip.count-1;for(int i=trip.count;i>ins;i--)trip.target[i]=trip.target[i-1];trip.target[ins].lat=lat;trip.target[ins].lon=lon;copystr(trip.target[ins].name,sizeof(trip.target[ins].name),name&&name[0]?name:"MAP POINT");trip.count++;if(ins==trip.active_idx)trip_schedule_route();save_trip();return 1;}
-static void trip_change_destination(const char*name,s32 lat,s32 lon){if(!trip.active||!trip.count){set_destination(name,lat,lon);return;}int i=trip.count-1;trip.target[i].lat=lat;trip.target[i].lon=lon;copystr(trip.target[i].name,sizeof(trip.target[i].name),name&&name[0]?name:"MAP POINT");add_recent(trip.target[i].name,lat,lon);save_trip();if(i==trip.active_idx)trip_schedule_route();}
-static void phone_destination_apply(void){if(!phone_dest.valid)return;int action=phone_wait_action;if(action==DEST_PICK_NONE)action=phone_dest.action=='S'?DEST_PICK_ADD_STOP:0;if(modal!=MOD_NONE&&modal!=MOD_WAIT_PHONE)return;if(modal==MOD_WAIT_PHONE)modal=MOD_NONE;if(action==DEST_PICK_CHANGE_DEST){if(trip.active&&trip.count){trip_change_destination(phone_dest.name,phone_dest.lat,phone_dest.lon);notice_success(ui_tr("DESTINATION CHANGED"));}else notice_fail(ui_tr("NO ACTIVE ROUTE"));}
-  else if(action==DEST_PICK_ADD_STOP){if(!trip.active||!trip.count)notice_fail(ui_tr("NO ACTIVE ROUTE"));else if(trip.count>=TRIP_MAX_TARGETS)notice_fail(ui_tr("TRIP FULL - STOP NOT ADDED"));else if(trip_add_stop(phone_dest.name,phone_dest.lat,phone_dest.lon)){add_recent(phone_dest.name,phone_dest.lat,phone_dest.lon);notice_success(ui_tr("STOP ADDED"));}else notice_fail(ui_tr("STOP NOT ADDED"));}
-  else{set_destination(phone_dest.name,phone_dest.lat,phone_dest.lon);screen=SCR_MAP;recenter_map();notice_success(ui_tr("ROUTE STARTED"));}
+static int trip_add_stop(const char*name,s32 lat,s32 lon){if(!trip.active||trip.count<1||trip.count>=TRIP_MAX_TARGETS)return 0;int ins=trip.count-1;for(int i=trip.count;i>ins;i--)trip.target[i]=trip.target[i-1];trip.target[ins].lat=lat;trip.target[ins].lon=lon;copystr(trip.target[ins].name,sizeof(trip.target[ins].name),name&&name[0]?name:"MAP POINT");trip.count++;if(ins==trip.active_idx)trip_schedule_route();save_trip();notice_success(ui_tr("STOP ADDED"));return 1;}
+static void trip_change_destination(const char*name,s32 lat,s32 lon){if(!trip.active||!trip.count){set_destination(name,lat,lon);return;}int i=trip.count-1;int changed=trip.target[i].lat!=lat||trip.target[i].lon!=lon||!streq(trip.target[i].name,name);trip.target[i].lat=lat;trip.target[i].lon=lon;copystr(trip.target[i].name,sizeof(trip.target[i].name),name&&name[0]?name:"MAP POINT");add_recent(trip.target[i].name,lat,lon);save_trip();if(i==trip.active_idx)trip_schedule_route();if(changed)notice_success(ui_tr("DESTINATION CHANGED"));}
+static void phone_destination_apply(void){if(!phone_dest.valid)return;int action=phone_wait_action;if(action==DEST_PICK_NONE)action=phone_dest.action=='S'?DEST_PICK_ADD_STOP:0;if(modal!=MOD_NONE&&modal!=MOD_WAIT_PHONE)return;if(modal==MOD_WAIT_PHONE)modal=MOD_NONE;if(action==DEST_PICK_CHANGE_DEST){if(trip.active&&trip.count){trip_change_destination(phone_dest.name,phone_dest.lat,phone_dest.lon);}else notice_fail(ui_tr("NO ACTIVE ROUTE"));}
+  else if(action==DEST_PICK_ADD_STOP){if(!trip.active||!trip.count)notice_fail(ui_tr("NO ACTIVE ROUTE"));else if(trip.count>=TRIP_MAX_TARGETS)notice_fail(ui_tr("TRIP FULL - STOP NOT ADDED"));else if(trip_add_stop(phone_dest.name,phone_dest.lat,phone_dest.lon)){add_recent(phone_dest.name,phone_dest.lat,phone_dest.lon);}else notice_fail(ui_tr("STOP NOT ADDED"));}
+  else{set_destination(phone_dest.name,phone_dest.lat,phone_dest.lon);screen=SCR_MAP;recenter_map();}
   phone_destination_clear();}
-static void trip_remove_stop(int idx){if(!trip.active||idx<trip.active_idx||idx<0||idx>=trip.count-1)return;int was_current=idx==trip.active_idx;for(int i=idx+1;i<trip.count;i++)trip.target[i-1]=trip.target[i];trip.count--;save_trip();if(was_current)trip_schedule_route();}
-static void trip_move_stop(int idx,int dir){if(!trip.active||idx<trip.active_idx||idx>=trip.count-1)return;int j=idx+dir;if(j<trip.active_idx||j>=trip.count-1)return;struct TripTarget t=trip.target[idx];trip.target[idx]=trip.target[j];trip.target[j]=t;save_trip();if(idx==trip.active_idx||j==trip.active_idx)trip_schedule_route();}
+static void trip_remove_stop(int idx){if(!trip.active||idx<trip.active_idx||idx<0||idx>=trip.count-1)return;int was_current=idx==trip.active_idx;for(int i=idx+1;i<trip.count;i++)trip.target[i-1]=trip.target[i];trip.count--;save_trip();if(was_current)trip_schedule_route();notice_success(ui_tr("Stop removed"));}
+static void trip_move_stop(int idx,int dir){if(!trip.active||idx<trip.active_idx||idx>=trip.count-1)return;int j=idx+dir;if(j<trip.active_idx||j>=trip.count-1)return;struct TripTarget t=trip.target[idx];trip.target[idx]=trip.target[j];trip.target[j]=t;save_trip();if(idx==trip.active_idx||j==trip.active_idx)trip_schedule_route();notice_success(ui_tr("Stop moved"));}
 static void trip_continue_after_stop(void){if(!trip.active||trip.active_idx+1>=trip.count)return;trip.active_idx++;trip.paused=0;arrival_ticks=0;save_trip();trip_schedule_route();}
 static void trip_service(void){if(trip_need_route&&gps.fix&&!trip.paused){if(trip_route_defer>0)trip_route_defer--;else trip_request_route();}if(atlas_active&&(atlas_phase!=AP_LEG||route_exact_to!=ROUTE_NOARC)){arrival_ticks=0;return;}if(!trip.active||trip.paused||!gps.fix)return;struct TripTarget*t=trip_current();if(!t)return;u32 d=geo_seg_m(car_lat(),car_lon(),t->lat,t->lon);/* dev5.6: the drivable route ends at the exact road-access snap, not at a fabricated straight connector to the POI centroid.  Count reaching that access point as arrival too. */if(route_status==R_READY&&!atlas_future_cost&&route_exact_to==ROUTE_NOARC&&route_dest_idx>=0&&route_dest_idx<route_dest_count){u32 sd=geo_seg_m(car_lat(),car_lon(),route_dest_cand[route_dest_idx].snap_lat,route_dest_cand[route_dest_idx].snap_lon);if(sd<d)d=sd;}if(d<=ARRIVAL_RADIUS_M&&gps.mph10<=100){if(arrival_ticks<ARRIVAL_TICKS)arrival_ticks++;}else arrival_ticks=0;if(arrival_ticks>=ARRIVAL_TICKS){arrival_ticks=0;trip.paused=1;route_cancel();save_trip();modal_choice=0;modal=trip_current_is_destination()?MOD_ARRIVED_DEST:MOD_ARRIVED_STOP;arrival_modal_deadline=s_now_ms()+ARRIVAL_MODAL_MS;}}
 static void arrival_modal_service(void){if(modal!=MOD_ARRIVED_STOP&&modal!=MOD_ARRIVED_DEST){arrival_modal_deadline=0;return;}if(!arrival_modal_deadline)arrival_modal_deadline=s_now_ms()+ARRIVAL_MODAL_MS;if(time_before_u32(s_now_ms(),arrival_modal_deadline))return;arrival_modal_deadline=0;if(modal==MOD_ARRIVED_STOP){modal=MOD_NONE;trip_continue_after_stop();screen=SCR_MAP;recenter_map();}else{modal=MOD_NONE;clear_trip();screen=SCR_MAP;recenter_map();}}
 static int menu_focus=0;
-/* Three centred menu rows; branding belongs to the boot splash. */
-static void menurow(int y,const char*l,const char*sub,int f){ui_choice(24,y-8,432,46,f);label(38,y-3,3,l,ui_choice_text(f),400);label(38,y+18,0,sub,f?C_ACTIVE_TEXT:C_MUTED,400);}
-static void draw_menu(void){header();fill(0,40,W,H-40,C_BG);menurow(87,ui_tr("Trip"),ui_tr("Destinations and itinerary"),menu_focus==0);menurow(141,bt_label(),ui_tr("Connected and saved phones"),menu_focus==1);menurow(195,ui_tr("Settings"),ui_tr("Display and navigation"),menu_focus==2);centered(240,254,0,"(c) OpenStreetMap contributors",C_MUTED);}
+static void menurow(int y,const char*l,const char*sub,int f){ui_choice(18,y,444,60,f);label(34,y+9,3,l,ui_choice_text(f),408);label(34,y+33,0,sub,f?C_ACTIVE_TEXT:C_MUTED,408);}
+static void draw_menu(void){fill(0,0,W,H,C_BG);menurow(MENU_BODY_Y,ui_tr("Trip"),ui_tr("Destinations and itinerary"),menu_focus==0);menurow(MENU_BODY_Y+66,bt_label(),ui_tr("Connected and saved phones"),menu_focus==1);menurow(MENU_BODY_Y+132,ui_tr("Settings"),ui_tr("Display and navigation"),menu_focus==2);centered(240,254,0,"(c) OpenStreetMap contributors",C_MUTED);}
 
 static int trip_pane=0,trip_tab=0,trip_focus=0,trip_right_focus=0;
 static void focus_rect(int x,int y,int w,int h,int active){ui_panel(x,y,w,h,active);}
-static void trip_item(int x,int y,int w,const char*s,int f){char name[161];copystr_limit(name,sizeof(name),s,40);ui_choice(x,y-3,w,20,f);compact_fit(x+8,y-2,w-16,1,name,ui_choice_text(f));}
+static void trip_item(int x,int y,int w,const char*s,int f){char name[161];copystr_limit(name,sizeof(name),s,40);ui_choice(x,y-3,w,19,f);compact_fit(x+8,y-2,w-16,1,name,ui_choice_text(f));}
 static const char* active_route_word(void){if(route_status==R_READY)return ui_tr("READY");if(trip_need_route||route_status==R_CALC)return ui_tr("CALC");if(route_status==R_NOFILE)return ui_tr("NO DATA");if(route_status==R_NOROAD)return ui_tr("NO ROAD");if(route_status==R_UNREACHABLE)return ui_tr("NO ROUTE");if(route_status==R_MEMORY)return ui_tr("MEM FULL");if(route_status==R_ERROR)return ui_tr("ERROR");return ui_tr("WAIT");}
 static void trip_target_row(int y,int idx,int selected){
  ui_choice(249,y-3,220,20,selected);label(256,y-1,0,idx==trip.count-1?"D":"S",selected?C_ACTIVE_TEXT:C_MUTED,12);
@@ -2188,24 +2366,32 @@ static void trip_target_row(int y,int idx,int selected){
  u16 sc=selected?C_ACTIVE_TEXT:(idx==trip.active_idx?(route_status==R_READY?C_CYAN:C_WARN):C_MUTED);compact_fit(sx,y,sw,0,st,sc);
 }
 static void draw_trip(void){
- header();fill(0,40,W,232,C_BG);focus_rect(4,44,231,223,trip_pane==0);focus_rect(244,44,232,223,trip_pane==1);
+ const int panel_y=MENU_BODY_Y,route_y=panel_y+32,route_step=22;
+ fill(0,0,W,H,C_BG);
+ focus_rect(4,panel_y,231,267-panel_y,trip_pane==0);focus_rect(244,panel_y,232,267-panel_y,trip_pane==1);
  const char*title=trip_pick_mode==DEST_PICK_ADD_STOP?ui_tr("Add stop"):(trip_pick_mode==DEST_PICK_CHANGE_DEST?ui_tr("Change destination"):ui_tr("Destinations"));
- compact_fit(12,47,214,1,title,trip_pane==0?C_CYAN:C_WHITE);label(253,47,1,ui_tr("Current route"),trip_pane==1?C_CYAN:C_WHITE,210);
- ui_choice(10,66,104,22,trip_tab==0);centered(62,70,0,ui_tr("Recents"),trip_tab==0?C_ACTIVE_TEXT:C_MUTED);
- ui_choice(118,66,110,22,trip_tab==1);centered(173,70,0,ui_tr("Favourites"),trip_tab==1?C_ACTIVE_TEXT:C_MUTED);
- int count=trip_tab?nfaves:nrecents,first=trip_focus>7?trip_focus-7:0;if(first+8>count)first=count>8?count-8:0;
+ compact_fit(12,panel_y+4,214,1,title,trip_pane==0?C_CYAN:C_WHITE);label(253,panel_y+4,1,ui_tr("Current route"),trip_pane==1?C_CYAN:C_WHITE,210);
+ ui_choice(10,panel_y+20,104,20,trip_tab==0);centered(62,panel_y+23,0,ui_tr("Recents"),trip_tab==0?C_ACTIVE_TEXT:C_MUTED);
+ ui_choice(118,panel_y+20,110,20,trip_tab==1);centered(173,panel_y+23,0,ui_tr("Favourites"),trip_tab==1?C_ACTIVE_TEXT:C_MUTED);
+ const int rows=9;
+ int count=trip_tab?nfaves:nrecents,first=trip_focus>=rows?trip_focus-rows+1:0;
+ if(first+rows>count)first=count>rows?count-rows:0;
  if(!count)centered(119,122,1,trip_tab?ui_tr("No favourites yet"):ui_tr("No recent places"),C_MUTED);
- for(int row=0;row<8&&first+row<count;row++){int i=first+row;trip_item(10,96+row*21,218,trip_tab?faves[i].name:recents[i].name,trip_pane==0&&trip_focus==i);}
+ for(int row=0;row<rows&&first+row<count;row++){int i=first+row;trip_item(10,panel_y+48+row*20,218,trip_tab?faves[i].name:recents[i].name,trip_pane==0&&trip_focus==i);}
  if(trip.active){int rem=trip.count-trip.active_idx;
-  for(int r=0;r<rem;r++)trip_target_row(76+r*22,trip.active_idx+r,trip_pane==1&&trip_right_focus==r);
-  trip_item(249,76+rem*22,220,ui_tr("+ Add stop"),trip_pane==1&&trip_right_focus==rem);
-  trip_item(249,98+rem*22,220,ui_tr("Cancel route"),trip_pane==1&&trip_right_focus==rem+1);
-  if(route_status==R_READY){char m[64];m[0]=0;append_miles(m,sizeof(m),route_path_m());appendstr(m,sizeof(m),"  ~");append_eta(m,sizeof(m),sat_add32(route_result_cost,atlas_future_cost));compact_fit(253,228,214,0,m,C_MUTED);}
-  else if(trip_need_route||route_status==R_CALC)label(253,228,0,ui_tr("Calculating route…"),C_CYAN,214);
+  for(int r=0;r<rem;r++)trip_target_row(route_y+r*route_step,trip.active_idx+r,trip_pane==1&&trip_right_focus==r);
+  trip_item(249,route_y+rem*route_step,220,ui_tr("+ Add stop"),trip_pane==1&&trip_right_focus==rem);
+  trip_item(249,route_y+(rem+1)*route_step,220,ui_tr("Cancel route"),trip_pane==1&&trip_right_focus==rem+1);
  }else{
   centered(359,110,1,ui_tr("Choose a destination"),C_WHITE);centered(359,132,0,ui_tr("from your saved places"),C_MUTED);
   trip_item(253,178,214,ui_tr("Send from phone"),trip_pane==1);
  }
+ if(modal==MOD_NONE&&notice_active())compact_fit(253,243,214,0,notice_text,notice_error?C_WARN:C_CYAN);
+ else if(trip.active&&route_status==R_READY){
+  char m[64]="";append_miles(m,sizeof(m),route_path_m());appendstr(m,sizeof(m),"  ~");
+  append_eta(m,sizeof(m),sat_add32(route_result_cost,atlas_future_cost));compact_fit(253,243,214,0,m,C_MUTED);
+ }else if(trip.active&&(trip_need_route||route_status==R_CALC))
+  compact_fit(253,243,214,0,ui_tr("Calculating route…"),C_CYAN);
 }
 
 static int bt_page_focus=0,bt_page_connected_choice=0,bt_page_dialog=-1,bt_page_dialog_choice=0;
@@ -2215,25 +2401,23 @@ static int bt_page_total(void){int ci=bt_connected_idx();return(ci>=0?1:0)+bt_sa
 static void bt_page_clamp(void){int t=bt_page_total();if(t<1)t=1;if(bt_page_focus<0)bt_page_focus=0;if(bt_page_focus>=t)bt_page_focus=t-1;}
 static void draw_bt_page_dialog(void){if(bt_page_dialog<0||bt_page_dialog>=nbtdev)return;ui_modal(76,105,328,92);compact_center(240,117,300,1,bt_display_name(bt_page_dialog),C_WHITE);centered(240,138,0,ui_tr("Saved phone"),C_MUTED);bt_page_button(96,157,132,ui_tr("Reconnect"),bt_page_dialog_choice==0);bt_page_button(252,157,132,ui_tr("Forget"),bt_page_dialog_choice==1);}
 static const char* bt_display_name(int idx){if(idx<0||idx>=nbtdev)return ui_tr("Unknown phone");if(bt_name_unknown(btdev[idx].name)){const char*cn=bt_name_cache_get(btdev[idx].addr);if(cn)return cn;if(btdev[idx].connected&&!bt_name_unknown(btui.device))return btui.device;return ui_tr("Unknown phone");}return btdev[idx].name;}
-static const char*bt_status_text(void){if(pref.debug&&btui.status[0])return btui.status;if(starts(btui.status,"BT DAEMON")||starts(btui.status,"BT L2CAP")||starts(btui.status,"BT AUDIO ERR"))return bt_unavailable_label();if(starts(btui.status,"BT PAIR"))return ui_tr("Pairing phone");if(starts(btui.status,"BT WAIT"))return ui_tr("Waiting for phone");return ui_tr("Ready to connect");}
+static const char*bt_status_text(void){if(pref.debug&&reading_present(btui.status))return btui.status;if(starts(btui.status,"BT DAEMON")||starts(btui.status,"BT L2CAP")||starts(btui.status,"BT AUDIO ERR"))return bt_unavailable_label();if(starts(btui.status,"BT PAIR"))return ui_tr("Pairing phone");if(starts(btui.status,"BT WAIT"))return ui_tr("Waiting for phone");return ui_tr("Ready to connect");}
 static void draw_bluetooth(void){
-  header();fill(0,40,W,H-40,C_BG);label(18,46,3,bt_label(),C_WHITE,440);bt_page_clamp();
+  fill(0,0,W,H,C_BG);bt_page_clamp();
   int ci=bt_connected_idx();int conn_selected=(ci>=0&&bt_page_focus==0);
-  /* Compact connected-device surface. Playback state already lives in the
-   * persistent header, so this card only manages the Bluetooth device. */
-  ui_surface(18,69,444,46,C_PANEL2);
+  ui_surface(18,MENU_BODY_Y,444,48,C_PANEL2);
   if(ci>=0){
-    label(30,74,0,ui_tr("Connected"),C_MUTED,216);compact_fit(30,92,216,1,bt_display_name(ci),C_WHITE);
-    bt_page_button(258,81,92,ui_tr("Disconnect"),conn_selected&&bt_page_connected_choice==0);bt_page_button(358,81,92,ui_tr("Forget"),conn_selected&&bt_page_connected_choice==1);
+    label(30,48,0,ui_tr("Connected"),C_MUTED,216);compact_fit(30,66,216,1,bt_display_name(ci),C_WHITE);
+    bt_page_button(258,55,92,ui_tr("Disconnect"),conn_selected&&bt_page_connected_choice==0);bt_page_button(358,55,92,ui_tr("Forget"),conn_selected&&bt_page_connected_choice==1);
   }else{
-    label(30,74,1,ui_tr("No phone connected"),C_MUTED,410);compact_fit(30,95,410,0,bt_status_text(),C_MUTED);
+    label(30,48,1,ui_tr("No phone connected"),C_MUTED,410);compact_fit(30,68,410,0,bt_status_text(),C_MUTED);
   }
-  label(24,124,0,ui_tr("Saved phones"),C_MUTED,420);
-  /* Six-row viewport over up to ten paired devices plus the pairing action.
-   * The window follows focus, so no scrollbar or extra chrome is required. */
-  int base=ci>=0?1:0,sc=bt_saved_count(),lf=bt_page_focus-base,listn=sc+1;if(lf<0)lf=0;int first=0;if(lf>5)first=lf-5;if(first+6>listn)first=listn>6?listn-6:0;
-  for(int row=0;row<6&&first+row<listn;row++){
-    int ord=first+row,y=142+row*20,f=bt_page_focus==base+ord;ui_choice(24,y-3,432,19,f);
+  label(24,92,0,ui_tr("Saved phones"),C_MUTED,420);
+  const int rows=8;
+  int base=ci>=0?1:0,sc=bt_saved_count(),lf=bt_page_focus-base,listn=sc+1;
+  int first=lf>=rows?lf-rows+1:0;if(first+rows>listn)first=listn>rows?listn-rows:0;
+  for(int row=0;row<rows&&first+row<listn;row++){
+    int ord=first+row,y=111+row*20,f=bt_page_focus==base+ord;ui_choice(24,y-3,432,19,f);
     if(ord<sc){int di=bt_saved_idx(ord);compact_fit(36,y-2,326,1,di>=0?bt_display_name(di):ui_tr("Unknown phone"),ui_choice_text(f));label(392,y,0,ui_tr("Saved"),f?C_ACTIVE_TEXT:C_MUTED,52);}
     else{label(36,y-2,1,ui_tr("+ Pair new phone"),ui_choice_text(f),326);label(388,y,0,"0000",f?C_ACTIVE_TEXT:C_MUTED,56);}
   }
@@ -2243,13 +2427,67 @@ static void draw_bluetooth(void){
 static int set_focus=0;
 static void settingrow(int y,const char*l,const char*v,int f){int vw=width(v,1);if(vw<76)vw=76;if(vw>180)vw=180;int vx=446-vw;ui_choice(18,y-5,444,26,f);compact_fit(30,y-2,vx-42,1,l,ui_choice_text(f));compact_fit(vx,y-2,vw,1,v,f?C_ACTIVE_TEXT:C_MUTED);}
 static const char* theme_value(void){if(pref.theme==THEME_DAY)return"DAY";if(pref.theme==THEME_NIGHT)return"NIGHT";return"AUTO";}
-/* User-facing settings only: build/QAD diagnostics remain in logs rather than
- * occupying the page.  Section labels make the four controls easier to scan. */
-static const char*units_value(void){return pref.units==1?ui_tr("Metric"):pref.units==2?ui_tr("Imperial"):ui_tr("Auto");}
-static void draw_settings(void){header();fill(0,40,W,H-40,C_BG);label(18,46,3,ui_tr("Settings"),C_WHITE,440);char bright[16],tz[96];bright[0]=tz[0]=0;append_int(bright,sizeof(bright),pref.bright);appendstr(bright,sizeof(bright),"%");appendstr(tz,sizeof(tz),pref.clock_auto?ui_tr("Auto"):"UTC");appendstr(tz,sizeof(tz)," ");if(ui_language_rtl())appendstr(tz,sizeof(tz),"\xe2\x81\xa6");int mins=pref.hoff*60+pref.moff;appendstr(tz,sizeof(tz),mins<0?"-":"+");if(mins<0)mins=-mins;append_int(tz,sizeof(tz),mins/60);appendstr(tz,sizeof(tz),":");if(mins%60<10)appendstr(tz,sizeof(tz),"0");append_int(tz,sizeof(tz),mins%60);if(ui_language_rtl())appendstr(tz,sizeof(tz),"\xe2\x81\xa9");
- const char*names[]={ui_tr("Brightness"),ui_tr("Theme"),ui_tr("Units"),ui_tr("Auto zoom"),ui_tr("Camera alerts"),ui_tr("Clock"),ui_tr("Debug log"),ui_tr("Language")};const char*values[]={bright,pref.theme==THEME_DAY?ui_tr("Day"):pref.theme==THEME_NIGHT?ui_tr("Night"):ui_tr("Auto"),units_value(),pref.autozoom?ui_tr("On"):ui_tr("Off"),pref.cameras==2?ui_tr("Phone audio"):pref.cameras?ui_tr("Visual"):ui_tr("Off"),tz,pref.debug?ui_tr("On"):ui_tr("Off"),ui_language_name()};int first=set_focus>6?set_focus-6:0;for(int i=first;i<8&&i<first+7;i++)settingrow(72+(i-first)*28,names[i],values[i],set_focus==i);}
-
-
+static const char* setting_names[]={"Brightness","Theme","Units","Auto zoom","Camera alerts","Clock","Debug log","Language"};
+static const char* units_value(void){return pref.units==1?ui_tr("Metric"):pref.units==2?ui_tr("Imperial"):ui_tr("Auto");}
+static const char* setting_value(int row,char b[96]){
+ switch(row){
+ case 0:
+  b[0]=0;append_int(b,96,pref.bright);appendstr(b,96,"%");return b;
+ case 1:return pref.theme==THEME_DAY?ui_tr("Day"):pref.theme==THEME_NIGHT?ui_tr("Night"):ui_tr("Auto");
+ case 2:return units_value();
+ case 3:return ui_tr(pref.autozoom?"On":"Off");
+ case 4:return pref.cameras==2?ui_tr("Phone audio"):pref.cameras?ui_tr("Visual"):ui_tr("Off");
+ case 5:{
+  copystr(b,96,pref.clock_auto?ui_tr("Auto"):"UTC");appendstr(b,96," ");
+  if(ui_language_rtl())appendstr(b,96,"\xe2\x81\xa6");
+  int mins=pref.hoff*60+pref.moff;
+  appendstr(b,96,mins<0?"-":"+");if(mins<0)mins=-mins;
+  append_int(b,96,mins/60);appendstr(b,96,":");if(mins%60<10)appendstr(b,96,"0");
+  append_int(b,96,mins%60);if(ui_language_rtl())appendstr(b,96,"\xe2\x81\xa9");return b;
+ }
+ case 6:return ui_tr(pref.debug?"On":"Off");
+ default:return ui_language_name();
+ }
+}
+static void draw_settings(void){
+ fill(0,0,W,H,C_BG);
+ for(int i=0;i<8;i++){
+  char b[96];settingrow(MENU_BODY_Y+5+i*28,ui_tr(setting_names[i]),setting_value(i,b),set_focus==i);
+ }
+}
+static void settings_key(int code){
+ if(code==K_UP){if(set_focus>0)set_focus--;return;}
+ if(code==K_DOWN){if(set_focus<7)set_focus++;return;}
+ if(code==K_ENTER&&set_focus==5){
+  pref.clock_auto=!pref.clock_auto;clock_next_ms=0;clock_service();
+ }else if(code==K_ENTER&&set_focus==7)pref.language=(pref.language+1)%UI_LANGUAGE_COUNT;
+ else if(code==K_LEFT||code==K_RIGHT){
+  int d=code==K_RIGHT?1:-1;
+  switch(set_focus){
+  case 0:{
+   int next=pref.bright+d*10;if(next<10)next=10;if(next>100)next=100;
+   if(next==pref.bright)return;
+   pref.bright=next;apply_brightness();break;
+  }
+  case 1:
+   pref.theme+=d;if(pref.theme<THEME_DAY)pref.theme=THEME_AUTO;if(pref.theme>THEME_AUTO)pref.theme=THEME_DAY;
+   refresh_theme();break;
+  case 2:pref.units=(pref.units+d+3)%3;break;
+  case 3:
+   if(pref.autozoom){manual_zoom=active_zoom();pref.autozoom=0;}
+   else{pref.autozoom=1;auto_zoom_level=-1;}
+   zoom_override=-1;break;
+  case 4:pref.cameras=(pref.cameras+d+3)%3;break;
+  case 5:{
+   pref.clock_auto=0;int m=pref.hoff*60+pref.moff+d*15;
+   if(m< -720)m=840;if(m>840)m=-720;pref.hoff=m/60;pref.moff=m%60;break;
+  }
+  case 6:pref.debug=!pref.debug;debug_state_write();if(!pref.debug)remove_stale_logs();break;
+  case 7:pref.language=(pref.language+d+UI_LANGUAGE_COUNT)%UI_LANGUAGE_COUNT;break;
+  }
+ }else return;
+ prefs_mark_dirty();
+}
 
 static void modal_option(int x,int y,int w,const char*s,int selected){ui_choice(x,y,w,22,selected);compact_center(x+w/2,y+3,w-16,1,s,ui_choice_text(selected));}
 static int modal_action_count(void){if(modal==MOD_RECENT)return trip.active?3:2;if(modal==MOD_FAVE)return trip.active?4:3;if(modal==MOD_TARGET){if(modal_index>=0&&modal_index<trip.count-1)return 3;return 2;}if(modal==MOD_SOURCE_PICK)return 4;return 0;}
@@ -2264,8 +2502,8 @@ static void draw_modal(void){if(modal==MOD_NONE)return;if(modal==MOD_ARRIVED_STO
   else if(modal==MOD_TARGET&&modal_index>=0&&modal_index<trip.count){if(modal_index<trip.count-1){modal_option(100,112,280,ui_tr("Remove stop"),modal_choice==0);modal_option(100,139,280,ui_tr("Move up"),modal_choice==1);modal_option(100,166,280,ui_tr("Move down"),modal_choice==2);}else{modal_option(100,125,280,ui_tr("Change destination"),modal_choice==0);int fi=fave_contains(trip.target[modal_index].lat,trip.target[modal_index].lon);modal_option(100,154,280,fi>=0?ui_tr("Remove favourite"):ui_tr("Add to favourites"),modal_choice==1);}}
   }
 
-static void draw_notice(void){if(!notice_active()||modal!=MOD_NONE||screen==SCR_MAP)return;int w=width(notice_text,1)+32;if(w<150)w=150;if(w>360)w=360;int x=(W-w)/2;ui_surface(x,47,w,28,C_PANEL2);compact_center(240,53,w-16,1,notice_text,notice_error?C_WARN:C_WHITE);}
-static void draw(void){clock_service();region_service();camera_service();refresh_theme();if(screen==SCR_MAP){draw_map();draw_camera_strip();}else if(screen==SCR_MENU)draw_menu();else if(screen==SCR_TRIP)draw_trip();else if(screen==SCR_BT)draw_bluetooth();else if(screen==SCR_KEY)draw_keyboard();else draw_settings();draw_modal();draw_notice();fb_flush();}
+static void draw_notice(void){if(!notice_active()||!notice_error||modal!=MOD_NONE||screen==SCR_MAP||screen==SCR_TRIP)return;int w=width(notice_text,1)+32;if(w<150)w=150;if(w>360)w=360;int x=(W-w)/2;ui_surface(x,47,w,28,C_PANEL2);compact_center(240,53,w-16,1,notice_text,notice_error?C_WARN:C_WHITE);}
+static void draw(void){clock_service();region_service();camera_service();refresh_theme();if(screen==SCR_MAP){draw_map();}else if(screen==SCR_MENU)draw_menu();else if(screen==SCR_TRIP)draw_trip();else if(screen==SCR_BT)draw_bluetooth();else if(screen==SCR_KEY)draw_keyboard();else draw_settings();if(screen!=SCR_MAP)header();draw_modal();draw_notice();fb_flush();}
 
 struct input_event16 {s32 sec,usec;u16 type,code;s32 value;};
 #define EV_KEY 1
@@ -2288,9 +2526,9 @@ if(modal!=MOD_NONE){
   if(!yesno&&modal!=MOD_WAIT_PHONE&&modal!=MOD_ARRIVED_STOP&&modal!=MOD_ARRIVED_DEST){int n=modal_action_count();if((code==K_UP||code==K_LEFT)&&modal_choice>0){modal_choice--;return;}if((code==K_DOWN||code==K_RIGHT)&&modal_choice+1<n){modal_choice++;return;}}
   if(code==K_ENTER){
     if(modal==MOD_ROUTE_POINT){if(modal_choice==0){if(pending_point_stop&&trip.active){if(trip_add_stop("MAP POINT",pending_lat,pending_lon))add_recent("MAP POINT",pending_lat,pending_lon);screen=SCR_TRIP;trip_pane=1;}else{set_destination("MAP POINT",pending_lat,pending_lon);screen=SCR_TRIP;trip_pane=1;trip_right_focus=0;}}modal=MOD_NONE;return;}
-    if(modal==MOD_CANCEL_ROUTE){if(modal_choice==0)clear_trip();modal=MOD_NONE;return;}
+    if(modal==MOD_CANCEL_ROUTE){if(modal_choice==0&&trip.active){clear_trip();notice_success(ui_tr("Route cancelled"));}modal=MOD_NONE;return;}
     if(modal==MOD_REMOVE_STOP){if(modal_choice==0)trip_remove_stop(modal_index);modal=MOD_NONE;return;}
-    if(modal==MOD_RESUME_TRIP){if(modal_choice==0){trip.paused=0;trip_need_route=1;trip_route_defer=1;}else clear_trip();modal=MOD_NONE;return;}
+    if(modal==MOD_RESUME_TRIP){if(modal_choice==0){trip.paused=0;trip_need_route=1;trip_route_defer=1;notice_success(ui_tr("Trip resumed"));}else if(trip.active){clear_trip();notice_success(ui_tr("Route cancelled"));}modal=MOD_NONE;return;}
     if(modal==MOD_ARRIVED_STOP){arrival_modal_deadline=0;modal=MOD_NONE;trip_continue_after_stop();screen=SCR_MAP;recenter_map();return;}
     if(modal==MOD_ARRIVED_DEST){arrival_modal_deadline=0;modal=MOD_NONE;clear_trip();screen=SCR_MAP;recenter_map();return;}
     if(modal==MOD_SOURCE_PICK){if(modal_choice==0||modal_choice==1){trip_pick_mode=dest_pick_action;trip_tab=modal_choice;trip_pane=0;trip_focus=0;dest_pick_action=DEST_PICK_NONE;modal=MOD_NONE;screen=SCR_TRIP;}else if(modal_choice==2){phone_wait_action=dest_pick_action;dest_pick_action=DEST_PICK_NONE;modal=MOD_WAIT_PHONE;modal_choice=0;}else{dest_pick_action=DEST_PICK_NONE;modal=MOD_NONE;}return;}
@@ -2301,12 +2539,14 @@ if(modal!=MOD_NONE){
   }
   return;
 }
-if(code==K_MENU){trip_pick_mode=DEST_PICK_NONE;screen=SCR_MENU;return;}
+if(code==K_MENU){bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;screen=SCR_MENU;return;}
 if(screen==SCR_BT&&bt_page_dialog>=0&&code==K_BACK){bt_page_dialog=-1;return;}
 if(screen==SCR_KEY&&kbd_picker&&code==K_BACK){keyboard_handle(code);return;}
 if(code==K_BACK){
   if(screen==SCR_TRIP&&trip_pick_mode!=DEST_PICK_NONE){trip_pick_mode=DEST_PICK_NONE;trip_pane=1;trip_right_focus=0;return;}
-  if(screen==SCR_MAP&&!freecam&&bt_source_selected()){bt_control_mode=bt_control_mode?0:1;return;}
+  if(screen==SCR_MAP&&!freecam&&(bt_control_mode||bt_controls_available())){
+    bt_control_mode=!bt_control_mode;bt_transport_press.kind=0;return;
+  }
   if(screen==SCR_KEY){screen=SCR_TRIP;return;}if(screen==SCR_MENU)screen=SCR_MAP;else if(screen!=SCR_MAP)screen=SCR_MENU;return;
 }
 if(screen==SCR_KEY){keyboard_handle(code);return;}
@@ -2314,27 +2554,38 @@ if(screen==SCR_MAP){
   /* BACK enters this explicit TomTom-remote Bluetooth context.  It is kept
    * separate from Renault radio/stalk input: K_UP/K_DOWN remain navigation
    * directions and are deliberately ignored while BT control is active. */
+  if(bt_control_mode&&!bt_controls_available())bt_control_mode=0;
   if(bt_control_mode){
-    if(code==K_LEFT){bt_command("PREV");return;}
-    if(code==K_RIGHT){bt_command("NEXT");return;}
-    if(code==K_ENTER){bt_command(btui.playing?"PAUSE":"PLAY");return;}
+    if(code==K_LEFT){bt_transport_command(BT_TRANSPORT_PREVIOUS);return;}
+    if(code==K_RIGHT){bt_transport_command(BT_TRANSPORT_NEXT);return;}
+    if(code==K_ENTER){bt_transport_command(BT_TRANSPORT_PLAY_PAUSE);return;}
     if(code==K_UP||code==K_DOWN)return;
   }
-  if(code==K_MAP){toggle_freecam();return;}
-  if(code==K_ENTER){if(freecam){pending_lat=cam_lat;pending_lon=cam_lon;pending_point_stop=trip.active?1:0;modal=MOD_ROUTE_POINT;modal_choice=0;}else if(pref.autozoom&&zoom_override>=0){zoom_override=-1;auto_zoom_level=-1;}return;}
-  if(code==K_UP||code==K_DOWN||code==K_LEFT||code==K_RIGHT){pan_freecam(code);return;}
-  if(code==K_ESC){int lo=mapok?(int)mh.minlvl:0;if(freecam){if(freecam_zoom>lo)freecam_zoom--;return;}if(pref.autozoom){int z=active_zoom();if(z>lo)zoom_override=z-1;return;}if(manual_zoom>lo)manual_zoom--;prefs_mark_dirty();return;}
-  if(code==K_SR){if(freecam){if(freecam_zoom<MAX_EXPLORE_ZOOM)freecam_zoom++;return;}int mz=mapok?(int)mh.maxlvl:6;if(mz>6)mz=6;if(pref.autozoom){int z=active_zoom();if(z<mz)zoom_override=z+1;return;}if(manual_zoom<mz)manual_zoom++;prefs_mark_dirty();return;}
+  if(code==K_MAP){bt_control_mode=0;int was=freecam;toggle_freecam();if(was!=freecam)hud_pulse(&hud_navigation,HUD_ZOOM,1800);return;}
+  if(code==K_ENTER){if(freecam){pending_lat=cam_lat;pending_lon=cam_lon;pending_point_stop=trip.active?1:0;modal=MOD_ROUTE_POINT;modal_choice=0;}else if(pref.autozoom&&zoom_override>=0){zoom_override=-1;auto_zoom_level=-1;hud_pulse(&hud_navigation,HUD_ZOOM,1800);}else hud_pulse(&hud_navigation,route_status==R_READY?HUD_JOURNEY:HUD_HEADING,route_status==R_READY?4200:2300);return;}
+  if(code==K_UP||code==K_DOWN||code==K_LEFT||code==K_RIGHT){int was=freecam;pan_freecam(code);if(!was&&freecam)hud_pulse(&hud_navigation,HUD_ZOOM,1800);return;}
+  if(code==K_ESC||code==K_SR){
+    int z=active_zoom(),up=code==K_SR,lo=mapok?(int)mh.minlvl:0;
+    int hi=freecam?MAX_EXPLORE_ZOOM:(mapok?(int)mh.maxlvl:6);if(!freecam&&hi>6)hi=6;
+    int next=z+(up?1:-1);
+    if(next>=lo&&next<=hi){
+      if(freecam)freecam_zoom=next;
+      else if(pref.autozoom)zoom_override=next;
+      else{manual_zoom=next;prefs_mark_dirty();}
+    }
+    hud_pulse(&hud_navigation,HUD_ZOOM,1800);return;
+  }
   return;}
 if(screen==SCR_MENU){if(code==K_UP&&menu_focus>0)menu_focus--;else if(code==K_DOWN&&menu_focus<2)menu_focus++;else if(code==K_ENTER)screen=menu_focus==0?SCR_TRIP:(menu_focus==1?SCR_BT:SCR_SET);return;}
 if(screen==SCR_TRIP){
   if(code==K_ESC){if(trip_pick_mode!=DEST_PICK_NONE){trip_pick_mode=DEST_PICK_NONE;trip_pane=1;trip_right_focus=0;}else trip_pane=0;return;}if(code==K_SR){if(trip_pick_mode!=DEST_PICK_NONE){trip_pick_mode=DEST_PICK_NONE;}trip_pane=1;trip_right_focus=0;return;}
-  if(trip_pane==0){int maxf=trip_tab==0?(nrecents?nrecents-1:0):(nfaves?nfaves-1:0);if(code==K_LEFT||code==K_RIGHT){trip_tab=trip_tab?0:1;trip_focus=0;return;}if(code==K_UP&&trip_focus>0)trip_focus--;else if(code==K_DOWN&&trip_focus<maxf)trip_focus++;else if(code==K_ENTER){struct SavedPlace p;int ok=0;if(trip_tab==0&&trip_focus<nrecents){p=recents[trip_focus];ok=1;}else if(trip_tab==1&&trip_focus<nfaves){p=faves[trip_focus];ok=1;}if(ok&&trip_pick_mode!=DEST_PICK_NONE){if(trip_pick_mode==DEST_PICK_ADD_STOP){if(trip_add_stop(p.name,p.lat,p.lon)){add_recent(p.name,p.lat,p.lon);notice_success(ui_tr("STOP ADDED"));}else notice_fail(ui_tr("STOP NOT ADDED"));}else{trip_change_destination(p.name,p.lat,p.lon);notice_success(ui_tr("DESTINATION CHANGED"));}trip_pick_mode=DEST_PICK_NONE;trip_pane=1;trip_right_focus=0;return;}if(ok){modal=trip_tab==0?MOD_RECENT:MOD_FAVE;modal_index=trip_focus;modal_choice=0;}return;}}
+  if(trip_pane==0){int maxf=trip_tab==0?(nrecents?nrecents-1:0):(nfaves?nfaves-1:0);if(code==K_LEFT||code==K_RIGHT){trip_tab=trip_tab?0:1;trip_focus=0;return;}if(code==K_UP&&trip_focus>0)trip_focus--;else if(code==K_DOWN&&trip_focus<maxf)trip_focus++;else if(code==K_ENTER){struct SavedPlace p;int ok=0;if(trip_tab==0&&trip_focus<nrecents){p=recents[trip_focus];ok=1;}else if(trip_tab==1&&trip_focus<nfaves){p=faves[trip_focus];ok=1;}if(ok&&trip_pick_mode!=DEST_PICK_NONE){if(trip_pick_mode==DEST_PICK_ADD_STOP){if(trip_add_stop(p.name,p.lat,p.lon)){add_recent(p.name,p.lat,p.lon);}else notice_fail(ui_tr("STOP NOT ADDED"));}else{trip_change_destination(p.name,p.lat,p.lon);}trip_pick_mode=DEST_PICK_NONE;trip_pane=1;trip_right_focus=0;return;}if(ok){modal=trip_tab==0?MOD_RECENT:MOD_FAVE;modal_index=trip_focus;modal_choice=0;}return;}}
   else if(trip.active){int rem=trip.count-trip.active_idx,total=rem+2;if(code==K_UP&&trip_right_focus>0)trip_right_focus--;else if(code==K_DOWN&&trip_right_focus+1<total)trip_right_focus++;else if(code==K_ENTER){if(trip_right_focus<rem){modal=MOD_TARGET;modal_index=trip.active_idx+trip_right_focus;modal_choice=0;}else if(trip_right_focus==rem){if(trip.count<TRIP_MAX_TARGETS){dest_pick_action=DEST_PICK_ADD_STOP;modal=MOD_SOURCE_PICK;modal_choice=0;}}else{modal=MOD_CANCEL_ROUTE;modal_choice=1;}return;}}
   else if(code==K_ENTER){phone_wait_action=DEST_PICK_NONE;modal=MOD_WAIT_PHONE;modal_choice=0;}
   return;}
-if(screen==SCR_BT){if(code==K_ESC){bt_page_dialog=-1;return;}if(bt_page_dialog>=0){if(code==K_LEFT){bt_page_dialog_choice=0;return;}if(code==K_RIGHT){bt_page_dialog_choice=1;return;}if(code==K_ENTER){if(bt_page_dialog_choice==0)bt_command_arg("CONNECT",btdev[bt_page_dialog].addr);else bt_command_arg("UNPAIR",btdev[bt_page_dialog].addr);bt_page_dialog=-1;return;}return;}bt_page_clamp();int ci=bt_connected_idx(),base=ci>=0?1:0,sc=bt_saved_count(),total=base+sc+1;if(code==K_UP&&bt_page_focus>0){bt_page_focus--;return;}if(code==K_DOWN&&bt_page_focus+1<total){bt_page_focus++;return;}if(ci>=0&&bt_page_focus==0){if(code==K_LEFT){bt_page_connected_choice=0;return;}if(code==K_RIGHT){bt_page_connected_choice=1;return;}if(code==K_ENTER){if(bt_page_connected_choice==0)bt_command_arg("DISCONNECT",btdev[ci].addr);else bt_command_arg("UNPAIR",btdev[ci].addr);return;}return;}if(code==K_ENTER){int ord=bt_page_focus-base;if(ord>=0&&ord<sc){int di=bt_saved_idx(ord);if(di>=0){bt_page_dialog=di;bt_page_dialog_choice=0;}return;}if(ord==sc){bt_command("PAIR");return;}}return;}
-if(screen==SCR_SET){int changed=0;if(code==K_ENTER&&set_focus==7){pref.language=(pref.language+1)%UI_LANGUAGE_COUNT;prefs_mark_dirty();return;}if(code==K_ENTER&&set_focus==5){pref.clock_auto=!pref.clock_auto;clock_next_ms=0;clock_service();prefs_mark_dirty();return;}if(code==K_UP&&set_focus>0)set_focus--;else if(code==K_DOWN&&set_focus<7)set_focus++;else if(code==K_LEFT||code==K_RIGHT){int d=code==K_RIGHT?1:-1;if(set_focus==0){pref.bright+=d*10;if(pref.bright<10)pref.bright=10;if(pref.bright>100)pref.bright=100;apply_brightness();changed=1;}else if(set_focus==1){pref.theme+=d;if(pref.theme<THEME_DAY)pref.theme=THEME_AUTO;if(pref.theme>THEME_AUTO)pref.theme=THEME_DAY;refresh_theme();changed=1;}else if(set_focus==2){pref.units=(pref.units+d+3)%3;changed=1;}else if(set_focus==3){if(pref.autozoom){manual_zoom=active_zoom();pref.autozoom=0;zoom_override=-1;}else{pref.autozoom=1;auto_zoom_level=-1;zoom_override=-1;}changed=1;}else if(set_focus==4){pref.cameras=(pref.cameras+d+3)%3;changed=1;}else if(set_focus==5){pref.clock_auto=0;int m=pref.hoff*60+pref.moff+d*15;if(m< -720)m=840;if(m>840)m=-720;pref.hoff=m/60;pref.moff=m%60;changed=1;}else if(set_focus==7){pref.language=(pref.language+d+UI_LANGUAGE_COUNT)%UI_LANGUAGE_COUNT;changed=1;}else if(set_focus==6){pref.debug=!pref.debug;changed=1;debug_state_write();if(!pref.debug)remove_stale_logs();}if(changed)prefs_mark_dirty();}return;}}
+if(screen==SCR_BT){if(code==K_ESC){bt_page_dialog=-1;return;}if(bt_page_dialog>=0){if(code==K_LEFT){bt_page_dialog_choice=0;return;}if(code==K_RIGHT){bt_page_dialog_choice=1;return;}if(code==K_ENTER){if(bt_page_dialog>=nbtdev){bt_page_dialog=-1;return;}if(bt_page_dialog_choice==0)bt_command_arg("CONNECT",btdev[bt_page_dialog].addr);else bt_forget_device(btdev[bt_page_dialog].addr);bt_page_dialog=-1;return;}return;}bt_page_clamp();int ci=bt_connected_idx(),base=ci>=0?1:0,sc=bt_saved_count(),total=base+sc+1;if(code==K_UP&&bt_page_focus>0){bt_page_focus--;return;}if(code==K_DOWN&&bt_page_focus+1<total){bt_page_focus++;return;}if(ci>=0&&bt_page_focus==0){if(code==K_LEFT){bt_page_connected_choice=0;return;}if(code==K_RIGHT){bt_page_connected_choice=1;return;}if(code==K_ENTER){if(bt_page_connected_choice==0)bt_command_arg("DISCONNECT",btdev[ci].addr);else bt_forget_device(btdev[ci].addr);return;}return;}if(code==K_ENTER){int ord=bt_page_focus-base;if(ord>=0&&ord<sc){int di=bt_saved_idx(ord);if(di>=0){bt_page_dialog=di;bt_page_dialog_choice=0;}return;}if(ord==sc){bt_command("PAIR");return;}}return;}
+if(screen==SCR_SET)settings_key(code);}
+
 
 static void poll_keys(void){for(int i=0;i<INPUT_MAX;i++){if(infd[i]<0)continue;for(;;){struct input_event16 e;long n=s_read(infd[i],&e,sizeof(e));if(n==(long)sizeof(e)){if(e.type==EV_KEY&&e.value==1&&known_remote_key(e.code)){if(input_lock<0){input_lock=i;input_log2("INPUT LOCK",i,e.code);}if(input_lock==i)key_handle(e.code);}continue;}if(n==0||(n<0&&n!=EAGAIN_NEG)){s_close(infd[i]);infd[i]=-1;if(input_lock==i){input_log2("INPUT LOST",i,-1);input_lock=-1;}}break;}}}
 
@@ -2356,7 +2607,7 @@ static void run(void){
   for(;;){
     next_frame+=ROUTE_FRAME_MS;
     if((tick%5)==0)scan_inputs();int had_fix=gps.fix;poll_gps();if(gps.fix){if(!had_fix){track_valid=0;track_course=-1;}remember_live_fix();}update_smooth_track();update_display_course();poll_keys();if((tick%2)==0){poll_audio();poll_car();bt_source_service();}if((tick%5)==0){bt_poll_status();poll_phone_destination();}if((tick%10)==0)update_road_context();
-    phone_destination_apply();trip_service();arrival_modal_service();if(bt_control_mode&&(screen!=SCR_MAP||modal!=MOD_NONE||freecam||!bt_source_selected()))bt_control_mode=0;prefs_service();ui_anim_tick=tick;if((tick%10)==0&&wdfd>=0)s_write(wdfd,"W",1);
+    phone_destination_apply();trip_service();arrival_modal_service();if(bt_control_mode&&(screen!=SCR_MAP||modal!=MOD_NONE||freecam||!bt_controls_available()))bt_control_mode=0;prefs_service();ui_anim_tick=tick;if((tick%10)==0&&wdfd>=0)s_write(wdfd,"W",1);
 
     /* DEV5.12 routed only in whatever time the completed frame happened to leave.
      * PERF2 gives an active query a guaranteed bounded foreground slice instead.

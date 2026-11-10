@@ -19,10 +19,21 @@ int main(int argc,char**argv){
  for(int night=0;night<2;night++)for(int clockwise=0;clockwise<2;clockwise++){
   fixture();pref.theme=night?THEME_NIGHT:THEME_DAY;apply_palette(night);screen=SCR_MAP;
   region_flags=clockwise?4:0;nav_man_type=MAN_ROUNDABOUT;nav_man_exit=3;nav_man_idx=8;nav_man_m=180;
-  draw_map();char name[80];snprintf(name,sizeof(name),"%s-%s",night?"night":"day",clockwise?"clockwise":"counterclockwise");snapshot(name);
+  draw_map();
+#ifdef HUD_TURN_ICON
+  hud_settle_for_capture(hud_now_ms());draw_map();
+#endif
+  char name[80];snprintf(name,sizeof(name),"%s-%s",night?"night":"day",clockwise?"clockwise":"counterclockwise");snapshot(name);
   fill(0,0,W,H,C_HEADER);
   const int exits[]={0,1,2,3,4,12};
-  for(int i=0;i<6;i++){nav_man_exit=exits[i];draw_manoeuvre_icon(40+i*80,40,MAN_ROUNDABOUT);}
+  for(int i=0;i<6;i++){
+#ifdef HUD_TURN_ICON
+   struct HudCard turn={.kind=MAN_ROUNDABOUT,.flags=clockwise,.value=exits[i]};
+   hud_draw_turn(40+i*80,40,&turn);
+#else
+   nav_man_exit=exits[i];draw_manoeuvre_icon(40+i*80,40,MAN_ROUNDABOUT);
+#endif
+  }
   snprintf(name,sizeof(name),"icons-%s-%s",night?"night":"day",clockwise?"clockwise":"counterclockwise");snapshot(name);
  }
  return 0;
@@ -62,8 +73,8 @@ def main():
             title=side.title()+' · '+('UK / clockwise' if row==0 else 'Right-hand traffic')
             d.text((x,y),title,font=font,fill=(225,231,242))
             im=Image.open(out/side/(scene+'.png'));board.paste(im,(x,y+26))
-            dy=12+170*row;dd.text((x,dy),title+' · 4× crop',font=font,fill=(225,231,242))
-            detail.paste(im.crop((374,242,480,272)).resize((424,120),Image.Resampling.NEAREST),(x,dy+28))
+            dy=12+170*row;dd.text((x,dy),title+' · 3× crop',font=font,fill=(225,231,242))
+            detail.paste(im.crop((342,218,474,265)).resize((396,141),Image.Resampling.NEAREST),(x,dy+28))
     board.save(out/'comparison.png');detail.save(out/'detail.png')
     print('Production framebuffer renders:',out)
 

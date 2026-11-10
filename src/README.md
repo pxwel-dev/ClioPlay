@@ -1,4 +1,4 @@
-# ClioPlay Global 1.1.0-rc.2
+# ClioPlay Global
 
 A standalone edition of the compact 480×272 ClioPlay interface for non-LIVE
 Carminat TomTom. It keeps the remote workflow, continuous antialiased roads/routes,
@@ -38,6 +38,14 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
 
 ## Behaviour
 
+- **Driving display:** the map fills the screen. The clock shows the outside
+  temperature when a valid reading is available. Audio, volume, connection and
+  navigation updates animate in as temporary notices. A new road name appears
+  briefly in the centre and shares its pill with any camera warning. The speed
+  and turn pills flank it. Exceeding a confirmed limit pulses the speed pill red.
+- **Menus:** each page title shares the top row with the clock and temporary
+  audio or connection notices. In Bluetooth control mode, Left and Right skip
+  tracks, and OK toggles playback. The selected control briefly highlights.
 - **Units:** Auto / Metric / Imperial. Country profiles cover 260 territories;
   explicit mph road evidence is a fallback when country resolution is unavailable. Speed, limits and distances agree.
   Numeric metric limits retain their exact value, including 130 km/h.
@@ -92,23 +100,16 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
   street names remain unchanged. Received UTF-8 names, Arabic/Indic shaping and
   bidirectional text run on the device. Fonts cover major scripts, not all Unicode
   or emoji. English uses “Bluetooth” for the page title; other languages retain their
-  translated phone labels. The top-bar source badge uses “BT” in every language,
-  with the playback symbol on the same centred row. The favourite keyboard provides independent uppercase/accented and native-script
+  translated phone labels. The audio notice uses “BT” in every language.
+  The favourite keyboard provides independent uppercase/accented and native-script
   layouts, with left-soft backspace, right-soft space and a wide language chooser.
   See [keyboard controls and input methods](locales/README.md#favourite-keyboard).
 
-## Framebuffer showcase
+## UI previews
 
-[Watch the showcase](docs/demo/index.html) or [download the MP4](docs/demo/clioplay-demo.mp4).
-The main presentation uses Night mode and demonstrates everyday remote controls,
-Trip and favourites, Bluetooth/audio, useful settings and the actual ClioPlay
-Send workflow. Day/Auto themes appear briefly. The video uses short descriptions
-and a remote drawing with synchronized key highlights. See the
-[chapters and regeneration notes](docs/demo/README.md).
-
-These are independent host examples with controlled sample state. The Sender
-publishes real browser metadata, with the Bluetooth radio hop simulated;
-physical head-unit timing, audio and wireless operation need hardware validation.
+The [main README](../README.md#ui-previews) embeds short native framebuffer GIFs
+of driving, menus, Bluetooth playback and receiving a destination. See the
+[preview notes](docs/demo/README.md) for the sample inputs and regeneration steps.
 
 ## Contents and validation
 

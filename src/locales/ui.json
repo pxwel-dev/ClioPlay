@@ -20,6 +20,62 @@
     "he"
   ],
   "strings": {
+    "Menu": [
+      "Menu",
+      "Menú"
+    ],
+    "Rename": [
+      "Renommer",
+      "Renombrar"
+    ],
+    "Connected to": [
+      "Connecté à",
+      "Conectado a"
+    ],
+    "Disconnected": [
+      "Déconnecté",
+      "Desconectado"
+    ],
+    "Device forgotten": [
+      "Appareil oublié",
+      "Dispositivo olvidado"
+    ],
+    "Reconnecting": [
+      "Reconnexion en cours",
+      "Reconectando"
+    ],
+    "Favourite saved": [
+      "Favori enregistré",
+      "Favorito guardado"
+    ],
+    "Favourite removed": [
+      "Favori supprimé",
+      "Favorito eliminado"
+    ],
+    "Favourite renamed": [
+      "Favori renommé",
+      "Favorito renombrado"
+    ],
+    "Stop removed": [
+      "Étape supprimée",
+      "Parada eliminada"
+    ],
+    "Stop moved": [
+      "Étape déplacée",
+      "Parada movida"
+    ],
+    "Route cancelled": [
+      "Itinéraire annulé",
+      "Ruta cancelada"
+    ],
+    "Trip resumed": [
+      "Trajet repris",
+      "Viaje reanudado"
+    ],
+    "Keyboard language": [
+      "Langue du clavier",
+      "Idioma del teclado"
+    ],
     "Settings": [
       "Réglages",
       "Ajustes"

@@ -10,21 +10,50 @@ static u16 mix(u16 a,u16 b,int alpha){
  return (u16)((((ar*(15-alpha)+((b>>11)&31)*alpha+7)/15)<<11)|
   (((ag*(15-alpha)+((b>>5)&63)*alpha+7)/15)<<5)|((ab*(15-alpha)+(b&31)*alpha+7)/15));
 }
-static void blend_pixel(int x,int y,u16 c,int a){if(x>=clip_x&&x<clip_right&&y>=clip_y&&y<clip_bottom)fb[y*W+x]=mix(fb[y*W+x],c,a);}
-static int rounded_inside(int px0,int py0,int w,int h,int r){
- if(px0<0||py0<0||px0>=w||py0>=h)return 0;
- int dx=px0<r?r-px0:(px0>=w-r?px0-(w-r-1):0);
- int dy=py0<r?r-py0:(py0>=h-r?py0-(h-r-1):0);
- return !dx||!dy||dx*dx+dy*dy<=r*r;
+static void blend_pixel(int x,int y,u16 c,int a){
+#ifdef CLIO_UI_ALPHA
+ if(hud_ink_alpha!=16)a=(a*hud_ink_alpha+8)>>4;
+#endif
+ if(a&&x>=clip_x&&x<clip_right&&y>=clip_y&&y<clip_bottom)fb[y*W+x]=mix(fb[y*W+x],c,a);
+}
+static int round_corner_coverage(int x,int y,int r){
+ int coverage=0,radius=r*8;
+ for(int sy=1;sy<8;sy+=2)for(int sx=1;sx<8;sx+=2){
+  int dx=radius-x*8-sx,dy=radius-y*8-sy;
+  coverage+=dx*dx+dy*dy<=radius*radius;
+ }
+ return coverage;
 }
 static void round_rect(int x,int y,int w,int h,int r,u16 c,int a){
- if(w<=0||h<=0)return;if(r>w/2)r=w/2;if(r>h/2)r=h/2;
- /* Opaque card interiors are fast row spans. Alpha is reserved for corners/shadows. */
- for(int j=0;j<h;j++){
-  int inset=0;
-  if(j<r||j>=h-r)while(inset<r&&!rounded_inside(inset,j,w,h,r))inset++;
-  if(a==15)fill(x+inset,y+j,w-2*inset,1,c);
-  else for(int i=inset;i<w-inset;i++)blend_pixel(x+i,y+j,c,a);
+ if(w<=0||h<=0||a<=0)return;
+ if(r>w/2)r=w/2;if(r>h/2)r=h/2;
+ /* Cache the subpixel corners. Large opaque interiors still use row spans. */
+ enum {CACHED_RADIUS=6};
+ static u8 corner[CACHED_RADIUS+1][CACHED_RADIUS][CACHED_RADIUS];
+ static unsigned ready;
+ if(r>0&&r<=CACHED_RADIUS&&!(ready&(1u<<r))){
+  for(int j=0;j<r;j++)for(int i=0;i<r;i++)corner[r][j][i]=(u8)round_corner_coverage(i,j,r);
+  ready|=1u<<r;
+ }
+ int opaque=a==15;
+#ifdef CLIO_UI_ALPHA
+ opaque=opaque&&hud_ink_alpha==16;
+#endif
+ int start=y<clip_y?clip_y:y,end=y+h>clip_bottom?clip_bottom:y+h;
+ for(int row=start;row<end;row++){
+  int dy=row-y,opposite=y+h-1-row;
+  if(opposite<dy)dy=opposite;
+  int inset=dy<r?r:0;
+  int left=x+inset,right=x+w-inset;
+  if(left<clip_x)left=clip_x;if(right>clip_right)right=clip_right;
+  if(opaque)fill(left,row,right-left,1,c);
+  else for(int col=left;col<right;col++)blend_pixel(col,row,c,a);
+  for(int i=0;i<inset;i++){
+   int coverage=r<=CACHED_RADIUS?corner[r][dy][i]:round_corner_coverage(i,dy,r);
+   int alpha=(coverage*a+8)>>4;
+   blend_pixel(x+i,row,c,alpha);
+   blend_pixel(x+w-1-i,row,c,alpha);
+  }
  }
 }
 static void circle(int x,int y,int r,u16 color){

@@ -11,7 +11,12 @@
 #include <string.h>
 static const char*outdir;
 static void snapshot(const char*name){char p[1024];snprintf(p,sizeof(p),"%s/%s.rgb565",outdir,name);FILE*f=fopen(p,"wb");assert(f);assert(fwrite(fb,1,sizeof(fb),f)==sizeof(fb));fclose(f);}
-static void settle(void){draw();}
+static void settle(void){
+ draw();
+#ifdef HUD_TURN_ICON
+ hud_settle_for_capture(hud_now_ms());draw();
+#endif
+}
 static void fixture(void){
  pref_keyboard_language=-1;kbd_language=kbd_page=kbd_picker=kbd_column=0;kbd_clear_composition();
  gps.fix=track_valid=display_course_valid=1;gps.lat=track_lat=cp_route[0][0];gps.lon=track_lon=cp_route[0][1];gps.course=track_course=display_course=0;gps.mph10=240;gps.hour=21;gps.min=41;gps.day=19;gps.mon=10;gps.year=2026;
@@ -30,6 +35,10 @@ static void fixture(void){
  nbtdev=10;for(int i=0;i<10;i++){snprintf(btdev[i].name,sizeof(btdev[i].name),"Saved phone %02d",i+1);snprintf(btdev[i].addr,sizeof(btdev[i].addr),"00:11:22:33:44:%02d",i);btdev[i].connected=i==0;}
  copystr(btdev[0].name,sizeof(btdev[0].name),"Demo phone");
  modal=MOD_NONE;bt_page_dialog=-1;bt_control_mode=0;trip_need_route=0;notice_text[0]=0;
+#ifdef HUD_TURN_ICON
+ hud_audio.kind=hud_source.kind=hud_navigation.kind=hud_connection.kind=hud_bt_feedback.kind=HUD_NONE;
+ hud_observed_route=route_status;hud_reset_animations();
+#endif
 }
 
 static void scenes(void){
@@ -45,9 +54,14 @@ static void scenes(void){
  fixture();screen=SCR_MAP;bt_control_mode=1;pref.theme=THEME_NIGHT;settle();snapshot("driving-media");
  copystr(btui.title,sizeof(btui.title),"An exceptionally long track title that should never cover the clock");
  copystr(roadctx.street,sizeof(roadctx.street),"An exceptionally long road name for fitting");settle();snapshot("driving-long-text");
- fixture();screen=SCR_MAP;set_band("FM");copystr(af.station,sizeof(af.station),"BBC Radio 1");copystr(af.freq,sizeof(af.freq),"98.8");settle();snapshot("driving-radio");
- u16 header_copy[W*40];memcpy(header_copy,fb,sizeof(header_copy));copystr(btui.title,sizeof(btui.title),"STALE TRACK SHOULD BE HIDDEN");header();assert(!memcmp(header_copy,fb,sizeof(header_copy)));
- set_band("AUX");settle();snapshot("driving-aux");memcpy(header_copy,fb,sizeof(header_copy));btui.title[0]=0;header();assert(!memcmp(header_copy,fb,sizeof(header_copy)));
+ fixture();screen=SCR_MAP;set_band("FM");copystr(af.station,sizeof(af.station),"BBC Radio 1");copystr(af.freq,sizeof(af.freq),"98.8");rebuild_source();settle();snapshot("driving-radio");
+ copystr(btui.title,sizeof(btui.title),"STALE TRACK SHOULD BE HIDDEN");
+#ifdef HUD_TURN_ICON
+ hud_prepare(active_zoom(),s_now_ms(),1);assert(hud_kind==HUD_SOURCE&&starts(hud_tween[HC_STATUS].target.title,"BBC Radio 1"));
+ set_band("AUX");rebuild_source();settle();snapshot("driving-aux");assert(hud_kind==HUD_SOURCE&&streq(hud_tween[HC_STATUS].target.tag,"AUX")&&!hud_tween[HC_STATUS].target.title[0]);
+#else
+ set_band("AUX");settle();snapshot("driving-aux");
+#endif
  fixture();screen=SCR_MAP;gps.fix=0;settle();snapshot("gps-lost");
  fixture();screen=SCR_MAP;route_status=R_CALC;settle();snapshot("calculating");
  fixture();screen=SCR_MAP;route_status=R_IDLE;trip.active=0;settle();snapshot("driving-no-route");

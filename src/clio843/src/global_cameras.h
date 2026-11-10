@@ -62,14 +62,21 @@ static void camera_service(void){u32 now=s_now_ms();if(camera_next_ms&&(s32)(now
 /* Only fixed and average-speed cameras carry a speed restriction in the UI.
  * Red-light records can contain maxspeed metadata, but it is not their alert. */
 static int camera_is_speed_alert(void){return camera_current.kind==1||camera_current.kind==3;}
-static void camera_strip_text(char*b,int size){b[0]=0;
+static void camera_alert_text(char*b,int size){b[0]=0;
  if(camera_average){appendstr(b,size,ui_tr("AVG "));int v=display_imperial()?(camera_average_speed*100000+80467)/160934:camera_average_speed;append_int(b,size,v);appendstr(b,size,display_imperial()?" mph":" km/h");}
  else appendstr(b,size,camera_current.kind==2?ui_tr("RED LIGHT"):camera_current.kind==3?ui_tr("AVERAGE CHECK"):ui_tr("SPEED CAMERA"));
- if(camera_is_speed_alert()&&camera_current.speed&&!(camera_current.flags&12)){appendstr(b,size," / ");append_int(b,size,display_limit(camera_current.speed,camera_current.flags));}appendstr(b,size,"  ");if(display_imperial()){u32 yd=(camera_distance*1094+500)/1000;append_int(b,size,(int)((yd+5)/10*10));appendstr(b,size," yd");}else{append_int(b,size,(int)((camera_distance+5)/10*10));appendstr(b,size," m");}
+ if(camera_is_speed_alert()&&camera_current.speed&&!(camera_current.flags&12)){appendstr(b,size," / ");append_int(b,size,display_limit(camera_current.speed,camera_current.flags));}
 }
-static void draw_camera_strip(void){if(!camera_visible||!gps.fix)return;char b[64];camera_strip_text(b,sizeof(b));
+static void camera_distance_text(char*b,int size){b[0]=0;
+ if(display_imperial()){u32 yd=(camera_distance*1094+500)/1000;append_int(b,size,(int)((yd+5)/10*10));appendstr(b,size," yd");}
+ else{append_int(b,size,(int)((camera_distance+5)/10*10));appendstr(b,size," m");}
+}
+static void camera_strip_text(char*b,int size){
+ char d[24];camera_alert_text(b,size);camera_distance_text(d,sizeof(d));
+ appendstr(b,size,"  ");appendstr(b,size,d);
+}
+static u16 camera_alert_colour(void){
  int actual=camera_average?camera_average_speed:(gps.mph10*160934+500000)/1000000;
  int limit=camera_current.flags&2?(camera_current.speed*160934+50000)/100000:camera_current.speed;
- u16 colour=camera_is_speed_alert()&&!(camera_current.flags&12)&&limit>0&&actual>limit?C_WARN:C_CYAN;
- fill(133,243,240,29,C_PANEL);fill(133,243,240,2,colour);compact_center(253,251,228,0,b,colour);
+ return camera_is_speed_alert()&&!(camera_current.flags&12)&&limit>0&&actual>limit?C_WARN:C_CYAN;
 }

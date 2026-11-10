@@ -16,12 +16,13 @@ def sha(path):
   for chunk in iter(lambda:f.read(1024*1024),b''):h.update(chunk)
  return h.hexdigest()
 
-def inputs():
+def inputs(published_reports):
  from build_ui import inspect_elf
- files={};reports={};expected={}
+ files={};reports={};report_paths={};expected={}
  for name in PROGRAMS:
   report=ROOT/'build'/f'{name}.build.json'
-  if not report.exists():report=ROOT/'build-reports'/f'{name}.build.json'
+  if published_reports or not report.is_file():report=ROOT/'build-reports'/f'{name}.build.json'
+  report_paths[name]=report
   data=json.loads(report.read_text());binary=ROOT/'clio843'/name
   if inspect_elf(binary)['sha256']!=data['sha256'] or sha(ROOT/'clio843'/name)!=data['sha256']:
    raise ValueError('Compile and install the current program first: '+name)
@@ -33,7 +34,7 @@ def inputs():
   if not (ROOT/rel).is_file() or sha(ROOT/rel)!=digest:raise ValueError('Changed source; compile and install first: '+rel)
  font=ROOT/'navigation-builder/data/global-fonts.cpf';info=json.loads(font.with_suffix('.cpf.json').read_text())
  if sha(font)!=info['sha256']:raise ValueError('Global font checksum mismatch')
- files.update(source_files(ROOT))
+ files.update(source_files(ROOT,report_paths))
  for name in ('LICENSE','THIRD_PARTY_NOTICES.md'):
   files[name]=ROOT/name
  files['SOURCE_STATUS.md']=ROOT/'docs/source-status.md'
@@ -48,10 +49,8 @@ def inputs():
 
 def readme(updated):
  template=(ROOT/'docs/repository-readme.md').read_text()
- film=json.loads((ROOT/'docs/demo/manifest.json').read_text())
- seconds=round(film['duration_seconds']);duration=f'{seconds//60}:{seconds%60:02}'
  date=datetime.fromisoformat(updated).strftime('%d %B %Y')
- return template.replace('@@UPDATED@@',date).replace('@@DURATION@@',duration).encode()
+ return template.replace('@@UPDATED@@',date).replace('@@VERSION@@',(ROOT/'VERSION').read_text().strip()).encode()
 
 
 def safe_target(output,name):
@@ -70,7 +69,8 @@ def refresh(output=DEFAULT,check=False):
  if output.is_symlink():raise ValueError('Delivery folder is a symbolic link')
  previous=json.loads((output/'latest.json').read_text()) if (output/'latest.json').exists() else None
  if portable and previous.get('format')!='clioplay-latest-1':raise ValueError('Not a ClioPlay publication folder')
- files,reports=inputs()
+ # Verify the shipped files even if an ignored local build predates them.
+ files,reports=inputs(published_reports=check and portable)
  # Source fingerprints use publication-relative identities, never the local
  # build/ path of a freshly generated report. A Git checkout has only the
  # corresponding build-reports/ file, with the same content.
@@ -104,7 +104,7 @@ def refresh(output=DEFAULT,check=False):
   tests['publication']=verify_tree(stage)
   hashes={str(p.relative_to(stage)):sha(p) for p in sorted(stage.rglob('*')) if p.is_file()}
   checksum=''.join(digest+'  '+name+'\n' for name,digest in hashes.items());(stage/'SHA256SUMS').write_text(checksum);hashes['SHA256SUMS']=sha(stage/'SHA256SUMS')
-  manifest={'format':'clioplay-latest-1','updated_at':updated,'edition':'Global','payload':'Clean-install source package, current binaries, legacy bootstrap, CAB-based installer; no vendor firmware, navigation packs or companion website','executables':{name:reports[name]['sha256'] for name in PROGRAMS},'source_sha256':source,'files':hashes,'checks':tests}
+  manifest={'format':'clioplay-latest-1','updated_at':updated,'edition':'Global','version':(ROOT/'VERSION').read_text().strip(),'payload':'Clean-install source package, current binaries, legacy bootstrap, CAB-based installer; no vendor firmware, navigation packs or companion website','executables':{name:reports[name]['sha256'] for name in PROGRAMS},'source_sha256':source,'files':hashes,'checks':tests}
   for name in [*hashes,'latest.json',*(previous or {}).get('files',{})]:safe_target(output,name)
   output.mkdir(parents=True,exist_ok=True)
   for name in hashes:
