@@ -23,7 +23,7 @@
     }
   },
   "source": "clio843/src/clioa2dp.c",
-  "source_tree_sha256": "ec1a75737337be2a05d3ab4aa7fa51aa4cffcfa5fe4c1abb8e7d9aca00f13106",
+  "source_tree_sha256": "c511b1707e2f33af3cafbca20721a434b6898f3f2534a13bfc44e05829f3699a",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "b0045a10c40374f77a1865d57be226f40dd313a23c5c38c68b60c3870f42a52b",
@@ -40,7 +40,7 @@
     "clio843/src/global_solar.h": "67d65a0970d4492b15b0f403be352ab32f7441a5a619940f95b60597cfdeda21",
     "clio843/src/global_text.cc": "45b454fa97ec49eaaca230e4578da4361138ff2c5c410e0e552edd5629231858",
     "clio843/src/global_text.h": "49956b951783a12949ea41c4e2df829837eaa8ecfd644c68e6ca57c70a2208b6",
-    "clio843/src/hud.h": "7539ced57e7cda0f6dcbe7e4f9714d438283bf1c02c54a70db37a07f384f0249",
+    "clio843/src/hud.h": "2ea086bd37ab2021ce2351941b10146f46453d031b504ae1496f04ae942e90b3",
     "clio843/src/hud_glass.h": "0daf30f30a65997b6b75ac3ae9b6e2c5701e6b4dfbf3d71319672ee04ada1254",
     "clio843/src/hud_turn_masks.h": "ceb5cc2dfc83963855f1c04541c646ac49a88e6c2177c6584c673d9d97b3ad45",
     "clio843/src/keyboard-data/UNICODE-LICENSE.txt": "e7a93b009565cfce55919a381437ac4db883e9da2126fa28b91d12732bc53d96",

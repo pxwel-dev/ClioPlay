@@ -33,6 +33,9 @@ BLUETOOTH_EVENTS = (
 )
 BLUETOOTH_SAMPLES = sorted({at + step for at, _ in BLUETOOTH_EVENTS for step in TWEEN_STEPS})
 PHONE_CALC_SAMPLES = range(0, 1280, 80)
+SPEED_WARNING_SAMPLES = (0, *range(400, 3041, 80))
+ROUNDABOUT_ETA_SAMPLES = (0, *(600 + step for step in TWEEN_STEPS),
+                        *(4800 + step for step in TWEEN_STEPS))
 
 
 def add(group, name, title, setup='', action='', check='', note=''):
@@ -105,6 +108,9 @@ def catalog(sender_receipts=None):
         motion('HUD motion', f'hud-{name}', title, road_cleared, events, samples)
     motion('HUD motion', 'hud-bluetooth', 'Bluetooth controls and volume', road_cleared,
            BLUETOOTH_EVENTS, BLUETOOTH_SAMPLES)
+    motion('HUD motion', 'hud-speed-warning', 'Speeding warning', road_cleared,
+           ((400, 'gps.mph10=390;assert(hud_is_overspeed());'),
+            (2640, 'gps.mph10=240;assert(!hud_is_overspeed());')), SPEED_WARNING_SAMPLES)
     for name, title, setup in [('explore','Explore map','explore();'), ('menu','Main menu','screen=SCR_MENU;'), ('trip-recents','Recent destinations','screen=SCR_TRIP;'), ('trip-favourites','Favourite destinations','screen=SCR_TRIP;trip_tab=1;'), ('itinerary','Current itinerary','screen=SCR_TRIP;trip_pane=1;'), ('phone','Phone connection','screen=SCR_BT;'), ('settings','Settings','screen=SCR_SET;'), ('keyboard','Name a favourite','name_keyboard();')]:
         add('Overview',name,title,setup)
     for i,title in enumerate(('Destinations','Bluetooth','Settings')):
@@ -130,6 +136,17 @@ def catalog(sender_receipts=None):
             setup='' if mode=='enter' else 'explore();'
             action='key_handle(K_MAP);'+'freecam_orientation_anim_step();'*frame
             key('Animations',f'explore-{mode}-{frame:02}',f'Explore {mode} · frame {frame}',setup,action,note='Consecutive production orientation/tilt steps; 100 ms device cadence, not a measured host frame rate.')
+    browse = 'key_handle(K_MAP);' + 'freecam_orientation_anim_step();' * 6
+    pan = browse + 'key_handle(K_UP);'
+    zoom = pan + 'key_handle(K_SR);'
+    key('Map', 'preview-explore-pan', 'Pan the map', browse + 's32 before=cam_lat;',
+        'key_handle(K_UP);', 'assert(freecam&&cam_lat!=before);')
+    key('Map', 'preview-explore-zoom', 'Zoom the map', pan + 'int before=active_zoom();',
+        'key_handle(K_SR);', 'assert(freecam&&active_zoom()==before+1);')
+    for frame in range(7):
+        key('Map', f'preview-explore-return-{frame:02}', 'Return to driving', zoom,
+            'key_handle(K_MAP);' + 'freecam_orientation_anim_step();' * frame,
+            'assert(!freecam);')
     for name,code,expect in [('previous','K_LEFT','PREV'),('next','K_RIGHT','NEXT'),('pause','K_ENTER','PAUSE')]:
         key('Audio',f'transport-{name}',f'Phone audio · {name}','key_handle(K_BACK);',f'key_handle({code});',f'command_is(" {expect}");', 'The real handler queues a command in isolated host I/O; phone acknowledgement/audio output is simulated.')
     key('Audio','transport-play','Phone audio · play','btui.playing=0;key_handle(K_BACK);','key_handle(K_ENTER);','command_is(" PLAY");')
@@ -153,6 +170,18 @@ def catalog(sender_receipts=None):
     add('Destinations','itinerary-empty','No current route','screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;')
     key('Destinations','empty-receive','Receive first destination from phone','screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;','key_handle(K_ENTER);','assert(modal==MOD_WAIT_PHONE);')
     key('Destinations','full-add-disabled','Full itinerary: add-stop limit','screen=SCR_TRIP;trip_pane=1;four_stops();trip_right_focus=5;','key_handle(K_ENTER);','assert(modal==MOD_NONE&&trip.count==5);')
+    add_stop = 'key_handle(K_MENU);key_handle(K_ENTER);key_handle(K_SR);key_handle(K_DOWN);key_handle(K_DOWN);'
+    add_source = add_stop + 'key_handle(K_ENTER);key_handle(K_DOWN);'
+    pick_favourite = add_source + 'key_handle(K_ENTER);key_handle(K_DOWN);'
+    add('Destinations', 'preview-add-stop', 'Select Add stop', add_stop,
+        check='assert(screen==SCR_TRIP&&trip_pane==1&&trip_right_focus==2);')
+    add('Destinations', 'preview-add-source', 'Choose Favourites as the source', add_source,
+        check='assert(modal==MOD_SOURCE_PICK&&modal_choice==1);')
+    add('Destinations', 'preview-pick-favourite', 'Select Work from favourites', pick_favourite,
+        check='assert(trip_pick_mode==DEST_PICK_ADD_STOP&&trip_tab==1&&trip_focus==1);')
+    key('Destinations', 'preview-stop-added', 'Work added to the itinerary', pick_favourite,
+        'key_handle(K_ENTER);',
+        'assert(trip.count==3&&streq(trip.target[1].name,"Work")&&streq(trip.target[2].name,"Home"));')
     # Every row in each saved-place and target action menu, plus its real outcome.
     for active in (False,True):
         for fav in (False,True):
@@ -264,9 +293,12 @@ def catalog(sender_receipts=None):
         key('Languages','language-'+code,'Language · '+code,'screen=SCR_SET;set_focus=7;pref.language=0;','key_handle(K_RIGHT);'*i,f'assert(pref.language=={i});')
     key('Languages','language-enter','Cycle language with ENTER','screen=SCR_SET;set_focus=7;','key_handle(K_ENTER);','assert(pref.language==1);')
     key('Languages','language-backward','Cycle language backwards','screen=SCR_SET;set_focus=7;','key_handle(K_LEFT);',f'assert(pref.language=={len(languages)-1});')
-    add('Navigation states','roundabout-guidance','Roundabout circulation and exit number',
-        'region_flags|=4;nav_man_type=MAN_ROUNDABOUT;nav_man_exit=3;nav_man_idx=route_head+8;nav_man_m=180;',
+    roundabout = 'region_flags|=4;nav_man_type=MAN_ROUNDABOUT;nav_man_exit=3;nav_man_idx=route_head+8;nav_man_m=180;'
+    add('Navigation states','roundabout-guidance','Roundabout circulation and exit number',roundabout,
         note='Controlled third-exit guidance state; production clockwise HUD glyph.')
+    motion('HUD motion', 'preview-roundabout-eta', 'Roundabout and journey overview', roundabout + road_cleared,
+           ((600, 'key_handle(K_ENTER);assert(hud_navigation.kind==HUD_JOURNEY);'), (4800, '')),
+           ROUNDABOUT_ETA_SAMPLES)
     states=[('gps-lost','Acquiring GPS','gps.fix=0;'),('route-calculating','Calculating route','route_status=R_CALC;'),('route-rerouting','Rerouting','route_status=R_CALC;route_rerouting=1;'),('route-error','No route available','route_status=R_UNREACHABLE;'),('no-route','Driving without a route','route_status=R_IDLE;route_n=0;trip.active=0;'),('limit-estimated','Estimated speed limit','roadctx.speed_flags=3;'),('limit-unknown','Unknown speed limit','roadctx.valid=0;roadctx.speed=0;'),('limit-variable','Variable speed limit','roadctx.speed=0;roadctx.speed_flags=8;'),('limit-unrestricted','Unrestricted speed context','roadctx.speed=0;roadctx.speed_flags=4;'),('limit-three-digit','Three-digit metric speed and limit','pref.units=1;gps.mph10=810;roadctx.speed=130;roadctx.speed_flags=0;'),('limit-metric','Metric speed and road limit','pref.units=1;roadctx.speed=50;roadctx.speed_flags=0;'),('limit-imperial','Imperial speed and road limit','pref.units=2;roadctx.speed=30;roadctx.speed_flags=2;'),('route-long-name','Long street name','copystr(roadctx.street,sizeof(roadctx.street),"A long example street name for fitting");'),('map-missing','Missing navigation data','mapok=0;'),('map-outside','Position outside installed coverage','gps.lat=track_lat=3500000;gps.lon=track_lon=-2000000;')]
     for name,title,setup in states:add('Navigation states',name,title,setup,note='Simulated GPS/road/route state rendered by production draw().')
     for kind,title in [(1,'Fixed speed camera'),(2,'Red-light camera'),(3,'Average-speed entry')]:

@@ -10,11 +10,17 @@ import sys
 import tempfile
 
 from PIL import Image
-from render_gallery import BLUETOOTH_SAMPLES, PHONE_CALC_SAMPLES, ROOT, sha
+from render_gallery import (BLUETOOTH_SAMPLES, PHONE_CALC_SAMPLES, ROUNDABOUT_ETA_SAMPLES,
+                            SPEED_WARNING_SAMPLES, ROOT, sha)
 
 
 def timeline(theme, scenes):
     return [(f'{theme}/{scene}.png', ms) for scene, ms in scenes]
+
+
+def timed_scenes(prefix, samples, end):
+    return [(f'{prefix}-{start:04d}', stop - start)
+            for start, stop in zip(samples, [*samples[1:], end])]
 
 
 def previews():
@@ -30,14 +36,24 @@ def previews():
             ('showcase-keyboard-char', 1050), ('phone', 900), ('settings', 950),
             ('showcase-theme-day', 1200),
         ]),
-        'bluetooth.gif': timeline('night', [
-            (f'hud-bluetooth-{start:04d}', end - start)
-            for start, end in zip(BLUETOOTH_SAMPLES, [*BLUETOOTH_SAMPLES[1:], 4750])
-        ]),
+        'bluetooth.gif': timeline('night', timed_scenes('hud-bluetooth', BLUETOOTH_SAMPLES, 4750)),
         'phone-destination.gif': timeline('night', [
             ('empty-receive', 1450),
             *((f'phone-preview-calculating-{ms:04d}', 80) for ms in PHONE_CALC_SAMPLES),
             ('phone-preview-trip', 1750),
+        ]),
+        'speed-warning.gif': timeline('night', timed_scenes('hud-speed-warning', SPEED_WARNING_SAMPLES, 3650)),
+        'map-browsing.gif': timeline('night', [
+            ('driving', 800),
+            *((f'explore-enter-{i:02}', 100) for i in range(5)), ('explore-enter-05', 600),
+            ('preview-explore-pan', 700), ('preview-explore-zoom', 750),
+            *((f'preview-explore-return-{i:02}', 100) for i in range(6)),
+            ('preview-explore-return-06', 750),
+        ]),
+        'roundabout-eta.gif': timeline('night', timed_scenes('preview-roundabout-eta', ROUNDABOUT_ETA_SAMPLES, 5600)),
+        'add-stop.gif': timeline('night', [
+            ('preview-add-stop', 1100), ('preview-add-source', 1200),
+            ('preview-pick-favourite', 1250), ('preview-stop-added', 1700),
         ]),
     }
 

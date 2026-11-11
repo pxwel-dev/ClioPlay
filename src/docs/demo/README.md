@@ -6,6 +6,10 @@
 | [Menus](menus.gif) | Menu, Trip, favourites, Rename, Bluetooth and Settings, with a switch to Day. |
 | [Bluetooth](bluetooth.gif) | The volume notice expands to show playback controls, then shrinks again. The pause button highlights when pressed. |
 | [Phone destination](phone-destination.gif) | The head unit receives a destination, shows moving route progress and lists the destination in Trip. |
+| [Speeding warning](speed-warning.gif) | The speed pill pulses red above a confirmed 30 mph limit and eases back when the car slows down. |
+| [Map browsing](map-browsing.gif) | MAP opens browsing, the direction pad pans and the right soft key zooms in. MAP returns to guidance. |
+| [Roundabout and ETA](roundabout-eta.gif) | The turn pill shows the third exit. OK displays the estimated time and remaining distance. |
+| [Add a stop](add-stop.gif) | Trip adds a favourite as an intermediate stop and keeps the original destination. |
 
 These silent loops use 480 × 272 frames from the production C renderer.
 They show an example route around Newcastle upon Tyne. Car and phone inputs

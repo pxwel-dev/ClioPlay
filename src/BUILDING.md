@@ -139,7 +139,7 @@ use an existing UK map bundle covering Newcastle:
 python3 tools/render_previews.py --maps /path/to/clio843/maps
 ```
 
-The tool writes four GIFs and a provenance manifest to `docs/demo/`.
+The tool writes the README GIFs and a provenance manifest to `docs/demo/`.
 The renderer uses controlled input and actual remote-handler calls. The phone
 destination preview uses a sample message at the daemon/UI boundary. Raw
 framebuffers and host executables stay temporary. See [preview notes](docs/demo/README.md).

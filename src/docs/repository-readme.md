@@ -15,9 +15,17 @@
 | --- | --- |
 | ![Temporary volume notice and Bluetooth playback controls](src/docs/demo/bluetooth.gif) | ![Receiving a destination from the phone on the head unit](src/docs/demo/phone-destination.gif) |
 
+| Speeding warning | Browse and zoom the map |
+| --- | --- |
+| ![The speed pill pulses red above a confirmed limit and settles when speed drops](src/docs/demo/speed-warning.gif) | ![Switching to map browsing, panning, zooming and returning to guidance](src/docs/demo/map-browsing.gif) |
+
+| Roundabout guidance and ETA | Add a stop from favourites |
+| --- | --- |
+| ![Third-exit roundabout guidance and journey overview on pressing OK](src/docs/demo/roundabout-eta.gif) | ![Adding a saved favourite to the itinerary before the destination](src/docs/demo/add-stop.gif) |
+
 ## Compatibility
 
-ClioPlay targets vehicles with the following equipment:
+This preview release of ClioPlay currently only supports vehicles that have the following:
 
 - Non-Bluetooth radio with a CD player
 - Non-live Carminat TomTom head unit
@@ -82,7 +90,6 @@ For development, see [contributing](CONTRIBUTING.md) and [building](src/BUILDING
 
 Firmware, map extracts, generated navigation, personal settings and build caches
 are excluded from Git. The [UI previews](src/docs/demo/README.md) use the
-production renderer with controlled host inputs. This release still needs a
-[vehicle trial](src/docs/next-release/hardware-trial.md) for timing, controls and audio.
+production renderer with controlled host inputs; it does not establish vehicle performance.
 
 <sub>Release files refreshed @@UPDATED@@ (Europe/London).</sub>

@@ -66,6 +66,7 @@ static void test_speed_limit_glass(void){
    apply_palette(night);hud_reset_animations();hud_driver_prepare(1000);
    const struct HudCard*speed=&hud_tween[HC_SPEED].target;
    assert(streq(speed->detail,limits[i].text));
+   assert(!speed->tag[0]);
    assert(speed->flags==(i==0));
    fill(0,0,W,H,0);hud_glass(speed->box,0);
    u16 outer=fb[sample];

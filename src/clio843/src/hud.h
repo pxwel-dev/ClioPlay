@@ -335,7 +335,6 @@ static void hud_driver_prepare(u32 now){
   speed.box=hud_box(HUD_BOTTOM_MARGIN,HUD_BOTTOM_Y,HUD_SIDE_W,43);
   append_int(speed.title,sizeof(speed.title),display_speed());
   append_road_limit(speed.detail,sizeof(speed.detail),&roadctx);
-  copystr(speed.tag,sizeof(speed.tag),display_imperial()?"mph":"km/h");
   speed.flags=hud_confirmed_limit();
  }
  if(trip.active&&!trip.paused&&gps.fix&&!freecam&&route_status==R_READY&&nav_man_type!=MAN_NONE&&nav_man_idx>=0){
@@ -513,12 +512,11 @@ static void hud_draw_camera(int x,int y,int w,const struct HudCard*c){
  compact_fit(title_x+title_w+HUD_CAMERA_GAP,y+6,distance_w,0,c->badge,c->ink);
 }
 static void hud_draw_speed(struct HudBox b,const struct HudCard*c){
- int speed_x=b.x+36;
- int speed_face=width(c->title,6)<=68?6:5;
- compact_center(speed_x,b.y+(speed_face==6?-2:2),68,speed_face,c->title,C_WHITE);
- compact_center(speed_x,b.y+28,68,0,c->tag,C_MUTED);
-
  struct HudBox limit={b.x+b.w-54,b.y+5,48,33,b.a};
+ int speed_x=(b.x+limit.x)/2;
+ int speed_face=width(c->title,6)<=68?6:5;
+ compact_center(speed_x,b.y+(speed_face==6?3:7),68,speed_face,c->title,C_WHITE);
+
  u16 tint=theme_resolved?rgb(39,52,71):rgb(223,234,246);
  u16 edge=theme_resolved?rgb(119,143,171):rgb(126,148,172);
  if(c->flags)edge=theme_resolved?rgb(225,100,110):rgb(187,48,62);
