@@ -214,3 +214,27 @@ been recovered. Their hashes and role are documented in
 
 For desktop-specific installation steps, see the root [README](../README.md)
 and [Windows setup](../WINDOWS.md). Windows uses the same installer inside WSL.
+
+### Shared status notifications
+
+GPS acquisition/recovery, missing maps, positions outside map coverage, route failures
+and no-active-route changes use the animated status pill. Action confirmations and
+errors (for example, saving a favourite or adding a stop) also use that pill on both
+map and menu pages. They share space with audio, volume and Bluetooth feedback.
+Messages wait for space and receive about four seconds of display time; unchanged
+states are not repeated. Resolved GPS/map/route states cancel stale waiting messages.
+Menus keep notifications above their content. Route calculation retains its moving
+progress indicator. Road names and camera alerts retain their dedicated bottom pill.
+
+Status text uses neutral theme ink for information, green for confirmations, amber
+for warnings such as GPS acquisition, and red for errors. New Bluetooth song titles,
+artists/albums and radio station/frequency changes trigger a short animated update.
+Playback-position reports do not retrigger it. Blank or `--` metadata stays hidden.
+These updates also work in menus and during BT CTRL; volume and transport controls
+remain available alongside them.
+
+In BT CTRL, a thin playback progress bar sits above the control symbols. It uses
+reported track position and duration, smooths position/seek updates and freezes
+when paused. Unknown durations (including live streams) leave the bar hidden.
+The existing pill stays the same height; route calculation keeps its own moving
+loading indicator. The bar displays playback position only; it is not a seek control.

@@ -2,11 +2,11 @@
 #define HUD_CLOCK_X 354
 enum {HUD_BOTTOM_MARGIN=8,HUD_SIDE_W=128,HUD_TURN_X=W-HUD_BOTTOM_MARGIN-HUD_SIDE_W,
  HUD_BOTTOM_GAP=4,HUD_ROAD_PAD=12,HUD_CAMERA_PAD=10,HUD_CAMERA_ICON_W=11,HUD_CAMERA_GAP=8};
-static int map_notice_error_active(void);
-static const char* map_notice_error_text(void);
 
 #include "hud_glass.h"
 #include "hud_turn_masks.h"
+#include "hud_status.h"
+#include "hud_playback.h"
 
 static char nav_zoom[48];
 static int hud_kind,hud_observed_route=R_IDLE;
@@ -126,7 +126,7 @@ static void hud_source_text(char*b,unsigned cap){
  else if(reading_present(car.source)&&!streq(car.source,af.band))copystr(b,cap,car.source);
 }
 
-enum {HUD_KEYS=1, HUD_PROGRESS=2, HUD_MENU_TWO_LINE=4};
+enum {HUD_KEYS=1, HUD_PROGRESS=2, HUD_MENU_TWO_LINE=4, HUD_PLAYBACK=8};
 enum {HUD_STATUS_TITLE,HUD_STATUS_BODY,HUD_STATUS_DETAIL,HUD_STATUS_CONNECTION,
  HUD_STATUS_FEEDBACK,HUD_STATUS_TRANSPORT,HUD_STATUS_LAYOUT_COUNT};
 static struct {
@@ -183,7 +183,6 @@ static void hud_nav_text(struct HudCard*c,int z,int kind,int tag){
  case HUD_CALC:
   copystr(c->title,sizeof(c->title),route_dest_idx>0?ui_tr("Trying nearby road"):(route_rerouting?ui_tr("Rerouting"):ui_tr("Calculating route")));
   c->flags|=HUD_PROGRESS;break;
- case HUD_NOTICE:copystr(c->title,sizeof(c->title),map_notice_error_text());break;
  case HUD_FAILURE:copystr(c->title,sizeof(c->title),hud_route_error());break;
  case HUD_JOURNEY:
   if(route_status==R_READY){if(tag)copystr(c->tag,sizeof(c->tag),"ETA");hud_journey_text(c->title,sizeof(c->title));}break;
@@ -201,30 +200,31 @@ static void hud_prepare(int z,u32 now,int map){
   memzero(&hud_tween[HC_STATUS],sizeof(hud_tween[HC_STATUS]));
   hud_status_map=map;
  }
- hud_clock_prepare(now);
+ hud_clock_prepare(now);hud_playback_update(now);
  if(!map)hud_menu_title_prepare();
  int audio_available=audio_source_detected()&&(!bt_source_selected()||btui.connected);
  if(!audio_available||!hud_pulse_live(&hud_audio,now)||!reading_present(car.volume))hud_audio.kind=HUD_NONE;
- if(!audio_available||!hud_pulse_live(&hud_source,now))hud_source.kind=HUD_NONE;
+ if(!audio_available||!hud_pulse_live(&hud_source,now)||
+    (hud_source.kind==HUD_TRACK&&(!bt_source_selected()||!reading_present(btui.title))))hud_source.kind=HUD_NONE;
  if(!hud_pulse_live(&hud_navigation,now))hud_navigation.kind=HUD_NONE;
  if(!btui.connected||!hud_pulse_live(&hud_connection,now))hud_connection.kind=HUD_NONE;
- if(!btui.connected||!hud_pulse_live(&hud_bt_feedback,now))hud_bt_feedback.kind=HUD_NONE;
- if(map&&route_status!=hud_observed_route){
+ if(!hud_pulse_live(&hud_bt_feedback,now))hud_bt_feedback.kind=HUD_NONE;
+ if(route_status!=hud_observed_route){
   hud_observed_route=route_status;
   if(route_status==R_READY)hud_pulse_at(&hud_navigation,HUD_JOURNEY,now,4200);
   else if(route_status>=R_NOFILE)hud_pulse_at(&hud_navigation,HUD_FAILURE,now,4200);
   else if(route_status==R_IDLE&&(hud_navigation.kind==HUD_JOURNEY||hud_navigation.kind==HUD_FAILURE))hud_navigation.kind=HUD_NONE;
  }
  int media=map&&!freecam&&bt_control_mode&&bt_controls_available();
- int nav=map?hud_navigation.kind:HUD_NONE;
- int urgent=map&&map_notice_error_active()?HUD_NOTICE:
-  (map&&route_status==R_CALC?HUD_CALC:(nav==HUD_FAILURE?HUD_FAILURE:HUD_NONE));
+ int nav=map||hud_navigation.kind==HUD_FAILURE?hud_navigation.kind:HUD_NONE;
+ int urgent=route_status==R_CALC?HUD_CALC:(nav==HUD_FAILURE?HUD_FAILURE:HUD_NONE);
  if(media){
   copystr(c.tag,sizeof(c.tag),"BT ");appendstr(c.tag,sizeof(c.tag),ui_tr("CTRL"));
-  c.flags|=HUD_KEYS;c.value=bt_transport_playing(now);
+  c.flags|=HUD_KEYS;if(hud_playback.valid)c.flags|=HUD_PLAYBACK;c.value=bt_transport_playing(now);
  }
  if(urgent){
   c.kind=urgent;hud_nav_text(&c,z,urgent,!media);
+  if(urgent==HUD_FAILURE)c.ink|=HUD_ERROR;
   if(hud_source.kind){copystr(c.detail,sizeof(c.detail),hud_audio_tag());appendstr(c.detail,sizeof(c.detail),"  ");char source[96];hud_source_text(source,sizeof(source));appendstr(c.detail,sizeof(c.detail),source);}
   else if(media)copystr(c.detail,sizeof(c.detail),hud_track());
  }else if(media){
@@ -239,9 +239,11 @@ static void hud_prepare(int z,u32 now,int map){
   }
  }else if(nav&&(!hud_source.kind||!time_before_u32(hud_navigation.changed,hud_source.changed))){
   c.kind=nav;hud_nav_text(&c,z,nav,1);
+  if(nav==HUD_FAILURE)c.ink|=HUD_ERROR;
   if(hud_source.kind){copystr(c.detail,sizeof(c.detail),hud_audio_tag());appendstr(c.detail,sizeof(c.detail),"  ");char source[96];hud_source_text(source,sizeof(source));appendstr(c.detail,sizeof(c.detail),source);}
  }else if(hud_source.kind){
   c.kind=HUD_SOURCE;copystr(c.tag,sizeof(c.tag),hud_audio_tag());hud_source_text(c.title,sizeof(c.title));
+  if(bt_source_selected()&&reading_present(btui.artist))copystr(c.detail,sizeof(c.detail),btui.artist);
  }
  int show_connection=hud_connection.kind&&(map||!hud_bt_feedback.kind||
   !time_before_u32(hud_connection.changed,hud_bt_feedback.changed));
@@ -251,11 +253,11 @@ static void hud_prepare(int z,u32 now,int map){
   unsigned cap=c.kind?sizeof(c.connection):sizeof(c.title);
   copystr(text,cap,ui_tr(has_device_name?"Connected to":"Connected"));
   if(has_device_name){appendstr(text,cap," ");appendstr(text,cap,hud_connected_name);}
-  if(!c.kind)c.kind=HUD_CONNECTION;
+  if(!c.kind){c.kind=HUD_CONNECTION;c.ink|=HUD_SUCCESS;}else c.ink|=HUD_SUCCESS<<4;
  }
  if(hud_bt_feedback.kind&&(map||!show_connection)){
-  if(c.kind)copystr(c.feedback,sizeof(c.feedback),hud_bt_text);
-  else{c.kind=HUD_BT_FEEDBACK;copystr(c.title,sizeof(c.title),hud_bt_text);}
+  if(c.kind){copystr(c.feedback,sizeof(c.feedback),hud_bt_text);c.ink|=hud_bt_level<<6;}
+  else{c.kind=HUD_BT_FEEDBACK;copystr(c.title,sizeof(c.title),hud_bt_text);c.ink|=hud_bt_level;}
  }
  /* Volume is independent of source/route changes, and never replaces track
   * metadata or transport keys in BT CTRL. */
@@ -263,15 +265,28 @@ static void hud_prepare(int z,u32 now,int map){
   if(!c.kind){c.kind=HUD_VOLUME;copystr(c.tag,sizeof(c.tag),hud_audio_tag());copystr(c.title,sizeof(c.title),car.volume);}
   else copystr(c.badge,sizeof(c.badge),car.volume);
  }
+ hud_status_observe(map,now);
  if(!map&&c.kind==HUD_CONNECTION&&has_device_name){
   copystr(c.title,sizeof(c.title),ui_tr("Connected to"));
-  copystr(c.detail,sizeof(c.detail),hud_connected_name);
+  copystr(c.detail,sizeof(c.detail),hud_connected_name);c.ink|=HUD_SUCCESS<<2;
+ }
+ hud_status_compose(&c,map,now);
+ if(!map&&c.kind==HUD_SYSTEM){
+  int left=HUD_MENU_TITLE_X+hud_menu_title.w+HUD_MENU_GAP;
+  int right=(hud_tween[HC_CLOCK].target.box.a?hud_tween[HC_CLOCK].target.box.x:HUD_CLOCK_X+50)-HUD_MENU_GAP;
+  if(width(c.title,1)>right-left-20){
+   char first[193],second[193];
+   if(hud_split_title(c.title,1,right-left-20,first,second)){
+    copystr(c.title,sizeof(c.title),first);copystr(c.detail,sizeof(c.detail),second);
+    c.ink|=(c.ink&3)<<2;
+   }
+  }
  }
  if(!c.tag[0]&&!c.title[0]&&!c.badge[0]&&!c.flags)c.kind=HUD_NONE;
  hud_kind=c.kind;
  if(c.kind){
   int y=8,h=27;
-  if(!map&&(c.detail[0]||c.connection[0]||c.feedback[0])){
+  if(!map&&(c.detail[0]||c.connection[0]||c.feedback[0]||(c.flags&HUD_PROGRESS))){
    c.flags|=HUD_MENU_TWO_LINE;y=4;h=34;
   }else h+=(c.detail[0]?16:0)+(c.connection[0]?14:0)+(c.feedback[0]?14:0)+
    (c.flags&HUD_KEYS?17:0)+(c.flags&HUD_PROGRESS?7:0);
@@ -321,7 +336,7 @@ static int hud_speed_red(u32 now){
  return 256-hud_ease(t<=900u?t:1800u-t,900)*210/256;
 }
 static void hud_driver_prepare(u32 now){
- struct HudCard speed={0},road={0},road_name={0},turn={0},compass={0},gps_card={0};
+ struct HudCard speed={0},road={0},road_name={0},turn={0},compass={0};
  int camera=gps.fix&&camera_visible;
  int show_speed=gps.fix&&(!freecam||camera);
  const char*name=gps.fix&&roadctx.valid?roadctx.street:"";
@@ -366,11 +381,8 @@ static void hud_driver_prepare(u32 now){
  if(freecam){
   compass.box=hud_box(404,234,68,29);hud_heading_text(compass.title,sizeof(compass.title),view_course());
  }
- if(!gps.fix&&mapok&&track_valid){
-  gps_card.box=hud_box(8,234,130,29);copystr(gps_card.title,sizeof(gps_card.title),ui_tr("Acquiring GPS"));
- }
  hud_set_card(HC_SPEED,speed,now);hud_set_card(HC_ROAD,road,now);hud_set_card(HC_TURN,turn,now);
- hud_set_card(HC_COMPASS,compass,now);hud_set_card(HC_GPS,gps_card,now);
+ hud_set_card(HC_COMPASS,compass,now);
  hud_set_card(HC_ROAD_NAME,road_name,now);
 }
 
@@ -455,13 +467,13 @@ static void hud_draw_status(struct HudBox b,const struct HudCard*c,u32 now){
  int x=b.x,y=b.y,w=b.w,bottom=y+b.h,badge=c->badge[0]?width(c->badge,0)+17:0,tx=x+10;
  int title_y=y+layout[HUD_STATUS_TITLE],small_y=title_y+2;
  int end=x+w-9-badge;
- hud_ink_alpha=streq(old->tag,next->tag)&&streq(old->title,next->title)?full:fade;
+ hud_ink_alpha=streq(old->tag,next->tag)&&streq(old->title,next->title)&&((old->ink^next->ink)&3)==0?full:fade;
  if(c->tag[0]){
   int tw=width(c->tag,0);
   compact_fit(tx,small_y,tw,0,c->tag,C_CYAN);tx+=tw;
   if(c->title[0]){hud_rect_ink(tx+5,small_y+1,1,11,C_BORDER);tx+=12;}
  }
- compact_fit(tx,title_y,end-tx,1,c->title,c->kind==HUD_FAILURE||c->kind==HUD_NOTICE?C_WARN:C_WHITE);
+ compact_fit(tx,title_y,end-tx,1,c->title,hud_status_colour(c->ink&3,c->flags&HUD_PROGRESS?C_CYAN:C_WHITE));
  if(badge){
   hud_ink_alpha=streq(old->badge,next->badge)?full:fade;
   int right=x+w-8;
@@ -469,18 +481,26 @@ static void hud_draw_status(struct HudBox b,const struct HudCard*c,u32 now){
   compact_fit(right-badge+12,small_y,badge-10,0,c->badge,C_CYAN);
  }
  int row=y+layout[HUD_STATUS_BODY];
- const struct {const char*from,*to,*text;u16 ink;} lines[]={
-  {old->detail,next->detail,c->detail,C_MUTED},
-  {old->connection,next->connection,c->connection,C_CYAN},
-  {old->feedback,next->feedback,c->feedback,C_WHITE},
+ const struct {const char*from,*to,*text;u16 ink;int same_colour;} lines[]={
+  {old->detail,next->detail,c->detail,hud_status_colour((c->ink>>2)&3,C_MUTED),((old->ink^next->ink)&12)==0},
+  {old->connection,next->connection,c->connection,hud_status_colour((c->ink>>4)&3,C_CYAN),((old->ink^next->ink)&48)==0},
+  {old->feedback,next->feedback,c->feedback,hud_status_colour((c->ink>>6)&3,C_WHITE),((old->ink^next->ink)&192)==0},
  };
+ // Menus have room for one body row. Keep it clear of the title and page body.
+ if(c->flags&HUD_MENU_TWO_LINE){
+  int i=c->feedback[0]?2:c->connection[0]?1:0;
+  if(lines[i].text[0]){
+   hud_ink_alpha=streq(lines[i].from,lines[i].to)&&lines[i].same_colour?full:fade;
+   compact_fit(x+10,row-2,w-20,0,lines[i].text,lines[i].ink);
+  }
+ }else
  // Reserve space gradually so existing rows move as neighbours arrive or leave.
  for(unsigned i=0;i<sizeof(lines)/sizeof(lines[0]);i++){
   int height=layout[HUD_STATUS_DETAIL+i];
   if(lines[i].text[0]){
    int room=bottom-row-13;
    if(room>height-11)room=height-11;
-   hud_ink_alpha=hud_status_row_ink(streq(lines[i].from,lines[i].to)?full:fade,room);
+   hud_ink_alpha=hud_status_row_ink(streq(lines[i].from,lines[i].to)&&lines[i].same_colour?full:fade,room);
    if(hud_ink_alpha)compact_fit(x+10,row-2,w-20,0,lines[i].text,lines[i].ink);
   }
   row+=height;
@@ -489,15 +509,19 @@ static void hud_draw_status(struct HudBox b,const struct HudCard*c,u32 now){
  if(c->flags&HUD_KEYS){
   hud_ink_alpha=hud_status_row_ink(changed_flags&HUD_KEYS?fade:full,bottom-row-14);
   if(hud_ink_alpha){
-   hud_rect_ink(x+9,row-3,w-18,1,C_BORDER);
+   int controls_alpha=hud_ink_alpha;
+   if(c->flags&HUD_PLAYBACK){
+    hud_ink_alpha=hud_status_ink(controls_alpha,changed_flags&HUD_PLAYBACK?phase:256);
+    hud_draw_playback(x+10,row-3,w-20,now);hud_ink_alpha=controls_alpha;
+   }else hud_rect_ink(x+9,row-3,w-18,1,C_BORDER);
    int play_fade=!(changed_flags&HUD_KEYS)&&old->value!=next->value?phase:256;
-   hud_draw_transport(x,w,row+6,now,c->value,play_fade);
+   hud_draw_transport(x,w,row+8,now,c->value,play_fade);
   }
  }
  row+=layout[HUD_STATUS_TRANSPORT];
  if(c->flags&HUD_PROGRESS){
   int track=w-20,travel=track-28;if(travel<1)return;
-  hud_ink_alpha=hud_status_row_ink(changed_flags&HUD_PROGRESS?fade:full,bottom-row-5);
+  hud_ink_alpha=hud_status_row_ink(changed_flags&HUD_PROGRESS?fade:full,c->flags&HUD_MENU_TWO_LINE?8:bottom-row-5);
   u32 p=((now-hud_progress_at)/22u)%(u32)(travel*2);
   int off=p<=(u32)travel?(int)p:2*travel-(int)p;
   int py=b.y+b.h-5;
@@ -585,12 +609,11 @@ static void hud_draw_card(int id,u32 now){
   compact_fit(x+46,y+4,w-53,1,c->title,C_WHITE);
   compact_fit(x+46,y+23,w-53,0,c->detail,C_MUTED);break;
  case HC_COMPASS:compact_center(x+w/2,y+6,w-12,1,c->title,C_WHITE);break;
- case HC_GPS:compact_fit(x+10,y+7,w-20,0,c->title,C_WARN);break;
  }
  hud_ink_alpha=16;clip_x=ox;clip_y=oy;clip_right=or;clip_bottom=ob;
 }
 static void hud_draw_all(u32 now,int map){
- if(map){hud_draw_card(HC_SPEED,now);hud_draw_card(HC_ROAD,now);hud_draw_card(HC_TURN,now);hud_draw_card(HC_COMPASS,now);hud_draw_card(HC_GPS,now);}
+ if(map){hud_draw_card(HC_SPEED,now);hud_draw_card(HC_ROAD,now);hud_draw_card(HC_TURN,now);hud_draw_card(HC_COMPASS,now);}
  hud_draw_card(HC_CLOCK,now);hud_draw_card(HC_STATUS,now);
 }
 static void header(void){
@@ -604,6 +627,7 @@ static void header(void){
 #ifdef HOST_TEST
 static void hud_reset_animations(void){
  memzero(hud_tween,sizeof(hud_tween));hud_last_road[0]=0;hud_road_at=0;hud_road_live=0;
+ hud_status_reset();hud_playback_reset();
  hud_speed_over=hud_speed_from=0;hud_speed_at=0;hud_status_map=-1;
  bt_transport_press.kind=0;bt_playback_request=-1;
 }

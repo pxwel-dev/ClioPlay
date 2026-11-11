@@ -13,7 +13,7 @@
 
 | Bluetooth playback and volume | Receiving a phone destination |
 | --- | --- |
-| ![Temporary volume notice and Bluetooth playback controls](src/docs/demo/bluetooth.gif) | ![Receiving a destination from the phone on the head unit](src/docs/demo/phone-destination.gif) |
+| ![Temporary volume notice, Bluetooth playback controls and track progress](src/docs/demo/bluetooth.gif) | ![Receiving a destination from the phone on the head unit](src/docs/demo/phone-destination.gif) |
 
 | Speeding warning | Browse and zoom the map |
 | --- | --- |
@@ -22,6 +22,10 @@
 | Roundabout guidance and ETA | Add a stop from favourites |
 | --- | --- |
 | ![Third-exit roundabout guidance and journey overview on pressing OK](src/docs/demo/roundabout-eta.gif) | ![Adding a saved favourite to the itinerary before the destination](src/docs/demo/add-stop.gif) |
+
+| Shared status notifications | Song and radio updates |
+| --- | --- |
+| ![GPS acquisition and recovery, phone connection, volume and no-active-route notices share one animated pill](src/docs/demo/status-notifications.gif) | ![A new song appears, updates inside Bluetooth control, then radio tuning changes the frequency](src/docs/demo/metadata-updates.gif) |
 
 ## Compatibility
 

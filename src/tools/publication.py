@@ -9,7 +9,7 @@ EXCLUDED_NAMES = {'.DS_Store', 'build_qadj', 'build_uk.command',
                   'bond.dat', 'faves.dat', 'recent.dat', 'trip.dat', 'audlast.dat',
                   'ui_translations 2.h'}
 PREVIEW_GIFS = ('driving.gif', 'menus.gif', 'bluetooth.gif', 'phone-destination.gif',
-                'speed-warning.gif', 'map-browsing.gif', 'roundabout-eta.gif', 'add-stop.gif')
+                'speed-warning.gif', 'map-browsing.gif', 'roundabout-eta.gif', 'add-stop.gif', 'status-notifications.gif', 'metadata-updates.gif')
 
 def source_files(root, reports):
     files = {}

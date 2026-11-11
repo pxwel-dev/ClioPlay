@@ -26,7 +26,7 @@ BLUETOOTH_EVENTS = (
     (0, 'set_volume(16);'),
     (650, 'key_handle(K_BACK);assert(bt_control_mode);'),
     (1800, ''),  # First volume notice expires.
-    (2100, 'set_volume(18);'),
+    (2100, 'set_volume(18);btui.pos=95;'),
     (2770, 'key_handle(K_ENTER);command_is(" PAUSE");'),
     (3500, 'key_handle(K_BACK);assert(!bt_control_mode);'),
     (3900, ''),  # Second volume notice expires.
@@ -64,6 +64,43 @@ def motion(group, name, title, setup, events, samples):
 def catalog(sender_receipts=None):
     SCENES.clear()
     add('Overview', 'driving', 'Driving with a route')
+    status_events = (
+        (0, 'gps.fix=0;'),
+        (800, 'set_volume(16);'),
+        (1600, 'show_phone_connection();'),
+        (2600, 'gps.fix=1;'),
+        (6500, 'trip.active=0;route_status=R_IDLE;route_n=0;'),
+        (7000, 'set_volume(18);'),
+    )
+    motion('Status notifications', 'preview-status', 'Shared GPS, phone, volume and route status',
+           'settle();hud_capture_ms+=4500u;draw();hud_capture_ms+=320u;draw();',
+           status_events, sorted({at+step for at, _ in status_events for step in TWEEN_STEPS}|
+                                 {4400, 4800, 5400, 6100, 6200, 6280, 6360, 6440, 8600}))
+
+    metadata_events = (
+        (0, 'preview_track("After Hours","ClioPlay demo");'),
+        (900, 'key_handle(K_BACK);assert(bt_control_mode);'),
+        (1700, 'preview_track("City Lights","Another artist");'),
+        (2900, 'key_handle(K_BACK);set_band("FM");copystr(af.station,sizeof(af.station),"RADIO 1");preview_frequency("98.8");'),
+        (4300, 'preview_frequency("99.2");'),
+        (8500, ''),
+    )
+    motion('Audio metadata', 'preview-metadata', 'Song changes and tuning with an unchanged station name',
+           'preview_track("Previous track","ClioPlay demo");hud_connection.kind=hud_source.kind=HUD_NONE;settle();hud_capture_ms+=4500u;draw();hud_capture_ms+=320u;draw();',
+           metadata_events, sorted({at+step for at, _ in metadata_events for step in TWEEN_STEPS}|{700,2600,3900,7200,9200}))
+
+    add('Status notifications','menu-status','Action confirmation in the menu header',
+        'screen=SCR_TRIP;notice_success(ui_tr("Favourite saved"));')
+    add('Status notifications','menu-status-volume','Action confirmation and volume above Settings',
+        'screen=SCR_SET;set_volume(18);notice_fail(ui_tr("STOP NOT ADDED"));')
+    add('Status notifications','menu-status-calculating','Moving route progress and status above Trip',
+        'screen=SCR_TRIP;route_status=R_CALC;notice_success(ui_tr("STOP ADDED"));')
+    add('Playback progress','hud-playback','Track progress above Bluetooth controls',
+        'key_handle(K_BACK);btui.pos=65;btui.dur=180;draw();hud_capture_ms+=400u;')
+    add('Playback progress','hud-playback-unknown','Controls with no reported track duration',
+        'key_handle(K_BACK);btui.pos=-1;btui.dur=0;')
+    add('Playback progress','hud-playback-calc','Playback progress and routing progress remain distinct',
+        'key_handle(K_BACK);btui.pos=65;btui.dur=180;route_status=R_CALC;set_volume(18);show_phone_connection();draw();hud_capture_ms+=400u;')
     add('Prototype HUD','hud-volume','Volume adjustment','set_volume(16);')
     add('Prototype HUD','hud-volume-ended','Volume notice cleared','settle();hud_capture_ms+=4300;')
     add('Prototype HUD','hud-route-volume','Volume during route calculation','route_status=R_CALC;set_volume(16);')
@@ -422,6 +459,16 @@ static void four_stops(void){three_stops();trip.count=5;trip.target[4]=trip.targ
 static void incoming(const char*name,char action){phone_dest.valid=1;phone_dest.action=action;phone_dest.lat=5497370;phone_dest.lon=-161331;copystr(phone_dest.name,sizeof(phone_dest.name),name);phone_destination_apply();}
 static void incoming_sender(const char*name,int seq,char action,int lat,int lon){char packet[512];int n=snprintf(packet,sizeof(packet),"SEQ=%d\nACTION=%c\nLAT=%d\nLON=%d\nNAME=%s\n",seq,action,lat,lon,name);long fd=s_open(BT_NAV_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);assert(fd>=0);assert(s_write((int)fd,packet,n)==n);s_close((int)fd);poll_phone_destination();assert(phone_dest.valid);phone_destination_apply();}
 static void show_camera(int kind,int avg){camera_visible=1;camera_average=avg;camera_current.kind=kind;camera_current.speed=30;camera_current.flags=2;camera_distance=avg?850:180;camera_average_speed=42;}
+static void preview_track(const char*title,const char*artist){
+ FILE*f=fopen(BT_STATUS_PATH,"w");assert(f);fputs("BT STREAMING\n",f);fclose(f);
+ f=fopen(BT_META_PATH,"w");assert(f);fprintf(f,"DEVICE=Example iPhone\nCONNECTED=1\nPLAYING=1\nTITLE=%s\nARTIST=%s\nALBUM=\nPOS=0\nDUR=240\n",title,artist);fclose(f);
+ f=fopen(BT_DEVLIST_PATH,"w");assert(f);fputs("COUNT=1\nDEV=00:11:22:33:44:55|1|Example iPhone\n",f);fclose(f);
+ bt_poll_status();assert(hud_source.kind==HUD_TRACK);
+}
+static void preview_frequency(const char*frequency){
+ int changed=0;process_property(65,(const u8*)frequency,slen(frequency),&changed);assert(changed);rebuild_source();
+ assert(hud_source.kind==HUD_SOURCE);
+}
 static void show_phone_connection(void){
  FILE*f=fopen(BT_STATUS_PATH,"w");assert(f);fputs("BT CONNECTED\n",f);fclose(f);
  f=fopen(BT_META_PATH,"w");assert(f);fputs("DEVICE=Example iPhone\nCONNECTED=1\n",f);fclose(f);
@@ -436,7 +483,7 @@ static void gallery_reset(int night){
  mapok=1;screen=SCR_MAP;trip_pane=trip_tab=trip_focus=trip_right_focus=0;menu_focus=set_focus=0;
  bt_page_focus=bt_page_connected_choice=bt_page_dialog_choice=0;
  trip_pick_mode=dest_pick_action=phone_wait_action=DEST_PICK_NONE;modal_choice=0;modal_index=-1;pending_point_stop=0;
- memzero(&phone_dest,sizeof(phone_dest));phone_seq_seen_valid=0;arrival_modal_deadline=0;notice_deadline=0;
+ memzero(&phone_dest,sizeof(phone_dest));phone_seq_seen_valid=0;arrival_modal_deadline=0;
  nrecents=8;nfaves=4;copystr(faves[0].name,sizeof(faves[0].name),"Home");copystr(faves[1].name,sizeof(faves[1].name),"Work");for(int i=0;i<4;i++){faves[i].lat=5500000+i*300;faves[i].lon=-165000-i*300;}
  kbd_focus=0;kbd_action=KBD_NAME_FAVE;kbd_fave_idx=-1;kbd_text[0]=0;theme_time_part=0;
  btui.album[0]=af.station[0]=af.freq[0]=0;copystr(btui.status,sizeof(btui.status),"BT READY");

@@ -14,7 +14,7 @@ struct HudTween {
  u32 position_at, content_at;
  int seen;
 };
-enum {HC_STATUS,HC_CLOCK,HC_SPEED,HC_ROAD,HC_TURN,HC_COMPASS,HC_GPS,HC_ROAD_NAME,HC_COUNT};
+enum {HC_STATUS,HC_CLOCK,HC_SPEED,HC_ROAD,HC_TURN,HC_COMPASS,HC_ROAD_NAME,HC_COUNT};
 static struct HudTween hud_tween[HC_COUNT];
 
 static int hud_ease(u32 elapsed,u32 duration){
@@ -32,7 +32,7 @@ static int hud_content_eq(const struct HudCard*a,const struct HudCard*b){
   streq(a->connection,b->connection)&&streq(a->feedback,b->feedback);
 }
 static int hud_same_status_except_volume(const struct HudCard*a,const struct HudCard*b){
- return a->kind==b->kind&&a->flags==b->flags&&a->value==b->value&&streq(a->tag,b->tag)&&
+ return a->kind==b->kind&&a->flags==b->flags&&a->value==b->value&&a->ink==b->ink&&streq(a->tag,b->tag)&&
   (a->kind==HUD_VOLUME||streq(a->title,b->title))&&streq(a->detail,b->detail)&&
   streq(a->connection,b->connection)&&streq(a->feedback,b->feedback);
 }

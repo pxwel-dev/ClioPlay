@@ -380,7 +380,7 @@ static void poll_gps(void){if(gpsfd<0)gpsfd=(int)s_open(GPS_PATH,O_RDONLY_|O_NON
 
 /* One current transient per domain; repeated knob events replace the value
  * without replaying the entrance animation. Millisecond subtraction wraps. */
-enum {HUD_NONE,HUD_SOURCE,HUD_VOLUME,HUD_ZOOM,HUD_JOURNEY,HUD_HEADING,HUD_FAILURE,HUD_MEDIA,HUD_CALC,HUD_NOTICE,HUD_CONNECTION,HUD_BT_FEEDBACK};
+enum {HUD_NONE,HUD_SOURCE,HUD_VOLUME,HUD_ZOOM,HUD_JOURNEY,HUD_HEADING,HUD_FAILURE,HUD_MEDIA,HUD_CALC,HUD_NOTICE,HUD_CONNECTION,HUD_BT_FEEDBACK,HUD_SYSTEM,HUD_TRACK};
 #ifdef HOST_TEST
 static int hud_capture_clock;
 static u32 hud_capture_ms;
@@ -388,6 +388,8 @@ static u32 hud_now_ms(void){return hud_capture_clock?hud_capture_ms:s_now_ms();}
 #else
 #define hud_now_ms s_now_ms
 #endif
+enum {HUD_INFO,HUD_SUCCESS,HUD_WARNING,HUD_ERROR};
+static int hud_bt_level;
 struct HudPulse {u32 since,changed,until;int kind;};
 static struct HudPulse hud_audio,hud_source,hud_navigation,hud_connection,hud_bt_feedback;
 static char hud_connected_name[33],hud_bt_text[96];
@@ -398,6 +400,8 @@ static void hud_pulse_at(struct HudPulse*p,int kind,u32 now,u32 ms){
 }
 static void hud_pulse(struct HudPulse*p,int kind,u32 ms){hud_pulse_at(p,kind,hud_now_ms(),ms);}
 static void hud_bt_notice(const char*message){
+ hud_bt_level=streq(message,ui_tr("Disconnected"))||streq(message,ui_tr("Reconnecting"))?HUD_WARNING:
+  streq(message,ui_tr("Device forgotten"))?HUD_SUCCESS:HUD_INFO;
  copystr(hud_bt_text,sizeof(hud_bt_text),message);
  hud_pulse(&hud_bt_feedback,HUD_BT_FEEDBACK,2500);
 }
@@ -415,7 +419,7 @@ static int reading_present(const char*s){
  * shutdown handshake. focusd writes the volatile /tmp/cfbus stream; ClioPlay
  * reconstructs source/station/frequency/volume itself and caches the final
  * display state directly to audlast.dat on orderly power-down. */
-struct AudioFeed {char band[8],freq[16],station[24];};static struct AudioFeed af;
+struct AudioFeed {char band[8],freq[16],station[24];};static struct AudioFeed af,audio_presented;
 static int audio_source_live=0;
 static int audio_source_detected(void){return audio_source_live&&reading_present(af.band);}
 static int audiofd=-1;static char audiobuf[4096],audioline[512];static unsigned audioused=0;
@@ -444,8 +448,12 @@ static void rebuild_source(void){
   const char*detail=reading_present(af.station)?af.station:af.freq;
   if(reading_present(detail)){appendstr(out,sizeof(out)," ");appendstr(out,sizeof(out),detail);}
  }
- if(setstrx(car.source,sizeof(car.source),out,0)&&audio_source_detected())
-  hud_pulse(&hud_source,HUD_SOURCE,2300);
+ int changed=setstrx(car.source,sizeof(car.source),out,0);
+ int radio=streq(af.band,"FM")||streq(af.band,"MW")||streq(af.band,"LW");
+ int metadata=radio&&((reading_present(af.freq)&&!streq(af.freq,audio_presented.freq))||
+                     (reading_present(af.station)&&!streq(af.station,audio_presented.station)));
+ audio_presented=af;
+ if((changed||metadata)&&audio_source_detected())hud_pulse(&hud_source,HUD_SOURCE,4200);
 }
 static void set_volume(int v){
  char out[16]="VOL ";
@@ -605,6 +613,17 @@ static int bt_name_cache_idx(const char*addr){for(int i=0;i<nbtname_cache;i++)if
 static const char* bt_name_cache_get(const char*addr){int i=bt_name_cache_idx(addr);return i>=0?btname_cache[i].name:0;}
 static void bt_name_cache_remember(const char*addr,const char*name){if(!addr||!addr[0]||bt_name_unknown(name))return;int i=bt_name_cache_idx(addr);if(i<0){if(nbtname_cache>=BT_UI_MAX_DEVICES)return;i=nbtname_cache++;copystr(btname_cache[i].addr,sizeof(btname_cache[i].addr),addr);}copystr(btname_cache[i].name,sizeof(btname_cache[i].name),name);}
 static void bt_name_cache_load(void){char b[768];long fd=s_open(BT_NAMES_PATH,O_RDONLY_,0);if(fd<0)return;long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n<=0)return;b[n]=0;char*ln=b;for(long i=0;i<=n;i++){if(b[i]=='\r'||b[i]=='\n'||b[i]==0){char save=b[i];b[i]=0;char*p=ln;while(*p&&*p!='|')p++;if(*p=='|'&&p-ln==17){*p=0;bt_name_cache_remember(ln,p+1);}if(!save)break;ln=b+i+1;}}}
+/* AVRCP unknown values and malformed metadata must not masquerade as 0 s. */
+static int bt_media_seconds(const char*s){
+ if(!s||!*s)return-1;
+ u32 value=0;
+ for(;*s;s++){
+  if(*s<'0'||*s>'9')return-1;
+  unsigned digit=(unsigned)(*s-'0');if(value>(4294967u-digit)/10u)return-1;
+  value=value*10u+digit;
+ }
+ return (int)value;
+}
 static void bt_parse_meta_line(char*ln){
   if(starts(ln,"DEVICE=")){bt_copy_value(btui.device,sizeof(btui.device),ln+7);return;}
   if(starts(ln,"TITLE=")){bt_copy_value(btui.title,sizeof(btui.title),ln+6);return;}
@@ -613,8 +632,8 @@ static void bt_parse_meta_line(char*ln){
   if(starts(ln,"PAIRED=")){btui.paired=atoi0(ln+7)?1:0;return;}
   if(starts(ln,"CONNECTED=")){btui.connected=atoi0(ln+10)?1:0;return;}
   if(starts(ln,"PLAYING=")){btui.playing=atoi0(ln+8)?1:0;return;}
-  if(starts(ln,"POS=")){btui.pos=atoi0(ln+4);if(btui.pos<0)btui.pos=0;return;}
-  if(starts(ln,"DUR=")){btui.dur=atoi0(ln+4);if(btui.dur<0)btui.dur=0;return;}
+  if(starts(ln,"POS=")){btui.pos=bt_media_seconds(ln+4);return;}
+  if(starts(ln,"DUR=")){btui.dur=bt_media_seconds(ln+4);if(btui.dur<0)btui.dur=0;return;}
 }
 static int bt_poll_devices(void){nbtdev=0;char b[1280];long fd=s_open(BT_DEVLIST_PATH,O_RDONLY_,0);if(fd<0)return 0;long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n<=0)return 0;int complete=b[n-1]=='\n';b[n]=0;char*ln=b;for(long i=0;i<=n&&nbtdev<BT_UI_MAX_DEVICES;i++){if(b[i]=='\r'||b[i]=='\n'||b[i]==0){char save=b[i];b[i]=0;if(starts(ln,"DEV=")){char*p=ln+4,*a=p,*c=0,*nm=0;while(*p&&*p!='|')p++;if(*p=='|'){*p=0;c=p+1;p=c;while(*p&&*p!='|')p++;if(*p=='|'){*p=0;nm=p+1;bt_copy_value(btdev[nbtdev].addr,sizeof(btdev[nbtdev].addr),a);btdev[nbtdev].connected=atoi0(c)?1:0;bt_copy_value(btdev[nbtdev].name,sizeof(btdev[nbtdev].name),nm);if(bt_name_unknown(btdev[nbtdev].name)){const char*cn=bt_name_cache_get(btdev[nbtdev].addr);if(cn)copystr(btdev[nbtdev].name,sizeof(btdev[nbtdev].name),cn);else if(btdev[nbtdev].connected&&!bt_name_unknown(btui.device)){copystr(btdev[nbtdev].name,sizeof(btdev[nbtdev].name),btui.device);bt_name_cache_remember(btdev[nbtdev].addr,btui.device);}}else bt_name_cache_remember(btdev[nbtdev].addr,btdev[nbtdev].name);if(!btdev[nbtdev].name[0])copystr(btdev[nbtdev].name,sizeof(btdev[nbtdev].name),"UNKNOWN DEVICE");nbtdev++;}}}if(!save)break;ln=b+i+1;}}return complete&&starts(b,"COUNT=")&&atoi0(b+6)==nbtdev;}
 static int bt_connected_idx(void){for(int i=0;i<nbtdev;i++)if(btdev[i].connected)return i;return-1;}
@@ -657,7 +676,7 @@ static void bt_hud_status(const char*before,u32 now,int devices_complete){
   if((starts(before,"BT PAIRING")&&streq(hud_bt_text,ui_tr("Pairing phone")))||
      (streq(before,"BT RECONNECTING")&&streq(hud_bt_text,ui_tr("Reconnecting"))))hud_bt_feedback.kind=HUD_NONE;
   if(starts(btui.status,"BT PAIRING"))hud_bt_notice(ui_tr("Pairing phone"));
-  else if(streq(btui.status,"BT RECONNECTING")&&screen==SCR_BT)hud_bt_notice(ui_tr("Reconnecting"));
+  else if(streq(btui.status,"BT RECONNECTING"))hud_bt_notice(ui_tr("Reconnecting"));
  }
 }
 static void bt_forget_device(const char*addr){
@@ -666,7 +685,9 @@ static void bt_forget_device(const char*addr){
 }
 static void bt_poll_status(void){
   char before[sizeof(btui.status)];copystr(before,sizeof(before),btui.status);
-  int was_playing=btui.playing;
+  int was_playing=btui.playing,was_connected=btui.connected;
+  char old_title[sizeof(btui.title)],old_artist[sizeof(btui.artist)],old_album[sizeof(btui.album)];
+  copystr(old_title,sizeof(old_title),btui.title);copystr(old_artist,sizeof(old_artist),btui.artist);copystr(old_album,sizeof(old_album),btui.album);
   char b[1024];long fd=s_open(BT_STATUS_PATH,O_RDONLY_,0);
   if(fd>=0){
    long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);
@@ -678,6 +699,7 @@ static void bt_poll_status(void){
    btui.device[0]=btui.title[0]=btui.artist[0]=btui.album[0]=0;btui.pos=btui.dur=0;
    for(int i=0;i<nbtdev;i++)btdev[i].connected=0;
    bt_hud_link=0;bt_hud_peer[0]=0;hud_connection.kind=hud_bt_feedback.kind=HUD_NONE;
+   if(fd>=0&&was_connected&&streq(btui.status,"BT DISCONNECTED"))hud_bt_notice(ui_tr("Disconnected"));
    return;
   }
   if(starts(btui.status,"BT STREAMING")){btui.connected=1;btui.paired=1;btui.playing=1;}
@@ -703,6 +725,13 @@ static void bt_poll_status(void){
   if(!btui.connected||now-bt_playback_requested_at>=BT_PLAYBACK_REPLY_MS||
      (btui.playing!=was_playing&&btui.playing==bt_playback_request))bt_playback_request=-1;
   bt_hud_status(before,now,devices_complete);
+  /* Track identity is independent of connection and playback position. Never
+   * announce blank placeholders or a phone playing while another source is on. */
+  if(btui.connected&&bt_source_selected()&&reading_present(btui.title)&&
+     (!streq(old_title,btui.title)||
+      (reading_present(btui.artist)&&!streq(old_artist,btui.artist))||
+      (reading_present(btui.album)&&!streq(old_album,btui.album))))
+   hud_pulse_at(&hud_source,HUD_TRACK,now,4200);
 }
 static const char* bt_action_label(void){if(btui.connected)return"DISCONNECT PHONE";if(btui.paired)return"RECONNECT PHONE";return"PAIR PHONE";}
 static void bt_action_connection(void){if(btui.connected)bt_command("DISCONNECT");else if(btui.paired)bt_command("CONNECT");else bt_command("PAIR");}
@@ -2206,7 +2235,7 @@ static void fill_car_triangle(int nx,int ny,int lx,int ly,int rx,int ry){
 }
 static void draw_car_marker(int z){if(!gps.fix)return;int cx,cy;world_to_screen(car_lat(),car_lon(),z,&cx,&cy);if(cx<-15||cx>W+15||cy<MAP_TOP-12||cy>MAP_BOTTOM+12)return;int carc=map_course(),vc=view_course();int rel=view_rotates()?carc-vc:carc;while(rel<0)rel+=360;while(rel>=360)rel-=360;int k=((rel+5)/10)%36,ss=SIN36[k],c=COS36[k];int nx=cx+(ss*10>>15),ny=cy-(c*10>>15);int lx=cx+((-c*7)>>15),ly=cy+((-ss*7)>>15);int rx=cx+((c*7)>>15),ry=cy+((ss*7)>>15);fill_car_triangle(nx,ny,lx,ly,rx,ry);map_mask_begin(3);map_line(nx,ny,lx,ly,C_CAR,2);map_line(nx,ny,rx,ry,C_CAR,2);map_line(lx,ly,rx,ry,C_CAR,2);map_mask_end();}
 static void draw_explore_crosshair(void){if(!freecam)return;int x=240,y=160;map_line(x-12,y,x-4,y,C_DIM,1);map_line(x+4,y,x+12,y,C_DIM,1);map_line(x,y-12,x,y-4,C_DIM,1);map_line(x,y+4,x,y+12,C_DIM,1);rect(x-2,y-2,5,5,C_DIM);}
-static void draw_map_geometry(int z){fill(0,MAP_TOP,W,MAP_BOTTOM-MAP_TOP,C_BG);if(!mapok){text_center(240,116,ui_tr("Map data missing"),C_MUTED,1);text_center(240,134,gps.fix?ui_tr("GPS active"):ui_tr("Acquiring GPS"),gps.fix?C_CYAN:C_WARN,1);return;}if(!gps.fix&&!freecam&&!track_valid){text_center(240,125,ui_tr("Acquiring GPS"),C_WARN,1);return;}s32 vl=view_lat(),vo=view_lon();if(!map_view_covered(vl,vo)){text_center(240,116,ui_tr("Outside map area"),C_MUTED,1);return;}int sourcez=z>6?6:clamp_map_zoom(z),tx0,tx1,ty0,ty1;
+static void draw_map_geometry(int z){fill(0,MAP_TOP,W,MAP_BOTTOM-MAP_TOP,C_BG);if(!mapok||(!gps.fix&&!freecam&&!track_valid))return;s32 vl=view_lat(),vo=view_lon();if(!map_view_covered(vl,vo))return;int sourcez=z>6?6:clamp_map_zoom(z),tx0,tx1,ty0,ty1;
   map_visible_tile_bounds(z,sourcez,&tx0,&tx1,&ty0,&ty1);
   /* Ocean polygons retain close-zoom precision in shared Z0..Z3 tiles.
    * Reuse Z3 at closer zooms to avoid millions of redundant offshore tiles.
@@ -2286,7 +2315,7 @@ static struct PhoneDestination phone_dest;static int phone_seq_seen_valid=0;stat
 #define ARRIVAL_MODAL_MS 5000u
 static u32 arrival_modal_deadline=0;
 #define NOTICE_MS 1800u
-static char notice_text[40];static u32 notice_deadline=0;static int notice_error=0;
+static char notice_text[40]; /* Latest action, also used by native checks. */
 
 #include "hud.h"
 
@@ -2295,7 +2324,6 @@ static void draw_map(void){
  if(!freecam)drive_label_prepare(z);
  draw_map_geometry(z);draw_route_overlay(z);if(!freecam)drive_label_render();
  draw_car_marker(z);draw_explore_crosshair();
- if(mh.flags&1){hud_glass((struct HudBox){8,186,108,22,256},0);compact_fit(16,191,92,0,ui_tr("Test map"),C_WARN);}
  hud_draw_all(now,1);
 }
 
@@ -2317,15 +2345,12 @@ static void keyboard_open_fave_rename(int idx){if(idx<0||idx>=nfaves)return;kbd_
  * action (N = route as new, S = add as stop). If the user explicitly entered
  * ADD STOP / CHANGE DESTINATION -> SEND FROM PHONE on the Carminat, that local
  * action takes precedence for the next received destination. */
-static void notice_set(const char*s,int is_error){copystr(notice_text,sizeof(notice_text),s&&s[0]?s:ui_tr("Done"));notice_deadline=s_now_ms()+NOTICE_MS;notice_error=is_error?1:0;}
-static void notice_success(const char*s){
- if(screen==SCR_MAP){notice_text[0]=0;notice_deadline=0;notice_error=0;}
- else notice_set(s,0);
+static void notice_set(const char*s,int is_error){
+ copystr(notice_text,sizeof(notice_text),s&&s[0]?s:ui_tr("Done"));
+ hud_status_notice(notice_text,is_error?HUD_ERROR:HUD_SUCCESS);
 }
+static void notice_success(const char*s){notice_set(s,0);}
 static void notice_fail(const char*s){notice_set(s,1);}
-static int notice_active(void){return notice_text[0]&&time_before_u32(s_now_ms(),notice_deadline);}
-static int map_notice_error_active(void){return screen==SCR_MAP&&modal==MOD_NONE&&notice_error&&notice_active();}
-static const char* map_notice_error_text(void){return notice_text;}
 static void poll_phone_destination(void){char b[384];long fd=s_open(BT_NAV_PATH,O_RDONLY_,0);if(fd<0)return;long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n<=0)return;b[n]=0;int have_seq=0,have_action=0,have_lat=0,have_lon=0;int seqi=0;s32 lat=0,lon=0;char action=0,name[161];copystr(name,sizeof(name),"PHONE DESTINATION");char*ln=b;for(long i=0;i<=n;i++){if(b[i]=='\r'||b[i]=='\n'||b[i]==0){char save=b[i];b[i]=0;if(starts(ln,"SEQ=")){seqi=atoi0(ln+4);have_seq=seqi>=0&&seqi<=65535;}else if(starts(ln,"ACTION=")){action=ln[7];have_action=(action=='N'||action=='S')&&ln[8]==0;}else if(starts(ln,"LAT=")){lat=(s32)atoi0(ln+4);have_lat=lat>=-9000000&&lat<=9000000;}else if(starts(ln,"LON=")){lon=(s32)atoi0(ln+4);have_lon=lon>=-18000000&&lon<=18000000;}else if(starts(ln,"NAME=")){copystr_limit(name,sizeof(name),ln+5,40);}if(!save)break;ln=b+i+1;}}
   if(!have_seq||!have_action||!have_lat||!have_lon)return;u16 seq=(u16)seqi;if(phone_seq_seen_valid&&phone_seq_seen==seq)return;phone_seq_seen=seq;phone_seq_seen_valid=1;phone_dest.valid=1;phone_dest.seq=seq;phone_dest.action=action;phone_dest.lat=lat;phone_dest.lon=lon;copystr(phone_dest.name,sizeof(phone_dest.name),name[0]?name:"PHONE DESTINATION");}
 static void phone_destination_clear(void){phone_dest.valid=0;phone_wait_action=DEST_PICK_NONE;}
@@ -2384,12 +2409,10 @@ static void draw_trip(void){
   centered(359,110,1,ui_tr("Choose a destination"),C_WHITE);centered(359,132,0,ui_tr("from your saved places"),C_MUTED);
   trip_item(253,178,214,ui_tr("Send from phone"),trip_pane==1);
  }
- if(modal==MOD_NONE&&notice_active())compact_fit(253,243,214,0,notice_text,notice_error?C_WARN:C_CYAN);
- else if(trip.active&&route_status==R_READY){
+ if(trip.active&&route_status==R_READY){
   char m[64]="";append_miles(m,sizeof(m),route_path_m());appendstr(m,sizeof(m),"  ~");
   append_eta(m,sizeof(m),sat_add32(route_result_cost,atlas_future_cost));compact_fit(253,243,214,0,m,C_MUTED);
- }else if(trip.active&&(trip_need_route||route_status==R_CALC))
-  compact_fit(253,243,214,0,ui_tr("Calculating route…"),C_CYAN);
+ }
 }
 
 static int bt_page_focus=0,bt_page_connected_choice=0,bt_page_dialog=-1,bt_page_dialog_choice=0;
@@ -2525,8 +2548,7 @@ static void draw_modal(void){if(modal==MOD_NONE)return;if(modal==MOD_ARRIVED_STO
   else if(modal==MOD_TARGET&&modal_index>=0&&modal_index<trip.count){if(modal_index<trip.count-1){modal_option(100,112,280,ui_tr("Remove stop"),modal_choice==0);modal_option(100,139,280,ui_tr("Move up"),modal_choice==1);modal_option(100,166,280,ui_tr("Move down"),modal_choice==2);}else{modal_option(100,125,280,ui_tr("Change destination"),modal_choice==0);int fi=fave_contains(trip.target[modal_index].lat,trip.target[modal_index].lon);modal_option(100,154,280,fi>=0?ui_tr("Remove favourite"):ui_tr("Add to favourites"),modal_choice==1);}}
   }
 
-static void draw_notice(void){if(!notice_active()||!notice_error||modal!=MOD_NONE||screen==SCR_MAP||screen==SCR_TRIP)return;int w=width(notice_text,1)+32;if(w<150)w=150;if(w>360)w=360;int x=(W-w)/2;ui_surface(x,47,w,28,C_PANEL2);compact_center(240,53,w-16,1,notice_text,notice_error?C_WARN:C_WHITE);}
-static void draw(void){clock_service();region_service();camera_service();refresh_theme();if(screen==SCR_MAP){draw_map();}else if(screen==SCR_MENU)draw_menu();else if(screen==SCR_TRIP)draw_trip();else if(screen==SCR_BT)draw_bluetooth();else if(screen==SCR_KEY)draw_keyboard();else draw_settings();if(screen!=SCR_MAP)header();draw_modal();draw_notice();fb_flush();}
+static void draw(void){clock_service();region_service();camera_service();refresh_theme();if(screen==SCR_MAP){draw_map();}else if(screen==SCR_MENU)draw_menu();else if(screen==SCR_TRIP)draw_trip();else if(screen==SCR_BT)draw_bluetooth();else if(screen==SCR_KEY)draw_keyboard();else draw_settings();if(screen!=SCR_MAP)header();draw_modal();fb_flush();}
 
 struct input_event16 {s32 sec,usec;u16 type,code;s32 value;};
 #define EV_KEY 1

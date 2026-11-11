@@ -26,7 +26,11 @@ def timed_scenes(prefix, samples, end):
 def previews():
     road_frames = (0, 164, 228, 292, 356, 420, 1164, 1228, 1292, 1356, 1420,
                    4100, 4164, 4228, 4292, 4356, 4420, 5300)
+    status_samples = sorted({at+step for at in (0,800,1600,2600,6500,7000) for step in (0,64,128,192,256,320)} | {4400,4800,5400,6100,6200,6280,6360,6440,8600})
+    metadata_samples = sorted({at+step for at in (0,900,1700,2900,4300,8500) for step in (0,64,128,192,256,320)} | {700,2600,3900,7200,9200})
     return {
+        'metadata-updates.gif': timeline('night', timed_scenes('preview-metadata', metadata_samples, 9600)),
+        'status-notifications.gif': timeline('night', timed_scenes('preview-status', status_samples, 9200)),
         'driving.gif': timeline('night', [
             (f'hud-road-then-camera-{start:04d}', end - start)
             for start, end in zip(road_frames, road_frames[1:])

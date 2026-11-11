@@ -161,6 +161,7 @@ static void test_status_motion(void){
 }
 
 static void test_missing_readings(void){
+ trip.active=1;
  hud_capture_ms=60000;screen=SCR_MAP;freecam=0;modal=MOD_NONE;route_status=R_IDLE;
  hud_observed_route=R_IDLE;hud_navigation.kind=HUD_NONE;
  hud_reset_animations();
@@ -215,7 +216,7 @@ static void test_menu_states(void){
  rename_fave(0,"Gallery");assert(streq(notice_text,"Favourite renamed"));
  remove_fave(0);assert(streq(notice_text,"Favourite removed"));
  modal=MOD_CANCEL_ROUTE;modal_choice=0;key_handle(K_ENTER);assert(streq(notice_text,"Route cancelled"));
- hud_prepare(0,hud_capture_ms,0);assert(hud_kind==HUD_NONE);
+ hud_prepare(0,hud_capture_ms,0);assert(hud_kind==HUD_SYSTEM);
 }
 
 static void test_bluetooth_feedback(void){
@@ -299,6 +300,7 @@ static void test_bluetooth_feedback(void){
 }
 
 int main(void){
+ gps.fix=mapok=1;mh.minlat=mh.minlon=-90000000;mh.maxlat=mh.maxlon=90000000;trip.active=1;
  pref.language=0;pref.units=2;apply_palette(0);
  assert(streq(bt_label(),"Bluetooth")&&streq(bt_source_label(),"BT"));
  for(int lang=1;lang<UI_LANGUAGE_COUNT;lang++){
