@@ -231,7 +231,7 @@ static void test_bluetooth_feedback(void){
  hud_capture_ms+=500;write_fixture(BT_META_PATH,"DEVICE=Pawel's phone\nCONNECTED=1\n");
  bt_poll_status();assert(streq(hud_connected_name,"Pawel's phone"));
  struct HudTween*status=&hud_tween[HC_STATUS];
- header();assert(streq(status->target.title,"Connected to")&&streq(status->target.detail,"Pawel's phone"));
+ header();assert(streq(status->target.title,"Connected to Pawel's phone")&&!status->target.detail[0]);
  assert(hud_pose(status,hud_capture_ms).a==0);
  u32 until=hud_connection.until;
  hud_capture_ms+=500;write_fixture(BT_STATUS_PATH,"BT STREAMING\n");bt_poll_status();
@@ -243,12 +243,12 @@ static void test_bluetooth_feedback(void){
  assert(status->target.flags==(HUD_KEYS|HUD_PROGRESS)&&streq(status->target.badge,"VOL 18"));
  assert(streq(status->target.detail,"Example track")&&streq(status->target.connection,"Connected to Pawel's phone"));
  assert(status->target.box.h>MENU_BODY_Y);
- // Opening a menu resets the tall map pose. The compact card retains both live notices and volume.
+ // Opening a menu restarts at its centred anchor with the same stacked notices and volume.
  screen=SCR_SET;hud_pulse(&hud_source,HUD_SOURCE,2300);header();
- assert((status->target.flags&HUD_MENU_TWO_LINE)&&streq(status->target.connection,"Connected to Pawel's phone"));
+ assert(!(status->target.flags&HUD_KEYS)&&streq(status->target.connection,"Connected to Pawel's phone"));
  assert(streq(status->target.badge,"VOL 18"));
  struct HudBox mid=hud_pose(status,hud_capture_ms+160);
- assert(mid.a>0&&mid.y+mid.h<MENU_BODY_Y);
+ assert(mid.a>0&&mid.a<256&&mid.y+mid.h<H);
  hud_capture_ms+=320;
  car_read_temperature("temp=--");header();
  struct HudBox without_temp=hud_status_pose(hud_capture_ms);
@@ -260,11 +260,11 @@ static void test_bluetooth_feedback(void){
   assert(pill.x>=left&&pill.x+pill.w<=right);
   assert(2*pill.x+pill.w>=left+right-1&&2*pill.x+pill.w<=left+right);
   fill(0,0,W,H,0x1234);hud_draw_all(hud_capture_ms+elapsed,0);
-  for(int i=MENU_BODY_Y*W;i<W*H;i++)assert(fb[i]==0x1234);
+  for(int i=(pill.y+pill.h)*W;i<W*H;i++)assert(fb[i]==0x1234);
  }
  struct HudBox with_temp=hud_status_pose(hud_capture_ms+320);
  assert(2*without_temp.x+without_temp.w-(2*with_temp.x+with_temp.w)>=49);
- assert(status->target.box.y+status->target.box.h<MENU_BODY_Y);
+ assert(status->target.box.h>MENU_BODY_Y&&status->target.box.h<=96);
  hud_capture_ms=until;hud_prepare(5,hud_capture_ms,1);assert(!status->target.connection[0]);
  screen=SCR_BT;bt_forget_device("00:11:22:33:44:55");bt_poll_status();assert(bt_forget_addr[0]);
  write_fixture(BT_STATUS_PATH,"BT DEVICE FORGOTTEN\n");

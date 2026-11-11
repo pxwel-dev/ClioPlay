@@ -10,7 +10,7 @@ import sys
 import tempfile
 
 from PIL import Image
-from render_gallery import (BLUETOOTH_SAMPLES, MENU_RETURN_SAMPLES, PHONE_CALC_SAMPLES, ROUNDABOUT_ETA_SAMPLES,
+from render_gallery import (BLUETOOTH_SAMPLES, MENU_ENTRY_SAMPLES, MENU_RETURN_SAMPLES, PHONE_CALC_SAMPLES, ROUNDABOUT_ETA_SAMPLES,
                             SPEED_WARNING_SAMPLES, ROOT, sha)
 
 
@@ -36,7 +36,7 @@ def previews():
             for start, end in zip(road_frames, road_frames[1:])
         ]),
         'menus.gif': timeline('night', [
-            ('map-menu', 850), ('menu-open-0', 1050), ('favourites-tab', 1050),
+            *timed_scenes('preview-menu-entry', MENU_ENTRY_SAMPLES, 1900), ('favourites-tab', 1050),
             ('showcase-keyboard-char', 850), ('phone', 700), ('settings', 700),
             ('schedule-edit-day', 800), ('schedule-edit-minute', 800), ('showcase-theme-day', 650),
             *timed_scenes('preview-menu-return', MENU_RETURN_SAMPLES, 1300),

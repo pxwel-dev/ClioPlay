@@ -1,36 +1,36 @@
 {
   "machine": "ARM7TDMI / ARMv4T",
   "abi": "ELF32 EABI5 soft-float; Linux OABI syscalls",
-  "entry": "0x733e0",
-  "bytes": 927156,
-  "sha256": "5adc50d1b2024cafe7eb4875c57be91a47809a475501637731fad3de1674a29d",
+  "entry": "0x733e8",
+  "bytes": 927068,
+  "sha256": "0bb87bb22ec95053e95b14699e365e33433862903fc545e4efb0acfd68966cb1",
   "sections": {
     ".text": {
-      "address": "0x731f0",
-      "bytes": 420664
+      "address": "0x731f8",
+      "bytes": 420268
     },
     ".rodata": {
       "address": "0x10108",
-      "bytes": 340198
+      "bytes": 340206
     },
     ".data": {
-      "address": "0xe9d28",
-      "bytes": 1136
+      "address": "0xe9ba8",
+      "bytes": 1144
     },
     ".bss": {
-      "address": "0xea1a0",
+      "address": "0xea020",
       "bytes": 10763024
     }
   },
   "source": "clio843/src/clio040.c",
-  "source_tree_sha256": "e56194f36c4231ea7e4ab9deb40e2bf5df07e31600bfb1096309bdc46ba25632",
+  "source_tree_sha256": "82e3ec09882c8f5bc4b751df336a7626e0d50fd9d1f1bdbffb9dee30110a393e",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "b0045a10c40374f77a1865d57be226f40dd313a23c5c38c68b60c3870f42a52b",
     "clio843/src/atlas_router.h": "ae13e0cb3de1c5c75a377abced3f4332cecd1ca0ff124e9d3074c555d9068eb5",
     "clio843/src/audio_chime.h": "184c222e448db2707fc752bc38f7f6c735b6cb1f4d168d88ddc7da7cf20f4d75",
     "clio843/src/boot_theme.h": "fa46f1bda9c0f37306c90f34d497192953aa718b30fa688291bbc7a66ddab746",
-    "clio843/src/clio040.c": "88cff07af2e9c10fe7830ccaee0e2b0475e1b4c01bd8f27369128eeb88ce9604",
+    "clio843/src/clio040.c": "b609f1461be78e4e8149a7350156e71e70762a2be5c2d99b290e58c4b5617716",
     "clio843/src/clioa2dp.c": "b18925f615b77648e31bcaeaa467abc5800fa0f330e3dfbbc9ef8cf8b8f4a983",
     "clio843/src/cliospl.c": "3ed913f73a028527a29b81ab1f3e4e49f8cab7ee26e715e4ee1715378e5e86e0",
     "clio843/src/font_atlas.h": "0989a1e455dd2a047dfea49d3e4d2a66a30b178960b80a2c31603ee80ffc4ffc",
@@ -39,10 +39,10 @@
     "clio843/src/global_regions.h": "3ffc21e07c46b527ec3f212875be19d2997980f520b6f64b9727400887d0a7e8",
     "clio843/src/global_text.cc": "45b454fa97ec49eaaca230e4578da4361138ff2c5c410e0e552edd5629231858",
     "clio843/src/global_text.h": "49956b951783a12949ea41c4e2df829837eaa8ecfd644c68e6ca57c70a2208b6",
-    "clio843/src/hud.h": "06817ed736229d2b1bce326368faadd8cc885abd32b0002ea75c4fb33cb9280a",
+    "clio843/src/hud.h": "b3662efe3bfaee88877b45013a22c935e2a9c560de95da83f86dcb8fd5c35ed6",
     "clio843/src/hud_glass.h": "100d890a0d22787375b4b47e79fd2a16eb6fc52925eb4148d255241e7a1dcd61",
     "clio843/src/hud_playback.h": "a2757e57a552bf1e03a30b7b62b60bf2ade02cf62ddf565531d2eb753f86f881",
-    "clio843/src/hud_status.h": "a26b6c97bb519fe015274d222e6fadfb29e26e8ec6e7acea30c617ba260bb1f5",
+    "clio843/src/hud_status.h": "190479dbda5d18c67511e06fb1738b2f45751414d5a4e63410b7ed787866fd64",
     "clio843/src/hud_turn_masks.h": "ceb5cc2dfc83963855f1c04541c646ac49a88e6c2177c6584c673d9d97b3ad45",
     "clio843/src/keyboard-data/UNICODE-LICENSE.txt": "e7a93b009565cfce55919a381437ac4db883e9da2126fa28b91d12732bc53d96",
     "clio843/src/keyboard-data/layouts.h": "22a3c1a36371612cf10b9db2811812d6320eef8065df4cd7586d4088ea25a6de",

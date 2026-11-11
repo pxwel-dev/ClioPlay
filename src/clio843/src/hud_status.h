@@ -57,7 +57,7 @@ static void hud_status_observe(int map,u32 now){
  }
  (void)now;
 }
-static void hud_status_compose(struct HudCard*c,int map,u32 now){
+static void hud_status_compose(struct HudCard*c,u32 now){
  if(hud_event_visible>=0){
   struct HudEvent*e=&hud_events[hud_event_visible];
   if(e->order==hud_event_displayed_order){
@@ -69,9 +69,7 @@ static void hud_status_compose(struct HudCard*c,int map,u32 now){
  if(modal!=MOD_NONE)return;
  char*line=0;unsigned cap=0;int shift=0;
  if(!c->kind){line=c->title;cap=sizeof(c->title);shift=0;}
- else if(!map){
-  if(!c->detail[0]&&!c->connection[0]&&!c->feedback[0]){line=c->detail;cap=sizeof(c->detail);shift=2;}
- }else if(!c->feedback[0]){line=c->feedback;cap=sizeof(c->feedback);shift=6;}
+ else if(!c->feedback[0]){line=c->feedback;cap=sizeof(c->feedback);shift=6;}
  else if(!c->connection[0]){line=c->connection;cap=sizeof(c->connection);shift=4;}
  else if(!c->detail[0]){line=c->detail;cap=sizeof(c->detail);shift=2;}
  if(!line)return;

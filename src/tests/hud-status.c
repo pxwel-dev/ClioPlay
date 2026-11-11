@@ -53,9 +53,9 @@ int main(void){
  prepare(12600,1);assert(contains("STOP NOT ADDED")&&card()->box.h<=96);
  assert(card()->flags&HUD_KEYS);assert(card()->flags&HUD_PROGRESS);
  prepare(12680,1);fill(0,0,W,H,0x1234);hud_draw_all(12680,1);
- prepare(15000,0);assert(card()->box.y+card()->box.h<MENU_BODY_Y);
+ prepare(15000,0);assert(card()->box.h<=96);
  fill(0,0,W,H,0x1234);hud_draw_card(HC_STATUS,15320);
- for(int i=MENU_BODY_Y*W;i<W*H;i++)assert(fb[i]==0x1234);
+ for(int i=(card()->box.y+card()->box.h)*W;i<W*H;i++)assert(fb[i]==0x1234);
 
  baseline();screen=SCR_TRIP;modal=MOD_RECENT;
  notice_success("Favourite saved");notice_success("Stop moved");

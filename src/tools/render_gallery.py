@@ -34,6 +34,7 @@ BLUETOOTH_EVENTS = (
 BLUETOOTH_SAMPLES = sorted({at + step for at, _ in BLUETOOTH_EVENTS for step in TWEEN_STEPS})
 PHONE_CALC_SAMPLES = range(0, 1280, 80)
 MENU_RETURN_SAMPLES = (0, *(400 + step for step in TWEEN_STEPS))
+MENU_ENTRY_SAMPLES = sorted({0, *(400+step for step in (0,100,200,300,400)), *(950+step for step in (0,100,200,300,400)), *(1400+step for step in (0,100,200,300,400))})
 SPEED_WARNING_SAMPLES = (0, *range(400, 3041, 80))
 ROUNDABOUT_ETA_SAMPLES = (0, *(600 + step for step in TWEEN_STEPS),
                         *(4800 + step for step in TWEEN_STEPS))
@@ -155,6 +156,11 @@ def catalog(sender_receipts=None):
         key('Menu',f'menu-focus-{i}',f'Select {title}', 'key_handle(K_MENU);', 'key_handle(K_DOWN);'*i, f'assert(menu_focus=={i});')
         key('Menu',f'menu-open-{i}',f'Open {title}', 'key_handle(K_MENU);'+'key_handle(K_DOWN);'*i, 'key_handle(K_ENTER);', f'assert(screen=={["SCR_TRIP","SCR_BT","SCR_SET"][i]});')
     key('Menu','menu-back','Back from menu to driving','screen=SCR_MENU;','key_handle(K_BACK);','assert(screen==SCR_MAP);')
+    motion('Menu', 'preview-menu-entry', 'Active status enters the menu once and persists through subpages',
+           'settle();set_volume(16);draw();hud_capture_ms+=400u;draw();',
+           ((400, 'key_handle(K_MENU);assert(screen==SCR_MENU);'),
+            (950, 'key_handle(K_ENTER);assert(screen==SCR_TRIP);'), (1400, '')),
+           MENU_ENTRY_SAMPLES)
     motion('Menu', 'preview-menu-return', 'Return to driving with a persistent clock',
            'screen=SCR_MENU;pref.theme=THEME_DAY;refresh_theme();settle();',
            ((400, 'key_handle(K_BACK);assert(screen==SCR_MAP);'),), MENU_RETURN_SAMPLES)

@@ -2666,7 +2666,7 @@ static void run(void){
      * initial calculation 5 Hz is still visually smooth enough, while every
      * skipped render leaves an entire frame for CH work. Moving reroutes remain
      * at the normal draw cadence. Always draw immediately when a route finishes. */
-    int do_draw=(screen==SCR_MAP||modal!=MOD_NONE||((tick%2)==0));
+    int do_draw=(screen==SCR_MAP||modal!=MOD_NONE||((tick%2)==0)||hud_menu_animating(s_now_ms()));
     if(turbo_calc&&route_status==R_CALC&&screen==SCR_MAP&&modal==MOD_NONE&&(tick&1u))do_draw=0;
     /* Advance only on rendered map frames so the transition remains visibly
      * five frames even if route calculation temporarily skips a draw. */

@@ -5,7 +5,7 @@
 | [Song and radio updates](metadata-updates.gif) | New song titles animate in, including during BT CTRL. Radio tuning updates even when the station name stays the same. |
 | [Status notifications](status-notifications.gif) | GPS acquisition and recovery, phone connection, volume and no-active-route messages share one animated pill. |
 | [Driving](driving.gif) | A new road name appears. A camera alert joins the same pill and remains after the name fades. |
-| [Menus](menus.gif) | Menu, Trip, favourites, the glass keyboard, Bluetooth and Settings, including custom Auto times and return to driving. |
+| [Menus](menus.gif) | An active volume pill animates into Menu, persists when opening Trip, then fades out on its original timer. Favourites, glass keyboard, Bluetooth, Settings, custom Auto times and return to driving follow. |
 | [Bluetooth](bluetooth.gif) | The volume notice expands to show controls and a thin track progress bar. A reported seek eases forward, and pause highlights when pressed. |
 | [Phone destination](phone-destination.gif) | The head unit receives a destination, shows moving route progress and lists the destination in Trip. |
 | [Speeding warning](speed-warning.gif) | The speed pill pulses red above a confirmed 30 mph limit and eases back when the car slows down. |

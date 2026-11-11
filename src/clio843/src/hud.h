@@ -10,7 +10,8 @@ enum {HUD_BOTTOM_MARGIN=8,HUD_SIDE_W=128,HUD_TURN_X=W-HUD_BOTTOM_MARGIN-HUD_SIDE
 
 static char nav_zoom[48];
 static int hud_kind,hud_observed_route=R_IDLE;
-static int hud_status_map=-1;
+static int hud_status_map=-1,hud_status_page=-1;
+static u32 hud_status_frame_at;
 static u32 hud_progress_at;
 enum {HUD_MENU_TITLE_X=12,HUD_MENU_GAP=8};
 static struct {
@@ -126,7 +127,7 @@ static void hud_source_text(char*b,unsigned cap){
  else if(reading_present(car.source)&&!streq(car.source,af.band))copystr(b,cap,car.source);
 }
 
-enum {HUD_KEYS=1, HUD_PROGRESS=2, HUD_MENU_TWO_LINE=4, HUD_PLAYBACK=8};
+enum {HUD_KEYS=1, HUD_PROGRESS=2, HUD_PLAYBACK=8};
 enum {HUD_STATUS_TITLE,HUD_STATUS_BODY,HUD_STATUS_DETAIL,HUD_STATUS_CONNECTION,
  HUD_STATUS_FEEDBACK,HUD_STATUS_TRANSPORT,HUD_STATUS_LAYOUT_COUNT};
 static struct {
@@ -140,8 +141,7 @@ static int hud_status_offset(int row,int q){
 }
 static void hud_prepare_status_layout(const struct HudCard*c,u32 now,int was_visible){
  if(!c->box.a)return;
- int compact=c->flags&HUD_MENU_TWO_LINE;
- const int to[]={compact?2:5,compact?18:25,c->detail[0]?16:0,
+ const int to[]={5,25,c->detail[0]?16:0,
   c->connection[0]?14:0,c->feedback[0]?14:0,c->flags&HUD_KEYS?17:0};
  int changed=0;
  for(int i=0;i<HUD_STATUS_LAYOUT_COUNT;i++)changed|=hud_status_layout.to[i]!=to[i];
@@ -195,11 +195,13 @@ static void hud_nav_text(struct HudCard*c,int z,int kind,int tag){
 }
 static void hud_prepare(int z,u32 now,int map){
  struct HudCard c={0};
- // A tall map card must never tween through the menu body on a page switch.
+ // Navigation and the entire menu tree are two presentation contexts.
+ // Moving between menu pages keeps the current entrance and notification term.
  if(hud_status_map!=map){
   memzero(&hud_tween[HC_STATUS],sizeof(hud_tween[HC_STATUS]));
   hud_status_map=map;
  }
+ hud_status_page=screen;
  hud_clock_prepare(now);hud_playback_update(now);
  if(!map)hud_menu_title_prepare();
  int audio_available=audio_source_detected()&&(!bt_source_selected()||btui.connected);
@@ -216,7 +218,7 @@ static void hud_prepare(int z,u32 now,int map){
   else if(route_status==R_IDLE&&(hud_navigation.kind==HUD_JOURNEY||hud_navigation.kind==HUD_FAILURE))hud_navigation.kind=HUD_NONE;
  }
  int media=map&&!freecam&&bt_control_mode&&bt_controls_available();
- int nav=map||hud_navigation.kind==HUD_FAILURE?hud_navigation.kind:HUD_NONE;
+ int nav=hud_navigation.kind;
  int urgent=route_status==R_CALC?HUD_CALC:(nav==HUD_FAILURE?HUD_FAILURE:HUD_NONE);
  if(media){
   copystr(c.tag,sizeof(c.tag),"BT ");appendstr(c.tag,sizeof(c.tag),ui_tr("CTRL"));
@@ -245,8 +247,7 @@ static void hud_prepare(int z,u32 now,int map){
   c.kind=HUD_SOURCE;copystr(c.tag,sizeof(c.tag),hud_audio_tag());hud_source_text(c.title,sizeof(c.title));
   if(bt_source_selected()&&reading_present(btui.artist))copystr(c.detail,sizeof(c.detail),btui.artist);
  }
- int show_connection=hud_connection.kind&&(map||!hud_bt_feedback.kind||
-  !time_before_u32(hud_connection.changed,hud_bt_feedback.changed));
+ int show_connection=hud_connection.kind;
  int has_device_name=reading_present(hud_connected_name);
  if(show_connection){
   char*text=c.kind?c.connection:c.title;
@@ -255,7 +256,7 @@ static void hud_prepare(int z,u32 now,int map){
   if(has_device_name){appendstr(text,cap," ");appendstr(text,cap,hud_connected_name);}
   if(!c.kind){c.kind=HUD_CONNECTION;c.ink|=HUD_SUCCESS;}else c.ink|=HUD_SUCCESS<<4;
  }
- if(hud_bt_feedback.kind&&(map||!show_connection)){
+ if(hud_bt_feedback.kind){
   if(c.kind){copystr(c.feedback,sizeof(c.feedback),hud_bt_text);c.ink|=hud_bt_level<<6;}
   else{c.kind=HUD_BT_FEEDBACK;copystr(c.title,sizeof(c.title),hud_bt_text);c.ink|=hud_bt_level;}
  }
@@ -266,29 +267,11 @@ static void hud_prepare(int z,u32 now,int map){
   else copystr(c.badge,sizeof(c.badge),car.volume);
  }
  hud_status_observe(map,now);
- if(!map&&c.kind==HUD_CONNECTION&&has_device_name){
-  copystr(c.title,sizeof(c.title),ui_tr("Connected to"));
-  copystr(c.detail,sizeof(c.detail),hud_connected_name);c.ink|=HUD_SUCCESS<<2;
- }
- hud_status_compose(&c,map,now);
- if(!map&&c.kind==HUD_SYSTEM){
-  int left=HUD_MENU_TITLE_X+hud_menu_title.w+HUD_MENU_GAP;
-  int right=(hud_tween[HC_CLOCK].target.box.a?hud_tween[HC_CLOCK].target.box.x:HUD_CLOCK_X+50)-HUD_MENU_GAP;
-  if(width(c.title,1)>right-left-20){
-   char first[193],second[193];
-   if(hud_split_title(c.title,1,right-left-20,first,second)){
-    copystr(c.title,sizeof(c.title),first);copystr(c.detail,sizeof(c.detail),second);
-    c.ink|=(c.ink&3)<<2;
-   }
-  }
- }
+ hud_status_compose(&c,now);
  if(!c.tag[0]&&!c.title[0]&&!c.badge[0]&&!c.flags)c.kind=HUD_NONE;
  hud_kind=c.kind;
  if(c.kind){
-  int y=8,h=27;
-  if(!map&&(c.detail[0]||c.connection[0]||c.feedback[0]||(c.flags&HUD_PROGRESS))){
-   c.flags|=HUD_MENU_TWO_LINE;y=4;h=34;
-  }else h+=(c.detail[0]?16:0)+(c.connection[0]?14:0)+(c.feedback[0]?14:0)+
+  int y=8,h=27+(c.detail[0]?16:0)+(c.connection[0]?14:0)+(c.feedback[0]?14:0)+
    (c.flags&HUD_KEYS?17:0)+(c.flags&HUD_PROGRESS?7:0);
   int w=20+width(c.title,1)+(c.tag[0]?width(c.tag,0)+12:0)+(c.badge[0]?width(c.badge,0)+18:0);
   int detail_w=width(c.detail,0)+20;
@@ -302,7 +285,9 @@ static void hud_prepare(int z,u32 now,int map){
    int left=HUD_MENU_TITLE_X+hud_menu_title.w+HUD_MENU_GAP;
    struct HudBox clock=hud_tween[HC_CLOCK].target.box;
    int right=(clock.a?clock.x:HUD_CLOCK_X+50)-HUD_MENU_GAP;
-   if(w>right-left)w=right-left;x=left+(right-left-w)/2;
+   if(w>right-left)w=right-left;
+   // hud_status_pose centres against the live header. A different page title
+   // must not retarget the entrance merely because its horizontal anchor moves.
   }
   c.box=hud_box(x,y,w,h);
  }
@@ -312,6 +297,7 @@ static void hud_prepare(int z,u32 now,int map){
  hud_set_card(HC_STATUS,c,now);
  struct HudBox b=hud_status_pose(now);
  nav_card_x=b.x;nav_card_y=b.y;nav_card_w=b.a?b.w:0;nav_card_h=b.h;
+ hud_status_frame_at=now;
 }
 
 static char hud_last_road[113];
@@ -486,14 +472,6 @@ static void hud_draw_status(struct HudBox b,const struct HudCard*c,u32 now){
   {old->connection,next->connection,c->connection,hud_status_colour((c->ink>>4)&3,C_CYAN),((old->ink^next->ink)&48)==0},
   {old->feedback,next->feedback,c->feedback,hud_status_colour((c->ink>>6)&3,C_WHITE),((old->ink^next->ink)&192)==0},
  };
- // Menus have room for one body row. Keep it clear of the title and page body.
- if(c->flags&HUD_MENU_TWO_LINE){
-  int i=c->feedback[0]?2:c->connection[0]?1:0;
-  if(lines[i].text[0]){
-   hud_ink_alpha=streq(lines[i].from,lines[i].to)&&lines[i].same_colour?full:fade;
-   compact_fit(x+10,row-2,w-20,0,lines[i].text,lines[i].ink);
-  }
- }else
  // Reserve space gradually so existing rows move as neighbours arrive or leave.
  for(unsigned i=0;i<sizeof(lines)/sizeof(lines[0]);i++){
   int height=layout[HUD_STATUS_DETAIL+i];
@@ -521,7 +499,7 @@ static void hud_draw_status(struct HudBox b,const struct HudCard*c,u32 now){
  row+=layout[HUD_STATUS_TRANSPORT];
  if(c->flags&HUD_PROGRESS){
   int track=w-20,travel=track-28;if(travel<1)return;
-  hud_ink_alpha=hud_status_row_ink(changed_flags&HUD_PROGRESS?fade:full,c->flags&HUD_MENU_TWO_LINE?8:bottom-row-5);
+  hud_ink_alpha=hud_status_row_ink(changed_flags&HUD_PROGRESS?fade:full,bottom-row-5);
   u32 p=((now-hud_progress_at)/22u)%(u32)(travel*2);
   int off=p<=(u32)travel?(int)p:2*travel-(int)p;
   int py=b.y+b.h-5;
@@ -616,8 +594,26 @@ static void hud_draw_all(u32 now,int map){
  if(map){hud_draw_card(HC_SPEED,now);hud_draw_card(HC_ROAD,now);hud_draw_card(HC_TURN,now);hud_draw_card(HC_COMPASS,now);}
  hud_draw_card(HC_CLOCK,now);hud_draw_card(HC_STATUS,now);
 }
+/* Menus idle at 5 Hz, but status/page transitions need the same 10 Hz
+ * opportunities as the map. Include the final frame after the tween ends. */
+static int hud_menu_animating(u32 now){
+ if(hud_status_page!=screen)return 1;
+ const int ids[]={HC_STATUS,HC_CLOCK};
+ for(unsigned i=0;i<sizeof(ids)/sizeof(ids[0]);i++){
+  const struct HudTween*t=&hud_tween[ids[i]];
+  if(!t->seen||(!t->from.a&&!t->target.box.a))continue;
+  if(now-t->position_at<320u||hud_status_frame_at-t->position_at<320u||
+     now-t->content_at<220u||hud_status_frame_at-t->content_at<220u)return 1;
+ }
+ const struct HudTween*t=&hud_tween[HC_STATUS];
+ if(t->seen&&(t->from.a||t->target.box.a)){
+  if(now-hud_status_layout.at<320u||hud_status_frame_at-hud_status_layout.at<320u)return 1;
+  if(t->target.box.a&&(t->target.flags&HUD_PROGRESS))return 1;
+ }
+ return 0;
+}
 static void header(void){
- u32 now=hud_now_ms();hud_prepare(0,now,0);hud_draw_all(now,0);
+ u32 now=hud_now_ms();hud_prepare(active_zoom(),now,0);hud_draw_all(now,0);
  int face=hud_menu_title.face,w=hud_menu_title.w;
  if(hud_menu_title.second[0]){
   compact_fit(HUD_MENU_TITLE_X,4,w,face,hud_menu_title.first,C_WHITE);
@@ -628,7 +624,7 @@ static void header(void){
 static void hud_reset_animations(void){
  memzero(hud_tween,sizeof(hud_tween));hud_last_road[0]=0;hud_road_at=0;hud_road_live=0;
  hud_status_reset();hud_playback_reset();
- hud_speed_over=hud_speed_from=0;hud_speed_at=0;hud_status_map=-1;
+ hud_speed_over=hud_speed_from=0;hud_speed_at=0;hud_status_map=hud_status_page=-1;hud_status_frame_at=0;
  bt_transport_press.kind=0;bt_playback_request=-1;
 }
 static void hud_settle_for_capture(u32 now){

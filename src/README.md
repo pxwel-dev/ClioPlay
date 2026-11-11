@@ -223,7 +223,12 @@ errors (for example, saving a favourite or adding a stop) also use that pill on 
 map and menu pages. They share space with audio, volume and Bluetooth feedback.
 Messages wait for space and receive about four seconds of display time; unchanged
 states are not repeated. Resolved GPS/map/route states cancel stale waiting messages.
-Menus keep notifications above their content. Route calculation retains its moving
+Navigation and menus share the same expanding status layout and animations. On
+menu pages the pill is centred in the header and can briefly overlay the upper
+content while expanded. Entering from navigation gives it a fresh fade-in at that
+anchor; all menu and settings pages share that same appearance and original timer.
+Moving within the menu tree never replays its entrance. New status changes still
+animate normally, and the clock/temperature pill stays persistent. Route calculation retains its moving
 progress indicator. Road names and camera alerts retain their dedicated bottom pill.
 
 Status text uses neutral theme ink for information, green for confirmations, amber
