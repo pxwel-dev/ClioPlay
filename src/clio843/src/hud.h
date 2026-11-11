@@ -594,8 +594,8 @@ static void hud_draw_all(u32 now,int map){
  if(map){hud_draw_card(HC_SPEED,now);hud_draw_card(HC_ROAD,now);hud_draw_card(HC_TURN,now);hud_draw_card(HC_COMPASS,now);}
  hud_draw_card(HC_CLOCK,now);hud_draw_card(HC_STATUS,now);
 }
-/* Menus idle at 5 Hz, but status/page transitions need the same 10 Hz
- * opportunities as the map. Include the final frame after the tween ends. */
+/* Menus refresh their content at 5 Hz; the compositor presents active
+ * transitions at 20 Hz. Include the final frame after the tween ends. */
 static int hud_menu_animating(u32 now){
  if(hud_status_page!=screen)return 1;
  const int ids[]={HC_STATUS,HC_CLOCK};
@@ -612,14 +612,17 @@ static int hud_menu_animating(u32 now){
  }
  return 0;
 }
-static void header(void){
- u32 now=hud_now_ms();hud_prepare(active_zoom(),now,0);hud_draw_all(now,0);
+static void hud_draw_page_title(void){
  int face=hud_menu_title.face,w=hud_menu_title.w;
  if(hud_menu_title.second[0]){
   compact_fit(HUD_MENU_TITLE_X,4,w,face,hud_menu_title.first,C_WHITE);
   compact_fit(HUD_MENU_TITLE_X,20,w,face,hud_menu_title.second,C_WHITE);
  }else compact_fit(HUD_MENU_TITLE_X,11,w,face,hud_menu_title.first,C_WHITE);
 }
+static void header(void){
+ u32 now=hud_now_ms();hud_prepare(active_zoom(),now,0);hud_draw_all(now,0);hud_draw_page_title();
+}
+
 #ifdef HOST_TEST
 static void hud_reset_animations(void){
  memzero(hud_tween,sizeof(hud_tween));hud_last_road[0]=0;hud_road_at=0;hud_road_live=0;

@@ -11,7 +11,7 @@ import tempfile
 
 from PIL import Image
 from render_gallery import (BLUETOOTH_SAMPLES, MENU_ENTRY_SAMPLES, MENU_RETURN_SAMPLES, PHONE_CALC_SAMPLES, ROUNDABOUT_ETA_SAMPLES,
-                            SPEED_WARNING_SAMPLES, ROOT, sha)
+                            SPEED_WARNING_SAMPLES, EXPLORE_SAMPLES, TWEEN_STEPS, ROOT, sha)
 
 
 def timeline(theme, scenes):
@@ -24,10 +24,9 @@ def timed_scenes(prefix, samples, end):
 
 
 def previews():
-    road_frames = (0, 164, 228, 292, 356, 420, 1164, 1228, 1292, 1356, 1420,
-                   4100, 4164, 4228, 4292, 4356, 4420, 5300)
-    status_samples = sorted({at+step for at in (0,800,1600,2600,6500,7000) for step in (0,64,128,192,256,320)} | {4400,4800,5400,6100,6200,6280,6360,6440,8600})
-    metadata_samples = sorted({at+step for at in (0,900,1700,2900,4300,8500) for step in (0,64,128,192,256,320)} | {700,2600,3900,7200,9200})
+    road_frames = sorted({0,5300}|{at+step for at in (100,1100,4100) for step in TWEEN_STEPS})
+    status_samples = sorted({at+step for at in (0,800,1600,2600,6500,7000) for step in TWEEN_STEPS} | {4400,4800,5400,6100,6200,6280,6360,6440,8600})
+    metadata_samples = sorted({at+step for at in (0,900,1700,2900,4300,8500) for step in TWEEN_STEPS} | {700,2600,3900,7200,9200})
     return {
         'metadata-updates.gif': timeline('night', timed_scenes('preview-metadata', metadata_samples, 9600)),
         'status-notifications.gif': timeline('night', timed_scenes('preview-status', status_samples, 9200)),
@@ -44,16 +43,16 @@ def previews():
         'bluetooth.gif': timeline('night', timed_scenes('hud-bluetooth', BLUETOOTH_SAMPLES, 4750)),
         'phone-destination.gif': timeline('night', [
             ('empty-receive', 1450),
-            *((f'phone-preview-calculating-{ms:04d}', 80) for ms in PHONE_CALC_SAMPLES),
+            *timed_scenes('phone-preview-calculating', list(PHONE_CALC_SAMPLES), 1300),
             ('phone-preview-trip', 1750),
         ]),
         'speed-warning.gif': timeline('night', timed_scenes('hud-speed-warning', SPEED_WARNING_SAMPLES, 3650)),
         'map-browsing.gif': timeline('night', [
             ('driving', 800),
-            *((f'explore-enter-{i:02}', 100) for i in range(5)), ('explore-enter-05', 600),
+            *((f'explore-enter-{i:02}', b-a) for i,(a,b) in enumerate(zip(EXPLORE_SAMPLES,EXPLORE_SAMPLES[1:]))), (f'explore-enter-{len(EXPLORE_SAMPLES)-1:02}', 600),
             ('preview-explore-pan', 700), ('preview-explore-zoom', 750),
-            *((f'preview-explore-return-{i:02}', 100) for i in range(6)),
-            ('preview-explore-return-06', 750),
+            *((f'preview-explore-return-{i:02}', b-a) for i,(a,b) in enumerate(zip(EXPLORE_SAMPLES,EXPLORE_SAMPLES[1:]))),
+            (f'preview-explore-return-{len(EXPLORE_SAMPLES)-1:02}', 750),
         ]),
         'roundabout-eta.gif': timeline('night', timed_scenes('preview-roundabout-eta', ROUNDABOUT_ETA_SAMPLES, 5600)),
         'add-stop.gif': timeline('night', [
@@ -75,7 +74,13 @@ def encode_gif(captures, destination, sequence):
         palette_input.paste(image, (0, i * h))
     palette = palette_input.quantize(colors=256)
     indexed = [image.quantize(palette=palette, dither=Image.Dither.NONE) for image in images]
-    durations = [round(ms / 10) * 10 for _, ms in sequence]
+    # GIF has a 10 ms clock: carry rounding error to retain total timing.
+    durations, elapsed, encoded = [], 0, 0
+    for _, ms in sequence:
+        elapsed += ms
+        target = round(elapsed / 10) * 10
+        durations.append(target - encoded)
+        encoded = target
     indexed[0].save(destination, save_all=True, append_images=indexed[1:],
                     duration=durations, loop=0, optimize=True)
     with Image.open(destination) as image:

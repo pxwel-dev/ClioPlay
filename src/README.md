@@ -243,3 +243,31 @@ reported track position and duration, smooths position/seek updates and freezes
 when paused. Unknown durations (including live streams) leave the bar hidden.
 The existing pill stays the same height; route calculation keeps its own moving
 loading indicator. The bar displays playback position only; it is not a seek control.
+
+### Frame scheduling
+
+The normal map refresh targets 10 FPS and drops to 5 FPS during initial routing
+and rerouting, whether parked or moving. During calculation the **entire display
+is capped at 5 FPS**, including pills, loading indicators, playback, speed warnings,
+menus and Explore rotation. This leaves more CPU time for routing. New input and
+status changes queue for the next frame; input, GPS and audio services keep running.
+On completion, failure or cancellation, normal presentation resumes immediately.
+Outside calculation, a separate compositor targets 20 FPS while overlays animate. It
+restores the latest finished background before drawing each overlay frame, so
+map updates can continue during an animation without showing partial roads or
+retaining old glyphs. Two extra RGB565 backgrounds use about 510 KiB of RAM.
+Quiet screens do not redraw at 20 FPS unnecessarily.
+
+Explore rotation and tilt follow a 500 ms elapsed-time transition rather than a
+fixed number of map frames. Camera presentation requests additional map drawing
+passes using the tile cache; these still cost CPU time. Normal map deadlines keep
+running, and rotation never resets a pill's appearance or notification timer.
+Outside calculation, long map drawing yields at safe points to present overlays.
+Routing uses spare
+deadline budget in chunks of at most 5 ms, with periodic cooperative clock checks.
+
+These are scheduling targets, not measured frame rates on the 400 MHz head unit.
+Slow SD reads or drawing can miss deadlines; missed frames are skipped rather than
+replayed in a burst. With Debug enabled, five-second `FRAME 5S` summaries in the
+existing `state.log` report presentations, scheduled map frames, extra camera
+passes, lateness and drawing/routing time. No frame log is written with Debug off.

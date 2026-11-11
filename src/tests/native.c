@@ -11,6 +11,7 @@
 #include <string.h>
 static const char*outdir;
 static void snapshot(const char*name){char p[1024];snprintf(p,sizeof(p),"%s/%s.rgb565",outdir,name);FILE*f=fopen(p,"wb");assert(f);assert(fwrite(fb,1,sizeof(fb),f)==sizeof(fb));fclose(f);}
+static void explore_sample(u32 elapsed){hud_capture_clock=1;hud_capture_ms+=elapsed;freecam_orientation_anim_update(hud_capture_ms);}
 static void settle(void){
  draw();
 #ifdef HUD_TURN_ICON
@@ -82,7 +83,7 @@ static void remote_tests(void){
  trip_right_focus=3;key_handle(K_ENTER);assert(modal==MOD_CANCEL_ROUTE&&modal_choice==1);key_handle(K_ENTER);assert(trip.active);key_handle(K_ESC);assert(trip_pane==0);
  fixture();screen=SCR_BT;bt_page_focus=0;bt_page_connected_choice=0;key_handle(K_ENTER);command_is(" DISCONNECT");key_handle(K_RIGHT);key_handle(K_ENTER);command_is(" UNPAIR");bt_page_focus=1;key_handle(K_ENTER);assert(bt_page_dialog>=0);key_handle(K_ENTER);command_is(" CONNECT");bt_page_focus=bt_page_total()-1;key_handle(K_ENTER);command_is(" PAIR");
  fixture();screen=SCR_KEY;keyboard_open_fave_name(5497000,-160000);copystr(kbd_text,sizeof(kbd_text),"HOME");kbd_focus=38;key_handle(K_ESC);assert(!strcmp(kbd_text,"HOM"));nfaves=0;key_handle(K_ENTER);assert(screen==SCR_TRIP&&nfaves==1&&!strcmp(faves[0].name,"HOM"));
- fixture();screen=SCR_MAP;key_handle(K_MAP);assert(freecam&&freecam_transition_active());for(int i=0;i<5;i++){freecam_orientation_anim_step();draw();char name[64];snprintf(name,sizeof(name),"explore-enter-%02d",i);snapshot(name);}assert(!freecam_transition_active()&&map_tilt_q8==0);s32 lon=cam_lon;key_handle(K_RIGHT);assert(cam_lon!=lon);key_handle(K_ENTER);assert(modal==MOD_ROUTE_POINT);key_handle(K_BACK);key_handle(K_MAP);assert(!freecam&&freecam_transition_active());for(int i=0;i<6;i++){freecam_orientation_anim_step();draw();char name[64];snprintf(name,sizeof(name),"explore-leave-%02d",i);snapshot(name);}assert(!freecam_transition_active()&&map_tilt_q8==256);
+ fixture();screen=SCR_MAP;hud_capture_clock=1;hud_capture_ms=s_now_ms();key_handle(K_MAP);assert(freecam&&freecam_transition_active());for(int i=0;i<5;i++){explore_sample(100);draw();char name[64];snprintf(name,sizeof(name),"explore-enter-%02d",i);snapshot(name);}assert(!freecam_transition_active()&&map_tilt_q8==0);s32 lon=cam_lon;key_handle(K_RIGHT);assert(cam_lon!=lon);key_handle(K_ENTER);assert(modal==MOD_ROUTE_POINT);key_handle(K_BACK);key_handle(K_MAP);assert(!freecam&&freecam_transition_active());for(int i=0;i<6;i++){explore_sample(100);draw();char name[64];snprintf(name,sizeof(name),"explore-leave-%02d",i);snapshot(name);}assert(!freecam_transition_active()&&map_tilt_q8==256);
  fixture();screen=SCR_TRIP;phone_dest.valid=1;phone_dest.action='S';phone_dest.lat=5497548;phone_dest.lon=-164050;copystr(phone_dest.name,sizeof(phone_dest.name),"Kareem's Grill");phone_wait_action=DEST_PICK_ADD_STOP;modal=MOD_WAIT_PHONE;phone_destination_apply();assert(trip.count==3&&!phone_dest.valid&&modal==MOD_NONE&&!strcmp(trip.target[1].name,"Kareem's Grill"));
  fixture();modal=MOD_RESUME_TRIP;screen=SCR_MAP;key_handle(K_MAP);key_handle(K_BACK);assert(modal==MOD_RESUME_TRIP);modal_choice=1;key_handle(K_ENTER);assert(!trip.active&&modal==MOD_NONE);
 #ifndef BEFORE

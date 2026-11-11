@@ -20,6 +20,7 @@ typedef unsigned short u16;
 typedef signed short s16;
 typedef unsigned int u32;
 typedef signed int s32;
+#include "frame_schedule.h"
 
 #ifndef HOST_TEST
 static inline long sc0(long nr){ register long r0 __asm__("r0"); __asm__ volatile("svc %1":"=r"(r0):"i"(0x900000+nr):"memory","cc"); return r0; }
@@ -57,7 +58,12 @@ __attribute__((noreturn)) static void s_exit(int c){sc1(1,c);for(;;){}}
 #include <sys/ioctl.h>
 static long s_read(int fd,void*p,unsigned n){return read(fd,p,n);} 
 static long s_write(int fd,const void*p,unsigned n){return write(fd,p,n);} 
-static long s_open(const char*p,int f,int m){return open(p,f,m);} 
+/* The runtime uses Linux flag values; native macOS tests need host flags. */
+static long s_open(const char*p,int f,int m){
+ int flags=f&3;if(f&64)flags|=O_CREAT;if(f&512)flags|=O_TRUNC;
+ if(f&1024)flags|=O_APPEND;if(f&2048)flags|=O_NONBLOCK;
+ return open(p,flags,m);
+} 
 static long s_close(int fd){return close(fd);} 
 static long s_unlink(const char*p){return unlink(p);} 
 static long s_lseek(int fd,long o,int w){return lseek(fd,o,w);} 
@@ -196,7 +202,12 @@ static void apply_palette(int night){
   if(changed)write_theme_state_raw(theme_resolved);
 }
 
-static u16 fb[FB_PIX];
+static u16 display_fb[FB_PIX];
+/* Array indirection preserves sizeof(fb) for the native renderer/test tools. */
+static u16 (*render_fb)[FB_PIX]=&display_fb;
+#define fb (*render_fb)
+static int render_background_dirty=1;
+static void render_checkpoint(void);
 static int clip_x=0,clip_y=0,clip_right=W,clip_bottom=H;
 static u8 font[FONT_BYTES];
 static int font_ok=0;
@@ -788,17 +799,16 @@ static void update_display_course(void){if(!gps.fix)return;int c=shown_course();
 static int map_course(void){if(display_course_valid)return display_course;return shown_course();}
 
 #define MAX_EXPLORE_ZOOM 9
-#define FREECAM_ORIENT_ANIM_FRAMES 5 /* Five rendered frames ~= 0.5 s at the normal 10 Hz map cadence. */
+#define FREECAM_ORIENT_ANIM_MS 500u
 #define FC_ANIM_NONE 0
 #define FC_ANIM_TO_NORTH 1
 #define FC_ANIM_TO_CAR 2
 static int freecam=0,freecam_zoom=5,auto_zoom_level=-1,zoom_override=-1;static s32 cam_lat=0,cam_lon=0;
-/* freecam_course is also the temporary view orientation while snapping back to
- * the car.  Mode changes are locked until the current five-frame transition
- * has completed, so entry/exit can never reverse halfway through. */
-static int freecam_course=0,freecam_course_valid=0,freecam_anim_mode=FC_ANIM_NONE,freecam_anim_frames=0,freecam_anim_hold=0;
-/* PERSPECTIVE1: 256=the fixed Waze-style driving tilt, 0=top-down Freecam.
- * The existing five rendered orientation frames also interpolate the tilt. */
+/* Camera interpolation has its own elapsed-time clock, independent of map
+ * and HUD frame counts. Input cannot reverse an unfinished transition. */
+static int freecam_course=0,freecam_course_valid=0,freecam_anim_mode=FC_ANIM_NONE,freecam_anim_from=0;
+static u32 freecam_anim_at;
+/* 256=driving perspective, 0=top-down Explore; rotation and tilt share time. */
 static int map_tilt_q8=256;
 
 /* Driving autozoom now uses only Z6/Z5/Z4.  Hysteresis keeps the existing
@@ -811,6 +821,23 @@ static s32 view_lat(void){return freecam?cam_lat:car_lat();}static s32 view_lon(
 static int view_course_valid(void){if(freecam_anim_mode==FC_ANIM_TO_CAR)return freecam_course_valid;return freecam?freecam_course_valid:display_course_valid;}
 static int view_course(void){if(freecam_anim_mode==FC_ANIM_TO_CAR&&freecam_course_valid)return freecam_course;return freecam&&freecam_course_valid?freecam_course:map_course();}
 static int view_rotates(void){return view_course_valid();}
+/* Continuous camera angles avoid the former ten-degree presentation steps.
+ * Interpolated trig is normalized once per angle, then cached per vertex pass. */
+static void view_trig(int*ss,int*c){
+ static int previous=-1,sine,cosine;
+ int angle=view_course();while(angle<0)angle+=360;angle%=360;
+ if(angle!=previous){
+  int k=angle/10,f=angle%10,n=(k+1)%36;
+  sine=(SIN36[k]*(10-f)+SIN36[n]*f)/10;
+  cosine=(COS36[k]*(10-f)+COS36[n]*f)/10;
+  int norm=(sine*sine+cosine*cosine)>>15,scale=(98304-norm)/2;
+  sine=(sine*scale+16384)>>15;cosine=(cosine*scale+16384)>>15;
+  if(sine>32767)sine=32767;if(cosine>32767)cosine=32767;
+  if(sine< -32767)sine=-32767;if(cosine< -32767)cosine=-32767;
+  previous=angle;
+ }
+ *ss=sine;*c=cosine;
+}
 #define MAP_TOP 0
 #define MAP_BOTTOM H
 #define HUD_BOTTOM_Y 220
@@ -861,7 +888,7 @@ static int perspective_scale_for_forward(int d){
   if(d<=PERSPECTIVE_LUT_MAX)return perspective_scale_q12[d/PERSPECTIVE_LUT_STEP];
   return (int)udiv32(PERSPECTIVE_BASE*256u*4096u,PERSPECTIVE_BASE*256u+2u*(u32)map_tilt_q8*(u32)d);
 }
-static void world_to_screen(s32 lat,s32 lon,int z,int*ox,int*oy){s32 vl=view_lat(),vo=view_lon();s32 dx=lon_delta(lon-vo),dy=lat-vl;int cq=coslat_q15(vl);s32 wx=lon_scale(dx,cq);int sh=14-z;long long xx=((long long)wx*256)>>sh,yy=-(((long long)dy*256)>>sh);s32 x=xx>16384?16384:xx< -16384?-16384:(s32)xx,y=yy>16384?16384:yy< -16384?-16384:(s32)yy;if(view_rotates()){int k=((view_course()+5)/10)%36;int c=COS36[k],ss=SIN36[k];int rx=(x*c+y*ss)>>15;int ry=(-x*ss+y*c)>>15;x=rx;y=ry;}
+static void world_to_screen(s32 lat,s32 lon,int z,int*ox,int*oy){s32 vl=view_lat(),vo=view_lon();s32 dx=lon_delta(lon-vo),dy=lat-vl;int cq=coslat_q15(vl);s32 wx=lon_scale(dx,cq);int sh=14-z;long long xx=((long long)wx*256)>>sh,yy=-(((long long)dy*256)>>sh);s32 x=xx>16384?16384:xx< -16384?-16384:(s32)xx,y=yy>16384?16384:yy< -16384?-16384:(s32)yy;if(view_rotates()){int c,ss;view_trig(&ss,&c);int rx=(x*c+y*ss)>>15;int ry=(-x*ss+y*c)>>15;x=rx;y=ry;}
   if(y<0&&map_tilt_q8>0){int q=perspective_scale_for_forward(-y);x=(x*q)>>12;y=(y*q)>>12;}
   *ox=MAP_ANCHOR_X+x;*oy=view_anchor_y()+y;
 }
@@ -871,7 +898,7 @@ static void world_to_screen(s32 lat,s32 lon,int z,int*ox,int*oy){s32 vl=view_lat
  * crease and bottom. The anchor is animated in lockstep with the tilt.
  * The eight-pixel vertical and 24-pixel horizontal bleed
  * accommodate the map line widths and integer/lookup rounding.  Inverse
- * projection uses the same quantised 10-degree rotation as world_to_screen().
+ * projection uses the same interpolated rotation as world_to_screen().
  * No floating point, dynamic allocations or per-road inverse calculations. */
 static void screen_to_world_coverage(int sx,int sy,int z,s32*lat,s32*lon){
   int x=sx-MAP_ANCHOR_X,y=sy-view_anchor_y();
@@ -884,7 +911,7 @@ static void screen_to_world_coverage(int sx,int sy,int z,s32*lat,s32*lon){
     y=-(int)udiv32(ds*base,den);
   }
   if(view_rotates()){
-    int k=((view_course()+5)/10)%36,c=COS36[k],ss=SIN36[k];
+    int c,ss;view_trig(&ss,&c);
     int rx=(x*c-y*ss)>>15,ry=(x*ss+y*c)>>15;x=rx;y=ry;
   }
   int sh=14-z,unit=1<<sh;
@@ -932,7 +959,7 @@ static void map_project_q8(s32 lat,s32 lon,int z,int*ox,int*oy){
  if(!MAP_ANTIALIAS){world_to_screen(lat,lon,z,ox,oy);*ox*=256;*oy*=256;return;}
  s32 dx=lon_delta(lon-view_lon()),dy=lat-view_lat();int sh=14-z,cq=coslat_q15(view_lat());
  long long x=((long long)dx*cq)>>(sh-1),y=-(long long)dy*(65536>>sh);
- if(view_rotates()){int k=((view_course()+5)/10)%36,c=COS36[k],ss=SIN36[k];long long rx=(x*c+y*ss)>>15,ry=(-x*ss+y*c)>>15;x=rx;y=ry;}
+ if(view_rotates()){int c,ss;view_trig(&ss,&c);long long rx=(x*c+y*ss)>>15,ry=(-x*ss+y*c)>>15;x=rx;y=ry;}
  if(y<0&&map_tilt_q8>0){int q;long long forward=-y;
   perspective_scale_update();
   if(forward<(long long)PERSPECTIVE_LUT_MAX*256){int i=(int)(forward>>10),f=(int)(forward&1023);q=(perspective_scale_q12[i]*(1024-f)+perspective_scale_q12[i+1]*f+512)>>10;}
@@ -989,6 +1016,7 @@ static void draw_closed_area(struct Tile*t,int span,int layer,int style,int np,c
   }
   u16 col=layer==1?C_WATER:C_GREEN;
   for(int y=lo;y<hi;y++){
+    if(!(y&7))render_checkpoint();
     int cuts[254],steps[254],n=0;
     for(int i=0;i<ne;i++)if(y>=edges[i].first&&y<edges[i].last){
       int x=edges[i].x,step=edges[i].step,k=n;
@@ -1015,6 +1043,7 @@ static void draw_path(struct Tile*t,int span,int layer,int style,int np,const u8
 }
 enum {MAP_DRAW_CONTEXT=0,MAP_DRAW_AREAS=1,MAP_DRAW_ROADS=2,MAP_DRAW_OCEAN=3};
 static void draw_tile_geometry(struct Tile*t,int viewz,int pass){
+  render_checkpoint();
   if(!t)return;const u8*p=t->data,*end=t->data+t->len;int span=span_for_level((int)t->lvl);
   if(mapfmt==1){
     if(pass!=MAP_DRAW_ROADS||t->len<2)return;u16 nf=rd16(p);p+=2;
@@ -1022,6 +1051,7 @@ static void draw_tile_geometry(struct Tile*t,int viewz,int pass){
   }
   int hs=mapfmt>=3?8:4;if(t->len<(u32)hs)return;u16 ng=rd16(p);p+=hs;
   for(u16 f=0;f<ng&&p+4<=end;f++){
+    if(!(f&7))render_checkpoint();
     int layer=*p++,style=*p++,np=*p++;p++;if(p+np*4>end)return;
     int ocean=layer==1&&style==(128|5);
     if(pass==MAP_DRAW_AREAS||pass==MAP_DRAW_OCEAN){
@@ -1087,7 +1117,7 @@ static void poi_icon(int kind,int x,int y){
   centered(x,y-8,0,"P",C_MUTED);
  }
 }
-static void draw_tile_labels(struct Tile*t,int viewz,int plo,int phi){if(mapfmt<2||!t)return;const u8*p=t->data,*end=t->data+t->len;int hs=mapfmt>=3?8:4;if(t->len<(u32)hs)return;u16 ng=rd16(p),nl=rd16(p+2);p+=hs;for(u16 f=0;f<ng&&p+4<=end;f++){int np=p[2];p+=4+(unsigned)np*4;if(p>end)return;}int span=span_for_level((int)t->lvl);for(u16 i=0;i<nl&&p+8<=end;i++){int kind=p[0],prio=p[1];u16 lx=rd16(p+2),ly=rd16(p+4);int tl=p[6];p+=8;if(p+tl>end)return;if(prio>=plo&&prio<=phi&&tl>0&&tl<113){char b[113];int n=tl;for(int j=0;j<n;j++)b[j]=(char)p[j];b[n]=0;s32 lon=(s32)t->tx*span+((s32)lx*span)/4095;s32 lat=(s32)t->ty*span+((s32)ly*span)/4095;int x,y;world_to_screen(lat,lon,viewz,&x,&y);if(!freecam)drive_label_offer(x,y,kind,prio,b);else if(kind>=6){if(label_free(x-8,y-8,x+8,y+8))poi_icon(kind,x,y);}else{int w=textw(b,1),x0=x-w/2,y0=y-6;if(!label_text_seen(b)&&label_free(x0-2,y0-2,x0+w+2,y0+14)){u16 c=label_color(kind);text(x0+1,y0+1,b,C_BG,1);text(x0,y0,b,c,1);label_text_add(b);}}}p+=tl;}}
+static void draw_tile_labels(struct Tile*t,int viewz,int plo,int phi){if(mapfmt<2||!t)return;const u8*p=t->data,*end=t->data+t->len;int hs=mapfmt>=3?8:4;if(t->len<(u32)hs)return;u16 ng=rd16(p),nl=rd16(p+2);p+=hs;for(u16 f=0;f<ng&&p+4<=end;f++){int np=p[2];p+=4+(unsigned)np*4;if(p>end)return;}int span=span_for_level((int)t->lvl);for(u16 i=0;i<nl&&p+8<=end;i++){if(!(i&15))render_checkpoint();int kind=p[0],prio=p[1];u16 lx=rd16(p+2),ly=rd16(p+4);int tl=p[6];p+=8;if(p+tl>end)return;if(prio>=plo&&prio<=phi&&tl>0&&tl<113){char b[113];int n=tl;for(int j=0;j<n;j++)b[j]=(char)p[j];b[n]=0;s32 lon=(s32)t->tx*span+((s32)lx*span)/4095;s32 lat=(s32)t->ty*span+((s32)ly*span)/4095;int x,y;world_to_screen(lat,lon,viewz,&x,&y);if(!freecam)drive_label_offer(x,y,kind,prio,b);else if(kind>=6){if(label_free(x-8,y-8,x+8,y+8))poi_icon(kind,x,y);}else{int w=textw(b,1),x0=x-w/2,y0=y-6;if(!label_text_seen(b)&&label_free(x0-2,y0-2,x0+w+2,y0+14)){u16 c=label_color(kind);text(x0+1,y0+1,b,C_BG,1);text(x0,y0,b,c,1);label_text_add(b);}}}p+=tl;}}
 
 /* Current road context: at Z6 each road geometry may reference tile-local
  * metadata. CPM3 records are [speed_mph, text_len, text]; CPM4 records are
@@ -1611,13 +1641,7 @@ static u32 route_prefetch_scratch[8192];
 static struct CprArc route_build_arc;static struct CprBase route_build_base;static struct CprPoint route_build_prev_point;
 #define ROUTE_GEOM_TMP_MAX 256u
 static struct CprPoint route_geom_tmp[ROUTE_GEOM_TMP_MAX];static u32 route_geom_cum_tmp[ROUTE_GEOM_TMP_MAX];static int route_build_geom_cached=0;
-#define ROUTE_FRAME_MS 100u
-#define ROUTE_DEADLINE_GUARD_MS 6u
-/* PERF2: guarantee useful routing work without returning to DEV5.7 freezes.
- * Stationary initial calculations may consume most of a frame; moving/re-route
- * work remains deliberately more conservative. */
-#define ROUTE_INITIAL_SLICE_MS 80u
-#define ROUTE_MOVING_SLICE_MS 55u
+/* Routing now consumes only spare deadline budget in <=5 ms chunks. */
 #define ROUTE_CLOCK_CHECK_MASK 31u
 static u32 route_sched_slices=0,route_sched_yields=0,route_build_steps=0;
 static int time_before_u32(u32 a,u32 b){return (s32)(a-b)<0;}
@@ -2053,6 +2077,7 @@ static void draw_route_overlay(int z){
  int x[255],y[255],n=1;if(s==route_head+1)map_project_q8(car_lat(),car_lon(),z,&x[0],&y[0]);else map_project_q8(route_lat[s-1],route_lon[s-1],z,&x[0],&y[0]);
  map_mask_begin(2);
  for(int i=s;i<=e;i++){
+  if(!(i&31))render_checkpoint();
   map_project_q8(route_lat[i],route_lon[i],z,&x[n],&y[n]);
   int visible=!((x[n-1]<-20*256&&x[n]<-20*256)||(x[n-1]>(W+20)*256&&x[n]>(W+20)*256)||(y[n-1]<(MAP_TOP-3)*256&&y[n]<(MAP_TOP-3)*256)||(y[n-1]>(MAP_BOTTOM+3)*256&&y[n]>(MAP_BOTTOM+3)*256));
   if(visible&&!freecam&&ndrive_route_segs<DRIVE_ROUTE_SEGS&&x[n-1]>-2048*256&&x[n-1]<2048*256&&y[n-1]>-2048*256&&y[n-1]<2048*256&&x[n]>-2048*256&&x[n]<2048*256&&y[n]>-2048*256&&y[n]<2048*256){
@@ -2174,40 +2199,28 @@ static void append_eta_hud(char*b,unsigned cap,u32 ds){u32 min=udiv32(ds+300u,60
 static int freecam_transition_active(void){return freecam_anim_mode!=FC_ANIM_NONE;}
 /* Hard recenter is reserved for programmatic state changes (arrival/trip/etc.).
  * User MAP toggling uses leave_freecam() below so it gets the reverse animation. */
-static void recenter_map(void){freecam=0;map_tilt_q8=256;freecam_course_valid=0;freecam_anim_mode=FC_ANIM_NONE;freecam_anim_frames=0;freecam_anim_hold=0;zoom_override=-1;if(pref.autozoom)auto_zoom_level=-1;}
-static void enter_freecam(void){if(freecam||freecam_transition_active()||(!gps.fix&&!track_valid))return;int z=active_zoom();int c=map_course();if(c<0||c>=360)c=0;freecam_course=c;freecam_course_valid=1;/* Always run five frames: even if already north-up, the tilt still animates away. */freecam_anim_mode=FC_ANIM_TO_NORTH;freecam_anim_frames=FREECAM_ORIENT_ANIM_FRAMES;freecam_anim_hold=0;map_tilt_q8=256;freecam=1;freecam_zoom=z;zoom_override=-1;/* MAP entry begins exactly at the car's current/last tracked position. */cam_lat=car_lat();cam_lon=car_lon();}
-static void leave_freecam(void){if(!freecam||freecam_transition_active())return;/* Snap position back to the car immediately, but keep a north-up frame before rotating the map back onto the trusted vehicle heading. */freecam=0;freecam_course=0;freecam_course_valid=1;freecam_anim_mode=FC_ANIM_TO_CAR;freecam_anim_frames=FREECAM_ORIENT_ANIM_FRAMES;freecam_anim_hold=1;map_tilt_q8=0;zoom_override=-1;if(pref.autozoom)auto_zoom_level=-1;}
+static void recenter_map(void){freecam=0;map_tilt_q8=256;freecam_course_valid=0;freecam_anim_mode=FC_ANIM_NONE;freecam_anim_at=0;zoom_override=-1;if(pref.autozoom)auto_zoom_level=-1;}
+static void enter_freecam(void){if(freecam||freecam_transition_active()||(!gps.fix&&!track_valid))return;int z=active_zoom();int c=map_course();if(c<0||c>=360)c=0;freecam_course=c;freecam_course_valid=1;/* Tilt still animates even when already facing north. */freecam_anim_mode=FC_ANIM_TO_NORTH;freecam_anim_from=c;freecam_anim_at=hud_now_ms();map_tilt_q8=256;freecam=1;freecam_zoom=z;zoom_override=-1;/* MAP entry begins exactly at the car's current/last tracked position. */cam_lat=car_lat();cam_lon=car_lon();}
+static void leave_freecam(void){if(!freecam||freecam_transition_active())return;/* Snap position back to the car immediately, but keep a north-up frame before rotating the map back onto the trusted vehicle heading. */freecam=0;freecam_course=0;freecam_course_valid=1;freecam_anim_mode=FC_ANIM_TO_CAR;freecam_anim_from=0;freecam_anim_at=hud_now_ms();map_tilt_q8=0;zoom_override=-1;if(pref.autozoom)auto_zoom_level=-1;}
 static void toggle_freecam(void){if(freecam_transition_active())return;if(freecam)leave_freecam();else enter_freecam();}
-/* Entry: current heading -> north. Exit: after one recentered north-up frame,
- * north -> the current trusted car heading.  Both use the shortest angular path
- * and the project's software divider so the ARMv4T freestanding build gains no
- * compiler runtime helper. */
-static void freecam_orientation_anim_step(void){
-  if(freecam_anim_mode==FC_ANIM_NONE)return;
-  if(freecam_anim_hold>0){freecam_anim_hold--;return;}
-  int target=0,mode=freecam_anim_mode;
-  if(mode==FC_ANIM_TO_CAR){target=map_course();if(target<0||target>=360){target=0;freecam_course_valid=0;}}
-  if(freecam_course_valid){
-    int d=target-freecam_course;while(d>180)d-=360;while(d<-180)d+=360;
-    if(d&&freecam_anim_frames>0){
-      u32 aq=udiv32((u32)(d<0?-d:d),(u32)freecam_anim_frames);
-      int q=d<0?-(int)aq:(int)aq;if(!q)q=d>0?1:-1;
-      freecam_course+=q;while(freecam_course<0)freecam_course+=360;while(freecam_course>=360)freecam_course-=360;
-    }
-  }
-  /* Rotation may reach north/the car heading early; do not end the tilt early.
-   * Both are tied to the same five rendered map frames and UI toggle lock. */
-  int done=FREECAM_ORIENT_ANIM_FRAMES-freecam_anim_frames+1;
-  if(done<1)done=1;if(done>FREECAM_ORIENT_ANIM_FRAMES)done=FREECAM_ORIENT_ANIM_FRAMES;
-  map_tilt_q8=mode==FC_ANIM_TO_NORTH?256-(256*done)/FREECAM_ORIENT_ANIM_FRAMES:(256*done)/FREECAM_ORIENT_ANIM_FRAMES;
-  freecam_anim_frames--;
-  if(freecam_anim_frames<=0){freecam_course=target;map_tilt_q8=mode==FC_ANIM_TO_NORTH?0:256;if(mode==FC_ANIM_TO_CAR)freecam_course_valid=0;freecam_anim_frames=0;freecam_anim_mode=FC_ANIM_NONE;}
+/* Presentation samples the same camera trajectory at any cadence. */
+static void freecam_orientation_anim_update(u32 now){
+ if(freecam_anim_mode==FC_ANIM_NONE)return;
+ int mode=freecam_anim_mode,target=mode==FC_ANIM_TO_NORTH?0:map_course();
+ if(target<0||target>=360){target=0;freecam_course_valid=0;}
+ int d=target-freecam_anim_from;while(d>180)d-=360;while(d<-180)d+=360;
+ u32 elapsed=now-freecam_anim_at;int q=frame_ease(elapsed,FREECAM_ORIENT_ANIM_MS);
+ if(elapsed<FREECAM_ORIENT_ANIM_MS&&q==256)q=255;
+ freecam_course=(freecam_anim_from+(d*q+(d>=0?128:-128))/256+360)%360;
+ map_tilt_q8=mode==FC_ANIM_TO_NORTH?256-q:q;
+ if(q==256){freecam_course=target;map_tilt_q8=mode==FC_ANIM_TO_NORTH?0:256;
+  if(mode==FC_ANIM_TO_CAR)freecam_course_valid=0;freecam_anim_mode=FC_ANIM_NONE;}
 }
 static int pan_step_for_zoom(int z){if(z<=6)return 80<<(6-z);z-=6;return 80>>z;}
 /* During the short north-up transition, arrow presses must remain relative to
  * the screen rather than suddenly becoming world-north/world-east controls. */
 static s32 freecam_east_to_lon(s32 east,int cq){if(!east)return 0;if(cq<=0)return east;u32 a=(u32)(east<0?-east:east);u32 q=udiv32((a<<15)+(u32)(cq>>1),(u32)cq);return east<0?-(s32)q:(s32)q;}
-static void pan_freecam(int code){if(!gps.fix&&!freecam&&!track_valid)return;enter_freecam();if(!freecam)return;int z=active_zoom();int step=pan_step_for_zoom(z);if(step<1)step=1;int course=freecam_course_valid?freecam_course:0;int k=((course+5)/10)%36;int ss=SIN36[k],c=COS36[k];s32 de=0,dn=0;if(code==103){de=(s32)(((s32)step*ss)>>15);dn=(s32)(((s32)step*c)>>15);}else if(code==108){de=-(s32)(((s32)step*ss)>>15);dn=-(s32)(((s32)step*c)>>15);}else if(code==106){de=(s32)(((s32)step*c)>>15);dn=-(s32)(((s32)step*ss)>>15);}else if(code==105){de=-(s32)(((s32)step*c)>>15);dn=(s32)(((s32)step*ss)>>15);}int cq=coslat_q15(cam_lat);cam_lat+=dn;if(cam_lat>8500000)cam_lat=8500000;if(cam_lat< -8500000)cam_lat=-8500000;cam_lon=lon_delta(cam_lon+freecam_east_to_lon(de,cq));}
+static void pan_freecam(int code){if(!gps.fix&&!freecam&&!track_valid)return;enter_freecam();if(!freecam)return;int z=active_zoom();int step=pan_step_for_zoom(z);if(step<1)step=1;int ss,c;view_trig(&ss,&c);s32 de=0,dn=0;if(code==103){de=(s32)(((s32)step*ss)>>15);dn=(s32)(((s32)step*c)>>15);}else if(code==108){de=-(s32)(((s32)step*ss)>>15);dn=-(s32)(((s32)step*c)>>15);}else if(code==106){de=(s32)(((s32)step*c)>>15);dn=-(s32)(((s32)step*ss)>>15);}else if(code==105){de=-(s32)(((s32)step*c)>>15);dn=(s32)(((s32)step*ss)>>15);}int cq=coslat_q15(cam_lat);cam_lat+=dn;if(cam_lat>8500000)cam_lat=8500000;if(cam_lat< -8500000)cam_lat=-8500000;cam_lon=lon_delta(cam_lon+freecam_east_to_lon(de,cq));}
 static void fill_car_triangle(int nx,int ny,int lx,int ly,int rx,int ry){
  const int x[3]={nx,lx,rx},y[3]={ny,ly,ry};
  struct {int top,bottom,x,step;} edges[3];
@@ -2319,12 +2332,15 @@ static char notice_text[40]; /* Latest action, also used by native checks. */
 
 #include "hud.h"
 
-static void draw_map(void){
- int z=active_zoom();perspective_scale_update();u32 now=hud_now_ms();hud_prepare(z,now,1);hud_driver_prepare(now);
+static void draw_map_background(void){
+ int z=active_zoom();perspective_scale_update();
  if(!freecam)drive_label_prepare(z);
  draw_map_geometry(z);draw_route_overlay(z);if(!freecam)drive_label_render();
  draw_car_marker(z);draw_explore_crosshair();
- hud_draw_all(now,1);
+}
+static void draw_map(void){
+ u32 now=hud_now_ms();freecam_orientation_anim_update(now);hud_prepare(active_zoom(),now,1);hud_driver_prepare(now);
+ draw_map_background();hud_draw_all(hud_now_ms(),1);
 }
 
 static int read_places(const char*path,struct SavedPlace*a,int cap){long fd=s_open(path,O_RDONLY_,0);if(fd<0)return 0;u32 magic=0,count=0;if(s_read((int)fd,&magic,4)!=4||s_read((int)fd,&count,4)!=4||(magic!=0x31504c43u&&magic!=0x32504c43u)){s_close((int)fd);return 0;}if(count>(u32)cap)count=(u32)cap;int got=0;for(u32 i=0;i<count;i++){if(magic==0x31504c43u){struct LegacyPlace o;if(s_read((int)fd,&o,sizeof(o))!=(long)sizeof(o))break;o.name[31]=0;a[i].lat=o.lat;a[i].lon=o.lon;copystr(a[i].name,sizeof(a[i].name),o.name);}else{if(s_read((int)fd,&a[i],sizeof(a[i]))!=(long)sizeof(a[i]))break;a[i].name[160]=0;char n[161];copystr(n,sizeof(n),a[i].name);copystr(a[i].name,sizeof(a[i].name),n);}got++;}s_close((int)fd);return got;}
@@ -2548,7 +2564,7 @@ static void draw_modal(void){if(modal==MOD_NONE)return;if(modal==MOD_ARRIVED_STO
   else if(modal==MOD_TARGET&&modal_index>=0&&modal_index<trip.count){if(modal_index<trip.count-1){modal_option(100,112,280,ui_tr("Remove stop"),modal_choice==0);modal_option(100,139,280,ui_tr("Move up"),modal_choice==1);modal_option(100,166,280,ui_tr("Move down"),modal_choice==2);}else{modal_option(100,125,280,ui_tr("Change destination"),modal_choice==0);int fi=fave_contains(trip.target[modal_index].lat,trip.target[modal_index].lon);modal_option(100,154,280,fi>=0?ui_tr("Remove favourite"):ui_tr("Add to favourites"),modal_choice==1);}}
   }
 
-static void draw(void){clock_service();region_service();camera_service();refresh_theme();if(screen==SCR_MAP){draw_map();}else if(screen==SCR_MENU)draw_menu();else if(screen==SCR_TRIP)draw_trip();else if(screen==SCR_BT)draw_bluetooth();else if(screen==SCR_KEY)draw_keyboard();else draw_settings();if(screen!=SCR_MAP)header();draw_modal();fb_flush();}
+static void draw(void){freecam_orientation_anim_update(hud_now_ms());clock_service();region_service();camera_service();refresh_theme();if(screen==SCR_MAP){draw_map();}else if(screen==SCR_MENU)draw_menu();else if(screen==SCR_TRIP)draw_trip();else if(screen==SCR_BT)draw_bluetooth();else if(screen==SCR_KEY)draw_keyboard();else draw_settings();if(screen!=SCR_MAP)header();draw_modal();fb_flush();}
 
 struct input_event16 {s32 sec,usec;u16 type,code;s32 value;};
 #define EV_KEY 1
@@ -2561,7 +2577,7 @@ static void input_log2(const char*tag,int ev,int code){if(!pref.debug)return;cha
 static void scan_inputs(void){char p[]="/dev/input/event0";for(int i=0;i<INPUT_MAX;i++){if(infd[i]>=0)continue;p[16]=(char)('0'+i);long fd=s_open(p,O_RDONLY_|O_NONBLOCK_,0);if(fd>=0){infd[i]=(int)fd;input_log2("INPUT OPEN",i,-1);}}}
 static void open_inputs(void){for(int i=0;i<INPUT_MAX;i++)infd[i]=-1;input_lock=-1;if(pref.debug)log_append(KEY_LOG,"--- CLIOPLAY GLOBAL 1.1.0-rc.1 COMPACT MEDIA INPUT ---");scan_inputs();}
 static void keydiag(int code){if(!pref.debug)return;char b[48]="KEY code=";append_int(b,sizeof(b),code);log_append(KEY_LOG,b);}
-static void key_handle(int code){keydiag(code);
+static void key_handle(int code){render_background_dirty=1;keydiag(code);
 /* Arrival/resume prompts cannot be silently escaped with MAP/BACK. */
 if(code==K_MAP&&screen!=SCR_MAP&&modal!=MOD_RESUME_TRIP&&modal!=MOD_ARRIVED_STOP&&modal!=MOD_ARRIVED_DEST){modal=MOD_NONE;dest_pick_action=DEST_PICK_NONE;phone_wait_action=DEST_PICK_NONE;trip_pick_mode=DEST_PICK_NONE;screen=SCR_MAP;recenter_map();return;}
 if(modal!=MOD_NONE){
@@ -2634,6 +2650,8 @@ if(screen==SCR_SET)settings_key(code);}
 
 static void poll_keys(void){for(int i=0;i<INPUT_MAX;i++){if(infd[i]<0)continue;for(;;){struct input_event16 e;long n=s_read(infd[i],&e,sizeof(e));if(n==(long)sizeof(e)){if(e.type==EV_KEY&&e.value==1&&known_remote_key(e.code)){if(input_lock<0){input_lock=i;input_log2("INPUT LOCK",i,e.code);}if(input_lock==i)key_handle(e.code);}continue;}if(n==0||(n<0&&n!=EAGAIN_NEG)){s_close(infd[i]);infd[i]=-1;if(input_lock==i){input_log2("INPUT LOST",i,-1);input_lock=-1;}}break;}}}
 
+#include "frame_renderer.h"
+
 static int power_requested(void){char b[24];long fd=s_open(POWER_PATH,O_RDWR_,0);if(fd<0)return 0;long n=s_read((int)fd,b,sizeof(b)-1);if(n<=0){s_close((int)fd);return 0;}b[n]=0;int v=atoi0(b),r=0;if(v&1){s_lseek((int)fd,0,SEEK_SET_);s_write((int)fd,"0",1);r=1;}s_close((int)fd);return r;}
 
 #ifndef HOST_TEST
@@ -2648,33 +2666,38 @@ static void run(void){
 #endif
 #endif
  load_prefs();debug_state_write();load_last_fix();seed_boot_theme();if(!pref.debug)remove_stale_logs();load_last_audio();nrecents=read_places(RECENT_PATH,recents,RECENT_MAX);nfaves=read_places(FAVES_PATH,faves,FAVE_MAX);load_trip();apply_brightness();load_map();load_timezones();load_regions();load_cameras();seed_boot_map_view();load_route_data();s_unlink(BT_CMD_PATH);bt_write_small(BT_ACTIVE_PATH,"0\n");bt_active_written=0;bt_name_cache_load();bt_poll_status();if(trip.active){modal=MOD_RESUME_TRIP;modal_choice=0;}open_inputs();
-  int wdfd=(int)s_open(WD_PATH,O_WRONLY_,0);debug_log(STATE_LOG,"CLIOPLAY GLOBAL 1.1.0-rc.1 COMPACT REV16 LOWCAM224 ROADTRACE1 BTNAMECACHE1 LOWCAM224 AUTOZOOM654 PERF8 NAV QAD7+UI6+MEDIA3+FREECAM-BIDIR-ANIM+PACKETS+MMAP+STALL+REPAIRSAFE TRIPFLOW GPSRESUME BTMEDIA CPR2-v5 ATLAS1 CLOCK1 CAMERA2 ROUTE RUNTIME");debug_log(STATE_LOG,qadjmode==7?(qadj_map_ok?"QAD7 PACKET+MMAP QUERY ENABLED":"QAD7 PAGED QUERY ENABLED"):(qadjmode==6?(qadj_map_ok?"QAD6 GEOMMETA+MMAP QUERY ENABLED":"QAD6 PAGED QUERY ENABLED"):(qadjmode==5?(qadj_map_ok?"QAD5 MMAP+STALL QUERY ENABLED":"QAD5 PAGED+STALL QUERY ENABLED"):(qadjmode==4?"QAD4 LOCAL-RECON QUERY ENABLED":(qadjmode==3?"QAD3 GROUP QUERY+RECON ENABLED":(qadjmode==2?"QAD2 NODE-BLOCK QUERY ENABLED (PAGED INDEX)":(qadjmode==1?"QAD1 FAST QUERY ENABLED":"QADJ FAST QUERY FALLBACK CPR2")))))));if(qadjmode==6&&qadj6_legacy_header)debug_log(STATE_LOG,"QAD6 DEV5.31 HEADER COMPAT ENABLED");{char mb[96];mb[0]=0;appendstr(mb,sizeof(mb),"MMAP QAD=");append_int(mb,sizeof(mb),qadj_map_ok);appendstr(mb,sizeof(mb)," GEOM=");append_int(mb,sizeof(mb),route_geom_map_ok);debug_log(STATE_LOG,mb);}u32 tick=0,next_frame=s_now_ms();
+  int wdfd=(int)s_open(WD_PATH,O_WRONLY_,0);debug_log(STATE_LOG,"CLIOPLAY GLOBAL 1.1.0-rc.1 COMPACT REV16 LOWCAM224 ROADTRACE1 BTNAMECACHE1 LOWCAM224 AUTOZOOM654 PERF8 NAV QAD7+UI6+MEDIA3+FREECAM-BIDIR-ANIM+PACKETS+MMAP+STALL+REPAIRSAFE TRIPFLOW GPSRESUME BTMEDIA CPR2-v5 ATLAS1 CLOCK1 CAMERA2 ROUTE RUNTIME");debug_log(STATE_LOG,qadjmode==7?(qadj_map_ok?"QAD7 PACKET+MMAP QUERY ENABLED":"QAD7 PAGED QUERY ENABLED"):(qadjmode==6?(qadj_map_ok?"QAD6 GEOMMETA+MMAP QUERY ENABLED":"QAD6 PAGED QUERY ENABLED"):(qadjmode==5?(qadj_map_ok?"QAD5 MMAP+STALL QUERY ENABLED":"QAD5 PAGED+STALL QUERY ENABLED"):(qadjmode==4?"QAD4 LOCAL-RECON QUERY ENABLED":(qadjmode==3?"QAD3 GROUP QUERY+RECON ENABLED":(qadjmode==2?"QAD2 NODE-BLOCK QUERY ENABLED (PAGED INDEX)":(qadjmode==1?"QAD1 FAST QUERY ENABLED":"QADJ FAST QUERY FALLBACK CPR2")))))));if(qadjmode==6&&qadj6_legacy_header)debug_log(STATE_LOG,"QAD6 DEV5.31 HEADER COMPAT ENABLED");{char mb[96];mb[0]=0;appendstr(mb,sizeof(mb),"MMAP QAD=");append_int(mb,sizeof(mb),qadj_map_ok);appendstr(mb,sizeof(mb)," GEOM=");append_int(mb,sizeof(mb),route_geom_map_ok);debug_log(STATE_LOG,mb);}u32 tick=0,next_model=s_now_ms(),next_input=next_model;render_runtime_reset(next_model);
   for(;;){
-    next_frame+=ROUTE_FRAME_MS;
-    if((tick%5)==0)scan_inputs();int had_fix=gps.fix;poll_gps();if(gps.fix){if(!had_fix){track_valid=0;track_course=-1;}remember_live_fix();}update_smooth_track();update_display_course();poll_keys();if((tick%2)==0){poll_audio();poll_car();bt_source_service();}if((tick%5)==0){bt_poll_status();poll_phone_destination();}if((tick%10)==0)update_road_context();
-    phone_destination_apply();trip_service();arrival_modal_service();if(bt_control_mode&&(screen!=SCR_MAP||modal!=MOD_NONE||freecam||!bt_controls_available()))bt_control_mode=0;prefs_service();ui_anim_tick=tick;if((tick%10)==0&&wdfd>=0)s_write(wdfd,"W",1);
-
-    /* DEV5.12 routed only in whatever time the completed frame happened to leave.
-     * PERF2 gives an active query a guaranteed bounded foreground slice instead.
-     * When parked this is intentionally aggressive; while moving or rerouting it
-     * stays shorter so navigation/input cadence remains smooth. */
-    int turbo_calc=(route_status==R_CALC&&!route_rerouting&&gps.mph10<20);
-    if(route_status==R_CALC){u32 slice=turbo_calc?ROUTE_INITIAL_SLICE_MS:ROUTE_MOVING_SLICE_MS;if(route_prof_on){u32 pt=s_now_ms();route_prof_slice_ms=pt;route_service_until(pt+slice);u32 pe=s_now_ms();route_prof_cpu_ms+=pe-pt;route_prof_slice_ms=0;}else route_service_until(s_now_ms()+slice);}
-    else if(route_status==R_READY)route_service_until(s_now_ms());
-
-    /* Full map rendering is expensive on the 400 MHz CPU. During a stationary
-     * initial calculation 5 Hz is still visually smooth enough, while every
-     * skipped render leaves an entire frame for CH work. Moving reroutes remain
-     * at the normal draw cadence. Always draw immediately when a route finishes. */
-    int do_draw=(screen==SCR_MAP||modal!=MOD_NONE||((tick%2)==0)||hud_menu_animating(s_now_ms()));
-    if(turbo_calc&&route_status==R_CALC&&screen==SCR_MAP&&modal==MOD_NONE&&(tick&1u))do_draw=0;
-    /* Advance only on rendered map frames so the transition remains visibly
-     * five frames even if route calculation temporarily skips a draw. */
-    if(do_draw&&screen==SCR_MAP)freecam_orientation_anim_step();
-    if(do_draw)draw();
-
-    if(power_requested()){debug_log(STATE_LOG,"POWER REQUEST");bt_write_small(BT_ACTIVE_PATH,"0\n");if(prefs_dirty)save_prefs();save_last_audio();if(gps.fix)remember_live_fix();save_last_fix();save_trip();draw();s_sync();s_nanosleep(0,400000000);if(wdfd>=0)s_close(wdfd);for(int i=0;i<INPUT_MAX;i++)if(infd[i]>=0)s_close(infd[i]);if(gpsfd>=0)s_close(gpsfd);if(audiofd>=0)s_close(audiofd);if(mapfd>=0)s_close(mapfd);if(qadjfd>=0)s_close(qadjfd);if(routefd>=0)s_close(routefd);return;}
-    u32 now=s_now_ms();if(time_before_u32(now,next_frame)){u32 rem=next_frame-now;s_nanosleep((long)(rem/1000u),(long)(rem%1000u)*1000000L);}else if((u32)(now-next_frame)>ROUTE_FRAME_MS*3u){next_frame=now;}tick++;
+    u32 now=s_now_ms();int model_due=frame_due(now,next_model);
+    if(frame_due(now,next_input)){poll_keys();next_input=frame_after(next_input,now,33u);}
+    if(model_due){
+      next_model=frame_after(next_model,now,FRAME_MODEL_MS);
+      if((tick%5)==0)scan_inputs();int had_fix=gps.fix;poll_gps();if(gps.fix){if(!had_fix){track_valid=0;track_course=-1;}remember_live_fix();}
+      update_smooth_track();update_display_course();
+      if((tick%2)==0){poll_audio();poll_car();bt_source_service();}
+      if((tick%5)==0){bt_poll_status();poll_phone_destination();}
+      if((tick%10)==0)update_road_context();
+      phone_destination_apply();trip_service();arrival_modal_service();
+      if(bt_control_mode&&(screen!=SCR_MAP||modal!=MOD_NONE||freecam||!bt_controls_available()))bt_control_mode=0;
+      prefs_service();ui_anim_tick=tick;if((tick%10)==0&&wdfd>=0)s_write(wdfd,"W",1);
+      clock_service();region_service();camera_service();refresh_theme();
+      if(screen!=SCR_MAP&&!(tick&1u))render_background_dirty=1;
+      tick++;
+    }
+    render_runtime_step(s_now_ms(),model_due);
+    now=s_now_ms();u32 wake=frame_earlier(next_model,next_input);
+    wake=frame_earlier(wake,render_runtime_deadline(now));
+    u32 budget=frame_route_budget(now,wake);
+    if(route_status==R_CALC&&budget){
+      route_prof_slice_ms=route_prof_on?now:0;route_service_until(now+budget);
+      u32 elapsed=s_now_ms()-now;render_stats.route_ms+=elapsed;
+      if(route_prof_on){route_prof_cpu_ms+=elapsed;route_prof_slice_ms=0;}
+      continue;
+    }
+    if(model_due&&route_status==R_READY)route_service_until(now);
+    if(power_requested()){debug_log(STATE_LOG,"POWER REQUEST");bt_write_small(BT_ACTIVE_PATH,"0\n");if(prefs_dirty)save_prefs();save_last_audio();if(gps.fix)remember_live_fix();save_last_fix();save_trip();render_background_dirty=1;render_runtime_step(hud_now_ms(),1);s_sync();s_nanosleep(0,400000000);if(wdfd>=0)s_close(wdfd);for(int i=0;i<INPUT_MAX;i++)if(infd[i]>=0)s_close(infd[i]);if(gpsfd>=0)s_close(gpsfd);if(audiofd>=0)s_close(audiofd);if(mapfd>=0)s_close(mapfd);if(qadjfd>=0)s_close(qadjfd);if(routefd>=0)s_close(routefd);return;}
+    render_profile_service(s_now_ms());
+    now=s_now_ms();if(!frame_due(now,wake)){u32 wait=wake-now;s_nanosleep((long)(wait/1000u),(long)(wait%1000u)*1000000L);}
   }
 }
 __attribute__((noreturn))void _start(void){run();s_exit(0);}

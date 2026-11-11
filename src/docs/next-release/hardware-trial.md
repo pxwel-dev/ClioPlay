@@ -36,6 +36,20 @@ results against the executable SHA-256 values and navigation `build.json`.
 5. On a recorded passenger-observed drive: motorway/urban roads, an active route,
    roundabout exits, recalculation, bridge-over-water drawing, day/night changes.
    Measure frame interval and route calculation time; log memory/underrun symptoms.
+   With Debug on, collect the five-second `FRAME 5S` lines from `state.log`.
+   Outside calculation, continuous animation targets about 100 HUD presentations
+   and 50 scheduled map frames per five seconds. During calculation/rerouting,
+   both HUD and map target 25 per five seconds, including menus and Explore.
+   Confirm that finishing, cancelling or failing restores the normal rates. `CAMERA` counts
+   additional Explore drawing passes, separate from scheduled `MAP` frames.
+   `LATE` counts presentations over 8 ms late; `MAXLATE_MS` is the worst delay.
+   `MAXHUD_MS` includes framebuffer output; `MAXBG_WALL_MS` includes overlay
+   yields while building a background, and `ROUTE_MS` is total route-slice time.
+   Compare quiet driving, loading, speeding pulse and Explore with an active
+   volume/zoom notice. Check new map frames continue during transitions, menus
+   retain notice timers, and no partial roads or old glyph rectangles appear.
+   Record route calculation time with Debug off too. These counters establish
+   device scheduling/output timing, not physical LCD scanout or a 20 FPS guarantee.
 6. Use a journey crossing two installed atlas cores: continuous tiles, no false
    arrival at a gateway, correct final destination and remaining distance. Include
    leaving/rejoining the planned route near a pack boundary. Check turn cues

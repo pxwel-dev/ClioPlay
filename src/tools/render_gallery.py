@@ -21,7 +21,8 @@ from text_engine import build as build_text
 
 ROOT = Path(__file__).resolve().parents[1]
 SCENES = []
-TWEEN_STEPS = (0, 64, 128, 192, 256, 320)
+TWEEN_STEPS = tuple(range(0, 351, 50))
+EXPLORE_SAMPLES = tuple(range(0, 501, 50))
 BLUETOOTH_EVENTS = (
     (0, 'set_volume(16);'),
     (650, 'key_handle(K_BACK);assert(bt_control_mode);'),
@@ -32,10 +33,10 @@ BLUETOOTH_EVENTS = (
     (3900, ''),  # Second volume notice expires.
 )
 BLUETOOTH_SAMPLES = sorted({at + step for at, _ in BLUETOOTH_EVENTS for step in TWEEN_STEPS})
-PHONE_CALC_SAMPLES = range(0, 1280, 80)
+PHONE_CALC_SAMPLES = tuple(range(0, 1300, 200))  # Whole UI targets 5 Hz while calculating.
 MENU_RETURN_SAMPLES = (0, *(400 + step for step in TWEEN_STEPS))
-MENU_ENTRY_SAMPLES = sorted({0, *(400+step for step in (0,100,200,300,400)), *(950+step for step in (0,100,200,300,400)), *(1400+step for step in (0,100,200,300,400))})
-SPEED_WARNING_SAMPLES = (0, *range(400, 3041, 80))
+MENU_ENTRY_SAMPLES = sorted({0, *(400+step for step in TWEEN_STEPS), *(950+step for step in TWEEN_STEPS), *(1400+step for step in TWEEN_STEPS)})
+SPEED_WARNING_SAMPLES = (0, *range(400, 3401, 50))
 ROUNDABOUT_ETA_SAMPLES = (0, *(600 + step for step in TWEEN_STEPS),
                         *(4800 + step for step in TWEEN_STEPS))
 
@@ -178,21 +179,20 @@ def catalog(sender_receipts=None):
     key('Map','autozoom-resume','Resume automatic zoom','pref.autozoom=1;zoom_override=4;','key_handle(K_ENTER);','assert(zoom_override==-1);')
     key('Map','map-menu','Open menu from driving','','key_handle(K_MENU);','assert(screen==SCR_MENU);')
     for mode in ('enter','leave'):
-        count=6 if mode=='enter' else 7
-        for frame in range(count):
+        for frame,elapsed in enumerate(EXPLORE_SAMPLES):
             setup='' if mode=='enter' else 'explore();'
-            action='key_handle(K_MAP);'+'freecam_orientation_anim_step();'*frame
-            key('Animations',f'explore-{mode}-{frame:02}',f'Explore {mode} · frame {frame}',setup,action,note='Consecutive production orientation/tilt steps; 100 ms device cadence, not a measured host frame rate.')
-    browse = 'key_handle(K_MAP);' + 'freecam_orientation_anim_step();' * 6
+            action=f'key_handle(K_MAP);explore_sample({elapsed});'
+            key('Animations',f'explore-{mode}-{frame:02}',f'Explore {mode} · frame {frame}',setup,action,note='Elapsed-time camera samples at 20 Hz; map/model cadence is separate. Host captures do not measure hardware throughput.')
+    browse = 'key_handle(K_MAP);' + 'explore_sample(100);' * 6
     pan = browse + 'key_handle(K_UP);'
     zoom = pan + 'key_handle(K_SR);'
     key('Map', 'preview-explore-pan', 'Pan the map', browse + 's32 before=cam_lat;',
         'key_handle(K_UP);', 'assert(freecam&&cam_lat!=before);')
     key('Map', 'preview-explore-zoom', 'Zoom the map', pan + 'int before=active_zoom();',
         'key_handle(K_SR);', 'assert(freecam&&active_zoom()==before+1);')
-    for frame in range(7):
+    for frame,elapsed in enumerate(EXPLORE_SAMPLES):
         key('Map', f'preview-explore-return-{frame:02}', 'Return to driving', zoom,
-            'key_handle(K_MAP);' + 'freecam_orientation_anim_step();' * frame,
+            f'key_handle(K_MAP);explore_sample({elapsed});',
             'assert(!freecam);')
     for name,code,expect in [('previous','K_LEFT','PREV'),('next','K_RIGHT','NEXT'),('pause','K_ENTER','PAUSE')]:
         key('Audio',f'transport-{name}',f'Phone audio · {name}','key_handle(K_BACK);',f'key_handle({code});',f'command_is(" {expect}");', 'The real handler queues a command in isolated host I/O; phone acknowledgement/audio output is simulated.')
@@ -458,7 +458,7 @@ static void save_route(void){saved_n=route_n;saved_m=route_result_m;saved_cost=r
  memcpy(saved_lat,route_lat,sizeof(saved_lat));memcpy(saved_lon,route_lon,sizeof(saved_lon));memcpy(saved_node,route_node,sizeof(saved_node));memcpy(saved_arc,route_seg_arc,sizeof(saved_arc));memcpy(saved_phys,route_seg_phys,sizeof(saved_phys));memcpy(saved_seg_m,route_seg_m,sizeof(saved_seg_m));memcpy(saved_seg_cost,route_seg_cost,sizeof(saved_seg_cost));}
 static void restore_route(void){route_n=saved_n;route_head=0;route_result_m=saved_m;route_result_cost=saved_cost;route_status=R_READY;
  memcpy(route_lat,saved_lat,sizeof(saved_lat));memcpy(route_lon,saved_lon,sizeof(saved_lon));memcpy(route_node,saved_node,sizeof(saved_node));memcpy(route_seg_arc,saved_arc,sizeof(saved_arc));memcpy(route_seg_phys,saved_phys,sizeof(saved_phys));memcpy(route_seg_m,saved_seg_m,sizeof(saved_seg_m));memcpy(route_seg_cost,saved_seg_cost,sizeof(saved_seg_cost));}
-static void explore(void){enter_freecam();for(int i=0;i<6;i++)freecam_orientation_anim_step();}
+static void explore(void){enter_freecam();explore_sample(500);}
 static void name_keyboard(void){screen=SCR_KEY;keyboard_open_fave_name(5497370,-161331);}
 static void three_stops(void){trip.count=4;trip.active_idx=0;for(int i=0;i<3;i++){trip.target[i].lat=5497300+i*100;trip.target[i].lon=-161300-i*100;snprintf(trip.target[i].name,sizeof(trip.target[i].name),"Stop %d",i+1);}trip.target[3]=trip.target[0];copystr(trip.target[3].name,sizeof(trip.target[3].name),"Home");}
 static void four_stops(void){three_stops();trip.count=5;trip.target[4]=trip.target[3];copystr(trip.target[3].name,sizeof(trip.target[3].name),"Stop 4");}
@@ -625,9 +625,10 @@ for(int night=0;night<2;night++){THEME_FILTER gallery_night=night;for(unsigned i
     if not args.frames_only:
         for theme in ('day','night'):
             overview(out,scenes,theme)
-            for mode,count in (('enter',6),('leave',7)):
+            for mode in ('enter','leave'):
+                count=len(EXPLORE_SAMPLES)
                 images=[Image.open(out/theme/f'explore-{mode}-{i:02}.png').copy() for i in range(count)]
-                images[0].save(out/f'explore-{mode}-{theme}.gif',save_all=True,append_images=images[1:],duration=[100]*(count-1)+[600],loop=0)
+                images[0].save(out/f'explore-{mode}-{theme}.gif',save_all=True,append_images=images[1:],duration=[round((b-a)/10)*10 for a,b in zip(EXPLORE_SAMPLES,EXPLORE_SAMPLES[1:])]+[600],loop=0)
         write_gallery(out,manifest)
     print('Captures:',out/'manifest.json')
 

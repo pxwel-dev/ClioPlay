@@ -88,5 +88,5 @@ int main(void){
  baseline();hud_audio.until=12300;hud_capture_ms=11000;key_handle(K_MENU);prepare(11000);entrance(11000,0);
  prepare(12300);assert(!card()->box.a);assert(hud_menu_animating(12600));prepare(12600);
  assert(hud_menu_animating(12700));prepare(12700);assert(!hud_menu_animating(12700));
- puts("Page status: navigation/menu entrance, persistent submenu state and timers, shared multi-row contents, clock persistence, live route progress and animation-only 10 Hz scheduling passed.");
+ puts("Page status: navigation/menu entrance, persistent submenu state and timers, shared multi-row contents, clock persistence, live route progress and independent animation scheduling passed.");
 }

@@ -17,11 +17,8 @@ struct HudTween {
 enum {HC_STATUS,HC_CLOCK,HC_SPEED,HC_ROAD,HC_TURN,HC_COMPASS,HC_ROAD_NAME,HC_COUNT};
 static struct HudTween hud_tween[HC_COUNT];
 
-static int hud_ease(u32 elapsed,u32 duration){
- if(elapsed>=duration)return 256;
- u32 t=elapsed*256u/duration;
- return (int)((t*t*(768u-2u*t)+32768u)>>16);
-}
+static int hud_ease(u32 elapsed,u32 duration){return frame_ease(elapsed,duration);}
+
 static int hud_lerp(int a,int b,int t){return a+((b-a)*t+128)/256;}
 static int hud_box_eq(struct HudBox a,struct HudBox b){
  return a.x==b.x&&a.y==b.y&&a.w==b.w&&a.h==b.h&&a.a==b.a;

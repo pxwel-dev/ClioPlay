@@ -45,7 +45,7 @@ static void map_blend(int x,int y,u16 c,int a){
 #if MAP_ANTIALIAS
 static void map_mask_end(void){
  map_mask_active=0;
- for(int row=0;row<MAP_BOTTOM-MAP_TOP;row++)for(int x=map_dirty_lo[row];x<=map_dirty_hi[row];x++){
+ for(int row=0;row<MAP_BOTTOM-MAP_TOP;row++){if(!(row&7))render_checkpoint();for(int x=map_dirty_lo[row];x<=map_dirty_hi[row];x++){
   u32*p=&map_coverage[row*W+x],bits=*p;if(!bits)continue;*p=0;
   /* Blend active classes locally, loading/storing the framebuffer once. */
   u16 out=fb[(row+MAP_TOP)*W+x];int slot=0;
@@ -55,7 +55,7 @@ static void map_mask_end(void){
       u32 g=(((out&0x07e0u)*(u32)(32-a)+(c&0x07e0u)*(u32)a)>>5)&0x07e0u;out=(u16)(rb|g);}
    }bits>>=5;slot++;
   }fb[(row+MAP_TOP)*W+x]=out;
- }
+ }}
 }
 #endif
 static void map_solid(int x,int y,int w,int h,u16 c){
@@ -219,6 +219,7 @@ static void map_stroke_polyline(const int*x,const int*y,int n,u16 col,int wid){
   }
  }
  int prev=0;for(int i=1;i<n;i++)if(keep[i]){
+  if(!(i&7))render_checkpoint();
   if(!((x[prev]<-20*256&&x[i]<-20*256)||(x[prev]>(W+20)*256&&x[i]>(W+20)*256)||(y[prev]<(MAP_TOP-5)*256&&y[i]<(MAP_TOP-5)*256)||(y[prev]>(MAP_BOTTOM+3)*256&&y[i]>(MAP_BOTTOM+3)*256)))map_line_q8(x[prev],y[prev],x[i],y[i],col,wid);
   prev=i;
  }
