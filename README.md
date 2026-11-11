@@ -1,7 +1,7 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
 <h1 align="center">CLIOPLAY 2.0.0</h1>
-<p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen and remote.</p>
+<p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
 
 <p align="center"><a href="#install">Install</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
