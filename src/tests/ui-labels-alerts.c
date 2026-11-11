@@ -164,10 +164,10 @@ static void test_missing_readings(void){
  trip.active=1;
  hud_capture_ms=60000;screen=SCR_MAP;freecam=0;modal=MOD_NONE;route_status=R_IDLE;
  hud_observed_route=R_IDLE;hud_navigation.kind=HUD_NONE;
- hud_reset_animations();
- process_decoded_line("SOURCE_STATUS text=\"--\"");assert(!audio_source_detected());
+ hud_reset_animations();hud_source.kind=hud_audio.kind=HUD_NONE;btui.connected=0;bt_active_written=-1;
+ process_decoded_line("SOURCE_STATUS text=\"--\"");assert(!audio_source_detected());bt_source_service();
  set_volume(16);hud_prepare(5,hud_capture_ms,1);
- assert(hud_kind==HUD_NONE&&!bt_controls_available());
+ assert(hud_kind==HUD_SOURCE&&streq(hud_tween[HC_STATUS].target.tag,"BT")&&!hud_tween[HC_STATUS].target.badge[0]);
  process_decoded_line("SOURCE_STATUS text=\"RADIO FM\"");hud_prepare(5,hud_capture_ms,1);
  assert(hud_kind==HUD_SOURCE&&streq(hud_tween[HC_STATUS].target.tag,"FM"));
  int changed=0;
@@ -179,7 +179,7 @@ static void test_missing_readings(void){
  write_fixture(BT_STATUS_PATH,"--\n");
  write_fixture(BT_META_PATH,"DEVICE=Old phone\nCONNECTED=1\nPLAYING=1\n");bt_poll_status();
  process_decoded_line("SOURCE_STATUS text=\"CD\"");key_handle(K_BACK);hud_prepare(5,hud_capture_ms,1);
- assert(!btui.connected&&!bt_control_mode&&hud_kind==HUD_NONE);
+ assert(!btui.connected&&!bt_control_mode&&hud_kind==HUD_SOURCE&&streq(hud_tween[HC_STATUS].target.tag,"BT")&&!hud_tween[HC_STATUS].target.title[0]);
  write_fixture(BT_STATUS_PATH,"BT CONNECTED\n");
  write_fixture(BT_META_PATH,"DEVICE=--\nCONNECTED=1\nTITLE=--\nARTIST=--\nALBUM=--\n");
  bt_poll_status();assert(btui.connected&&!hud_connection.kind);

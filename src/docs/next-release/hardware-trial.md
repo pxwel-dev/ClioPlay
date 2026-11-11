@@ -27,6 +27,20 @@ results against the executable SHA-256 values and navigation `build.json`.
 3. Confirm physical AUX still initializes. Cycle FM/MW/LW/CD-Bluetooth/AUX and
    check the temporary source and volume notices, radio text, mute and playback
    control highlights. Record any source or focus delay.
+   Check CD → BT; AUX stays AUX both before and after connecting a phone, with
+   BT output/controls disabled. Boot without a readable radio source, both with
+   empty first-boot values and a cached radio/volume record: BT output should be
+   enabled, unavailable readings hidden, and metadata, playback progress and BT
+   CTRL available with a connected phone. Repeated unknown-source events must
+   not replay/extend track notices. Test audio sent specifically to Carminat BT,
+   independently of the factory Bluetooth receiver. Check the radio knob and
+   steering-wheel volume/mute controls during playback, including with FM and
+   factory Bluetooth selected, and check calls, pause/resume and reconnects.
+   A live CD event must keep BT available even while volume remains unknown.
+   When a valid FM/MW/LW source appears, verify radio labels return and BT PCM
+   output stops; losing source telemetry should restore the BT fallback once.
+   Check phone-audio camera alerts on CD and independent BT. Host UI/gate checks
+   do not establish physical playback, volume control or coexistence on another radio.
 4. Pair and reconnect a real phone, restart car/phone, pause/resume/skip and send
    a named destination with accents/non-Latin text. Confirm the remote stays
    connected. Boot with the remote asleep, allow the phone to reconnect, then

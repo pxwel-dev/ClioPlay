@@ -58,8 +58,9 @@ def verify_text_and_links(folder, paths):
         for name, pattern in patterns.items():
             if re.search(pattern, raw):
                 raise ValueError(name+' pattern in publication: '+str(path.relative_to(folder)))
-    docs = ('README.md', 'CONTRIBUTING.md', 'SECURITY.md', 'src/README.md',
+    docs = ('README.md', 'CONTRIBUTING.md', 'src/README.md',
             'src/BUILDING.md', 'src/docs/github-launch.md', 'src/docs/demo/README.md', 'WINDOWS.md')
+    if (folder/'SECURITY.md').is_file():docs += ('SECURITY.md',)
     for name in docs:
         path = folder/name
         text = path.read_text()

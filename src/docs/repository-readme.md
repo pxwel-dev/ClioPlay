@@ -29,7 +29,7 @@
 
 ## Compatibility
 
-This preview release of ClioPlay currently only supports vehicles that have the following:
+The primary supported configuration is:
 
 - Non-Bluetooth radio with a CD player
 - Non-live Carminat TomTom head unit
@@ -37,7 +37,25 @@ This preview release of ClioPlay currently only supports vehicles that have the 
 
 Expect support very soon for physical console controls found on vehicles that do not have a Bluetooth remote control for their Carminat unit, such as Renault Scenic and Megane models. 
 
-Confirmed that vehicles that do not have a Bluetooth remote control for their Carminat and instead use the physical console controls STILL have integrated Bluetooth hardware inside of their Carminat units, meaning that vehicles that don't have any factory Bluetooth capability in their radios will be able to benefit from Bluetooth audio implemented inside ClioPlay. 
+Confirmed that vehicles which use the physical console controls in place of Bluetooth remote control for their Carminat STILL have integrated Bluetooth hardware inside of their Carminat units, meaning that vehicles that don't have any factory Bluetooth capability in their radios will be able to benefit from Bluetooth audio implemented inside ClioPlay. 
+
+ClioPlay handles the audio source as follows:
+
+| Radio source read by ClioPlay | Source shown and used |
+| --- | --- |
+| CD / no-disc CD | **BT** |
+| AUX, with or without a connected phone | **AUX** (wired input) |
+| No valid live radio source | **BT**, independent of radio source/volume telemetry |
+| FM / MW / LW | The reported radio source |
+
+BT playback is available on CD and when no valid live radio source can be read;
+BT CTRL also requires a connected phone. An unknown volume on first boot, or a
+saved volume from a previous boot, does not determine radio compatibility.
+Unavailable radio/volume readings stay hidden. The fallback BT label does not
+claim that a phone is connected. Physical volume controls remain with the vehicle;
+ClioPlay does not add software volume. Physical console controls are not
+implemented yet. Independent playback, volume/mute behaviour and coexistence
+still need vehicle validation on radios such as the Scénic's separate audio unit.
 
 ## Features
 

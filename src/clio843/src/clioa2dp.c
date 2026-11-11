@@ -185,7 +185,7 @@ static int sbc_decode(const u8*d,u32 len,struct SbcState*s,struct SbcFrame*f){in
  *     requested through /tmp/clbthci and performed by btstart.sh's tiny helper.
  *
  * UI IPC matches clio040 DEV5.34 MEDIA1:
- *   /tmp/clbt       selected logical BLUETOOTH (native CD) source, 0/1
+ *   /tmp/clbt       selected Bluetooth PCM output (CD or no readable radio source), 0/1
  *   /tmp/clbtstat   one-line status
  *   /tmp/clbtmeta   DEVICE/TITLE/ARTIST/ALBUM/PAIRED/CONNECTED/PLAYING/POS/DUR
  *   /tmp/clnav      validated CLP2 phone destination for clio040
@@ -454,7 +454,7 @@ static int reconnect_wait_ticks=-1;
  * HCI/SDP services, A2DP registration and the phone-command helper are ready.
  * Reconnect deliberately does NOT wait for clio040, /tmp/clbt, GPS or a GPS fix.
  * /tmp/clbt remains only the later audio-source gate: a connected phone may be
- * established early while PCM output stays closed until CD/BLUETOOTH is selected. */
+ * established early while PCM output stays closed until the UI selects CD/BT or the no-radio-data fallback. */
 enum {AUTO_WAIT_READY=0,AUTO_SETTLE=1,AUTO_CONNECTING=2,AUTO_RETRY_WAIT=3,AUTO_DONE=4};
 static int auto_boot_state=AUTO_WAIT_READY,auto_attempts=0,auto_acl_fallback=0;
 static u32 auto_next_tick=0,auto_started_tick=0;

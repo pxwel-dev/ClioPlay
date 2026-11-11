@@ -432,6 +432,7 @@ static int reading_present(const char*s){
  * display state directly to audlast.dat on orderly power-down. */
 struct AudioFeed {char band[8],freq[16],station[24];};static struct AudioFeed af,audio_presented;
 static int audio_source_live=0;
+static int bt_source_selected(void);
 static int audio_source_detected(void){return audio_source_live&&reading_present(af.band);}
 static int audiofd=-1;static char audiobuf[4096],audioline[512];static unsigned audioused=0;
 static char upc(char c){return(c>='a'&&c<='z')?(char)(c-32):c;}
@@ -439,9 +440,12 @@ static void copy_trim(char*out,unsigned cap,const u8*p,unsigned n){unsigned a=0,
 static int setstrx(char*dst,unsigned cap,const char*src,int upper){char t[40];unsigned i=0;while(src[i]&&i+1<cap&&i+1<sizeof(t)){t[i]=upper?upc(src[i]):src[i];i++;}t[i]=0;if(streq(dst,t))return 0;copystr(dst,cap,t);return 1;}
 static int set_band(const char*b){
  if(!reading_present(b)){
+  int was_bt=bt_source_selected();
   audio_source_live=0;
   af.band[0]=af.freq[0]=af.station[0]=car.source[0]=0;
-  hud_source.kind=hud_audio.kind=HUD_NONE;
+  hud_audio.kind=HUD_NONE;
+  /* Missing radio data selects BT status, without restarting live track notices. */
+  if(!was_bt)hud_pulse(&hud_source,HUD_SOURCE,2300);
   return 0;
  }
  int changed=setstrx(af.band,sizeof(af.band),b,1);
@@ -541,13 +545,15 @@ static void poll_car(void){
 /* DEV5.34 Bluetooth media UI/daemon boundary.
  *
  * The Renault head unit remains in its stable no-disc CD source internally,
- * but CLIOPLAY treats that source as BLUETOOTH everywhere.  Audio ownership is
+ * but CLIOPLAY treats that source as BLUETOOTH everywhere. AUX stays wired AUX.
+ * With no valid radio feed, Bluetooth is available independently of radio
+ * source/volume telemetry. Audio ownership is
  * deliberately outside clio040: the clioa2dp daemon owns AVDTP/SBC, AVRCP and
  * /dev/barc-snd.  This process only publishes whether the Bluetooth source is
  * selected, consumes daemon state/metadata, and emits small idempotent commands.
  *
  * IPC is volatile (/tmp) and therefore cannot corrupt persistent settings:
- *   /tmp/clbt      : "1" while live CD/BLUETOOTH is selected, otherwise "0"
+ *   /tmp/clbt      : "1" for CD/BT or no readable radio source; else "0"
  *   /tmp/clbtstat  : one-line daemon status (BT CONNECTED/STREAMING/...)
  *   /tmp/clbtmeta  : KEY=VALUE lines (DEVICE/TITLE/ARTIST/ALBUM/...)
  *   /tmp/clbtcmd   : monotonically sequenced "<n> <COMMAND>" command record
@@ -577,7 +583,9 @@ static struct HudPulse bt_transport_press;
 static int bt_playback_request=-1;
 static u32 bt_playback_requested_at;
 
-static int bt_source_selected(void){return audio_source_detected()&&streq(af.band,"CD");}
+static int bt_source_selected(void){
+ return !audio_source_detected()||streq(af.band,"CD");
+}
 static int bt_controls_available(void){return btui.connected&&bt_source_selected();}
 static int bt_write_small(const char*path,const char*s){
  long fd=s_open(path,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);
@@ -587,7 +595,14 @@ static int bt_write_small(const char*path,const char*s){
  s_close((int)fd);
  return written==(long)length;
 }
-static void bt_source_service(void){int on=bt_source_selected();if(on==bt_active_written)return;bt_write_small(BT_ACTIVE_PATH,on?"1\n":"0\n");bt_active_written=on;if(pref.debug)debug_log(STATE_LOG,on?"BT SOURCE ACTIVE (CD)":"BT SOURCE INACTIVE");}
+static void bt_source_service(void){
+ int on=bt_source_selected();if(on==bt_active_written)return;
+ if(!bt_write_small(BT_ACTIVE_PATH,on?"1\n":"0\n"))return;
+ bt_active_written=on;
+ if(on&&!audio_source_detected()&&!hud_pulse_live(&hud_source,hud_now_ms()))
+  hud_pulse(&hud_source,HUD_SOURCE,2300);
+ if(pref.debug)debug_log(STATE_LOG,!on?"BT SOURCE INACTIVE":audio_source_detected()?"BT SOURCE ACTIVE (CD)":"BT SOURCE ACTIVE (DEFAULT)");
+}
 static int bt_command(const char*cmd){
  char record[48]="";
  append_int(record,sizeof(record),(int)bt_cmd_seq++);

@@ -279,3 +279,34 @@ Slow SD reads or drawing can miss deadlines; missed frames are skipped rather th
 replayed in a burst. With Debug enabled, five-second `FRAME 5S` summaries in the
 existing `state.log` report presentations, scheduled map frames, extra camera
 passes, lateness and drawing/routing time. No frame log is written with Debug off.
+
+### Radio and Bluetooth source selection
+
+CD is presented as BT. AUX stays wired AUX with or without a connected phone;
+FM/MW/LW retain their radio labels and disable Bluetooth PCM output. When no valid
+live radio source can be read, BT is the independent default source: output,
+metadata and playback progress are available, and BT CTRL requires a connected
+phone. A later valid radio source takes priority. This fallback also applies at
+startup before a live source arrives; it does not classify the radio as incompatible.
+
+Cached radio/volume values are hidden. Neither an unknown volume on first boot
+nor a saved volume determines whether Bluetooth may play. Physical volume
+controls remain with the vehicle; ClioPlay has no user-adjustable software volume.
+Renault's [Carminat handbook, printed pages 5 and 16](https://www.user-manual.renault.com/sites/renault/files/Carminat-Tom-Tom-NX947_ENG.pdf)
+covers dashboard radio displays and adjusting guidance volume with the audio
+system's controls. This supports separating audio output from display telemetry;
+it does not establish that our mixer setup works on every radio. Independent
+playback, physical volume/mute response and coexistence with factory Bluetooth
+need vehicle testing. Missing telemetry alone does not prove a missing audio path.
+
+Renault's [2009 Grand Scénic announcement](https://media.renault.at/772/article/827)
+lists an MP3-CD radio with AUX. Primary [radio hardware research](https://hackaday.io/page/20334-types-of-renault-radios-displays-protocols)
+distinguishes basic R1 CD radios from R2 Bluetooth radios and their different
+protocols. The surveyed evidence does not establish a factory AUX-only radio
+without CD or Bluetooth in the target 2009–2012 non-LIVE range, so AUX is not used
+as a heuristic for Bluetooth routing or radio capability.
+
+Source/track notices remain temporary and use the shared glass animations in
+navigation and menus. These paths have host checks; sound output and coexistence
+on other radios still need vehicle trials. No automatic radio-source selection
+or physical console control is implemented by these UI source rules.

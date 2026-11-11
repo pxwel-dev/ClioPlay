@@ -100,7 +100,7 @@ static void hud_journey_text(char*b,unsigned cap){
  for(char*p=b+distance;*p;p++)if(*p>='A'&&*p<='Z')*p+=32;
 }
 static const char* hud_audio_tag(void){
- return streq(af.band,"CD")?bt_source_label():af.band;
+ return bt_source_selected()?bt_source_label():af.band;
 }
 static const char* hud_track(void){
  return reading_present(btui.title)?btui.title:"";
@@ -112,7 +112,7 @@ static void hud_heading_text(char*b,unsigned cap,int heading){
 }
 static void hud_source_text(char*b,unsigned cap){
  b[0]=0;
- if(streq(af.band,"CD")){copystr(b,cap,hud_track());return;}
+ if(bt_source_selected()){if(btui.connected)copystr(b,cap,hud_track());return;}
  if(reading_present(af.station)){
   copystr(b,cap,af.station);
   if(reading_present(af.freq)){appendstr(b,cap,"  ");appendstr(b,cap,af.freq);}
@@ -197,10 +197,10 @@ static void hud_prepare(int z,u32 now,int map){
  hud_status_page=screen;
  hud_clock_prepare(now);hud_playback_update(now);
  if(!map)hud_menu_title_prepare();
- int audio_available=audio_source_detected()&&(!bt_source_selected()||btui.connected);
- if(!audio_available||!hud_pulse_live(&hud_audio,now)||!reading_present(car.volume))hud_audio.kind=HUD_NONE;
- if(!audio_available||!hud_pulse_live(&hud_source,now)||
-    (hud_source.kind==HUD_TRACK&&(!bt_source_selected()||!reading_present(btui.title))))hud_source.kind=HUD_NONE;
+ /* No radio feed still has a valid BT source; volume requires a live feed. */
+ if(!audio_source_detected()||!hud_pulse_live(&hud_audio,now)||!reading_present(car.volume))hud_audio.kind=HUD_NONE;
+ if(!hud_pulse_live(&hud_source,now)||
+    (hud_source.kind==HUD_TRACK&&(!btui.connected||!bt_source_selected()||!reading_present(btui.title))))hud_source.kind=HUD_NONE;
  if(!hud_pulse_live(&hud_navigation,now))hud_navigation.kind=HUD_NONE;
  if(!btui.connected||!hud_pulse_live(&hud_connection,now))hud_connection.kind=HUD_NONE;
  if(!hud_pulse_live(&hud_bt_feedback,now))hud_bt_feedback.kind=HUD_NONE;
@@ -247,7 +247,7 @@ static void hud_prepare(int z,u32 now,int map){
   unsigned cap=c.kind?sizeof(c.connection):sizeof(c.title);
   copystr(text,cap,ui_tr(has_device_name?"Connected to":"Connected"));
   if(has_device_name){appendstr(text,cap," ");appendstr(text,cap,hud_connected_name);}
-  if(!c.kind){c.kind=HUD_CONNECTION;c.ink|=HUD_SUCCESS;}else c.ink|=HUD_SUCCESS<<4;
+  if(!c.kind){c.kind=HUD_CONNECTION;copystr(c.tag,sizeof(c.tag),bt_source_label());c.ink|=HUD_SUCCESS;}else c.ink|=HUD_SUCCESS<<4;
  }
  if(hud_bt_feedback.kind){
   if(c.kind){copystr(c.feedback,sizeof(c.feedback),hud_bt_text);c.ink|=hud_bt_level<<6;}

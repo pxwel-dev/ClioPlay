@@ -119,6 +119,14 @@ def catalog(sender_receipts=None):
     motion('Map', 'preview-zoom-modes', 'Manual zoom, MAP restores Auto, and Explore notices occur once',
            'settle();pref.autozoom=1;zoom_override=-1;auto_zoom_level=5;hud_capture_ms+=4500u;draw();hud_capture_ms+=350u;draw();',
            ZOOM_MODE_EVENTS, ZOOM_MODE_SAMPLES)
+    add('Audio sources','source-aux-unpaired','AUX without a phone',
+        'set_band("AUX");btui.connected=btui.playing=0;btui.title[0]=btui.artist[0]=btui.album[0]=0;bt_source_service();')
+    add('Audio sources','source-aux-phone','AUX remains wired AUX with a connected phone',
+        'set_band("AUX");bt_source_service();')
+    add('Audio sources','source-bt-default','Default BT with no readable radio or phone',
+        'set_band("");btui.connected=btui.playing=0;btui.title[0]=btui.artist[0]=btui.album[0]=0;hud_source.kind=HUD_NONE;bt_source_service();')
+    add('Audio sources','source-bt-independent','BT controls without readable radio source or volume',
+        'set_band("");car.volume[0]=0;hud_source.kind=HUD_NONE;bt_source_service();key_handle(K_BACK);')
     add('Prototype HUD','hud-volume','Volume adjustment','set_volume(16);')
     add('Prototype HUD','hud-volume-ended','Volume notice cleared','settle();hud_capture_ms+=4300;')
     add('Prototype HUD','hud-route-volume','Volume during route calculation','route_status=R_CALC;set_volume(16);')
@@ -499,7 +507,7 @@ static void show_phone_connection(void){
 }
 static void gallery_reset(int night){
  hud_capture_clock=1;hud_capture_ms=s_now_ms();gallery_motion=0;
- bt_hud_link=0;bt_hud_peer[0]=0;
+ bt_hud_link=0;bt_hud_peer[0]=0;bt_active_written=-1;
  route_cancel();fixture();restore_route();atlas_active=0;atlas_future_m=atlas_future_cost=0;
  pref=(struct Prefs){50,1,0,0,0,night?THEME_NIGHT:THEME_DAY,0,1,0,0,CLIO_DAY_START,CLIO_NIGHT_START};apply_palette(night);
  mapok=1;screen=SCR_MAP;trip_pane=trip_tab=trip_focus=trip_right_focus=0;menu_focus=set_focus=0;
