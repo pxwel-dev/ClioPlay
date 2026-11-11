@@ -315,7 +315,7 @@ static int hud_speed_red(u32 now){
  return 256-hud_ease(t<=900u?t:1800u-t,900)*210/256;
 }
 static void hud_driver_prepare(u32 now){
- struct HudCard speed={0},road={0},road_name={0},turn={0},compass={0};
+ struct HudCard speed={0},road={0},road_name={0},turn={0};
  int camera=gps.fix&&camera_visible;
  int show_speed=gps.fix&&(!freecam||camera);
  const char*name=gps.fix&&roadctx.valid?roadctx.street:"";
@@ -357,11 +357,7 @@ static void hud_driver_prepare(u32 now){
   int h=camera&&show_name?43:29;
   road.box=hud_box((W-w)/2,HUD_BOTTOM_Y+43-h,w,h);
  }
- if(freecam){
-  compass.box=hud_box(404,234,68,29);hud_heading_text(compass.title,sizeof(compass.title),view_course());
- }
  hud_set_card(HC_SPEED,speed,now);hud_set_card(HC_ROAD,road,now);hud_set_card(HC_TURN,turn,now);
- hud_set_card(HC_COMPASS,compass,now);
  hud_set_card(HC_ROAD_NAME,road_name,now);
 }
 
@@ -579,12 +575,11 @@ static void hud_draw_card(int id,u32 now){
   hud_draw_turn(x+23,y+21,c);
   compact_fit(x+46,y+4,w-53,1,c->title,C_WHITE);
   compact_fit(x+46,y+23,w-53,0,c->detail,C_MUTED);break;
- case HC_COMPASS:compact_center(x+w/2,y+6,w-12,1,c->title,C_WHITE);break;
  }
  hud_ink_alpha=16;clip_x=ox;clip_y=oy;clip_right=or;clip_bottom=ob;
 }
 static void hud_draw_all(u32 now,int map){
- if(map){hud_draw_card(HC_SPEED,now);hud_draw_card(HC_ROAD,now);hud_draw_card(HC_TURN,now);hud_draw_card(HC_COMPASS,now);}
+ if(map){hud_draw_card(HC_SPEED,now);hud_draw_card(HC_ROAD,now);hud_draw_card(HC_TURN,now);}
  hud_draw_card(HC_CLOCK,now);hud_draw_card(HC_STATUS,now);
 }
 /* Menus refresh their content at 5 Hz; the compositor presents active

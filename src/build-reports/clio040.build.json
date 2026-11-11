@@ -2,28 +2,28 @@
   "machine": "ARM7TDMI / ARMv4T",
   "abi": "ELF32 EABI5 soft-float; Linux OABI syscalls",
   "entry": "0x736ac",
-  "bytes": 932004,
-  "sha256": "89415c8b5ca1c3c25d8f849cb25d301f1a0bd8968c0a2b96b629f11b2ccbe6e1",
+  "bytes": 931488,
+  "sha256": "03e370ecd121d4367da3330b29c904b086b9eb0c45d0ba436d84a21c180993e3",
   "sections": {
     ".text": {
       "address": "0x734b8",
-      "bytes": 423272
+      "bytes": 422864
     },
     ".rodata": {
       "address": "0x10108",
       "bytes": 340910
     },
     ".data": {
-      "address": "0xeaa20",
+      "address": "0xea888",
       "bytes": 1160
     },
     ".bss": {
-      "address": "0xeaeb0",
-      "bytes": 11285312
+      "address": "0xead10",
+      "bytes": 11284080
     }
   },
   "source": "clio843/src/clio040.c",
-  "source_tree_sha256": "f573080b2c645690c74ad4602ff17795d2dbce068204955e64a266912ed2c2a9",
+  "source_tree_sha256": "ab05f1751bc136cddb0d1cb510594fc75deda3483cae6c6d662947698e8c8fcb",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "b0045a10c40374f77a1865d57be226f40dd313a23c5c38c68b60c3870f42a52b",
@@ -41,8 +41,8 @@
     "clio843/src/global_regions.h": "3ffc21e07c46b527ec3f212875be19d2997980f520b6f64b9727400887d0a7e8",
     "clio843/src/global_text.cc": "45b454fa97ec49eaaca230e4578da4361138ff2c5c410e0e552edd5629231858",
     "clio843/src/global_text.h": "49956b951783a12949ea41c4e2df829837eaa8ecfd644c68e6ca57c70a2208b6",
-    "clio843/src/hud.h": "8d8757faf113c2c9f78be65140450e91d297cfb28a8a59957ead0026542a5a9b",
-    "clio843/src/hud_glass.h": "ad2d599fa57be5aab3eb95a1eab44dada80e44897d334ab1eab55dd0012a1967",
+    "clio843/src/hud.h": "c8684f1310f250ee99a6c57dd90038c47cf7dda82f8fec17f55211e58395a8e8",
+    "clio843/src/hud_glass.h": "5aee66a01c4b307f8fd930e2252e921d76bb4fb78cf1228eed332af686ba1471",
     "clio843/src/hud_playback.h": "a2757e57a552bf1e03a30b7b62b60bf2ade02cf62ddf565531d2eb753f86f881",
     "clio843/src/hud_status.h": "91f9d2cc57aeae72deebee57974292a8c3033631b4cd11b83d57fdececbaeaed",
     "clio843/src/hud_turn_masks.h": "ceb5cc2dfc83963855f1c04541c646ac49a88e6c2177c6584c673d9d97b3ad45",

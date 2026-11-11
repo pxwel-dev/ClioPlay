@@ -14,7 +14,7 @@ struct HudTween {
  u32 position_at, content_at;
  int seen;
 };
-enum {HC_STATUS,HC_CLOCK,HC_SPEED,HC_ROAD,HC_TURN,HC_COMPASS,HC_ROAD_NAME,HC_COUNT};
+enum {HC_STATUS,HC_CLOCK,HC_SPEED,HC_ROAD,HC_TURN,HC_ROAD_NAME,HC_COUNT};
 static struct HudTween hud_tween[HC_COUNT];
 
 static int hud_ease(u32 elapsed,u32 duration){return frame_ease(elapsed,duration);}
