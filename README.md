@@ -37,7 +37,7 @@ This preview release of ClioPlay currently only supports vehicles that have the 
 
 Expect support very soon for physical console controls found on vehicles that do not have a Bluetooth remote control for their Carminat unit, such as Renault Scenic and Megane models. 
 
-Confirmed that vehicles that do not have a Bluetooth remote control for their Carminat and instead use the physical console controls STILL have integrated Bluetooth hardware, meaning that vehicles that don't have any factory Bluetooth capability won't have this problem anymore. 
+Confirmed that vehicles that do not have a Bluetooth remote control for their Carminat and instead use the physical console controls STILL have integrated Bluetooth hardware inside of their Carminat units, meaning that vehicles that don't have any factory Bluetooth capability in their radios will be able to benefit from Bluetooth audio implemented inside ClioPlay. 
 
 ## Features
 
