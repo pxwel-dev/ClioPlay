@@ -35,9 +35,9 @@ This preview release of ClioPlay currently only supports vehicles that have the 
 - Non-live Carminat TomTom head unit
 - Bluetooth remote control used to operate the Carminat
 
-Expect support very soon for physical console controls very soon for those vehicles that do not have a Bluetooth remote control for their Carminat unit. 
+Expect support very soon for physical console controls found on vehicles that do not have a Bluetooth remote control for their Carminat unit, such as Renault Scenic and Megane models. 
 
-Confirmed that vehicles that do not have a Bluetooth remote control for their Carminat and instead use the physical console controls STILL have Bluetooth hardware. 
+Confirmed that vehicles that do not have a Bluetooth remote control for their Carminat and instead use the physical console controls STILL have integrated Bluetooth hardware, meaning that vehicles that don't have any factory Bluetooth capability won't have this problem anymore. 
 
 ## Features
 
