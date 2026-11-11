@@ -105,6 +105,75 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
   layouts, with left-soft backspace, right-soft space and a wide language chooser.
   See [keyboard controls and input methods](locales/README.md#favourite-keyboard).
 
+## Remote controls
+
+### Driving, map browsing and BT CTRL
+
+| Button | Driving map | Map browsing | BT CTRL on the driving map |
+| --- | --- | --- | --- |
+| **MAP** | Enter map browsing. | Return to the driving view. | Leave BT CTRL and enter map browsing. |
+| **MENU** | Open Menu. | Open Menu. | Leave BT CTRL and open Menu. |
+| **BACK** | Enter BT CTRL when Bluetooth audio is selected and a phone is connected. | | Leave BT CTRL. |
+| **Centre / OK** | Show estimated remaining time and distance for about four seconds. With GPS and no active route, show the heading. | Open the route or add-stop prompt for the point under the crosshair. | Play or pause. |
+| **Up / Down** | Enter map browsing and pan. | Pan up or down. | |
+| **Left / Right** | Enter map browsing and pan. | Pan left or right. | Previous or next track. |
+| **Left / right soft keys** | Zoom out or in. With Auto zoom enabled, this sets a temporary override. | Zoom out or in. | Zoom out or in on the driving map. |
+
+After a manual zoom adjustment with Auto zoom enabled, **OK** on the driving
+map restores Auto zoom first. A second press shows the journey estimate during
+guidance. The estimate also appears when a route calculation or reroute finishes.
+
+### Menu, Trip and Bluetooth
+
+- **Menu:** use **Up / Down** to choose Trip, Bluetooth or Settings. Press **OK**
+  to open it or **BACK** to return to driving. From a page, **MENU** or **BACK**
+  returns to Menu. **MAP** goes directly to the driving map.
+- **Trip:** use the **left soft key** to focus destinations and the **right soft
+  key** to focus the itinerary. In destinations, **Left / Right** switches
+  between Recents and Favourites, and **Up / Down** moves through places.
+  **OK** opens the place's actions or selects it for the current Add stop or
+  Change destination task. In the itinerary, **Up / Down** moves through the
+  route, and **OK** opens the selected stop or destination's actions, the
+  Add stop choices, or the cancel confirmation. With an empty itinerary, **OK**
+  opens the prompt to receive a destination from your phone. **BACK** or either
+  soft key cancels an in-progress destination selection and returns to the itinerary.
+- **Bluetooth:** use **Up / Down** to move between the connected phone, saved
+  phones and **Pair new phone**. On the connected phone, **Left / Right** selects
+  Disconnect or Forget, and **OK** runs it. **OK** on a saved phone opens its
+  Connect or Forget options. Choose with **Left / Right** and confirm with **OK**.
+  **BACK** or the **left soft key** closes those options. **OK** on **Pair new
+  phone** starts pairing.
+
+### Settings
+
+Use **Up / Down** to highlight a row. The available actions depend on the setting.
+
+| Setting | Left / Right | Centre / OK |
+| --- | --- | --- |
+| Brightness | Adjust in 10-point steps. | |
+| Theme | Cycle Day, Night and Auto. | |
+| Units | Cycle Auto, Metric and Imperial. | |
+| Auto zoom | Toggle on or off. | |
+| Camera alerts | Cycle Off, Visual and Phone audio. | |
+| Clock | Set a manual UTC offset in 15-minute steps. | Toggle automatic and manual time. |
+| Debug log | Toggle on or off. | |
+| Language | Cycle backwards or forwards. | Select the next language. |
+
+### Favourite keyboard and dialogs
+
+- In **Rename**, the **direction pad** moves between characters and actions.
+  **OK** types the highlighted character or activates the highlighted action,
+  including character pages, the language chooser and Save. The **left soft key**
+  deletes, the **right soft key** inserts a space, and **BACK** returns to Trip
+  without saving. In the language chooser, **Up / Down** moves one language,
+  **Left / Right** jumps six, **OK** selects, and **BACK** or the **left soft key**
+  closes the chooser. See [language-specific input](locales/README.md#favourite-keyboard).
+- In option dialogs, **Up / Left** selects the previous option and **Down / Right**
+  selects the next one. In Yes/No dialogs, use **Left / Right**. **OK** confirms,
+  and **BACK** dismisses ordinary dialogs. At the saved-trip resume prompt, choose
+  an option and confirm with **OK**. At arrival, **OK** continues from a stop or
+  finishes the trip. The arrival countdown can also complete that step.
+
 ## UI previews
 
 The [main README](../README.md#ui-previews) embeds short native framebuffer GIFs
