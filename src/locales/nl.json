@@ -150,5 +150,7 @@
   "Phone connection": "Telefoonverbinding",
   "Phone": "Telefoon",
   "No track information": "Geen nummerinformatie",
-  "Radio": "Radio"
+  "Radio": "Radio",
+  "Day starts": "Dag vanaf",
+  "Night starts": "Nacht vanaf"
 }

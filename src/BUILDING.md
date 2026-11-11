@@ -208,30 +208,27 @@ checks theme/brightness behaviour and icon compositing under UBSan, and writes
 previews to `docs/next-release/splash-antialias/`. Its optional before captures
 are historical reference data; they are not needed to build the splash.
 
-## Seasonal Auto theme
+## Scheduled Auto theme
 
-`clio843/src/boot_theme.h` shares the offline sunrise/sunset calculation between
-the splash and UI. It interpolates the existing latitude/date tables generated
-from the [NOAA solar equations](https://gml.noaa.gov/grad/solcalc/solareqns.PDF).
-The device uses integer arithmetic, with no runtime trigonometry or network.
-UTC date, latitude and longitude determine daylight; display timezone/DST
-offsets do not affect it. These are approximate astronomical boundaries and
-cannot detect cloud cover, tunnels or vehicle lighting.
-Night begins 15 minutes before estimated sunset; Day begins at estimated
-sunrise. The same dusk margin applies at boot and during driving.
+`clio843/src/boot_theme.h` shares the daily schedule between the splash and UI.
+`daystart` and `nightstart` in `prefs.ini` store local minutes after midnight.
+Older preferences use Day at 07:00 and Night at 18:00. Invalid or identical
+times revert to these defaults.
 
-The UI loads the checksum-validated `gpslast.dat` before resolving its initial
-palette. The splash reads the same existing record through `last_fix.h`.
-Before a GPS fix, Auto uses the saved coordinates with GPS UTC date/time when
-available, otherwise the unit's UTC wall clock. A live fix takes priority.
-If date or location is unavailable, retain the saved palette (Night by default).
-There is no fixed 07:00–19:00 daylight fallback. Manual Day/Night always wins.
+Choose Auto in Settings, then scroll to Day starts and Night starts.
+OK switches between hours and minutes; Left/Right adjusts the highlighted
+part. The schedule repeats daily and supports a Day interval crossing midnight.
+Day/Night overrides take priority.
 
-`tests/auto-theme.c` checks the production resolver against independent
-floating-point solar equations, plus winter/summer, hemispheres, polar seasons,
-leap dates, time-only RMC, saved/live positions, clock fallback and overrides.
-`tests/splash.c` verifies actual framebuffer output and saved-position handling.
-Both run under UBSan in `tools/verify_ci.py`; host checks are not vehicle trials.
+Live decisions use the displayed local clock. Before GPS time arrives, the UI
+and splash use the unit's UTC clock plus the saved local offset. Automatic
+timezone/DST updates also affect the schedule through that offset. With no valid
+clock, retain the saved palette, defaulting to Night.
+
+`tests/auto-theme.c` covers exact boundaries, midnight wrap, local offsets,
+legacy/corrupt preferences, persistence, controls and manual overrides.
+`tests/splash.c` verifies the schedule against actual splash framebuffer output.
+Both run under UBSan in `tools/verify_ci.py`.
 
 ## Boot measurements
 

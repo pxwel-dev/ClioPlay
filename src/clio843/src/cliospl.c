@@ -85,15 +85,19 @@ static void fill(int x,int y,int w,int h,u16 c){if(x<0){w+=x;x=0;}if(y<0){h+=y;y
 #include "boot_theme.h"
 #include "last_fix.h"
 #include "splash_icon.h"
-static int spl_theme=2,spl_bright=50;
+static int spl_theme=2,spl_bright=50,spl_offset=0,spl_day_start=CLIO_DAY_START,spl_night_start=CLIO_NIGHT_START;
 static int spl_int(const char*s){int sign=1,v=0;if(*s=='-'){sign=-1;s++;}for(int n=0;n<6&&*s>='0'&&*s<='9';n++,s++)v=v*10+*s-'0';return v*sign;}
 static int spl_eq(const char*a,const char*b){while(*a&&*a==*b){a++;b++;}return *a==*b;}
 static void spl_load_prefs(void){
+ spl_day_start=CLIO_DAY_START;spl_night_start=CLIO_NIGHT_START;spl_offset=0;int hours=0,minutes=0;
  char b[512];long fd=s_open(SPLASH_PREF,0,0);if(fd<0)return;long n=s_read(fd,b,sizeof(b)-1);s_close(fd);if(n<=0)return;b[n]=0;
  for(char*p=b;*p;){char*name=p;while(*p&&*p!='\r'&&*p!='\n')p++;char next=*p;*p=0;char*eq=name;while(*eq&&*eq!='=')eq++;
-  if(*eq){*eq++=0;int v=spl_int(eq);if(spl_eq(name,"theme"))spl_theme=v;else if(spl_eq(name,"bright"))spl_bright=v;}
+  if(*eq){*eq++=0;int v=spl_int(eq);if(spl_eq(name,"theme"))spl_theme=v;else if(spl_eq(name,"bright"))spl_bright=v;else if(spl_eq(name,"hoff"))hours=v;else if(spl_eq(name,"moff"))minutes=v;else if(spl_eq(name,"daystart"))spl_day_start=clio_theme_time(eq,CLIO_DAY_START);else if(spl_eq(name,"nightstart"))spl_night_start=clio_theme_time(eq,CLIO_NIGHT_START);}
   if(!next)break;p++;
  }
+ if(hours>=-12&&hours<=14&&minutes>=-59&&minutes<=59)spl_offset=hours*60+minutes;
+ if(spl_offset< -720||spl_offset>840)spl_offset=0;
+ if(!clio_theme_schedule_valid(spl_day_start,spl_night_start)){spl_day_start=CLIO_DAY_START;spl_night_start=CLIO_NIGHT_START;}
  if(spl_theme<0||spl_theme>2)spl_theme=2;if(spl_bright<10)spl_bright=10;if(spl_bright>100)spl_bright=100;
 }
 static int spl_saved_theme(void){char c=0;long fd=s_open(SPLASH_THEME,0,0);if(fd<0)return-1;long n=s_read(fd,&c,1);s_close(fd);return n==1&&c=='0'?0:(n==1&&c=='1'?1:-1);}
@@ -152,7 +156,7 @@ static void spl_render(int night){
  label(groupx+(groupw-textw)/2-left,groupy+icon+gap-top,6,title,night?rgb(249,250,255):rgb(23,29,38),0);
 }
 static int spl_present(void){long fd=s_open(SPLASH_FB,1,0);if(fd<0)return 0;unsigned done=0;while(done<sizeof(fb)){long n=s_write(fd,(const u8*)fb+done,sizeof(fb)-done);if(n<=0)break;done+=(unsigned)n;}s_close(fd);return done==sizeof(fb);}
-static int spl_run(void){spl_load_prefs();struct LastFixDisk fix;int valid=lastfix_read(SPLASH_LASTGPS,&fix);int night=clio_boot_night(spl_theme,spl_clock_utc(),valid,valid?fix.lat:0,valid?fix.lon:0,spl_saved_theme());spl_brightness();spl_render(night);return spl_present()?0:1;}
+static int spl_run(void){spl_load_prefs();int night=clio_boot_night(spl_theme,spl_clock_utc(),spl_offset,spl_day_start,spl_night_start,spl_saved_theme());spl_brightness();spl_render(night);return spl_present()?0:1;}
 #ifndef HOST_TEST
 __attribute__((noreturn))void _start(void){s_exit(spl_run());}
 #else

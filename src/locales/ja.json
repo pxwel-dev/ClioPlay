@@ -150,5 +150,7 @@
   "Phone connection": "スマートフォン接続",
   "Phone": "スマホ",
   "No track information": "曲の情報がありません",
-  "Radio": "ラジオ"
+  "Radio": "ラジオ",
+  "Day starts": "昼モード開始",
+  "Night starts": "夜モード開始"
 }

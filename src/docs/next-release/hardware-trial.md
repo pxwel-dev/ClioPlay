@@ -15,10 +15,10 @@ results against the executable SHA-256 values and navigation `build.json`.
    UI loading now overlaps Focus readiness. Confirm vehicle source/temperature
    still appear and AUX/radio work when Focus becomes ready, including a slow
    startup. Compare with Debug off to separate logging overhead.
-   For Auto theme, compare winter dusk with summer evenings. Check splash and
-   first UI palette using a saved location before GPS lock, then live GPS;
-   confirm manual Day/Night overrides and display clock offsets do not alter
-   solar switching. Weather/tunnels have no light-sensor input.
+   For Auto theme, configure Day starts and Night starts in local time.
+   Check transitions at the exact saved times, restart on both sides of each
+   boundary, and compare the splash with the first UI palette before GPS lock.
+   Confirm manual Day/Night overrides and automatic timezone/DST changes.
 2. Parked remote: Menu → Trip/Bluetooth/Settings; scrolling settings; Auto/Metric/
    Imperial, Clock Auto/manual and all available languages; saved favourites/trip;
    smooth map browsing entry/exit. Check long/native names and the frosted speed-limit inset, including estimated values

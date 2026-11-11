@@ -1,5 +1,6 @@
 """Git boundaries must exclude private/local outputs and detect stray files."""
 from pathlib import Path
+from contextlib import chdir
 import shutil
 import subprocess
 import sys
@@ -14,6 +15,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class PublicationTest(unittest.TestCase):
+    def test_check_from_source_subdirectory(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);managed=self.fixture(root)
+            (root/'src').mkdir()
+            with chdir(root/'src'):
+                result=verify_git_candidates(root,managed)
+            self.assertEqual(result['files'],2)
+
     def test_windows_launchers_keep_exact_bytes_through_git(self):
         # A working tree can contain CRLF while an older tracked Git blob is
         # LF. Exercise real Git storage/checkout with the published attributes,

@@ -1,60 +1,73 @@
-/* Actual UI resolver, saved-position I/O and independent solar equations. */
+/* Daily schedule boundaries, local clock selection and saved preferences. */
 #define HOST_TEST 1
 #define CLIO_THEME_TEST 1
 #define main unused_device_entry
 #include "../clio843/src/clio040.c"
 #undef main
 #include <assert.h>
-#include <math.h>
 #include <string.h>
 
-static void gps_date(int year,int month,int day,int hour,int minute){gps.year=year;gps.mon=month;gps.day=day;gps.hour=hour;gps.min=minute;}
-static void solar_reference(void){
- // Independently evaluate NOAA's published floating-point equations on the
- // host. Ignore ten minutes around the true boundary: device tables use
- // coarse latitude/date interpolation and are not an ephemeris service.
- const double pi=3.14159265358979323846;
- unsigned checked=0;const int lats[]={-60,-35,0,35,55,60};
- for(int year=2026;year<=2028;year+=2)for(int mon=1;mon<=12;mon++)for(unsigned k=0;k<sizeof(lats)/sizeof(lats[0]);k++){
-  int d=clio_day_of_year(year,mon,6);double g=2*pi*d/(clio_leap_year(year)?366:365);
-  double dec=.006918-.399912*cos(g)+.070257*sin(g)-.006758*cos(2*g)+.000907*sin(2*g)-.002697*cos(3*g)+.00148*sin(3*g);
-  double eot=229.18*(.000075+.001868*cos(g)-.032077*sin(g)-.014615*cos(2*g)-.040849*sin(2*g));
-  double lat=lats[k]*pi/180,half=acos((cos(90.833*pi/180)-sin(lat)*sin(dec))/(cos(lat)*cos(dec)))*720/pi;
-  for(int longitude=-150;longitude<=150;longitude+=50)for(int minute=0;minute<1440;minute+=11){
-   double solar=fmod(minute+longitude*4+eot+2880,1440);
-   if(fabs(solar-(720-half))<10||fabs(solar-(720+half-15))<10)continue;
-   assert(clio_solar_night(year,mon,6,minute,lats[k]*100000,longitude*100000)==(solar<720-half||solar>=720+half-15));checked++;
-  }
- }
- printf("Solar reference: %u independent date/latitude/longitude/time cases passed.\n",checked);
+static void preferences(const char*text){
+ FILE*f=fopen(PREF_PATH,"wb");assert(f);
+ assert(fwrite(text,1,strlen(text),f)==strlen(text)&&fclose(f)==0);
 }
 int main(void){
- solar_reference();
+ for(int minute=0;minute<1440;minute++){
+  assert(clio_schedule_night(minute,420,1080)==(minute<420||minute>=1080));
+  assert(clio_schedule_night(minute,1200,300)==(minute>=300&&minute<1200));
+ }
+ assert(clio_schedule_night(556,557,1062)==1);
+ assert(clio_schedule_night(557,557,1062)==0);
+ assert(clio_schedule_night(1061,557,1062)==0);
+ assert(clio_schedule_night(1062,557,1062)==1);
+ assert(clio_schedule_night(0,0,1)==0&&clio_schedule_night(1,0,1)==1);
+ assert(clio_schedule_night(-1,420,1080)==-1);
+ assert(clio_schedule_night(0,420,420)==-1);
+ assert(clio_theme_time("1439",0)==1439&&clio_theme_time("0",99)==0);
+ const char*bad[]={"","-1","1440","99999999999999","08:30","abc","420x"};
+ for(unsigned i=0;i<sizeof(bad)/sizeof(bad[0]);i++)assert(clio_theme_time(bad[i],420)==420);
  assert(clio_day_of_year(2028,2,29)==59&&clio_day_of_year(2026,2,29)==-1);
- assert(clio_day_of_year(2026,4,31)==-1&&clio_day_of_year(2026,0,1)==-1);
- assert(clio_solar_night(2026,11,6,-1,5497548,-164050)==-1);
- assert(clio_solar_night(2026,6,21,0,8000000,1500000)==0);
- assert(clio_solar_night(2026,12,21,720,8000000,1500000)==1);
- lastfix_valid=1;lastfix_lat=5497548;lastfix_lon=-164050;lastfix_course=70;assert(save_last_fix()==1);
- lastfix_valid=0;assert(load_last_fix()&&lastfix_lat==5497548&&lastfix_lon==-164050);
- pref.theme=THEME_AUTO;pref.hoff=14;pref.moff=0;theme_resolved=0;write_theme_state_raw(0);
- theme_test_utc=1793923200L+17*3600;memzero(&gps,sizeof(gps));gps.hour=-1;
- seed_boot_theme();assert(theme_resolved==1);refresh_theme();assert(theme_resolved==1);
- // Time/date-only RMC has no position: use the saved coordinates, not 0,0.
- char rmc[]="$GPRMC,170000,V,,,,,,,061126,,,N";parse_nmea(rmc);
- assert(!gps.fix&&gps.lat==0&&gps.lon==0&&gps.year==2026);assert(auto_is_night());
- gps.hour=15;assert(!auto_is_night());gps.hour=7;assert(auto_is_night());gps.hour=8;assert(!auto_is_night());
- gps.hour=16;gps.min=0;assert(!auto_is_night());gps.min=15;assert(auto_is_night());
- // Live position wins over the saved location; live UTC wins over the RTC.
- gps.fix=1;gps.lat=-3386000;gps.lon=15120000;gps_date(2026,12,21,0,0);assert(!auto_is_night());
- gps.lat=5497548;gps.lon=-164050;gps_date(2026,6,21,20,0);assert(!auto_is_night());gps.hour=22;assert(auto_is_night());
- // No GPS date yet: the same seasonal decision still runs from the RTC.
- gps.fix=0;gps_date(0,0,0,-1,0);theme_test_utc=1782000000L+20*3600;assert(!auto_is_night());
- theme_test_utc=1793923200L+17*3600;assert(auto_is_night());
- pref.theme=THEME_DAY;refresh_theme();assert(!theme_resolved);pref.theme=THEME_NIGHT;refresh_theme();assert(theme_resolved);
- pref.theme=THEME_AUTO;theme_test_utc=-1;theme_resolved=0;assert(!auto_is_night());theme_resolved=1;assert(auto_is_night());
- lastfix_valid=0;theme_test_utc=1793923200L+12*3600;seed_boot_theme();assert(theme_resolved==1);
- assert(clio_boot_night(THEME_AUTO,-1,1,5497548,-164050,-1)==1);
- puts("AUTO theme: November/summer, both hemispheres/polar dates, leap validation, GPS-free boot, time-only RMC, saved/live location, UTC/DST independence, missing inputs and manual overrides passed.");
+
+ pref.theme=THEME_AUTO;pref.day_start=557;pref.night_start=1062;pref.hoff=1;pref.moff=0;
+ gps.fix=lastfix_valid=0;gps.year=gps.mon=gps.day=0;
+ gps.hour=8;gps.min=16;assert(auto_is_night());
+ gps.min=17;assert(!auto_is_night());
+ gps.hour=16;gps.min=41;assert(!auto_is_night());
+ gps.min=42;assert(auto_is_night());
+ // No position or GPS date is needed, including a time-only RMC.
+ char rmc[]="$GPRMC,081700,V,,,,,,,061126,,,N";parse_nmea(rmc);
+ assert(!gps.fix&&!auto_is_night());
+ gps.hour=-1;theme_test_utc=1793923200L+8*3600+17*60;
+ write_theme_state_raw(1);seed_boot_theme();assert(!theme_resolved&&!auto_is_night());
+ theme_test_utc=1793923200L+16*3600+42*60;refresh_theme();assert(theme_resolved);
+ pref.hoff=-5;pref.moff=-30;gps.hour=0;gps.min=0;assert(auto_is_night());
+ pref.theme=THEME_DAY;refresh_theme();assert(!theme_resolved);
+ pref.theme=THEME_NIGHT;refresh_theme();assert(theme_resolved);
+ pref.theme=THEME_AUTO;gps.hour=-1;theme_test_utc=-1;
+ theme_resolved=0;assert(!auto_is_night());theme_resolved=1;assert(auto_is_night());
+ assert(clio_boot_night(THEME_AUTO,-1,0,420,1080,0)==0);
+ assert(clio_boot_night(THEME_AUTO,-1,0,420,1080,-1)==1);
+
+ preferences("version=6\ntheme=2\nbright=60\n");
+ load_prefs();assert(pref.day_start==420&&pref.night_start==1080&&pref.bright==60);
+ pref.day_start=557;pref.night_start=1062;save_prefs();
+ pref.day_start=pref.night_start=0;load_prefs();
+ assert(pref.day_start==557&&pref.night_start==1062);
+ preferences("daystart=420\nnightstart=420\n");load_prefs();
+ assert(pref.day_start==420&&pref.night_start==1080);
+ preferences("daystart=bad\nnightstart=99999999999999\n");load_prefs();
+ assert(pref.day_start==420&&pref.night_start==1080);
+
+ pref.theme=THEME_AUTO;pref.hoff=pref.moff=0;gps.hour=6;gps.min=30;
+ screen=SCR_SET;set_focus=8;theme_time_part=0;
+ key_handle(K_LEFT);assert(pref.day_start==360&&!auto_is_night());
+ key_handle(K_ENTER);key_handle(K_RIGHT);assert(theme_time_part==1&&pref.day_start==361);
+ key_handle(K_DOWN);assert(set_focus==9&&theme_time_part==0);
+ key_handle(K_RIGHT);assert(pref.night_start==1140);
+ key_handle(K_ENTER);key_handle(K_LEFT);assert(pref.night_start==1139);
+ save_prefs();load_prefs();assert(pref.day_start==361&&pref.night_start==1139);
+ // Draw both scrolled schedule rows through the normal page entry point.
+ draw_settings();
+ puts("AUTO schedule: every minute, midnight wrap, exact custom boundaries, local offsets, GPS-free boot/time-only input, legacy/corrupt preferences, persistence, schedule controls and manual overrides passed.");
  return 0;
 }

@@ -150,5 +150,7 @@
   "Phone connection": "Telefonverbindung",
   "Phone": "Handy",
   "No track information": "Keine Titelinformationen",
-  "Radio": "Radio"
+  "Radio": "Radio",
+  "Day starts": "Tag ab",
+  "Night starts": "Nacht ab"
 }

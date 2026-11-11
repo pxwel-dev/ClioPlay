@@ -274,9 +274,15 @@ def catalog(sender_receipts=None):
     key('Favourite keyboard','keyboard-utf8-delete','Delete a whole native character','screen=SCR_KEY;keyboard_open_fave_rename(0);copystr(kbd_text,sizeof(kbd_text),"東京");','key_handle(K_ESC);','assert(!strcmp(kbd_text,"東"));')
     key('Favourite keyboard','keyboard-save-empty','Empty name stays in keyboard','name_keyboard();kbd_focus=38;','key_handle(K_ENTER);','assert(screen==SCR_KEY);')
     # Settings: row navigation, every discrete option, and meaningful numeric boundaries.
-    for i,title in enumerate(('Brightness','Theme','Units','Auto zoom','Camera alerts','Clock','Debug log','Language')):
+    for i,title in enumerate(('Brightness','Theme','Units','Auto zoom','Camera alerts','Clock','Debug log','Language','Day starts','Night starts')):
         key('Settings',f'settings-focus-{i}','Select '+title,'screen=SCR_SET;','key_handle(K_DOWN);'*i,f'assert(set_focus=={i});')
     key('Settings','settings-up','Move settings selection up','screen=SCR_SET;set_focus=7;','key_handle(K_UP);','assert(set_focus==6);')
+    key('Settings','schedule-edit-day','Adjust the Day start hour',
+        'screen=SCR_SET;set_focus=8;theme_time_part=0;','key_handle(K_RIGHT);',
+        'assert(pref.day_start==8*60);')
+    key('Settings','schedule-edit-minute','Adjust the Night start minute',
+        'screen=SCR_SET;set_focus=9;theme_time_part=0;','key_handle(K_ENTER);key_handle(K_LEFT);',
+        'assert(pref.night_start==17*60+59);')
     for value in (10,50,100):
         key('Settings',f'brightness-{value}',f'Brightness {value}%','screen=SCR_SET;pref.bright=50;', 'key_handle(K_LEFT);'*((50-value)//10) if value<50 else 'key_handle(K_RIGHT);'*((value-50)//10),f'assert(pref.bright=={value});')
     for value,title in enumerate(('Day','Night','Auto')):
@@ -426,13 +432,13 @@ static void gallery_reset(int night){
  hud_capture_clock=1;hud_capture_ms=s_now_ms();gallery_motion=0;
  bt_hud_link=0;bt_hud_peer[0]=0;
  route_cancel();fixture();restore_route();atlas_active=0;atlas_future_m=atlas_future_cost=0;
- pref=(struct Prefs){50,1,0,0,0,night?THEME_NIGHT:THEME_DAY,0,1,0,0};apply_palette(night);
+ pref=(struct Prefs){50,1,0,0,0,night?THEME_NIGHT:THEME_DAY,0,1,0,0,CLIO_DAY_START,CLIO_NIGHT_START};apply_palette(night);
  mapok=1;screen=SCR_MAP;trip_pane=trip_tab=trip_focus=trip_right_focus=0;menu_focus=set_focus=0;
  bt_page_focus=bt_page_connected_choice=bt_page_dialog_choice=0;
  trip_pick_mode=dest_pick_action=phone_wait_action=DEST_PICK_NONE;modal_choice=0;modal_index=-1;pending_point_stop=0;
  memzero(&phone_dest,sizeof(phone_dest));phone_seq_seen_valid=0;arrival_modal_deadline=0;notice_deadline=0;
  nrecents=8;nfaves=4;copystr(faves[0].name,sizeof(faves[0].name),"Home");copystr(faves[1].name,sizeof(faves[1].name),"Work");for(int i=0;i<4;i++){faves[i].lat=5500000+i*300;faves[i].lon=-165000-i*300;}
- kbd_focus=0;kbd_action=KBD_NAME_FAVE;kbd_fave_idx=-1;kbd_text[0]=0;
+ kbd_focus=0;kbd_action=KBD_NAME_FAVE;kbd_fave_idx=-1;kbd_text[0]=0;theme_time_part=0;
  btui.album[0]=af.station[0]=af.freq[0]=0;copystr(btui.status,sizeof(btui.status),"BT READY");
  manual_zoom=freecam_zoom=5;zoom_override=-1;auto_zoom_level=-1;route_rerouting=0;
  ui_anim_tick=0;lastfix_valid=1;gps.hour=12;gps.min=35;gps.sec=0;gps.day=21;gps.mon=10;gps.year=2026;gps_fix_ms=s_now_ms();

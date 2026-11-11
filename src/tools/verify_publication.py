@@ -34,7 +34,7 @@ def verify_git_candidates(folder, managed):
         raw = subprocess.check_output([
             git, '-c', 'core.excludesFile='+os.devnull, '--git-dir='+temp+'/.git',
             '--work-tree='+str(folder.resolve()), 'ls-files', '--others',
-            '--exclude-standard', '-z'])
+            '--exclude-standard', '-z'], cwd=folder)
     files = set(filter(None, raw.decode('utf-8').split('\0')))
     expected = set(managed) | {'latest.json'}
     if files != expected:

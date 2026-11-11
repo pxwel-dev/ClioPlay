@@ -89,11 +89,13 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
 - **Clock:** offline automatic timezone and DST from GPS, with a manual fallback.
   Settings → Clock: Enter toggles Auto/manual; Left/Right selects a manual offset
   in 15-minute steps. Rules span 2020–2060 and retain the last offset at boot.
-- **Auto theme:** seasonal sunrise/sunset from UTC date and position, switching
-  to Night 15 minutes before estimated sunset to reduce dusk glare. The splash
-  and UI use the saved location and unit clock before GPS is ready, then follow
-  live GPS. Day/Night overrides remain available. With no usable date or position,
-  Auto retains the last theme, defaulting to Night on a fresh installation.
+- **Auto theme:** a custom daily schedule using local time. In Settings, choose
+  Auto under Theme, then set **Day starts** and **Night starts**. Defaults are
+  07:00 and 18:00. Scroll down to the schedule rows, use **OK** to select hours
+  or minutes, and **Left / Right** to adjust the highlighted part. The times are
+  saved and also apply to the boot splash. Day/Night overrides remain available.
+  The unit clock and saved UTC offset provide the schedule before GPS is ready.
+  With no valid clock, Auto retains the last theme, defaulting to Night.
 - **Language:** 18 options in Settings, including Arabic, Simplified Chinese,
   Japanese, Korean, Hindi, Hebrew, Greek and Cyrillic languages. See
   [the complete language list](locales/README.md). Native destination and
@@ -158,6 +160,7 @@ Use **Up / Down** to highlight a row. The available actions depend on the settin
 | Clock | Set a manual UTC offset in 15-minute steps. | Toggle automatic and manual time. |
 | Debug log | Toggle on or off. | |
 | Language | Cycle backwards or forwards. | Select the next language. |
+| Day starts / Night starts | Adjust the highlighted hour or minute. | Switch between editing hours and minutes. |
 
 ### Favourite keyboard and dialogs
 

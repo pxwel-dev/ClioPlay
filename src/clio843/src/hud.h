@@ -154,6 +154,12 @@ static void hud_prepare_status_layout(const struct HudCard*c,u32 now,int was_vis
  hud_status_layout.at=now;
 }
 static struct HudBox hud_box(int x,int y,int w,int h){return (struct HudBox){x,y,w,h,256};}
+static void keyboard_surface(int x,int y,int w,int h,int selected){
+ u16 tint=selected?C_ACTIVE:(theme_resolved?rgb(26,39,54):rgb(226,235,244));
+ u16 edge=selected?C_CYAN:(theme_resolved?rgb(81,104,128):rgb(141,160,178));
+ hud_glass_surface(hud_box(x,y,w,h),tint,edge,selected?12u:5u,0);
+ if(selected)round_rect(x+3,y+5,2,h-10,1,C_CYAN,15);
+}
 static void hud_clock_prepare(u32 now){
  struct HudCard c={0};
  int minute=local_clock_minutes();

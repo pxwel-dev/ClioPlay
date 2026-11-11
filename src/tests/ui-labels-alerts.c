@@ -40,8 +40,17 @@ static void test_clock_page_changes(void){
  pref.units=1;gps.hour=12;gps.min=35;car_read_temperature("temp=18");
  screen=SCR_MAP;modal=MOD_NONE;freecam=0;
  hud_prepare(5,hud_capture_ms,1);
- hud_capture_ms+=400;hud_prepare(5,hud_capture_ms,1);
  struct HudTween*clock=&hud_tween[HC_CLOCK];
+ u32 boot=hud_capture_ms;
+ struct HudBox first=hud_pose(clock,boot);
+ assert(first.a==0&&first.y==4);
+ for(u32 elapsed=80;elapsed<320;elapsed+=80){
+  hud_prepare(5,boot+elapsed,1);
+  struct HudBox entering=hud_pose(clock,boot+elapsed);
+  assert(entering.a>0&&entering.a<256&&entering.y>=4&&entering.y<=8);
+  assert(clock->position_at==boot);
+ }
+ hud_capture_ms=boot+320;hud_prepare(5,hud_capture_ms,1);
  struct HudBox expected=hud_pose(clock,hud_capture_ms);
  u32 position_at=clock->position_at;
  assert(expected.a==256&&expected.y==8);
@@ -71,6 +80,19 @@ static void test_ui_coverage(void){
  u16 centre=fb[60*W+86],edge=fb[54*W+79];
  assert(centre!=background&&edge!=background&&edge!=centre);
  bt_control_mode=0;
+ for(int selected=0;selected<=1;selected++){
+  fill(0,0,W,H,0);keyboard_surface(20,30,60,26,selected);
+  u16 dark=fb[42*W+48];
+  assert(fb[30*W+20]==0);
+  fill(0,0,W,H,0xffff);keyboard_surface(20,30,60,26,selected);
+  assert(fb[42*W+48]!=dark);
+ }
+ keyboard_open_fave_name(5497370,-161331);screen=SCR_KEY;
+ kbd_focus=0;draw_keyboard();keyboard_move(1,0);draw_keyboard();
+ u16 after_move[52*26];
+ for(int y=0;y<26;y++)for(int x=0;x<52;x++)after_move[y*52+x]=fb[(115+y)*W+12+x];
+ fill(0,0,W,H,0xffff);draw_keyboard();
+ for(int y=0;y<26;y++)for(int x=0;x<52;x++)assert(after_move[y*52+x]==fb[(115+y)*W+12+x]);
 }
 
 static void test_speed_limit_glass(void){
@@ -168,7 +190,7 @@ static void test_missing_readings(void){
 
 static void test_menu_states(void){
  hud_capture_clock=1;hud_capture_ms=20000;
- pref=(struct Prefs){50,0,0,1,0,THEME_DAY,0,1,1,0};
+ pref=(struct Prefs){50,0,0,1,0,THEME_DAY,0,1,1,0,CLIO_DAY_START,CLIO_NIGHT_START};
  screen=SCR_SET;modal=MOD_NONE;
  hud_audio.kind=hud_source.kind=hud_navigation.kind=hud_connection.kind=hud_bt_feedback.kind=HUD_NONE;
  hud_reset_animations();

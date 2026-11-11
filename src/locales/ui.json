@@ -627,6 +627,14 @@
     "Radio": [
       "Radio",
       "Radio"
+    ],
+    "Day starts": [
+      "Début du jour",
+      "Inicio del día"
+    ],
+    "Night starts": [
+      "Début de la nuit",
+      "Inicio de la noche"
     ]
   },
   "language_names": {

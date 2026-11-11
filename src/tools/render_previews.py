@@ -33,8 +33,8 @@ def previews():
         ]),
         'menus.gif': timeline('night', [
             ('map-menu', 850), ('menu-open-0', 1050), ('favourites-tab', 1050),
-            ('showcase-keyboard-char', 1050), ('phone', 900), ('settings', 950),
-            ('showcase-theme-day', 850),
+            ('showcase-keyboard-char', 850), ('phone', 700), ('settings', 700),
+            ('schedule-edit-day', 800), ('schedule-edit-minute', 800), ('showcase-theme-day', 650),
             *timed_scenes('preview-menu-return', MENU_RETURN_SAMPLES, 1300),
         ]),
         'bluetooth.gif': timeline('night', timed_scenes('hud-bluetooth', BLUETOOTH_SAMPLES, 4750)),
