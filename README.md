@@ -45,7 +45,7 @@ Confirmed that vehicles that do not have a Bluetooth remote control for their Ca
 - Browse the map, choose destinations, manage stops, recents and favourites.
 - Bluetooth phone audio with track information and remote playback controls.
 - Steering wheel audio controls.
-- Full-screen maps with animated, frosted notices for road names, camera alerts, route progress and audio changes.
+- Full-screen maps with animated, semi-transparent frosted glass notices for road names, camera alerts, route progress and audio changes.
 - Day/Night themes with custom daily switch times in Auto, automatic units and time zones, and 18 interface languages.
 - Mapped speed limits and camera alerts where the bundled country policy allows them.
 
