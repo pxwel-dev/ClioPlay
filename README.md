@@ -44,7 +44,7 @@ ClioPlay handles the audio source as follows:
 | Radio source read by ClioPlay | Source shown and used |
 | --- | --- |
 | CD / no-disc CD | **BT** |
-| AUX, with or without a connected phone | **AUX** (wired input) |
+| AUX | **AUX** |
 | No valid live radio source | **BT**, independent of radio source/volume telemetry |
 | FM / MW / LW | The reported radio source |
 
