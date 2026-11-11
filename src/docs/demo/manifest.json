@@ -12,7 +12,7 @@
     "clio843/src/global_text.h": "49956b951783a12949ea41c4e2df829837eaa8ecfd644c68e6ca57c70a2208b6",
     "clio843/src/font_atlas.h": "0989a1e455dd2a047dfea49d3e4d2a66a30b178960b80a2c31603ee80ffc4ffc",
     "clio843/src/splash_icon.h": "1c0cb3bf3be97ce49cdf626bc0184b0736b49fee877a92f5bf2e5cb2d0ec17eb",
-    "clio843/src/hud_status.h": "190479dbda5d18c67511e06fb1738b2f45751414d5a4e63410b7ed787866fd64",
+    "clio843/src/hud_status.h": "91f9d2cc57aeae72deebee57974292a8c3033631b4cd11b83d57fdececbaeaed",
     "clio843/src/last_fix.h": "eaf9a30204c7b146bf83ea6ea6f2f4a9c25486dcbf69bc366824888426668cca",
     "clio843/src/clioa2dp.c": "b18925f615b77648e31bcaeaa467abc5800fa0f330e3dfbbc9ef8cf8b8f4a983",
     "clio843/src/atlas_catalog.h": "b0045a10c40374f77a1865d57be226f40dd313a23c5c38c68b60c3870f42a52b",
@@ -28,14 +28,14 @@
     "clio843/src/hud_turn_masks.h": "ceb5cc2dfc83963855f1c04541c646ac49a88e6c2177c6584c673d9d97b3ad45",
     "clio843/src/global_cameras.h": "1f86c0c862ebd64a6709acc9b4e7ebaba207391fc5650493e0fc001e3c1bb8a2",
     "clio843/src/urban_speed_defaults.h": "a719a3d065f16bc39727b01d7ed73f412beeb4d8703b5bde73a8c6ff1c35ac10",
-    "clio843/src/clio040.c": "f05e3a3a5b69e1e049b26555d416459972c5c65a3499549abc88f9c1ace45c76",
+    "clio843/src/clio040.c": "f6496c601e76d82c7845503a1d72f708aa22c3175df4a4d5b13a2f67de2e51dc",
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/audio_chime.h": "184c222e448db2707fc752bc38f7f6c735b6cb1f4d168d88ddc7da7cf20f4d75",
     "clio843/src/utf8.h": "e6e172fb98b7f4c9e958322d13296190fd003025562c05146bcc9a3d50af8b7c",
     "clio843/src/unicode_support.c": "43a20e8dde712fbdb5e087062ad68d3ae5aec704c1ab864dec9c57a99fd54b77",
     "clio843/src/frame_renderer.h": "9395c054ab1a799433cdc367ca65098424b61e6bf51d2732d75d955fef5e1ca5",
     "clio843/src/boot_theme.h": "fa46f1bda9c0f37306c90f34d497192953aa718b30fa688291bbc7a66ddab746",
-    "clio843/src/ui_translations.h": "0e296ed23d16a117f428e5e4300474c7ba64bbeb80566e1cde28e441f2692c1a",
+    "clio843/src/ui_translations.h": "5eb937b5ec2219a8b5aaf0efa95ef9b54ba904f0d7e485c2e0c5c0fc802e1f6e",
     "clio843/src/keyboard-data/layouts.h": "22a3c1a36371612cf10b9db2811812d6320eef8065df4cd7586d4088ea25a6de",
     "clio843/src/keyboard-data/pinyin.h": "790948587decc97f934f36a06c1bf35ce537c96bfd2d18c833da5b94323b0001",
     "clio843/src/vendor/compiler-rt/builtins/extendsftf2.c": "48fb287875d8831c08b6a820f2a152705b1ad00d7615a8150e11475ce2c202c2",
@@ -490,7 +490,7 @@
     "clio843/src/vendor/sheenbidi/Headers/SheenBidi/SheenBidi.h": "44a644a72edf2300838d32c3e32aa14a7cb66b584fb9da643b8311aa21991cbe"
   },
   "executables": {
-    "clio040": "0164d7dcd89f716905b1b74e4186d494a2fc198e9974dc9d17b7319660cd38ab",
+    "clio040": "13b2b5b24c791c5c45909e53d4a6bd9992ce8b7795fa20cc37294d0ede474006",
     "cliospl": "7f69eb4ae127ba0bd17911ecd9ee4ae0e0ab7e6119513dc72167027b3058e641",
     "clioa2dp": "46ff89d620896c3d3c578dd1c60ed025f22851380964ff01bdabc9b78a06100b"
   },
@@ -724,7 +724,7 @@
       ]
     },
     "status-notifications.gif": {
-      "sha256": "1a7ebed3bc2f34f416d022e431ac3e43600d22eafa9f135417f082d084103076",
+      "sha256": "eee05888da10ffc9a9bcc0166773158525490852cfd99e06c699f72322884718",
       "frames": 42,
       "duration_ms": 9200,
       "source_frames": [
@@ -942,19 +942,19 @@
         },
         {
           "frame": "night/preview-status-7250.png",
-          "rgb565_sha256": "31f77cd5a97bd7eb11ea72409394724e292c68ed090f85e6ab46654ee8692cbc"
+          "rgb565_sha256": "f49474cdf88560f16fd984ada90bbbc2e3448b5a38d2ed30b20b41e233a051f1"
         },
         {
           "frame": "night/preview-status-7300.png",
-          "rgb565_sha256": "aa61c34b068908b2bdf63f215a287937ce571145784d7c4be201d282f6b1c2e7"
+          "rgb565_sha256": "222dfe58d25ab7bc302ef38492ff92a25464909cd792807bf07cde5f82ba0c8d"
         },
         {
           "frame": "night/preview-status-7350.png",
-          "rgb565_sha256": "aa61c34b068908b2bdf63f215a287937ce571145784d7c4be201d282f6b1c2e7"
+          "rgb565_sha256": "222dfe58d25ab7bc302ef38492ff92a25464909cd792807bf07cde5f82ba0c8d"
         },
         {
           "frame": "night/preview-status-8600.png",
-          "rgb565_sha256": "aa61c34b068908b2bdf63f215a287937ce571145784d7c4be201d282f6b1c2e7"
+          "rgb565_sha256": "222dfe58d25ab7bc302ef38492ff92a25464909cd792807bf07cde5f82ba0c8d"
         }
       ]
     },

@@ -34,9 +34,9 @@ int main(void){
  prepare(14500,1);assert(contains("Map data missing"));
  mapok=1;gps.fix=1;prepare(14600,1);assert(!hud_events[HUD_EVENT_MAP].left);
  assert(contains("GPS active")); /* stale missing-map event is cancelled */
- trip.active=0;route_status=R_IDLE;prepare(20000,1);assert(contains("NO ACTIVE ROUTE"));
- prepare(25000,1);assert(!contains("NO ACTIVE ROUTE"));
- prepare(30000,1);assert(!contains("NO ACTIVE ROUTE"));
+ trip.active=0;route_status=R_IDLE;prepare(20000,1);assert(contains("No active route"));
+ prepare(25000,1);assert(!contains("No active route"));
+ prepare(30000,1);assert(!contains("No active route"));
  trip.active=1;route_status=R_CALC;prepare(30100,1);assert(!hud_events[HUD_EVENT_ROUTE].left);
 
  baseline();bt_control_mode=1;route_status=R_CALC;

@@ -2381,8 +2381,8 @@ static void set_destination(const char*name,s32 lat,s32 lon){memzero(&trip,sizeo
 static void clear_trip(void){memzero(&trip,sizeof(trip));save_trip();arrival_ticks=0;trip_need_route=trip_route_defer=0;route_cancel();}
 static int trip_add_stop(const char*name,s32 lat,s32 lon){if(!trip.active||trip.count<1||trip.count>=TRIP_MAX_TARGETS)return 0;int ins=trip.count-1;for(int i=trip.count;i>ins;i--)trip.target[i]=trip.target[i-1];trip.target[ins].lat=lat;trip.target[ins].lon=lon;copystr(trip.target[ins].name,sizeof(trip.target[ins].name),name&&name[0]?name:"MAP POINT");trip.count++;if(ins==trip.active_idx)trip_schedule_route();save_trip();notice_success(ui_tr("STOP ADDED"));return 1;}
 static void trip_change_destination(const char*name,s32 lat,s32 lon){if(!trip.active||!trip.count){set_destination(name,lat,lon);return;}int i=trip.count-1;int changed=trip.target[i].lat!=lat||trip.target[i].lon!=lon||!streq(trip.target[i].name,name);trip.target[i].lat=lat;trip.target[i].lon=lon;copystr(trip.target[i].name,sizeof(trip.target[i].name),name&&name[0]?name:"MAP POINT");add_recent(trip.target[i].name,lat,lon);save_trip();if(i==trip.active_idx)trip_schedule_route();if(changed)notice_success(ui_tr("DESTINATION CHANGED"));}
-static void phone_destination_apply(void){if(!phone_dest.valid)return;int action=phone_wait_action;if(action==DEST_PICK_NONE)action=phone_dest.action=='S'?DEST_PICK_ADD_STOP:0;if(modal!=MOD_NONE&&modal!=MOD_WAIT_PHONE)return;if(modal==MOD_WAIT_PHONE)modal=MOD_NONE;if(action==DEST_PICK_CHANGE_DEST){if(trip.active&&trip.count){trip_change_destination(phone_dest.name,phone_dest.lat,phone_dest.lon);}else notice_fail(ui_tr("NO ACTIVE ROUTE"));}
-  else if(action==DEST_PICK_ADD_STOP){if(!trip.active||!trip.count)notice_fail(ui_tr("NO ACTIVE ROUTE"));else if(trip.count>=TRIP_MAX_TARGETS)notice_fail(ui_tr("TRIP FULL - STOP NOT ADDED"));else if(trip_add_stop(phone_dest.name,phone_dest.lat,phone_dest.lon)){add_recent(phone_dest.name,phone_dest.lat,phone_dest.lon);}else notice_fail(ui_tr("STOP NOT ADDED"));}
+static void phone_destination_apply(void){if(!phone_dest.valid)return;int action=phone_wait_action;if(action==DEST_PICK_NONE)action=phone_dest.action=='S'?DEST_PICK_ADD_STOP:0;if(modal!=MOD_NONE&&modal!=MOD_WAIT_PHONE)return;if(modal==MOD_WAIT_PHONE)modal=MOD_NONE;if(action==DEST_PICK_CHANGE_DEST){if(trip.active&&trip.count){trip_change_destination(phone_dest.name,phone_dest.lat,phone_dest.lon);}else notice_fail(ui_tr("No active route"));}
+  else if(action==DEST_PICK_ADD_STOP){if(!trip.active||!trip.count)notice_fail(ui_tr("No active route"));else if(trip.count>=TRIP_MAX_TARGETS)notice_fail(ui_tr("TRIP FULL - STOP NOT ADDED"));else if(trip_add_stop(phone_dest.name,phone_dest.lat,phone_dest.lon)){add_recent(phone_dest.name,phone_dest.lat,phone_dest.lon);}else notice_fail(ui_tr("STOP NOT ADDED"));}
   else{set_destination(phone_dest.name,phone_dest.lat,phone_dest.lon);screen=SCR_MAP;recenter_map();}
   phone_destination_clear();}
 static void trip_remove_stop(int idx){if(!trip.active||idx<trip.active_idx||idx<0||idx>=trip.count-1)return;int was_current=idx==trip.active_idx;for(int i=idx+1;i<trip.count;i++)trip.target[i-1]=trip.target[i];trip.count--;save_trip();if(was_current)trip_schedule_route();notice_success(ui_tr("Stop removed"));}
@@ -2748,7 +2748,7 @@ trip_tab=0;trip_focus=8;trip_pane=0;screen=SCR_TRIP;
 memzero(&trip,sizeof(trip));route_status=R_IDLE;nav_maneuver_reset();
 #endif
 #ifdef PREVIEW_MAP_NOTICE_ERROR
-screen=SCR_MAP;modal=MOD_NONE;notice_fail(ui_tr("NO ACTIVE ROUTE"));
+screen=SCR_MAP;modal=MOD_NONE;notice_fail(ui_tr("No active route"));
 #endif
 #ifdef PREVIEW_MAP_NOTICE_SUCCESS
 screen=SCR_MAP;modal=MOD_NONE;notice_success(ui_tr("STOP ADDED"));

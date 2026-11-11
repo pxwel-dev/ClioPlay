@@ -53,7 +53,7 @@ static void hud_status_observe(int map,u32 now){
  int idle=!trip.active&&route_status==R_IDLE;
  if(idle!=hud_seen_idle){
   hud_seen_idle=idle;
-  hud_event_set(HUD_EVENT_ROUTE,idle?ui_tr("NO ACTIVE ROUTE"):0,HUD_INFO);
+  hud_event_set(HUD_EVENT_ROUTE,idle?ui_tr("No active route"):0,HUD_INFO);
  }
  (void)now;
 }
