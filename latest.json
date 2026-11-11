@@ -1,6 +1,6 @@
 {
   "format": "clioplay-latest-1",
-  "updated_at": "2026-11-11T21:55:43+00:00",
+  "updated_at": "2026-11-11T22:02:29+00:00",
   "edition": "Global",
   "version": "2.0.0",
   "payload": "Clean-install source package, current binaries, legacy bootstrap, CAB-based installer; no vendor firmware, navigation packs or companion website",
@@ -1206,7 +1206,7 @@
     "bootstrap-SHA256.json": "8570be2a8df210c93060abc258d185551dbcfbfc652b68a801510bc37e0765f7",
     "docs/source-status.md": "a0ea6ad82b7f3db1a7699b442f766063fb1def68d991f27f2074fafd17963cef",
     "docs/camera-support.md": "2a58059199ce658ddd838f21f02d063d453c415c934b6f44c2441b4081cb1f5e",
-    "docs/repository-readme.md": "b06218832278e6dc331748f6abf7e2337f94d31f8a3c38eac6db8d0fc158736b",
+    "docs/repository-readme.md": "41660d16d04467349a614faf001358212d789a394dda06fd13c7f3d3d81000f0",
     "docs/next-release/hardware-trial.md": "ed67bd79f43259d83f8d19dc542f2f87ea1ee5547d006c807978c8c4fbc2b648",
     "docs/github-launch.md": "1984ec4cd40617807a898758058488c151bfbd4052b38b11c7b39913a267028d",
     "legacy-binaries/clioaux-init": "35d046ba6ae04978227f83ecc6cd99367aef4149a711730a69f6e8f26ae52b47",
@@ -1247,7 +1247,7 @@
     "Install.cmd": "b504a77b6d13c036d2e027a9759f06fa8a30c677144f1ee286f56953d2020fa6",
     "Install.command": "5a3df10333b2db1c445eccf5c2875f9d1051c90b9b86ffacc4da1b1e4d1e3d9a",
     "LICENSE": "b04ac8d0e455fe1b4c2f8b0e42531cd7b67add31f3b06c05d58e600feda6f464",
-    "README.md": "99f2ada99b390e4cede99dd516a031c3020f61cd6a65cf6fcfde1db514df1def",
+    "README.md": "aa40abaf18f1954489d165e714358e1bfd601d5d54ebef82138c03c1860c2b5c",
     "SECURITY.md": "144e1bd144a00615b471ae94b2bf1a4aa7d767698b9f77882a4a4cbf1712d039",
     "SOURCE_STATUS.md": "a0ea6ad82b7f3db1a7699b442f766063fb1def68d991f27f2074fafd17963cef",
     "THIRD_PARTY_NOTICES.md": "909e3a7e5c7aee799d2b0050813f8f8cab34a7b0a4bb029382becf6454161690",
@@ -2290,7 +2290,7 @@
     "src/docs/demo/status-notifications.gif": "eee05888da10ffc9a9bcc0166773158525490852cfd99e06c699f72322884718",
     "src/docs/github-launch.md": "1984ec4cd40617807a898758058488c151bfbd4052b38b11c7b39913a267028d",
     "src/docs/next-release/hardware-trial.md": "ed67bd79f43259d83f8d19dc542f2f87ea1ee5547d006c807978c8c4fbc2b648",
-    "src/docs/repository-readme.md": "b06218832278e6dc331748f6abf7e2337f94d31f8a3c38eac6db8d0fc158736b",
+    "src/docs/repository-readme.md": "41660d16d04467349a614faf001358212d789a394dda06fd13c7f3d3d81000f0",
     "src/docs/source-status.md": "a0ea6ad82b7f3db1a7699b442f766063fb1def68d991f27f2074fafd17963cef",
     "src/fonts/LGPL-2.1.txt": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95",
     "src/fonts/LICENSE.txt": "3361d054759a2fc686a2c058be82deaf9c2e6fe549be9004d7935a6c1736315d",
@@ -2478,7 +2478,7 @@
     "src/tools/verify_splash.py": "b288101d4d082f64a79279dd8a3f13c72c055d6cf69d82c2af088a9e7e1609eb",
     "src/tools/verify_text_cache.py": "aa5cad2c209ae1e03e8cf28b60e4b2d5888a484b6a25475d2c2efd4d90b1f80a",
     "src/tools/verify_unicode.py": "146d50e150f0671aad6a70de4bb41a869da4ce6f52b4f0708d7d43e0d7ce0bf1",
-    "SHA256SUMS": "44e92597ceb3c278f644d564764a3b19938dcc080a95a8aeefa31eaae82aedd9"
+    "SHA256SUMS": "17a3861df1c0d1bd4f68f5750644dc6ed35fd181a2e93c799ce9ee28f03a8044"
   },
   "checks": {
     "publication": {

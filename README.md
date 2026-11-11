@@ -1,7 +1,7 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
 <h1 align="center">CLIOPLAY 2.0.0</h1>
-<p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen and remote.</p>
+<p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
 
 <p align="center"><a href="#install">Install</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
@@ -45,7 +45,7 @@ Confirmed that vehicles that do not have a Bluetooth remote control for their Ca
 - Browse the map, choose destinations, manage stops, recents and favourites.
 - Bluetooth phone audio with track information and remote playback controls.
 - Steering wheel audio controls.
-- Full-screen maps with animated, frosted notices for road names, camera alerts, route progress and audio changes.
+- Full-screen maps with animated, semi-transparent frosted glass notices for road names, camera alerts, route progress and audio changes.
 - Day/Night themes with custom daily switch times in Auto, automatic units and time zones, and 18 interface languages.
 - Mapped speed limits and camera alerts where the bundled country policy allows them.
 
@@ -78,7 +78,7 @@ Map building can take substantial time for large extracts.
 
 | Control | Action |
 | --- | --- |
-| **MAP** | Switch between driving and map browsing, or return to driving from a menu. |
+| **MAP** | Restore Auto zoom after temporary manual zoom; otherwise switch between driving and map browsing, or return to driving from a menu. |
 | **MENU** | Open the menu for Trip, Bluetooth and Settings. |
 | **BACK** | Go back or dismiss a dialog. On the driving map with Bluetooth audio selected and a phone connected, toggle **BT CTRL**. |
 | **Centre / OK** | On the driving map, show the ETA and remaining distance, or the heading without a route. In map browsing, select the point under the crosshair. In **BT CTRL**, play or pause. In menus, select or confirm. |
@@ -87,8 +87,10 @@ Map building can take substantial time for large extracts.
 | **Left soft key** | Zoom out on the map, focus destinations in Trip, or delete while naming a favourite. |
 | **Right soft key** | Zoom in on the map, focus the itinerary in Trip, or insert a space while naming a favourite. |
 
-If you adjust the zoom while Auto zoom is enabled, the first **OK** press on the
-driving map restores Auto zoom. Press **OK** again to see the ETA during guidance.
+If you adjust the zoom while Auto zoom is enabled, **MAP** restores Auto zoom
+without entering Explore. Press **MAP** again to enter Explore, or use an arrow
+to enter Explore and pan directly. **OK** shows the ETA during guidance, including
+while temporary Manual zoom is active.
 
 See the [full remote controls guide](src/README.md#remote-controls) for actions in
 each screen, including settings, pairing and the favourite keyboard.
