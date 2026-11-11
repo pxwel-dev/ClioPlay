@@ -49,13 +49,7 @@ ClioPlay handles the audio source as follows:
 | FM / MW / LW | The reported radio source |
 
 BT playback is available on CD and when no valid live radio source can be read;
-BT CTRL also requires a connected phone. An unknown volume on first boot, or a
-saved volume from a previous boot, does not determine radio compatibility.
-Unavailable radio/volume readings stay hidden. The fallback BT label does not
-claim that a phone is connected. Physical volume controls remain with the vehicle;
-ClioPlay does not add software volume. Physical console controls are not
-implemented yet. Independent playback, volume/mute behaviour and coexistence
-still need vehicle validation on radios such as the Scénic's separate audio unit.
+BT CTRL also requires a connected phone. Unavailable radio/volume readings stay hidden. 
 
 ## Features
 
