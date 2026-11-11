@@ -33,6 +33,7 @@ BLUETOOTH_EVENTS = (
 )
 BLUETOOTH_SAMPLES = sorted({at + step for at, _ in BLUETOOTH_EVENTS for step in TWEEN_STEPS})
 PHONE_CALC_SAMPLES = range(0, 1280, 80)
+MENU_RETURN_SAMPLES = (0, *(400 + step for step in TWEEN_STEPS))
 SPEED_WARNING_SAMPLES = (0, *range(400, 3041, 80))
 ROUNDABOUT_ETA_SAMPLES = (0, *(600 + step for step in TWEEN_STEPS),
                         *(4800 + step for step in TWEEN_STEPS))
@@ -117,6 +118,9 @@ def catalog(sender_receipts=None):
         key('Menu',f'menu-focus-{i}',f'Select {title}', 'key_handle(K_MENU);', 'key_handle(K_DOWN);'*i, f'assert(menu_focus=={i});')
         key('Menu',f'menu-open-{i}',f'Open {title}', 'key_handle(K_MENU);'+'key_handle(K_DOWN);'*i, 'key_handle(K_ENTER);', f'assert(screen=={["SCR_TRIP","SCR_BT","SCR_SET"][i]});')
     key('Menu','menu-back','Back from menu to driving','screen=SCR_MENU;','key_handle(K_BACK);','assert(screen==SCR_MAP);')
+    motion('Menu', 'preview-menu-return', 'Return to driving with a persistent clock',
+           'screen=SCR_MENU;pref.theme=THEME_DAY;refresh_theme();settle();',
+           ((400, 'key_handle(K_BACK);assert(screen==SCR_MAP);'),), MENU_RETURN_SAMPLES)
     key('Menu','menu-up','Move menu selection up','screen=SCR_MENU;menu_focus=2;','key_handle(K_UP);','assert(menu_focus==1);')
     for page,name in [('SCR_TRIP','destinations'),('SCR_BT','phone'),('SCR_SET','settings'),('SCR_KEY','keyboard')]:
         key('Menu',f'{name}-map',f'MAP returns from {name}',f'screen={page};','key_handle(K_MAP);','assert(screen==SCR_MAP);')
@@ -234,7 +238,7 @@ def catalog(sender_receipts=None):
         key('Phone destinations',f'phone-wait-{name}-back','Cancel waiting · '+name,state,'key_handle(K_BACK);','assert(modal==MOD_NONE);')
         add('Phone destinations',f'phone-received-{name}','Received destination · '+name,state+'incoming("Central Station",\'N\');',note='A validated incoming destination is injected at the daemon/UI boundary, then production phone_destination_apply() runs.')
     add('Phone destinations','incoming-native-name','Received native destination name','screen=SCR_TRIP;modal=MOD_WAIT_PHONE;phone_wait_action=DEST_PICK_CHANGE_DEST;incoming("東京駅 · محطة",\'N\');')
-    phone_received = ('screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;modal=MOD_WAIT_PHONE;'
+    phone_received = ('screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;modal=MOD_WAIT_PHONE;settle();'
                       'incoming_sender("Central Station",1,\'N\',5497370,-161331);'
                       'assert(modal==MOD_NONE&&trip.active&&streq(trip.target[0].name,"Central Station"));'
                       'trip_service();trip_service();')

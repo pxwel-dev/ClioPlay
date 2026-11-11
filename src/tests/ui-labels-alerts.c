@@ -35,6 +35,27 @@ static void test_clock_temperature(void){
  s_unlink(CAR_PATH);
 }
 
+static void test_clock_page_changes(void){
+ hud_reset_animations();hud_capture_clock=1;hud_capture_ms=90000;
+ pref.units=1;gps.hour=12;gps.min=35;car_read_temperature("temp=18");
+ screen=SCR_MAP;modal=MOD_NONE;freecam=0;
+ hud_prepare(5,hud_capture_ms,1);
+ hud_capture_ms+=400;hud_prepare(5,hud_capture_ms,1);
+ struct HudTween*clock=&hud_tween[HC_CLOCK];
+ struct HudBox expected=hud_pose(clock,hud_capture_ms);
+ u32 position_at=clock->position_at;
+ assert(expected.a==256&&expected.y==8);
+ const int pages[]={SCR_MENU,SCR_TRIP,SCR_BT,SCR_SET,SCR_KEY,SCR_MAP};
+ for(unsigned i=0;i<sizeof(pages)/sizeof(pages[0]);i++){
+  screen=pages[i];hud_capture_ms+=400;
+  for(u32 elapsed=0;elapsed<=320;elapsed+=64){
+   hud_prepare(5,hud_capture_ms+elapsed,screen==SCR_MAP);
+   assert(hud_box_eq(hud_pose(clock,hud_capture_ms+elapsed),expected));
+   assert(clock->position_at==position_at);
+  }
+ }
+}
+
 static void test_ui_coverage(void){
  apply_palette(1);hud_reset_animations();
  u16 background=C_BG;
@@ -376,7 +397,7 @@ int main(void){
  camera_current.kind=3;camera_strip_text(text,sizeof(text));assert(streq(text,"AVERAGE CHECK / 30  200 yd"));
  camera_average=1;camera_average_speed=48;camera_strip_text(text,sizeof(text));assert(starts(text,"AVG 30 mph / 30"));
  camera_average=0;camera_current.kind=2;pref.units=1;camera_strip_text(text,sizeof(text));assert(streq(text,"RED LIGHT  180 m"));
- test_ui_coverage();test_speed_limit_glass();test_clock_temperature();test_menu_states();test_bluetooth_feedback();test_missing_readings();
+ test_ui_coverage();test_speed_limit_glass();test_clock_temperature();test_clock_page_changes();test_menu_states();test_bluetooth_feedback();test_missing_readings();
  test_status_motion();
  puts("Glass and status animation, independent road/camera states, speed alerts, temperature validation, menu header bounds and Bluetooth feedback passed.");return 0;
 }

@@ -3,7 +3,7 @@
 | Preview | What it shows |
 | --- | --- |
 | [Driving](driving.gif) | A new road name appears. A camera alert joins the same pill and remains after the name fades. |
-| [Menus](menus.gif) | Menu, Trip, favourites, Rename, Bluetooth and Settings, with a switch to Day. |
+| [Menus](menus.gif) | Menu, Trip, favourites, Rename, Bluetooth and Settings, a switch to Day and return to driving with the clock still visible. |
 | [Bluetooth](bluetooth.gif) | The volume notice expands to show playback controls, then shrinks again. The pause button highlights when pressed. |
 | [Phone destination](phone-destination.gif) | The head unit receives a destination, shows moving route progress and lists the destination in Trip. |
 | [Speeding warning](speed-warning.gif) | The speed pill pulses red above a confirmed 30 mph limit and eases back when the car slows down. |

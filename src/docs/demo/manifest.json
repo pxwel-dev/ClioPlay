@@ -492,8 +492,8 @@
     "clioa2dp": "5cc108e9976ce700a8392fd53ad7222e9fb5a78cff82181a4cd2c4d97025348d"
   },
   "generator_inputs": {
-    "tools/render_previews.py": "3d39d5c6935ffb2ea2d7deb3a5361b315d8a4ddf90f1a0d5aed31d2bc4911c5e",
-    "tools/render_gallery.py": "6d8d342a73c89626fe1e45b077d32de6b4109282ae6101327f03242d248a9707",
+    "tools/render_previews.py": "e956975c15a3968d87003f4e0fdc22760988a141e674eba600feff7d5e2156a1",
+    "tools/render_gallery.py": "15185e08d8153559fc3640353051b223f4a44c0da0eb200f96ce79c9cdcc938a",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
     "tests/native.c": "5e79cc40b615e44eaefd4cfc22cea24be40c31c0c6251fe53ea067af4eccc929",
     "tests/splash.c": "0a61f9dad9cdcc06620bfcb8bbd26f9b1bb167ce06567fd321575fd802156f48",
@@ -577,9 +577,9 @@
       ]
     },
     "menus.gif": {
-      "sha256": "e9abc34b3b090bb89d280ab02349c2663784910d3b8cc13d3cfa2c46ed3c25b5",
-      "frames": 7,
-      "duration_ms": 7050,
+      "sha256": "b9c6c532928de2b16584059bb30cd580de1c364dc943c1338578e1c78abbba88",
+      "frames": 14,
+      "duration_ms": 7980,
       "source_frames": [
         {
           "frame": "night/map-menu.png",
@@ -608,6 +608,34 @@
         {
           "frame": "night/showcase-theme-day.png",
           "rgb565_sha256": "c7b5b8b5699d931a78d24e498de5cd7674d22f39e9f83a879540a156f3d70792"
+        },
+        {
+          "frame": "night/preview-menu-return-0000.png",
+          "rgb565_sha256": "cc886a13e4f4959bcf443aac7505284ce7c3372716fbb591c37e37f104d0945b"
+        },
+        {
+          "frame": "night/preview-menu-return-0400.png",
+          "rgb565_sha256": "115344b1351a06d33aa5e7d7bffde84f19ee317923c347c153421b36278ba2d3"
+        },
+        {
+          "frame": "night/preview-menu-return-0464.png",
+          "rgb565_sha256": "8c3ca6362f32a3ac23ded1030295735d6ff0e051287dbbac92662632c82d5463"
+        },
+        {
+          "frame": "night/preview-menu-return-0528.png",
+          "rgb565_sha256": "7a2e42b1a8c7165f8f7f968d5d0c412fbf3beb2e1caa1fd69b0533ace2131920"
+        },
+        {
+          "frame": "night/preview-menu-return-0592.png",
+          "rgb565_sha256": "afb252db28879862ec07b55288cd6cebe211bc1328686a722a06f7266ba0f3c5"
+        },
+        {
+          "frame": "night/preview-menu-return-0656.png",
+          "rgb565_sha256": "4e782811f9445ef9a5e66b66e7c5dd27dca21529b1a9e5482e30b80850a2f6ef"
+        },
+        {
+          "frame": "night/preview-menu-return-0720.png",
+          "rgb565_sha256": "9cd96838a2b4ed6771a66a494a7fbf978c8b02aea7dc0e9e0b2cee22efa1eac7"
         }
       ]
     },
@@ -787,7 +815,7 @@
       ]
     },
     "phone-destination.gif": {
-      "sha256": "db4130b3a21b72664306bc9a756230a136e6e6777233d019a96d7bff7fd61610",
+      "sha256": "a432f0e8b47e0626f5aa1b1f6dbef0dd2ac59b73af40819ad0c6a440b7a49485",
       "frames": 18,
       "duration_ms": 4480,
       "source_frames": [
@@ -797,19 +825,19 @@
         },
         {
           "frame": "night/phone-preview-calculating-0000.png",
-          "rgb565_sha256": "bba828537836a24c2114179b5e2c52f7a9334a59b66f72d0d07e0cbe44c66959"
+          "rgb565_sha256": "65d0a3c77f35d463170cf0feef5753df9c7dcd746cb06c6bbc9ac3693db0d1bc"
         },
         {
           "frame": "night/phone-preview-calculating-0080.png",
-          "rgb565_sha256": "66011d69cbfb3b654fa8dc3c4ee16e9b454319ba803d2b71783a44d62a351219"
+          "rgb565_sha256": "0f9a6806b15b41ff5adcd53fd01e6aa4250022e0f608fa540c6d006c85cd8731"
         },
         {
           "frame": "night/phone-preview-calculating-0160.png",
-          "rgb565_sha256": "0af6f863c9cba859aba24afe920606828e4b8e5ec37160d6375aa93fd41ec240"
+          "rgb565_sha256": "f8538e2dff3e13d974244f7f3e177262021a734ffabde8ae0893a986c38d9fd5"
         },
         {
           "frame": "night/phone-preview-calculating-0240.png",
-          "rgb565_sha256": "ae8777d2f1de8bcd5e2417f0ceb36539bff18e551b22cd0fc45310cf12b0e891"
+          "rgb565_sha256": "5f23d814aadf896a353a2cfc4b2beab8ce8ec5b1b1a6f59442d73cdd846366d6"
         },
         {
           "frame": "night/phone-preview-calculating-0320.png",
