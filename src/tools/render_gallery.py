@@ -39,6 +39,19 @@ MENU_ENTRY_SAMPLES = sorted({0, *(400+step for step in TWEEN_STEPS), *(950+step 
 SPEED_WARNING_SAMPLES = (0, *range(400, 3401, 50))
 ROUNDABOUT_ETA_SAMPLES = (0, *(600 + step for step in TWEEN_STEPS),
                         *(4800 + step for step in TWEEN_STEPS))
+ZOOM_MODE_EVENTS = (
+    (0, 'key_handle(K_SR);assert(zoom_override>=0);'),
+    (1100, 'key_handle(K_MAP);assert(!freecam&&zoom_override==-1);'),
+    (2200, 'key_handle(K_MAP);assert(freecam);'),
+    (2700, ''),
+    (4000, ''),
+    (4500, 'key_handle(K_UP);key_handle(K_SR);assert(!hud_navigation.kind);'),
+    (5200, 'key_handle(K_MAP);assert(!freecam);'),
+)
+ZOOM_MODE_SAMPLES = sorted({at+step for at in (0,1100,2200,4000,5200) for step in TWEEN_STEPS} |
+                           {at+step for at in (2200,5200) for step in EXPLORE_SAMPLES} |
+                           {4500,4700,4900,6000,6350})
+
 
 
 def add(group, name, title, setup='', action='', check='', note=''):
@@ -103,6 +116,9 @@ def catalog(sender_receipts=None):
         'key_handle(K_BACK);btui.pos=-1;btui.dur=0;')
     add('Playback progress','hud-playback-calc','Playback progress and routing progress remain distinct',
         'key_handle(K_BACK);btui.pos=65;btui.dur=180;route_status=R_CALC;set_volume(18);show_phone_connection();draw();hud_capture_ms+=400u;')
+    motion('Map', 'preview-zoom-modes', 'Manual zoom, MAP restores Auto, and Explore notices occur once',
+           'settle();pref.autozoom=1;zoom_override=-1;auto_zoom_level=5;hud_capture_ms+=4500u;draw();hud_capture_ms+=350u;draw();',
+           ZOOM_MODE_EVENTS, ZOOM_MODE_SAMPLES)
     add('Prototype HUD','hud-volume','Volume adjustment','set_volume(16);')
     add('Prototype HUD','hud-volume-ended','Volume notice cleared','settle();hud_capture_ms+=4300;')
     add('Prototype HUD','hud-route-volume','Volume during route calculation','route_status=R_CALC;set_volume(16);')
@@ -176,7 +192,7 @@ def catalog(sender_receipts=None):
         for name,code in [('in','K_SR'),('out','K_ESC')]:
             key('Map',f'zoom-{name}-'+('explore' if free else 'driving'),f'Zoom {name} in '+('Explore' if free else 'driving'),setup,f'key_handle({code});')
     key('Map','autozoom-override','Override automatic zoom','pref.autozoom=1;zoom_override=4;','key_handle(K_SR);','assert(zoom_override==5);')
-    key('Map','autozoom-resume','Resume automatic zoom','pref.autozoom=1;zoom_override=4;','key_handle(K_ENTER);','assert(zoom_override==-1);')
+    key('Map','autozoom-resume','Resume automatic zoom','pref.autozoom=1;zoom_override=4;','key_handle(K_MAP);','assert(zoom_override==-1&&!freecam);')
     key('Map','map-menu','Open menu from driving','','key_handle(K_MENU);','assert(screen==SCR_MENU);')
     for mode in ('enter','leave'):
         for frame,elapsed in enumerate(EXPLORE_SAMPLES):

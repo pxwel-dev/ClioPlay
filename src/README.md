@@ -113,7 +113,7 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
 
 | Button | Driving map | Map browsing | BT CTRL on the driving map |
 | --- | --- | --- | --- |
-| **MAP** | Enter map browsing. | Return to the driving view. | Leave BT CTRL and enter map browsing. |
+| **MAP** | Restore Auto zoom after a temporary manual adjustment; otherwise enter map browsing. | Return to the driving view and the configured zoom mode. | Leave BT CTRL; restore Auto zoom if temporarily adjusted, otherwise enter map browsing. |
 | **MENU** | Open Menu. | Open Menu. | Leave BT CTRL and open Menu. |
 | **BACK** | Enter BT CTRL when Bluetooth audio is selected and a phone is connected. | | Leave BT CTRL. |
 | **Centre / OK** | Show estimated remaining time and distance for about four seconds. With GPS and no active route, show the heading. | Open the route or add-stop prompt for the point under the crosshair. | Play or pause. |
@@ -121,9 +121,17 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
 | **Left / Right** | Enter map browsing and pan. | Pan left or right. | Previous or next track. |
 | **Left / right soft keys** | Zoom out or in. With Auto zoom enabled, this sets a temporary override. | Zoom out or in. | Zoom out or in on the driving map. |
 
-After a manual zoom adjustment with Auto zoom enabled, **OK** on the driving
-map restores Auto zoom first. A second press shows the journey estimate during
-guidance. The estimate also appears when a route calculation or reroute finishes.
+With Auto zoom enabled, the soft keys temporarily adjust the driving zoom and
+show **Manual zoom**. **MAP** restores Auto zoom without entering Explore; a
+subsequent **MAP** enters Explore. Arrow keys can enter Explore and pan directly,
+including from temporary manual zoom. **OK** continues to show the journey estimate
+during guidance, including while the zoom is temporarily adjusted. The estimate
+also appears when a route calculation or reroute finishes.
+
+Explore shows one entry notice. Zooming and panning within Explore neither replay
+that notice nor extend it. Leaving Explore shows **Auto zoom**, or **Manual zoom**
+when Auto zoom is disabled in Settings. These mode notices share the usual glass
+styling, transitions and temporary display time.
 
 ### Menu, Trip and Bluetooth
 

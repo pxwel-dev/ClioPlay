@@ -8,7 +8,6 @@ enum {HUD_BOTTOM_MARGIN=8,HUD_SIDE_W=128,HUD_TURN_X=W-HUD_BOTTOM_MARGIN-HUD_SIDE
 #include "hud_status.h"
 #include "hud_playback.h"
 
-static char nav_zoom[48];
 static int hud_kind,hud_observed_route=R_IDLE;
 static int hud_status_map=-1,hud_status_page=-1;
 static u32 hud_status_frame_at;
@@ -80,12 +79,6 @@ static struct HudBox hud_status_pose(u32 now){
   b.x=left+(right-left-b.w)/2;
  }
  return b;
-}
-static void nav_status_prepare(int z){
- nav_zoom[0]=0;
- appendstr(nav_zoom,sizeof(nav_zoom),freecam?ui_tr("Explore"):
-  (pref.autozoom&&zoom_override>=0?ui_tr("Adjusted"):(pref.autozoom?ui_tr("Auto"):ui_tr("Manual"))));
- if(pref.debug){appendstr(nav_zoom,sizeof(nav_zoom)," Z");append_int(nav_zoom,sizeof(nav_zoom),z);}
 }
 static const char* hud_route_error(void){
  switch(route_status){
@@ -186,9 +179,9 @@ static void hud_nav_text(struct HudCard*c,int z,int kind,int tag){
  case HUD_FAILURE:copystr(c->title,sizeof(c->title),hud_route_error());break;
  case HUD_JOURNEY:
   if(route_status==R_READY){if(tag)copystr(c->tag,sizeof(c->tag),"ETA");hud_journey_text(c->title,sizeof(c->title));}break;
- case HUD_ZOOM:
-  nav_status_prepare(z);if(tag&&!freecam)copystr(c->tag,sizeof(c->tag),"ZOOM");
-  copystr(c->title,sizeof(c->title),nav_zoom);break;
+ case HUD_AUTO_ZOOM:copystr(c->title,sizeof(c->title),ui_tr("Auto zoom"));break;
+ case HUD_EXPLORE:copystr(c->title,sizeof(c->title),ui_tr("Explore"));break;
+ case HUD_MANUAL_ZOOM:copystr(c->title,sizeof(c->title),ui_tr("Manual zoom"));break;
  case HUD_HEADING:
   if(gps.fix)hud_heading_text(c->title,sizeof(c->title),map_course());break;
  }

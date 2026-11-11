@@ -78,7 +78,7 @@ Map building can take substantial time for large extracts.
 
 | Control | Action |
 | --- | --- |
-| **MAP** | Switch between driving and map browsing, or return to driving from a menu. |
+| **MAP** | Restore Auto zoom after temporary manual zoom; otherwise switch between driving and map browsing, or return to driving from a menu. |
 | **MENU** | Open the menu for Trip, Bluetooth and Settings. |
 | **BACK** | Go back or dismiss a dialog. On the driving map with Bluetooth audio selected and a phone connected, toggle **BT CTRL**. |
 | **Centre / OK** | On the driving map, show the ETA and remaining distance, or the heading without a route. In map browsing, select the point under the crosshair. In **BT CTRL**, play or pause. In menus, select or confirm. |
@@ -87,8 +87,10 @@ Map building can take substantial time for large extracts.
 | **Left soft key** | Zoom out on the map, focus destinations in Trip, or delete while naming a favourite. |
 | **Right soft key** | Zoom in on the map, focus the itinerary in Trip, or insert a space while naming a favourite. |
 
-If you adjust the zoom while Auto zoom is enabled, the first **OK** press on the
-driving map restores Auto zoom. Press **OK** again to see the ETA during guidance.
+If you adjust the zoom while Auto zoom is enabled, **MAP** restores Auto zoom
+without entering Explore. Press **MAP** again to enter Explore, or use an arrow
+to enter Explore and pan directly. **OK** shows the ETA during guidance, including
+while temporary Manual zoom is active.
 
 See the [full remote controls guide](src/README.md#remote-controls) for actions in
 each screen, including settings, pairing and the favourite keyboard.

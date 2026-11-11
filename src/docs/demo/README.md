@@ -9,7 +9,7 @@
 | [Bluetooth](bluetooth.gif) | The volume notice expands to show controls and a thin track progress bar. A reported seek eases forward, and pause highlights when pressed. |
 | [Phone destination](phone-destination.gif) | The head unit receives a destination, shows moving route progress and lists the destination in Trip. |
 | [Speeding warning](speed-warning.gif) | The speed pill pulses red above a confirmed 30 mph limit and eases back when the car slows down. |
-| [Map browsing](map-browsing.gif) | MAP opens browsing, the direction pad pans and the right soft key zooms in. MAP returns to guidance. |
+| [Map browsing](map-browsing.gif) | Manual zoom is temporary; MAP restores Auto before entering Explore. Explore appears once on entry, stays silent during later pan/zoom, and returns to Auto with one notice. |
 | [Roundabout and ETA](roundabout-eta.gif) | The turn pill shows the third exit. OK displays the estimated time and remaining distance. |
 | [Add a stop](add-stop.gif) | Trip adds a favourite as an intermediate stop and keeps the original destination. |
 

@@ -391,7 +391,7 @@ static void poll_gps(void){if(gpsfd<0)gpsfd=(int)s_open(GPS_PATH,O_RDONLY_|O_NON
 
 /* One current transient per domain; repeated knob events replace the value
  * without replaying the entrance animation. Millisecond subtraction wraps. */
-enum {HUD_NONE,HUD_SOURCE,HUD_VOLUME,HUD_ZOOM,HUD_JOURNEY,HUD_HEADING,HUD_FAILURE,HUD_MEDIA,HUD_CALC,HUD_NOTICE,HUD_CONNECTION,HUD_BT_FEEDBACK,HUD_SYSTEM,HUD_TRACK};
+enum {HUD_NONE,HUD_SOURCE,HUD_VOLUME,HUD_MANUAL_ZOOM,HUD_JOURNEY,HUD_HEADING,HUD_FAILURE,HUD_MEDIA,HUD_CALC,HUD_NOTICE,HUD_CONNECTION,HUD_BT_FEEDBACK,HUD_SYSTEM,HUD_TRACK,HUD_EXPLORE,HUD_AUTO_ZOOM};
 #ifdef HOST_TEST
 static int hud_capture_clock;
 static u32 hud_capture_ms;
@@ -2622,9 +2622,11 @@ if(screen==SCR_MAP){
     if(code==K_ENTER){bt_transport_command(BT_TRANSPORT_PLAY_PAUSE);return;}
     if(code==K_UP||code==K_DOWN)return;
   }
-  if(code==K_MAP){bt_control_mode=0;int was=freecam;toggle_freecam();if(was!=freecam)hud_pulse(&hud_navigation,HUD_ZOOM,1800);return;}
-  if(code==K_ENTER){if(freecam){pending_lat=cam_lat;pending_lon=cam_lon;pending_point_stop=trip.active?1:0;modal=MOD_ROUTE_POINT;modal_choice=0;}else if(pref.autozoom&&zoom_override>=0){zoom_override=-1;auto_zoom_level=-1;hud_pulse(&hud_navigation,HUD_ZOOM,1800);}else hud_pulse(&hud_navigation,route_status==R_READY?HUD_JOURNEY:HUD_HEADING,route_status==R_READY?4200:2300);return;}
-  if(code==K_UP||code==K_DOWN||code==K_LEFT||code==K_RIGHT){int was=freecam;pan_freecam(code);if(!was&&freecam)hud_pulse(&hud_navigation,HUD_ZOOM,1800);return;}
+  if(code==K_MAP){bt_control_mode=0;
+    if(!freecam&&pref.autozoom&&zoom_override>=0){zoom_override=-1;auto_zoom_level=-1;hud_pulse(&hud_navigation,HUD_AUTO_ZOOM,1800);return;}
+    int was=freecam;toggle_freecam();if(was!=freecam)hud_pulse(&hud_navigation,freecam?HUD_EXPLORE:(pref.autozoom?HUD_AUTO_ZOOM:HUD_MANUAL_ZOOM),1800);return;}
+  if(code==K_ENTER){if(freecam){pending_lat=cam_lat;pending_lon=cam_lon;pending_point_stop=trip.active?1:0;modal=MOD_ROUTE_POINT;modal_choice=0;}else hud_pulse(&hud_navigation,route_status==R_READY?HUD_JOURNEY:HUD_HEADING,route_status==R_READY?4200:2300);return;}
+  if(code==K_UP||code==K_DOWN||code==K_LEFT||code==K_RIGHT){int was=freecam;pan_freecam(code);if(!was&&freecam)hud_pulse(&hud_navigation,HUD_EXPLORE,1800);return;}
   if(code==K_ESC||code==K_SR){
     int z=active_zoom(),up=code==K_SR,lo=mapok?(int)mh.minlvl:0;
     int hi=freecam?MAX_EXPLORE_ZOOM:(mapok?(int)mh.maxlvl:6);if(!freecam&&hi>6)hi=6;
@@ -2634,7 +2636,7 @@ if(screen==SCR_MAP){
       else if(pref.autozoom)zoom_override=next;
       else{manual_zoom=next;prefs_mark_dirty();}
     }
-    hud_pulse(&hud_navigation,HUD_ZOOM,1800);return;
+    if(!freecam&&next>=lo&&next<=hi)hud_pulse(&hud_navigation,HUD_MANUAL_ZOOM,1800);return;
   }
   return;}
 if(screen==SCR_MENU){if(code==K_UP&&menu_focus>0)menu_focus--;else if(code==K_DOWN&&menu_focus<2)menu_focus++;else if(code==K_ENTER)screen=menu_focus==0?SCR_TRIP:(menu_focus==1?SCR_BT:SCR_SET);return;}

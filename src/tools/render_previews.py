@@ -11,7 +11,7 @@ import tempfile
 
 from PIL import Image
 from render_gallery import (BLUETOOTH_SAMPLES, MENU_ENTRY_SAMPLES, MENU_RETURN_SAMPLES, PHONE_CALC_SAMPLES, ROUNDABOUT_ETA_SAMPLES,
-                            SPEED_WARNING_SAMPLES, EXPLORE_SAMPLES, TWEEN_STEPS, ROOT, sha)
+                            SPEED_WARNING_SAMPLES, EXPLORE_SAMPLES, TWEEN_STEPS, ZOOM_MODE_SAMPLES, ROOT, sha)
 
 
 def timeline(theme, scenes):
@@ -47,13 +47,7 @@ def previews():
             ('phone-preview-trip', 1750),
         ]),
         'speed-warning.gif': timeline('night', timed_scenes('hud-speed-warning', SPEED_WARNING_SAMPLES, 3650)),
-        'map-browsing.gif': timeline('night', [
-            ('driving', 800),
-            *((f'explore-enter-{i:02}', b-a) for i,(a,b) in enumerate(zip(EXPLORE_SAMPLES,EXPLORE_SAMPLES[1:]))), (f'explore-enter-{len(EXPLORE_SAMPLES)-1:02}', 600),
-            ('preview-explore-pan', 700), ('preview-explore-zoom', 750),
-            *((f'preview-explore-return-{i:02}', b-a) for i,(a,b) in enumerate(zip(EXPLORE_SAMPLES,EXPLORE_SAMPLES[1:]))),
-            (f'preview-explore-return-{len(EXPLORE_SAMPLES)-1:02}', 750),
-        ]),
+        'map-browsing.gif': timeline('night', timed_scenes('preview-zoom-modes', ZOOM_MODE_SAMPLES, 6500)),
         'roundabout-eta.gif': timeline('night', timed_scenes('preview-roundabout-eta', ROUNDABOUT_ETA_SAMPLES, 5600)),
         'add-stop.gif': timeline('night', [
             ('preview-add-stop', 1100), ('preview-add-source', 1200),

@@ -77,7 +77,7 @@ static void remote_tests(void){
  for(int i=0;i<3;i++){screen=SCR_MENU;menu_focus=i;key_handle(K_ENTER);int pages[]={SCR_TRIP,SCR_BT,SCR_SET};assert(screen==pages[i]);key_handle(K_MAP);assert(screen==SCR_MAP&&!freecam);}
  fixture();screen=SCR_MAP;key_handle(K_BACK);assert(bt_control_mode);key_handle(K_RIGHT);command_is(" NEXT");key_handle(K_LEFT);command_is(" PREV");key_handle(K_ENTER);command_is(" PAUSE");key_handle(K_BACK);assert(!bt_control_mode);
  key_handle(K_SR);assert(active_zoom()==5);key_handle(K_ESC);assert(active_zoom()==4);
- pref.autozoom=1;zoom_override=4;key_handle(K_ENTER);assert(zoom_override==-1);
+ pref.autozoom=1;zoom_override=4;key_handle(K_MAP);assert(zoom_override==-1&&!freecam);
  fixture();screen=SCR_TRIP;trip_pane=trip_tab=trip_focus=0;for(int i=0;i<30;i++)key_handle(K_DOWN);assert(trip_focus==24);key_handle(K_ENTER);assert(modal==MOD_RECENT&&modal_index==24);key_handle(K_BACK);key_handle(K_RIGHT);assert(trip_tab==1&&trip_focus==0);key_handle(K_ENTER);assert(modal==MOD_FAVE);key_handle(K_BACK);
  key_handle(K_SR);assert(trip_pane==1);trip_right_focus=2;key_handle(K_ENTER);assert(modal==MOD_SOURCE_PICK);key_handle(K_DOWN);key_handle(K_DOWN);key_handle(K_ENTER);assert(modal==MOD_WAIT_PHONE&&phone_wait_action==DEST_PICK_ADD_STOP);key_handle(K_BACK);assert(modal==MOD_NONE);
  trip_right_focus=3;key_handle(K_ENTER);assert(modal==MOD_CANCEL_ROUTE&&modal_choice==1);key_handle(K_ENTER);assert(trip.active);key_handle(K_ESC);assert(trip_pane==0);
