@@ -47,6 +47,21 @@ results against the executable SHA-256 values and navigation `build.json`.
    wake the remote with a button and confirm control and audio coexist. Repeat
    with a remote button pressed during phone startup. Phone setup has no fixed
    three-second remote wait. Factory Bluetooth/hands-free coexistence is outside this build.
+   Compare the same pill/Explore animation while paused and immediately after
+   starting Bluetooth music. Keep Debug off for the normal comparison, then
+   collect `FRAME 5S` from `state.log` alongside `AUDIO 5S` from `bt.log` with
+   Debug on. Audio summaries report received packets/decoded frames, maintenance
+   passes (normally about 50 per five seconds), the longest packet processing
+   time and PCM underrun/drop deltas. Packet time includes scheduling delays;
+   it is not a CPU-utilisation or temperature reading. These summaries use the
+   existing Debug-only log and stop when Debug is disabled.
+   Verify unchanged sound, camera-tone duck/release, pause/resume, progress,
+   track updates and remembered-phone names. Reconnect and pairing timeouts
+   must follow elapsed time regardless of packet traffic. The receiver now
+   uses exact reciprocal SBC division, bounded byte reads, direct PCM packing
+   when no chime is active, and elapsed-time maintenance/metadata polling.
+   Stereo rate, bitpool capability, ring buffering and audio priority are unchanged.
+   Physical frame-rate gains and thermal behaviour remain unverified.
 5. On a recorded passenger-observed drive: motorway/urban roads, an active route,
    roundabout exits, recalculation, bridge-over-water drawing, day/night changes.
    Measure frame interval and route calculation time; log memory/underrun symptoms.

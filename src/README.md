@@ -213,6 +213,8 @@ Host tests cover the unsplit reference graph versus restricted two- and three-pa
 including a long active via-way restriction,
 an actual Hendaye–Irun France/Spain route, native text, cameras, clock transitions,
 installer rollback, legacy remote screens, water/bridge layering and antialiasing.
+Audio regressions check exact SBC arithmetic, bounded reads, identical PCM and
+maintenance timers independent of Bluetooth packet wakeups.
 Country-scale France/Spain build status is recorded separately; downloaded inputs
 are not evidence of finished builds. Geographic metadata is not a legal boundary
 survey; Auto units retain a manual override. Dateline-spanning/planet extracts and

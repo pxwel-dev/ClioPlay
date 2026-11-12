@@ -1,5 +1,5 @@
 /*
- * CLIOPLAY clioa2dp 1.9 AUTORECONNECT2 EARLYBOOT AUDIOGUARD1 PAIRFIX26 DEBUGGATE - stable A2DP/AVRCP sink with persistent legacy-BlueZ bond storage.
+ * CLIOPLAY clioa2dp 1.9 AUDIOCPU1 AUTORECONNECT2 EARLYBOOT AUDIOGUARD1 PAIRFIX26 DEBUGGATE - stable A2DP/AVRCP sink with persistent legacy-BlueZ bond storage.
  *
  * Target: ARMv4T / ARM7TDMI, freestanding old-Linux ABI, no libc at runtime.
  * Bluetooth control uses the kernel L2CAP socket ABI directly.  SDP publication
@@ -93,6 +93,8 @@ __attribute__((naked)) void __aeabi_uidivmod(void){__asm__ volatile(
   "bx lr\n");}
 #endif
 
+#include "audio_schedule.h"
+
 /* ---------------- SBC decoder (8 subbands, stereo/joint stereo) ----------- */
 #define ASR32(v,b) ((s32)(v)>>(b))
 #define SS8(v) ASR32((s32)(u32)(v),14)
@@ -134,7 +136,29 @@ enum { SBC_MONO=0,SBC_DUAL=1,SBC_STEREO=2,SBC_JOINT=3 };
 struct SbcFrame {int frequency,blocks,mode,channels,allocation,subbands,bitpool;u8 joint;u8 scale[2][8];s32 sb[16][2][8];s16 pcm[2][128];};
 struct SbcState {s32 V[2][170];s16 offset[2][16];int initialized;};
 
-static u32 get_bits(const u8*d,u32 bitpos,int n){u32 v=0;for(int i=0;i<n;i++){v=(v<<1)|((d[bitpos>>3]>>(7-(bitpos&7)))&1u);bitpos++;}return v;}
+/* The decoder requests at most 16 bits. Read only the bytes covered by that
+ * request; callers validate the bit range before entering this hot path. */
+static u32 get_bits(const u8*d,u32 bitpos,int n){
+ if(!n)return 0;
+ u32 byte=bitpos>>3,shift=bitpos&7u,v=(u32)d[byte]<<16;
+ if(shift+(u32)n>8u)v|=(u32)d[byte+1]<<8;
+ if(shift+(u32)n>16u)v|=d[byte+2];
+ return (v>>(24u-shift-(u32)n))&((1u<<n)-1u);
+}
+/* Exact division by 2^bits-1, not an approximate audio calculation. Floor
+ * reciprocal multiplication underestimates the quotient by at most one; the
+ * remainder correction restores the original result over the full u32 range.
+ * ARMv4T has UMULL, avoiding the old 32-iteration division per subband sample. */
+static u32 sbc_levels_divide(u32 n,int bits){
+ static const u32 reciprocal[17]={0,0,
+  0xffffffffu/3u,0xffffffffu/7u,0xffffffffu/15u,0xffffffffu/31u,
+  0xffffffffu/63u,0xffffffffu/127u,0xffffffffu/255u,0xffffffffu/511u,
+  0xffffffffu/1023u,0xffffffffu/2047u,0xffffffffu/4095u,0xffffffffu/8191u,
+  0xffffffffu/16383u,0xffffffffu/32767u,0xffffffffu/65535u};
+ if(bits==1)return n;
+ u32 divisor=(1u<<bits)-1u,q=(u32)(((unsigned long long)n*reciprocal[bits])>>32);
+ return q+(n-q*divisor>=divisor);
+}
 static void sbc_bits(struct SbcFrame*f,int bits[2][8]){
   int bitneed[2][8],maxneed=0,bitcount=0,slicecount=0,bitslice,ch,sb;
   for(ch=0;ch<2;ch++)for(sb=0;sb<8;sb++){
@@ -154,18 +178,24 @@ static int sbc_unpack(const u8*d,u32 len,struct SbcFrame*f){
   u32 consumed=32;f->joint=0;if(f->mode==SBC_JOINT){if(len*8u<consumed+8)return-3;for(int sb=0;sb<7;sb++)if(get_bits(d,consumed+sb,1))f->joint|=(u8)(1u<<sb);consumed+=8;}
   if(len*8u<consumed+64)return-3;for(int ch=0;ch<2;ch++)for(int sb=0;sb<8;sb++){f->scale[ch][sb]=(u8)get_bits(d,consumed,4);consumed+=4;}
   int bits[2][8];sbc_bits(f,bits);
-  for(int blk=0;blk<16;blk++)for(int ch=0;ch<2;ch++)for(int sb=0;sb<8;sb++){int nb=bits[ch][sb];if(!nb){f->sb[blk][ch][sb]=0;continue;}if(consumed+(u32)nb>len*8u)return-3;u32 a=get_bits(d,consumed,nb);consumed+=(u32)nb;u32 levels=(1u<<nb)-1u;u32 num=((a<<1)|1u)<<f->scale[ch][sb];f->sb[blk][ch][sb]=(s32)udiv32(num,levels)-(1<<f->scale[ch][sb]);}
+  for(int blk=0;blk<16;blk++)for(int ch=0;ch<2;ch++)for(int sb=0;sb<8;sb++){int nb=bits[ch][sb];if(!nb){f->sb[blk][ch][sb]=0;continue;}if(consumed+(u32)nb>len*8u)return-3;u32 a=get_bits(d,consumed,nb);consumed+=(u32)nb;u32 num=((a<<1)|1u)<<f->scale[ch][sb];f->sb[blk][ch][sb]=(s32)sbc_levels_divide(num,nb)-(1<<f->scale[ch][sb]);}
   if(f->mode==SBC_JOINT)for(int blk=0;blk<16;blk++)for(int sb=0;sb<8;sb++)if(f->joint&(1u<<sb)){s32 a=f->sb[blk][0][sb],b=f->sb[blk][1][sb];f->sb[blk][0][sb]=a+b;f->sb[blk][1][sb]=a-b;}
   if(consumed&7u)consumed+=8u-(consumed&7u);return (int)(consumed>>3);
 }
 static s16 clip16(s32 v){return v>32767?32767:(v<-32768?-32768:(s16)v);}
-static s32 madd(s32 a,s32 b,s32 r){return (s32)((u32)(a*b)+(u32)r);} /* intentional fixed-point wrap */
+static s32 madd(s32 a,s32 b,s32 r){return (s32)((u32)a*(u32)b+(u32)r);} /* intentional fixed-point wrap */
 static void sbc_state_init(struct SbcState*s){memzero(s,sizeof(*s));for(int ch=0;ch<2;ch++)for(int i=0;i<16;i++)s->offset[ch][i]=(s16)(10*i+10);s->initialized=1;}
 static void sbc_synth8(struct SbcState*s,struct SbcFrame*f,int ch,int blk){
-  s16*off=s->offset[ch];for(int i=0;i<16;i++){off[i]--;if(off[i]<0){off[i]=159;for(int j=0;j<9;j++)s->V[ch][j+160]=s->V[ch][j];}s32 r=synmatrix8[i][7]*f->sb[blk][ch][7];for(int j=6;j>=0;j--)r=madd(synmatrix8[i][j],f->sb[blk][ch][j],r);s->V[ch][off[i]]=SCALE8(r);}
-  for(int i=0,idx=0;i<8;i++,idx+=5){int k=(i+8)&15;s32 r=s->V[ch][off[k]+9]*sbc_proto_8_80m1[idx+4];r=madd(s->V[ch][off[i]+8],sbc_proto_8_80m0[idx+4],r);r=madd(s->V[ch][off[k]+7],sbc_proto_8_80m1[idx+3],r);r=madd(s->V[ch][off[i]+6],sbc_proto_8_80m0[idx+3],r);r=madd(s->V[ch][off[k]+5],sbc_proto_8_80m1[idx+2],r);r=madd(s->V[ch][off[i]+4],sbc_proto_8_80m0[idx+2],r);r=madd(s->V[ch][off[k]+3],sbc_proto_8_80m1[idx+1],r);r=madd(s->V[ch][off[i]+2],sbc_proto_8_80m0[idx+1],r);r=madd(s->V[ch][off[k]+1],sbc_proto_8_80m1[idx],r);r=madd(s->V[ch][off[i]],sbc_proto_8_80m0[idx],r);f->pcm[ch][blk*8+i]=clip16(SCALE8(r));}
+  s16*off=s->offset[ch];for(int i=0;i<16;i++){off[i]--;if(off[i]<0){off[i]=159;for(int j=0;j<9;j++)s->V[ch][j+160]=s->V[ch][j];}s32 r=madd(synmatrix8[i][7],f->sb[blk][ch][7],0);for(int j=6;j>=0;j--)r=madd(synmatrix8[i][j],f->sb[blk][ch][j],r);s->V[ch][off[i]]=SCALE8(r);}
+  for(int i=0,idx=0;i<8;i++,idx+=5){int k=(i+8)&15;s32 r=madd(s->V[ch][off[k]+9],sbc_proto_8_80m1[idx+4],0);r=madd(s->V[ch][off[i]+8],sbc_proto_8_80m0[idx+4],r);r=madd(s->V[ch][off[k]+7],sbc_proto_8_80m1[idx+3],r);r=madd(s->V[ch][off[i]+6],sbc_proto_8_80m0[idx+3],r);r=madd(s->V[ch][off[k]+5],sbc_proto_8_80m1[idx+2],r);r=madd(s->V[ch][off[i]+4],sbc_proto_8_80m0[idx+2],r);r=madd(s->V[ch][off[k]+3],sbc_proto_8_80m1[idx+1],r);r=madd(s->V[ch][off[i]+2],sbc_proto_8_80m0[idx+1],r);r=madd(s->V[ch][off[k]+1],sbc_proto_8_80m1[idx],r);r=madd(s->V[ch][off[i]],sbc_proto_8_80m0[idx],r);f->pcm[ch][blk*8+i]=clip16(SCALE8(r));}
 }
 static int sbc_decode(const u8*d,u32 len,struct SbcState*s,struct SbcFrame*f){int n=sbc_unpack(d,len,f);if(n<0)return n;if(!s->initialized)sbc_state_init(s);for(int ch=0;ch<2;ch++)for(int blk=0;blk<16;blk++)sbc_synth8(s,f,ch,blk);return n;}
+
+/* Normal 44.1 kHz output needs no resampling or inactive-chime mixing. */
+static void sbc_pcm_interleave(u8*out,const struct SbcFrame*f){
+ for(int i=0;i<128;i++){u16 l=(u16)f->pcm[0][i],r=(u16)f->pcm[1][i];
+  out[4*i]=(u8)l;out[4*i+1]=(u8)(l>>8);out[4*i+2]=(u8)r;out[4*i+3]=(u8)(r>>8);}
+}
 
 #ifndef HOST_TEST
 /* -------------------------------------------------------------------------
@@ -238,8 +268,9 @@ static int debug_enabled(void){char b[4]={0};long fd=s_open(DEBUG_STATE_PATH,O_R
 static void bt_log_append(const char*s){if(debug_enabled())file_append(BT_EVENT_LOG_PATH,s);}
 static void status_set(const char*s){if(streq(status_last,s))return;copystr(status_last,sizeof(status_last),s);file_write(BT_STATUS_PATH,s);meta_dirty=1;}
 static int source_enabled(void){char b[4]={0};long fd=s_open(BT_ACTIVE_PATH,O_RDONLY_,0);if(fd<0)return 0;long n=s_read((int)fd,b,3);s_close((int)fd);return n>0&&b[0]=='1';}
-/* Refresh once per daemon iteration, never once per decoded SBC frame. */
+/* Refresh on the 100 ms maintenance clock, never once per media packet. */
 static int source_active=0;
+static int audio_profile_on=0;static u32 audio_maintenance_runs=0,audio_packet_max_ms=0;
 static void meta_text(char*d,u32 cap,const u8*s,u32 n){u32 at=0,out=0;while(at<n&&out+1<cap){unsigned c=s[at],bytes=c<128?1:c>=0xc2&&c<=0xdf?2:c>=0xe0&&c<=0xef?3:c>=0xf0&&c<=0xf4?4:0;if(!bytes||bytes>n-at){at++;continue;}char tmp[5];for(unsigned i=0;i<bytes;i++)tmp[i]=(char)s[at+i];tmp[bytes]=0;if(!utf8_span(tmp)){at++;continue;}if(c<32||c==127){at+=bytes;continue;}if(out+bytes>=cap)break;for(unsigned i=0;i<bytes;i++)d[out++]=(char)s[at++];}d[out]=0;}
 static void meta_clear_track(void){meta_title[0]=meta_artist[0]=meta_album[0]=0;meta_pos=meta_dur=0;meta_playing=0;meta_dirty=1;}
 /* Mobile browsers can briefly expose the PWA/document title as AVRCP metadata
@@ -298,9 +329,20 @@ static void bond_capture(const u8*p){/* HCI Link Key Notification payload: addr6
  * meta_device is intentionally retained across an ordinary disconnect, so it
  * is also a safe recovery source for the currently selected remembered peer. */
 static void remember_live_name(void){if(live_peer_valid&&!name_is_unknown(meta_device))device_name_store(live_peer,meta_device);}
+static int device_list_known=0,device_list_connected=0,device_list_live=0,device_list_saved=0;
+static u8 device_list_live_addr[6],device_list_saved_addr[6];static char device_list_name[33];
 static void device_list_write(void){u8 r[MAX_BONDS][BOND_REC_SIZE];int c=bond_read(r);char b[1280];b[0]=0;append_str(b,sizeof(b),"COUNT=");append_uint(b,sizeof(b),(u32)c);append_char(b,sizeof(b),'\n');for(int i=0;i<c;i++){char a[18],n[33];int live=(meta_connected&&live_peer_valid&&addr_eq(r[i],live_peer));int saved=(saved_peer_valid&&addr_eq(r[i],saved_peer));addr_text(r[i],a);if(!device_name_find(r[i],n,sizeof(n)))copystr(n,sizeof(n),"UNKNOWN DEVICE");/* A resolved device name can outlive the transport connection.  Recover it
  * for either the live peer or the currently remembered peer, and immediately
- * write it back so subsequent boots no longer depend on transient metadata. */if((live||saved)&&name_is_unknown(n)&&!name_is_unknown(meta_device)){copystr(n,sizeof(n),meta_device);device_name_store(r[i],n);}append_str(b,sizeof(b),"DEV=");append_str(b,sizeof(b),a);append_char(b,sizeof(b),'|');append_char(b,sizeof(b),live?'1':'0');append_char(b,sizeof(b),'|');append_str(b,sizeof(b),n);append_char(b,sizeof(b),'\n');}file_write(BT_DEVLIST_PATH,b);}
+ * write it back so subsequent boots no longer depend on transient metadata. */if((live||saved)&&name_is_unknown(n)&&!name_is_unknown(meta_device)){copystr(n,sizeof(n),meta_device);device_name_store(r[i],n);}append_str(b,sizeof(b),"DEV=");append_str(b,sizeof(b),a);append_char(b,sizeof(b),'|');append_char(b,sizeof(b),live?'1':'0');append_char(b,sizeof(b),'|');append_str(b,sizeof(b),n);append_char(b,sizeof(b),'\n');}file_write(BT_DEVLIST_PATH,b);
+ device_list_connected=meta_connected;device_list_live=live_peer_valid;device_list_saved=saved_peer_valid;
+ memcopy(device_list_live_addr,live_peer,6);memcopy(device_list_saved_addr,saved_peer,6);
+ copystr(device_list_name,sizeof(device_list_name),meta_device);device_list_known=1;
+}
+static void device_list_service(void){
+ if(!device_list_known||device_list_connected!=meta_connected||device_list_live!=live_peer_valid||
+    device_list_saved!=saved_peer_valid||!addr_eq(device_list_live_addr,live_peer)||
+    !addr_eq(device_list_saved_addr,saved_peer)||!streq(device_list_name,meta_device))device_list_write();
+}
 static void hci_remote_name_request(const u8 addr[6]){if(hcifd<0||!addr)return;u8 b[14];memzero(b,sizeof(b));b[0]=0x01;b[1]=0x19;b[2]=0x04;b[3]=10;memcopy(b+4,addr,6);b[10]=0x02;long n=s_write(hcifd,b,sizeof(b));hci_log(n==(long)sizeof(b)?"HCI REMOTE NAME REQUEST":"HCI REMOTE NAME REQUEST FAIL",addr,n==(long)sizeof(b)?-1:1);}
 static void remote_name_store(const u8 addr[6],const u8*src,u32 n){char d[33],known[33];u32 j=0;for(u32 i=0;i<n&&j+1<sizeof(d);i++){u8 c=src[i];if(!c)break;if(c>=32&&c<127&&c!='|')d[j++]=(char)c;else if(c>=128){if(!j||d[j-1]!=' ')d[j++]=' ';}}while(j&&d[j-1]==' ')j--;d[j]=0;int target=(live_peer_valid&&addr_eq(addr,live_peer))||(saved_peer_valid&&addr_eq(addr,saved_peer));if(name_is_unknown(d)){/* A transient/blank Remote Name result is not new identity information. Preserve the last resolved name instead of exposing UNKNOWN DEVICE. */if(device_name_find(addr,known,sizeof(known))&&!name_is_unknown(known))copystr(d,sizeof(d),known);else if(target&&!name_is_unknown(meta_device))copystr(d,sizeof(d),meta_device);else copystr(d,sizeof(d),"PHONE");}else device_name_store(addr,d);if(target&&!name_is_unknown(d))copystr(meta_device,sizeof(meta_device),d);meta_dirty=1;device_list_write();char l[96];l[0]=0;append_str(l,sizeof(l),"PHONE NAME ");append_str(l,sizeof(l),d);append_char(l,sizeof(l),'\n');bt_log_append(l);}
 static void hci_request(const char*verb,const u8*a){char b[64];b[0]=0;append_str(b,sizeof(b),verb);if(a){char t[18];addr_text(a,t);append_char(b,sizeof(b),' ');append_str(b,sizeof(b),t);}append_char(b,sizeof(b),'\n');file_write(BT_HCI_PATH,b);}
@@ -457,7 +499,7 @@ static int reconnect_wait_ticks=-1;
  * established early while PCM output stays closed until the UI selects CD/BT or the no-radio-data fallback. */
 enum {AUTO_WAIT_READY=0,AUTO_SETTLE=1,AUTO_CONNECTING=2,AUTO_RETRY_WAIT=3,AUTO_DONE=4};
 static int auto_boot_state=AUTO_WAIT_READY,auto_attempts=0,auto_acl_fallback=0;
-static u32 auto_next_tick=0,auto_started_tick=0;
+static u32 auto_next_tick=10,auto_started_tick=0;
 static int avr_sdpfd=-1;
 static u32 avrcp_sdp_retry_at=0;
 static int avrcp_listen_warned=0;
@@ -544,13 +586,13 @@ static struct SbcState decst;static struct SbcFrame decfr;static u8 pcm_out[512]
 static const u8 SBC_CAP0=0x23;
 static const u8 SBC_CAP1=0x15; /* 16 blocks + 8 subbands + loudness */
 static u8 sbc_sel0=0x22,sbc_sel1=0x15,sbc_sel_min=2,sbc_sel_max=53;
-static u32 media_packets=0,media_bytes=0,media_frames=0,media_decode_errors=0;
+static u32 media_packets=0,media_bytes=0,media_frames=0,media_decode_errors=0,media_epoch=0;
 struct AvSbcCfg{u8 c0,c1,mn,mx;int found;};
 static const char*av_sig_name(int sig){switch(sig){case 1:return"DISCOVER";case 2:return"GET_CAPABILITIES";case 3:return"SET_CONFIGURATION";case 4:return"GET_CONFIGURATION";case 5:return"RECONFIGURE";case 6:return"OPEN";case 7:return"START";case 8:return"CLOSE";case 9:return"SUSPEND";case 10:return"ABORT";case 11:return"SECURITY_CONTROL";case 12:return"GET_ALL_CAPABILITIES";case 13:return"DELAY_REPORT";default:return"UNKNOWN";}}
 static void av_log_msg(const char*dir,int sig,int tl,int n){char b[128];b[0]=0;append_str(b,sizeof(b),"AVDTP ");append_str(b,sizeof(b),dir);append_char(b,sizeof(b),' ');append_str(b,sizeof(b),av_sig_name(sig));append_str(b,sizeof(b)," TL=");append_uint(b,sizeof(b),(u32)tl);append_str(b,sizeof(b)," LEN=");append_uint(b,sizeof(b),(u32)(n<0?0:n));append_str(b,sizeof(b)," STATE=");append_str(b,sizeof(b),av_started?"STREAMING":(av_opened?"OPEN":(cfg_ok?"CONFIGURED":"IDLE")));append_char(b,sizeof(b),'\n');bt_log_append(b);}
 static void av_log_reject(int sig,int err){char b[112];b[0]=0;append_str(b,sizeof(b),"AVDTP TX REJECT ");append_str(b,sizeof(b),av_sig_name(sig));append_str(b,sizeof(b)," ERR=0x");append_hex8(b,sizeof(b),(u8)err);append_char(b,sizeof(b),'\n');bt_log_append(b);}
 static void av_log_sbc(const char*tag,const struct AvSbcCfg*c){char b[144];b[0]=0;append_str(b,sizeof(b),tag);append_str(b,sizeof(b)," C0=0x");append_hex8(b,sizeof(b),c->c0);append_str(b,sizeof(b)," C1=0x");append_hex8(b,sizeof(b),c->c1);append_str(b,sizeof(b)," MODE=");append_str(b,sizeof(b),(c->c0&1)?"JOINT":((c->c0&2)?"STEREO":"OTHER"));append_str(b,sizeof(b)," MIN=");append_uint(b,sizeof(b),c->mn);append_str(b,sizeof(b)," MAX=");append_uint(b,sizeof(b),c->mx);append_char(b,sizeof(b),'\n');bt_log_append(b);}
-static void av_log_media(void){char b[144];b[0]=0;append_str(b,sizeof(b),"SBC MEDIA RX PACKETS=");append_uint(b,sizeof(b),media_packets);append_str(b,sizeof(b)," BYTES=");append_uint(b,sizeof(b),media_bytes);append_str(b,sizeof(b)," FRAMES=");append_uint(b,sizeof(b),media_frames);append_str(b,sizeof(b)," DECODE_ERR=");append_uint(b,sizeof(b),media_decode_errors);append_str(b,sizeof(b)," SOURCE=");append_char(b,sizeof(b),source_active?'1':'0');append_char(b,sizeof(b),'\n');bt_log_append(b);}
+static void av_log_media(void){if(!audio_profile_on)return;char b[144];b[0]=0;append_str(b,sizeof(b),"SBC MEDIA RX PACKETS=");append_uint(b,sizeof(b),media_packets);append_str(b,sizeof(b)," BYTES=");append_uint(b,sizeof(b),media_bytes);append_str(b,sizeof(b)," FRAMES=");append_uint(b,sizeof(b),media_frames);append_str(b,sizeof(b)," DECODE_ERR=");append_uint(b,sizeof(b),media_decode_errors);append_str(b,sizeof(b)," SOURCE=");append_char(b,sizeof(b),source_active?'1':'0');append_char(b,sizeof(b),'\n');bt_log_append(b);}
 static int av_send(int fd,const u8*req,u8 sig,const u8*payload,int plen,int accept){u8 b[40];if(plen>38)return 0;b[0]=(req[0]&0xf0)|(accept?2:3);b[1]=sig&0x3f;for(int i=0;i<plen;i++)b[2+i]=payload[i];return s_write(fd,b,(u32)(2+plen))==2+plen;}
 static void av_caps(u8 p[10]){p[0]=1;p[1]=0;/* Media Transport */p[2]=7;p[3]=6;p[4]=0;p[5]=0;/* audio/SBC */p[6]=SBC_CAP0;p[7]=SBC_CAP1;p[8]=2;p[9]=53;}
 static void av_selected(u8 p[10]){p[0]=1;p[1]=0;p[2]=7;p[3]=6;p[4]=0;p[5]=0;p[6]=sbc_sel0;p[7]=sbc_sel1;p[8]=sbc_sel_min;p[9]=sbc_sel_max;}
@@ -558,7 +600,7 @@ static int av_parse_sbc(const u8*b,int n,int start,struct AvSbcCfg*out){memzero(
 static int av_sbc_supported(const struct AvSbcCfg*c){if(!c->found)return 0;if(c->c0!=0x21&&c->c0!=0x22)return 0;if(c->c1!=SBC_CAP1)return 0;if(c->mn<2||c->mn>53||c->mx<c->mn||c->mx>53)return 0;return 1;}
 static int av_seid_is_ours(const u8*b,int n){return n>=3&&((b[2]>>2)&0x3f)==1;}
 static void av_store_cfg(const struct AvSbcCfg*c){sbc_sel0=c->c0;sbc_sel1=c->c1;sbc_sel_min=c->mn;sbc_sel_max=c->mx;cfg_ok=1;av_opened=av_started=0;}
-static void av_reset_stream(void){cfg_ok=av_opened=av_started=0;sbc_sel0=0x22;sbc_sel1=0x15;sbc_sel_min=2;sbc_sel_max=53;media_packets=media_bytes=media_frames=media_decode_errors=0;memzero(&decst,sizeof(decst));}
+static void av_reset_stream(void){media_epoch++;cfg_ok=av_opened=av_started=0;sbc_sel0=0x22;sbc_sel1=0x15;sbc_sel_min=2;sbc_sel_max=53;media_packets=media_bytes=media_frames=media_decode_errors=0;memzero(&decst,sizeof(decst));}
 static int av_signal(int fd,const u8*b,int n){if(n<2)return 1;int tl=(b[0]>>4)&15,ptype=(b[0]>>2)&3,msg=b[0]&3,sig=b[1]&0x3f;if(ptype!=0){hci_log("AVDTP FRAGMENT UNSUPPORTED",live_peer_valid?live_peer:0,ptype);return 1;}if(msg!=0){/* We are an acceptor for A2DP; ignore peer responses to commands we never originate. */return 1;}u8 p[16];av_log_msg("RX",sig,tl,n);
   if(sig==1){p[0]=1u<<2;p[1]=1u<<3;av_send(fd,b,sig,p,2,1);av_log_msg("TX ACCEPT",sig,tl,4);return 1;} /* SEID 1, Sink */
   if(sig==2||sig==12){if(!av_seid_is_ours(b,n)){p[0]=0x11;av_send(fd,b,sig,p,1,0);av_log_reject(sig,0x11);return 1;}av_caps(p);av_send(fd,b,sig,p,10,1);av_log_msg("TX ACCEPT CAPS",sig,tl,12);return 1;}
@@ -589,8 +631,12 @@ static void alert_service(void){u32 now=alert_now_ms(),msg[4];long f=s_open(CAME
   for(int i=0;i<128;i++){int gain,tone=chime_sample(&camera_chime,&gain);s16 v=(s16)tone;pcm_out[4*i]=(u8)v;pcm_out[4*i+1]=(u8)((u16)v>>8);pcm_out[4*i+2]=(u8)v;pcm_out[4*i+3]=(u8)((u16)v>>8);}if(!snd_push(pcm_out,512))break;
  }
 }
-static void pcm_pack(void){int q=0,d=snd_div;if(d<1)d=1;for(int i=0;i<128;i+=d){s32 l=0,r=0;for(int j=0;j<d;j++){l+=decfr.pcm[0][i+j];r+=decfr.pcm[1][i+j];}if(d==2){l>>=1;r>>=1;}else if(d==4){l>>=2;r>>=2;}int gain,tone=chime_sample(&camera_chime,&gain);s16 ls=(s16)chime_mix(l,gain,tone),rs=(s16)chime_mix(r,gain,tone);pcm_out[q++]=(u8)ls;pcm_out[q++]=(u8)((u16)ls>>8);pcm_out[q++]=(u8)rs;pcm_out[q++]=(u8)((u16)rs>>8);}if(!snd_push(pcm_out,(u32)q))status_set("BT BUFFERING");else status_set(snd_started?"BT STREAMING":"BT BUFFERING");}
-static void media_packet(const u8*b,int n){if(!av_started||n<14)return;alert_last_media=alert_now_ms();if(source_active&&snd_started)snd_sample_playback();media_packets++;media_bytes+=(u32)n;int cc=b[0]&15,off=12+4*cc;if(b[0]&0x10){if(off+4>n){media_decode_errors++;return;}int ext=((int)b[off+2]<<8)|b[off+3];off+=4+ext*4;}if(off>=n){media_decode_errors++;return;}u8 ph=b[off++];if(ph&0xe0){media_decode_errors++;return;}int frames=ph&15;if(frames<1){media_decode_errors++;return;}int decoded=0;for(int k=0;k<frames&&off<n;k++){int used=sbc_decode(b+off,(u32)(n-off),&decst,&decfr);if(used<=0){media_decode_errors++;break;}off+=used;decoded++;media_frames++;if(!source_active)continue;if(sndfd<0&&!snd_open())return;pcm_pack();}if(media_packets==1||media_packets==10||(media_packets%100u)==0||decoded!=frames)av_log_media();}
+static void pcm_pack(void){int q=0,d=snd_div;
+ if(d==1&&!chime_active(&camera_chime)){
+  sbc_pcm_interleave(pcm_out,&decfr);
+  q=512;
+ }else{if(d<1)d=1;for(int i=0;i<128;i+=d){s32 l=0,r=0;for(int j=0;j<d;j++){l+=decfr.pcm[0][i+j];r+=decfr.pcm[1][i+j];}if(d==2){l>>=1;r>>=1;}else if(d==4){l>>=2;r>>=2;}int gain,tone=chime_sample(&camera_chime,&gain);s16 ls=(s16)chime_mix(l,gain,tone),rs=(s16)chime_mix(r,gain,tone);pcm_out[q++]=(u8)ls;pcm_out[q++]=(u8)((u16)ls>>8);pcm_out[q++]=(u8)rs;pcm_out[q++]=(u8)((u16)rs>>8);}}if(!snd_push(pcm_out,(u32)q))status_set("BT BUFFERING");else status_set(snd_started?"BT STREAMING":"BT BUFFERING");}
+static void media_packet(const u8*b,int n){if(!av_started||n<14)return;alert_last_media=alert_now_ms();if(source_active&&snd_started)snd_sample_playback();media_packets++;media_bytes+=(u32)n;int cc=b[0]&15,off=12+4*cc;if(b[0]&0x10){if(off+4>n){media_decode_errors++;return;}int ext=((int)b[off+2]<<8)|b[off+3];off+=4+ext*4;}if(off>=n){media_decode_errors++;return;}u8 ph=b[off++];if(ph&0xe0){media_decode_errors++;return;}int frames=ph&15;if(frames<1){media_decode_errors++;return;}int decoded=0;for(int k=0;k<frames&&off<n;k++){int used=sbc_decode(b+off,(u32)(n-off),&decst,&decfr);if(used<=0){media_decode_errors++;break;}off+=used;decoded++;media_frames++;if(!source_active)continue;if(sndfd<0&&!snd_open())return;pcm_pack();}if(audio_profile_on){u32 elapsed=alert_now_ms()-alert_last_media;if(elapsed>audio_packet_max_ms)audio_packet_max_ms=elapsed;}if(media_packets==1||media_packets==10||(media_packets%100u)==0||decoded!=frames)av_log_media();}
 
 /* ---------------- AVRCP Controller: metadata + 4 transport commands ----- */
 static int avrcpfd=-1,avrcp_state=0;/*0 none,1 connecting,2 ready*/static u8 avrcp_tl=0;static u32 avrcp_retry_at=0;
@@ -649,7 +695,9 @@ static void auto_boot_service(u32 tick){
   }
   if(auto_boot_state==AUTO_WAIT_READY){
     if(tick>=600u){hci_log("AUTO RECONNECT BOOT READINESS TIMEOUT",0,-1);auto_boot_cancel();return;}
-    if((tick%10u)!=0u)return; /* SD-free, low-frequency startup check. */
+    /* A busy receiver can skip maintenance ticks. A deadline must not depend
+     * on landing on an exact multiple of ten. */
+    if(tick<auto_next_tick)return;auto_next_tick=tick+10u;
     /* Bluetooth readiness is the only boot barrier.  GPS and the framebuffer UI
      * start independently and must never delay restoration of the last phone. */
     if(hcifd<0||listenfd<0||ctrllistenfd<0||avr_sdpfd<0||!local_bdaddr_valid||
@@ -692,14 +740,40 @@ static void accept_avdtp(void){u8 peer[6];int c=bt_accept_peer(listenfd,peer);if
 }
 static void accept_avrcp(void){u8 peer[6];int c=bt_accept_peer(ctrllistenfd,peer);if(c<0)return;if(manual_block){s_close(c);return;}int known=bond_find(peer,0,0);int ok=(live_peer_valid&&addr_eq(peer,live_peer))||(!live_peer_valid&&((saved_peer_valid&&addr_eq(peer,saved_peer))||known));if(!ok){s_close(c);return;}if(!live_peer_valid){memcopy(live_peer,peer,6);live_peer_valid=1;peer_save(peer);meta_connected=1;meta_dirty=1;}hci_remote_name_request(peer);if(avrcpfd>=0)s_close(avrcpfd);avrcpfd=c;s_fcntl(avrcpfd,F_SETFL,O_NONBLOCK_);avrcp_state=2;avrcp_retry_at=0;hci_log("AVRCP ACCEPTED",peer,-1);reconnect_profile_ready(peer);}
 
-static void serve(void){long prio=s_audio_priority();peer_load();local_bdaddr_load();meta_write();status_set("BT WAIT PHONE");hcifd=hci_raw_open();if(hcifd<0)hci_log("HCI MONITOR OPEN FAIL",0,-1);if(saved_peer_valid)bond_restore_hcid(saved_peer);device_list_write();hci_log("AVRCP SDP+MULTI-DEVICE KEYVAULT+PIN0000 AUDIOGUARD1 AUTORECONNECT2-EARLYBOOT",0,-1);hci_log(prio<0?"AUDIO PRIORITY REQUEST DENIED (NORMAL SCHEDULING)":"AUDIO PRIORITY -4 SET",0,-1);u32 tick=0;for(;;){
+static void audio_profile_service(u32 now){
+ static struct AudioPeriodic window;static u32 packets,frames,maintenance,underruns,drops,epoch;
+ int enabled=debug_enabled();
+ if(!enabled){audio_profile_on=0;window.initialized=0;audio_packet_max_ms=0;return;}
+ if(!audio_profile_on||epoch!=media_epoch){epoch=media_epoch;audio_profile_on=1;audio_packet_max_ms=0;window.at=now;window.initialized=1;
+  packets=media_packets;frames=media_frames;maintenance=audio_maintenance_runs;underruns=snd_underruns;drops=snd_pcm_drops;return;}
+ if(!audio_periodic(&window,now,5000u))return;
+ char b[224]="AUDIO 5S PACKETS=";append_uint(b,sizeof(b),media_packets-packets);
+ append_str(b,sizeof(b)," FRAMES=");append_uint(b,sizeof(b),media_frames-frames);
+ append_str(b,sizeof(b)," MAINT=");append_uint(b,sizeof(b),audio_maintenance_runs-maintenance);
+ append_str(b,sizeof(b)," MAX_PACKET_MS=");append_uint(b,sizeof(b),audio_packet_max_ms);
+ append_str(b,sizeof(b)," UNDERRUNS=");append_uint(b,sizeof(b),snd_underruns-underruns);
+ append_str(b,sizeof(b)," DROPS=");append_uint(b,sizeof(b),snd_pcm_drops-drops);append_char(b,sizeof(b),'\n');bt_log_append(b);
+ packets=media_packets;frames=media_frames;maintenance=audio_maintenance_runs;underruns=snd_underruns;drops=snd_pcm_drops;audio_packet_max_ms=0;
+}
+static void serve(void){long prio=s_audio_priority();peer_load();local_bdaddr_load();meta_write();status_set("BT WAIT PHONE");hcifd=hci_raw_open();if(hcifd<0)hci_log("HCI MONITOR OPEN FAIL",0,-1);if(saved_peer_valid)bond_restore_hcid(saved_peer);device_list_write();hci_log("AVRCP SDP+MULTI-DEVICE KEYVAULT+PIN0000 AUDIOGUARD1 AUTORECONNECT2-EARLYBOOT",0,-1);hci_log(prio<0?"AUDIO PRIORITY REQUEST DENIED (NORMAL SCHEDULING)":"AUDIO PRIORITY -4 SET",0,-1);u32 tick=0;struct AudioPeriodic maintenance={0},status_poll={0},metadata_poll={0};for(;;){
+    u32 now=alert_now_ms(),steps=audio_periodic(&maintenance,now,100u);
+    if(steps){
+    tick+=steps;audio_maintenance_runs++;
+    audio_profile_service(now);
     if(listenfd<0){listenfd=make_listener_psm(PSM_AVDTP);if(listenfd<0){status_set("BT L2CAP ERR");s_nanosleep(1,0);continue;}}
     if(ctrllistenfd<0){ctrllistenfd=make_listener_psm(PSM_AVRCP);if(ctrllistenfd>=0){hci_log("AVRCP LISTEN PSM17 READY",0,-1);avrcp_listen_warned=0;}else if(!avrcp_listen_warned){hci_log("AVRCP LISTEN PSM17 FAIL",0,-1);avrcp_listen_warned=1;}}
     if(ctrllistenfd>=0&&avr_sdpfd<0&&tick>=avrcp_sdp_retry_at){if(!avrcp_sdp_register())avrcp_sdp_retry_at=tick+50;}
+    /* Charge elapsed time only to timers that already existed. A command or
+     * boot reconnect started below must receive its full new timeout even
+     * after a long scheduling stall. */
+    reconnect_profile_ticks=audio_countdown(reconnect_profile_ticks,steps);
+    reconnect_wait_ticks=audio_countdown(reconnect_wait_ticks,steps);
+    avrcp_delay_ticks=audio_countdown(avrcp_delay_ticks,steps);
+    if(hci_pair_ticks>0){hci_pair_ticks=audio_countdown(hci_pair_ticks,steps);if(hci_pair_ticks==0&&hci_pair_armed){hci_pair_armed=0;hci_log("HCI PAIR/RECONNECT WINDOW EXPIRED",0,-1);pairing_policy_finish();}}
     process_command();
     auto_boot_service(tick);
-    if(reconnect_profile_ticks>0)reconnect_profile_ticks--;else if(reconnect_profile_ticks==0&&!manual_block&&saved_peer_valid&&!meta_connected){avrcp_open(tick);if(avrcp_state==2){reconnect_profile_ticks=-1;}else if(avrcp_state==1){reconnect_profile_ticks=-1;hci_log("AVRCP RECONNECT PROFILE PENDING",saved_peer,-1);}else reconnect_profile_ticks=20;}
-    if(reconnect_wait_ticks>0)reconnect_wait_ticks--;else if(reconnect_wait_ticks==0&&!meta_connected){
+    if(reconnect_profile_ticks==0&&!manual_block&&saved_peer_valid&&!meta_connected){avrcp_open(tick);if(avrcp_state==2){reconnect_profile_ticks=-1;}else if(avrcp_state==1){reconnect_profile_ticks=-1;hci_log("AVRCP RECONNECT PROFILE PENDING",saved_peer,-1);}else reconnect_profile_ticks=20;}
+    if(reconnect_wait_ticks==0&&!meta_connected){
       reconnect_wait_ticks=-1;reconnect_profile_ticks=-1;
       if(auto_boot_state==AUTO_CONNECTING){
         avrcp_close();
@@ -709,20 +783,26 @@ static void serve(void){long prio=s_audio_priority();peer_load();local_bdaddr_lo
         status_set("BT WAIT PHONE");
       }else{status_set("BT REPAIR REQUIRED");hci_log("PHONE RECONNECT PROFILE TIMEOUT REPAIR REQUIRED",saved_peer_valid?saved_peer:0,-1);}
     }
-    if(avrcp_delay_ticks>0)avrcp_delay_ticks--;else if(avrcp_delay_ticks==0&&meta_connected&&!manual_block){avrcp_open(tick);if(avrcp_state)avrcp_delay_ticks=-1;}
+    if(avrcp_delay_ticks==0&&meta_connected&&!manual_block){avrcp_open(tick);if(avrcp_state)avrcp_delay_ticks=-1;}
     else if(avrcp_delay_ticks<0&&meta_connected&&avrcp_state==0&&av_started&&!manual_block&&tick>=avrcp_retry_at)avrcp_open(tick);
+    int en=source_enabled();source_active=en;if(!en&&sndfd>=0)snd_close();if(av_started){if(!en)status_set("BT CONNECTED");else status_set(snd_started?"BT STREAMING":"BT BUFFERING");}
+    alert_service();
+    if(meta_connected&&avrcp_state==2){
+      if(audio_periodic(&status_poll,now,1000u))avrcp_get_status();
+      if(audio_periodic(&metadata_poll,now,3000u))avrcp_get_meta();
+    }else{status_poll.initialized=metadata_poll.initialized=0;}
+    if(meta_dirty)meta_write();
+    device_list_service();
+    }
     struct pollfd0 pf[6];int np=0,ih=-1,il=-1,ir=-1,is=-1,im=-1,ic=-1;
     if(hcifd>=0){ih=np;pf[np].fd=hcifd;pf[np].events=POLLIN;pf[np].revents=0;np++;}
     il=np;pf[np].fd=listenfd;pf[np].events=POLLIN;pf[np].revents=0;np++;if(ctrllistenfd>=0){ir=np;pf[np].fd=ctrllistenfd;pf[np].events=POLLIN;pf[np].revents=0;np++;}
     if(sigfd>=0){is=np;pf[np].fd=sigfd;pf[np].events=POLLIN;pf[np].revents=0;np++;}
     if(mediafd>=0){im=np;pf[np].fd=mediafd;pf[np].events=POLLIN;pf[np].revents=0;np++;}
     if(avrcpfd>=0){ic=np;pf[np].fd=avrcpfd;pf[np].events=POLLIN|(avrcp_state==1?POLLOUT:0);pf[np].revents=0;np++;}
-    long pr=s_poll(pf,(u32)np,100);tick++;
-    if(hci_pair_ticks>0){hci_pair_ticks--;if(hci_pair_ticks==0&&hci_pair_armed){hci_pair_armed=0;hci_log("HCI PAIR/RECONNECT WINDOW EXPIRED",0,-1);pairing_policy_finish();}}
-    int en=source_enabled();source_active=en;if(!en&&sndfd>=0)snd_close();if(av_started){if(!en)status_set("BT CONNECTED");else status_set(snd_started?"BT STREAMING":"BT BUFFERING");}
-    alert_service();
-    if(meta_connected&&avrcp_state==2){if((tick%10u)==0)avrcp_get_status();if((tick%30u)==1)avrcp_get_meta();}
-    if(meta_dirty||(tick%10u)==0){meta_write();device_list_write();}
+    /* A media packet may wake poll every few milliseconds. Only socket work
+     * runs at that rate; maintenance remains on its 100 ms wall-clock schedule. */
+    long pr=s_poll(pf,(u32)np,audio_periodic_wait(&maintenance,alert_now_ms(),100u));
     if(pr<0){hci_log("POLL ERROR",0,(int)(-pr));s_nanosleep(0,50000000);continue;}if(pr==0)continue;
     if(ih>=0&&(pf[ih].revents&POLLIN))hci_event_service();
     if(il>=0&&(pf[il].revents&POLLIN))accept_avdtp();if(ir>=0&&ctrllistenfd>=0&&(pf[ir].revents&POLLIN))accept_avrcp();
