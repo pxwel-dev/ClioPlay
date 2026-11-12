@@ -133,6 +133,10 @@ that notice nor extend it. Leaving Explore shows **Auto zoom**, or **Manual zoom
 when Auto zoom is disabled in Settings. These mode notices share the usual glass
 styling, transitions and temporary display time.
 
+Confirming a point selected in Explore returns directly to the driving map with
+the reverse rotation/tilt animation. The time/temperature pill remains visible;
+calculation uses the existing five-frame-per-second cap. Declining keeps Explore.
+
 ### Menu, Trip and Bluetooth
 
 - **Menu:** use **Up / Down** to choose Trip, Bluetooth or Settings. Press **OK**

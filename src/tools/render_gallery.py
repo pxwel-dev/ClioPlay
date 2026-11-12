@@ -548,6 +548,8 @@ static void coordinate_route_start(void){
 }
 static void map_point_preview(const char*stage){
  clear_trip();gps.mph10=0;screen=SCR_MAP;hud_navigation.kind=HUD_NONE;
+ settle(); /* Seed the persistent clock before any Explore/route transition. */
+ u32 clock_at=hud_tween[HC_CLOCK].position_at;
  if(streq(stage,"driving"))return;
  key_handle(K_MAP);explore_sample(500);
  for(int i=0;i<4;i++)key_handle(K_LEFT);for(int i=0;i<2;i++)key_handle(K_UP);
@@ -555,8 +557,10 @@ static void map_point_preview(const char*stage){
  s32 lat=cam_lat,lon=cam_lon;key_handle(K_ENTER);
  assert(modal==MOD_ROUTE_POINT&&pending_lat==lat&&pending_lon==lon&&!pending_point_stop);
  if(streq(stage,"confirm"))return;
- key_handle(K_ENTER);assert(screen==SCR_TRIP&&trip.active&&trip.target[0].lat==lat&&trip.target[0].lon==lon);
- key_handle(K_MAP);trip_service();trip_service();assert(screen==SCR_MAP&&!freecam&&route_status==R_CALC);
+ key_handle(K_ENTER);assert(screen==SCR_MAP&&trip.active&&trip.target[0].lat==lat&&trip.target[0].lon==lon);
+ assert(!freecam&&freecam_transition_active()&&map_tilt_q8==0);
+ assert(hud_tween[HC_CLOCK].position_at==clock_at&&hud_pose(&hud_tween[HC_CLOCK],hud_now_ms()).a==256);
+ trip_service();trip_service();assert(screen==SCR_MAP&&!freecam&&route_status==R_CALC);
 }
 static void three_stops(void){trip.count=4;trip.active_idx=0;for(int i=0;i<3;i++){trip.target[i].lat=5497300+i*100;trip.target[i].lon=-161300-i*100;snprintf(trip.target[i].name,sizeof(trip.target[i].name),"Stop %d",i+1);}trip.target[3]=trip.target[0];copystr(trip.target[3].name,sizeof(trip.target[3].name),"Home");}
 static void four_stops(void){three_stops();trip.count=5;trip.target[4]=trip.target[3];copystr(trip.target[3].name,sizeof(trip.target[3].name),"Stop 4");}

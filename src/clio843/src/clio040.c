@@ -820,9 +820,11 @@ static int map_course(void){if(display_course_valid)return display_course;return
 #define FC_ANIM_TO_CAR 2
 static int freecam=0,freecam_zoom=5,auto_zoom_level=-1,zoom_override=-1;static s32 cam_lat=0,cam_lon=0;
 /* Camera interpolation has its own elapsed-time clock, independent of map
- * and HUD frame counts. Input cannot reverse an unfinished transition. */
+ * and HUD frame counts. MAP toggles are guarded; confirming a selected point
+ * may reverse an unfinished entry from its current pose. */
 static int freecam_course=0,freecam_course_valid=0,freecam_anim_mode=FC_ANIM_NONE,freecam_anim_from=0;
 static u32 freecam_anim_at;
+static int freecam_anim_tilt_from=256;
 /* 256=driving perspective, 0=top-down Explore; rotation and tilt share time. */
 static int map_tilt_q8=256;
 
@@ -2212,11 +2214,20 @@ static void drive_label_render(void){
 static void append_miles_hud(char*b,unsigned cap,u32 m){if(!display_imperial()){append_metric_distance(b,cap,m,0);return;}u32 mi10=udiv32(m*10u+804u,1609u);if(mi10>=100u){append_int(b,cap,(int)udiv32(mi10+5u,10u));appendstr(b,cap,"mi");}else{append_int(b,cap,(int)(mi10/10u));appendstr(b,cap,".");char d[2]={(char)('0'+mi10%10u),0};appendstr(b,cap,d);appendstr(b,cap,"mi");}}
 static void append_eta_hud(char*b,unsigned cap,u32 ds){u32 min=udiv32(ds+300u,600u);if(min>=60u){append_int(b,cap,(int)(min/60u));appendstr(b,cap,"h");if(min%60u<10u)appendstr(b,cap,"0");append_int(b,cap,(int)(min%60u));}else{append_int(b,cap,(int)min);appendstr(b,cap,"min");}}
 static int freecam_transition_active(void){return freecam_anim_mode!=FC_ANIM_NONE;}
+static void freecam_orientation_anim_update(u32 now);
 /* Hard recenter is reserved for programmatic state changes (arrival/trip/etc.).
  * User MAP toggling uses leave_freecam() below so it gets the reverse animation. */
-static void recenter_map(void){freecam=0;map_tilt_q8=256;freecam_course_valid=0;freecam_anim_mode=FC_ANIM_NONE;freecam_anim_at=0;zoom_override=-1;if(pref.autozoom)auto_zoom_level=-1;}
-static void enter_freecam(void){if(freecam||freecam_transition_active()||(!gps.fix&&!track_valid))return;int z=active_zoom();int c=map_course();if(c<0||c>=360)c=0;freecam_course=c;freecam_course_valid=1;/* Tilt still animates even when already facing north. */freecam_anim_mode=FC_ANIM_TO_NORTH;freecam_anim_from=c;freecam_anim_at=hud_now_ms();map_tilt_q8=256;freecam=1;freecam_zoom=z;zoom_override=-1;/* MAP entry begins exactly at the car's current/last tracked position. */cam_lat=car_lat();cam_lon=car_lon();}
-static void leave_freecam(void){if(!freecam||freecam_transition_active())return;/* Snap position back to the car immediately, but keep a north-up frame before rotating the map back onto the trusted vehicle heading. */freecam=0;freecam_course=0;freecam_course_valid=1;freecam_anim_mode=FC_ANIM_TO_CAR;freecam_anim_from=0;freecam_anim_at=hud_now_ms();map_tilt_q8=0;zoom_override=-1;if(pref.autozoom)auto_zoom_level=-1;}
+static void recenter_map(void){freecam=0;map_tilt_q8=256;freecam_course_valid=0;freecam_anim_mode=FC_ANIM_NONE;freecam_anim_at=0;freecam_anim_tilt_from=256;zoom_override=-1;if(pref.autozoom)auto_zoom_level=-1;}
+static void enter_freecam(void){if(freecam||freecam_transition_active()||(!gps.fix&&!track_valid))return;int z=active_zoom();int c=map_course();if(c<0||c>=360)c=0;freecam_course=c;freecam_course_valid=1;/* Tilt still animates even when already facing north. */freecam_anim_mode=FC_ANIM_TO_NORTH;freecam_anim_from=c;freecam_anim_at=hud_now_ms();freecam_anim_tilt_from=256;map_tilt_q8=256;freecam=1;freecam_zoom=z;zoom_override=-1;/* MAP entry begins exactly at the car's current/last tracked position. */cam_lat=car_lat();cam_lon=car_lon();}
+static void leave_freecam(void){
+ if(!freecam)return;
+ /* Confirmation may arrive before Explore has finished entering. Reverse from
+  * the current camera pose instead of snapping to north-up or driving tilt. */
+ u32 now=hud_now_ms();freecam_orientation_anim_update(now);
+ freecam=0;freecam_course_valid=1;freecam_anim_mode=FC_ANIM_TO_CAR;
+ freecam_anim_from=freecam_course;freecam_anim_tilt_from=map_tilt_q8;
+ freecam_anim_at=now;zoom_override=-1;if(pref.autozoom)auto_zoom_level=-1;
+}
 static void toggle_freecam(void){if(freecam_transition_active())return;if(freecam)leave_freecam();else enter_freecam();}
 /* Presentation samples the same camera trajectory at any cadence. */
 static void freecam_orientation_anim_update(u32 now){
@@ -2227,7 +2238,7 @@ static void freecam_orientation_anim_update(u32 now){
  u32 elapsed=now-freecam_anim_at;int q=frame_ease(elapsed,FREECAM_ORIENT_ANIM_MS);
  if(elapsed<FREECAM_ORIENT_ANIM_MS&&q==256)q=255;
  freecam_course=(freecam_anim_from+(d*q+(d>=0?128:-128))/256+360)%360;
- map_tilt_q8=mode==FC_ANIM_TO_NORTH?256-q:q;
+ map_tilt_q8=freecam_anim_tilt_from+(((mode==FC_ANIM_TO_NORTH?0:256)-freecam_anim_tilt_from)*q)/256;
  if(q==256){freecam_course=target;map_tilt_q8=mode==FC_ANIM_TO_NORTH?0:256;
   if(mode==FC_ANIM_TO_CAR)freecam_course_valid=0;freecam_anim_mode=FC_ANIM_NONE;}
 }
@@ -2605,7 +2616,20 @@ if(modal!=MOD_NONE){
   if(yesno&&(code==K_LEFT||code==K_RIGHT)){modal_choice=modal_choice?0:1;return;}
   if(!yesno&&modal!=MOD_WAIT_PHONE&&modal!=MOD_ARRIVED_STOP&&modal!=MOD_ARRIVED_DEST){int n=modal_action_count();if((code==K_UP||code==K_LEFT)&&modal_choice>0){modal_choice--;return;}if((code==K_DOWN||code==K_RIGHT)&&modal_choice+1<n){modal_choice++;return;}}
   if(code==K_ENTER){
-    if(modal==MOD_ROUTE_POINT){if(modal_choice==0){if(pending_point_stop&&trip.active){if(trip_add_stop("MAP POINT",pending_lat,pending_lon))add_recent("MAP POINT",pending_lat,pending_lon);screen=SCR_TRIP;trip_pane=1;}else{set_destination("MAP POINT",pending_lat,pending_lon);screen=SCR_TRIP;trip_pane=1;trip_right_focus=0;}}modal=MOD_NONE;return;}
+    if(modal==MOD_ROUTE_POINT){
+      if(modal_choice==0){
+        int accepted=1;
+        if(pending_point_stop&&trip.active){
+          accepted=trip_add_stop("MAP POINT",pending_lat,pending_lon);
+          if(accepted)add_recent("MAP POINT",pending_lat,pending_lon);else notice_fail(ui_tr("Stop not added"));
+        }else set_destination("MAP POINT",pending_lat,pending_lon);
+        if(accepted){
+          screen=SCR_MAP;trip_pane=1;trip_right_focus=0;leave_freecam();
+          if(hud_navigation.kind==HUD_EXPLORE)hud_navigation.kind=HUD_NONE;
+        }
+      }
+      modal=MOD_NONE;return;
+    }
     if(modal==MOD_CANCEL_ROUTE){if(modal_choice==0&&trip.active){clear_trip();notice_success(ui_tr("Route cancelled"));}modal=MOD_NONE;return;}
     if(modal==MOD_REMOVE_STOP){if(modal_choice==0)trip_remove_stop(modal_index);modal=MOD_NONE;return;}
     if(modal==MOD_RESUME_TRIP){if(modal_choice==0){trip.paused=0;trip_need_route=1;trip_route_defer=1;notice_success(ui_tr("Trip resumed"));}else if(trip.active){clear_trip();notice_success(ui_tr("Route cancelled"));}modal=MOD_NONE;return;}

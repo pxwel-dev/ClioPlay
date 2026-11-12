@@ -105,3 +105,10 @@ be captured from the actual device/test setup.
   Check keyboard languages and day/night glass rendering, active audio notices
   and the time/temperature row on numeric, name and review pages. Check a target
   outside installed routing data reports the usual routing failure.
+
+- In Explore, choose a point and confirm a new route, then repeat as Add stop.
+  Confirm it returns directly to driving with the reverse rotation/tilt animation,
+  including a quick confirmation before entry finishes. The time/temperature
+  pill must stay visible without a second entrance, with time-only and valid
+  temperature configurations. Declining leaves Explore unchanged. Route
+  calculation must retain its existing five-FPS cap.

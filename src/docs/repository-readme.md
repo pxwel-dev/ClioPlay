@@ -27,7 +27,7 @@
 | --- | --- |
 | ![GPS acquisition and recovery, phone connection, volume and no-active-route notices share one animated pill](src/docs/demo/status-notifications.gif) | ![A new song appears, updates inside Bluetooth control, then radio tuning changes the frequency](src/docs/demo/metadata-updates.gif) |
 
-| Manual coordinate route | Route to a point on the map |
+| Manual coordinate route ([entry steps](src/docs/demo/coordinates.gif)) | Route to a point on the map |
 | --- | --- |
 | ![Enter latitude and longitude, name the destination, calculate the route and find it in Recents](src/docs/demo/coordinate-route.gif) | ![Enter Explore, pan the crosshair, press OK and confirm a route to the selected point](src/docs/demo/map-point-route.gif) |
 
@@ -58,7 +58,8 @@ BT CTRL also requires a connected phone. Unavailable radio/volume readings stay 
 ## Features
 
 - Offline OpenStreetMap navigation, routing and rerouting.
-- Browse the map, enter named decimal-degree coordinates offline, manage stops, recents and favourites.
+- Browse the map and route to a selected point, send destination from a connected phone, or manually enter named decimal-degree lat/long coordinates
+- Manage stops, recents and favourites.
 - Bluetooth phone audio with track information and remote playback controls.
 - Steering wheel audio controls.
 - Full-screen maps with animated, semi-transparent frosted glass notices for road names, camera alerts, route progress and audio changes.
@@ -89,28 +90,6 @@ The installer downloads and checks the required official TomTom firmware.
 It does not format the card. Replaced files are backed up. Any existing ClioPlay preferences,
 pairings and saved places are preserved. No previous ClioPlay install is needed.
 Map building can take substantial time for large extracts.
-
-## Enter a destination offline
-
-In **Trip**, press the **right soft key** to focus the itinerary, then select
-**Coordinates**. Enter decimal **latitude first**, then **longitude**, add an
-optional name, and review before confirming. Use negative values for south/west.
-The **±** key changes the sign; the left soft key deletes and the right soft key
-advances between coordinate fields. **BACK** returns to the previous step while
-keeping your entries. An empty name uses the coordinates in Recents.
-
-Coordinates are also available under **Add stop** and **Change destination**.
-Confirmed places appear in **Recents**, where they can be reused or saved as
-favourites. Cancelling entry changes neither the route nor Recents. Routing uses
-your installed navigation data; entering coordinates does not download maps.
-
-[Quick coordinate entry preview](src/docs/demo/coordinates.gif)
-
-To choose a destination visually, press **MAP** to enter Explore, move the
-crosshair with the arrows, then press **OK** and confirm **Route to point**.
-With an active trip, the same action offers to add the point as a stop. If a
-temporary manual zoom is active, the first **MAP** restores Auto zoom; press it
-again to enter Explore.
 
 ## Use your remote
 

@@ -21,6 +21,39 @@ static void baseline(void){
  hud_audio.kind=hud_source.kind=hud_navigation.kind=hud_connection.kind=hud_bt_feedback.kind=HUD_NONE;
  hud_reset_animations();prepare(10000);
 }
+static void point_confirmation(void){
+ for(int stop=0;stop<2;stop++)for(int midway=0;midway<2;midway++)for(int temp=0;temp<2;temp++){
+  baseline();car.tempok=temp;car.temp=18;prepare(10400);prepare(10800);
+  trip.active=stop;trip.count=stop?1:0;trip.active_idx=0;nrecents=0;
+  if(stop){trip.target[0].lat=5500000;trip.target[0].lon=-160000;copystr(trip.target[0].name,sizeof(trip.target[0].name),"Home");}
+  else route_status=hud_observed_route=R_IDLE;
+  struct HudBox clock=hud_pose(&hud_tween[HC_CLOCK],10800);
+  u32 position=hud_tween[HC_CLOCK].position_at,content=hud_tween[HC_CLOCK].content_at;
+  hud_capture_ms=11000;key_handle(K_MAP);prepare(11000+(midway?125:500));key_handle(K_UP);
+  key_handle(K_ENTER);assert(modal==MOD_ROUTE_POINT&&pending_point_stop==stop);
+  s32 lat=pending_lat,lon=pending_lon;int tilt=map_tilt_q8,angle=freecam_course;u32 at=hud_capture_ms;
+  key_handle(K_ENTER);
+  assert(screen==SCR_MAP&&modal==MOD_NONE&&!freecam&&freecam_anim_mode==FC_ANIM_TO_CAR);
+  assert(map_tilt_q8==tilt&&freecam_course==angle&&freecam_anim_at==at);
+  assert(trip.count==(stop?2:1)&&trip.target[0].lat==lat&&trip.target[0].lon==lon&&nrecents==1);
+  if(stop)assert(streq(trip.target[1].name,"Home"));
+  assert(hud_navigation.kind!=HUD_EXPLORE);
+  route_status=R_CALC;
+  for(u32 dt=0;dt<=500;dt+=100){
+   prepare(at+dt);
+   assert(hud_box_eq(hud_pose(&hud_tween[HC_CLOCK],at+dt),clock));
+   assert(hud_tween[HC_CLOCK].position_at==position&&hud_tween[HC_CLOCK].content_at==content);
+   assert(map_tilt_q8>=tilt&&map_tilt_q8<=256);
+   if(dt&&dt<500)assert(map_tilt_q8>tilt&&map_tilt_q8<256&&freecam_transition_active());
+  }
+  assert(!freecam_transition_active()&&map_tilt_q8==256&&view_course()==70);
+  route_status=R_READY;prepare(at+600);assert(hud_box_eq(hud_pose(&hud_tween[HC_CLOCK],at+600),clock));
+ }
+ /* Declining the point keeps Explore and never creates a recent or transition. */
+ baseline();trip.active=trip.count=0;nrecents=0;key_handle(K_MAP);prepare(10600);
+ key_handle(K_ENTER);key_handle(K_RIGHT);key_handle(K_ENTER);
+ assert(screen==SCR_MAP&&freecam&&!freecam_transition_active()&&!trip.active&&!nrecents);
+}
 int main(void){
  baseline();prepare(10100);key_handle(K_MAP);prepare(10100);
  assert(freecam&&hud_navigation.kind==HUD_EXPLORE&&streq(card()->title,"Explore"));
@@ -71,5 +104,7 @@ int main(void){
  /* A clamp with no zoom change cannot invent a temporary override or notice. */
  baseline();gps.mph10=0;auto_zoom_level=6;key_handle(K_SR);prepare(10000);
  assert(zoom_override==-1&&!hud_navigation.kind);
+ point_confirmation();
+ puts("Selected-point routing: direct animated return, mid-entry reversal, stops, persistent time/temperature and cancellation passed.");
  puts("Zoom notices: one Explore entry, silent pan/zoom and limits, stable Debug text, MAP restores Auto before Explore, OK retains ETA, arrows enter from overrides, manual setting and transition guards passed.");
 }

@@ -29,7 +29,7 @@
     "clio843/src/hud_turn_masks.h": "ceb5cc2dfc83963855f1c04541c646ac49a88e6c2177c6584c673d9d97b3ad45",
     "clio843/src/global_cameras.h": "d07e8dabf65f3513a5ec88eb15e34bdcad628cdb291f08a518eb46a3ebed9cd9",
     "clio843/src/urban_speed_defaults.h": "a719a3d065f16bc39727b01d7ed73f412beeb4d8703b5bde73a8c6ff1c35ac10",
-    "clio843/src/clio040.c": "30ed1bbcb80f0c3aecdf61d8d0b940ea206c7e9e8d08a4e4f42336201f21edb6",
+    "clio843/src/clio040.c": "6319051aa1f04548d3ae7c98c7ce4020757c3634c774a147dd59ab7e6704e668",
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/audio_chime.h": "184c222e448db2707fc752bc38f7f6c735b6cb1f4d168d88ddc7da7cf20f4d75",
     "clio843/src/utf8.h": "e6e172fb98b7f4c9e958322d13296190fd003025562c05146bcc9a3d50af8b7c",
@@ -491,13 +491,13 @@
     "clio843/src/vendor/sheenbidi/Headers/SheenBidi/SheenBidi.h": "44a644a72edf2300838d32c3e32aa14a7cb66b584fb9da643b8311aa21991cbe"
   },
   "executables": {
-    "clio040": "4ba0d67b42b5dcfd0573a0d87dd0e0128a1d4d2e9ce4e9023a41c3eb1645600f",
+    "clio040": "008e0fc7fe8ebf4862d655771f697fa8533b066d51eb760c1a777630da29e8d3",
     "cliospl": "7f69eb4ae127ba0bd17911ecd9ee4ae0e0ab7e6119513dc72167027b3058e641",
     "clioa2dp": "46ff89d620896c3d3c578dd1c60ed025f22851380964ff01bdabc9b78a06100b"
   },
   "generator_inputs": {
     "tools/render_previews.py": "86969a651990abdf4c32349756e16b981f2892c5dd11e3d2d8c0f1c6a260b371",
-    "tools/render_gallery.py": "4c0c4ecdae39ccdd5d5bef89cccf63c2d03d46044a7013e7a8658ba28c3ea90b",
+    "tools/render_gallery.py": "20e42ec7240121d62d57bfb7206c4c04c3d53d30a184c4dae753345372cbf4d2",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
     "tests/native.c": "f52b471b212f9edfb4f575cf53d818eb6b47b3f51db01c7fa8678cd2a839aec6",
     "tests/splash.c": "a564a2e45e6ff0dfbe38ea30174398c35873aeda601fcd37cbb58095a96d7e51",
@@ -2177,7 +2177,7 @@
       "routing_provenance": "Production remote handlers create the destination and production routing runs to R_READY on the local map bundle; target coordinates and nonempty route geometry are asserted. GPS is held stationary. The 1.3-second calculation display is a controlled preview interval, not a timing benchmark."
     },
     "map-point-route.gif": {
-      "sha256": "673843d862580420fb87fcfbe4bab6c21cb94e49cbec5c282502507d71a82ce6",
+      "sha256": "7e7c1eb693fd33796557a47485a367cd995bc4c4bc48e0c08460dc9be85301a8",
       "frames": 29,
       "duration_ms": 7000,
       "source_frames": [
@@ -2187,47 +2187,47 @@
         },
         {
           "frame": "night/map-point-explore-0000.png",
-          "rgb565_sha256": "83a697edd7cdfa51c7cda7797f67ec97f38f3ee9de434212dfcfe1140827dd3d"
+          "rgb565_sha256": "9837d4c1df31f2dfdeb5bf3ea851c444b1da6ac34f00e59af8059e3f3d86b7ac"
         },
         {
           "frame": "night/map-point-explore-0050.png",
-          "rgb565_sha256": "47038376d939b4273e0acfcec20f682b6d6f4ad50bb43f181bd7e2953bce2b30"
+          "rgb565_sha256": "bebc5428c72a2957f794b28f72a72f981ff267bcb6ca8ea7f0941c8a1c78fc09"
         },
         {
           "frame": "night/map-point-explore-0100.png",
-          "rgb565_sha256": "9e42fcaa95e0865e3e34ce73f55207de88eec941506fb81caa3bb96006305c6e"
+          "rgb565_sha256": "149b39094823725ea0a2f69aabb5a7c43b3afc15ec13cc9b554551dd198cedd7"
         },
         {
           "frame": "night/map-point-explore-0150.png",
-          "rgb565_sha256": "8188951a8b28e995c074fb37021577980b1f730941899beb5906f79b6c39fe4d"
+          "rgb565_sha256": "5c55ee8f4f13ae53930a58df7edb7aae880cdc1d3e82cc2ddb3b57ffbcf44af1"
         },
         {
           "frame": "night/map-point-explore-0200.png",
-          "rgb565_sha256": "f0d79c42dbb3eeab3dd58af72aeced07b5e35bb531c9c06b31d21936fad9d553"
+          "rgb565_sha256": "a24e162718fce3b00056e515a625b1c5e00e00fc72d2d2a067265d9019ccd3cc"
         },
         {
           "frame": "night/map-point-explore-0250.png",
-          "rgb565_sha256": "4fbba45b15ac7eb35351c3118cb5f7412649a647d2549b4561920fea93772f38"
+          "rgb565_sha256": "2e17fde2c255acd4d3123fe519db4418ce4a9c76395685bb173ab0bd453ac3e0"
         },
         {
           "frame": "night/map-point-explore-0300.png",
-          "rgb565_sha256": "c477b358f1919d214b3877bbff3539fa3d6e0fb88183a95e0f8346266c756ecc"
+          "rgb565_sha256": "6c8ab0b32528fb65fab5fe76846ef7481b599163b4d46755ecdd356fcc3b88d1"
         },
         {
           "frame": "night/map-point-explore-0350.png",
-          "rgb565_sha256": "5404c5ddc8ddcc59d83dc99f6d94cbad2f04d56bcee930afd615dab815b8602a"
+          "rgb565_sha256": "357593cd418d83bd8746e2263c37ad12d2140d7e92dbbca921c9c6dd3db1bc70"
         },
         {
           "frame": "night/map-point-explore-0400.png",
-          "rgb565_sha256": "ca01db843918708537d6171b760929c1c80c419442eb1ce3bafda0b216f5c606"
+          "rgb565_sha256": "61f42a1d89f0d68ce8c5df8b549dd519e822af6909fa4d448f487f82541826e3"
         },
         {
           "frame": "night/map-point-explore-0450.png",
-          "rgb565_sha256": "8c6c1dbaf07318cf416872c2da7c4ef761384d87332460ee70c1f334254bb3d6"
+          "rgb565_sha256": "920718113812f01ab1b4c57c5a6625e232662c18cb06678ed88a859ba7c3eefc"
         },
         {
           "frame": "night/map-point-explore-0500.png",
-          "rgb565_sha256": "283da36558dcf79953c7ff98725a59098b323cd815b630eae65788231452641c"
+          "rgb565_sha256": "55449f0c82982b6c4b0e81a024bae3690474e6ee2c370fe79135b2c2f97861c1"
         },
         {
           "frame": "night/map-point-selected.png",
@@ -2239,15 +2239,15 @@
         },
         {
           "frame": "night/map-point-calculating-0000.png",
-          "rgb565_sha256": "cf0004f15b248ba645ca417e021d101f22f659fad2ddd5099f22ddfae7308b9d"
+          "rgb565_sha256": "c525bddd6f965dc3f59f2bfbf964d47688090c924bc96453badcde277862a729"
         },
         {
           "frame": "night/map-point-calculating-0200.png",
-          "rgb565_sha256": "5746759763b929b109aaa46584c67b68cf67cd731eda6b5d25091f468b986a95"
+          "rgb565_sha256": "b3266ff9e7ddf20bbabebd48c31db4ca0e6a1aab437de8e6f8aa99a47e2c6b80"
         },
         {
           "frame": "night/map-point-calculating-0400.png",
-          "rgb565_sha256": "775b145d645c9107034558c4239cdb6fbafa45384254551d9cea887b27640a77"
+          "rgb565_sha256": "17965d297ece2a97e797df067a6e1d871861c49eb35367475943e51500fc662d"
         },
         {
           "frame": "night/map-point-calculating-0600.png",
