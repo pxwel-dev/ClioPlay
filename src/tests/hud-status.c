@@ -45,12 +45,12 @@ int main(void){
  copystr(hud_bt_text,sizeof(hud_bt_text),"Reconnecting");
  hud_pulse_at(&hud_connection,HUD_CONNECTION,10000,4200);
  hud_pulse_at(&hud_bt_feedback,HUD_BT_FEEDBACK,10000,2500);
- set_volume(18);notice_fail("STOP NOT ADDED");
+ set_volume(18);notice_fail("Stop not added");
  prepare(10100,1);assert(card()->flags==(HUD_KEYS|HUD_PROGRESS));
  assert(streq(card()->badge,"VOL 18")&&card()->box.h<=96);
- assert(!contains("STOP NOT ADDED")); /* all three existing rows are in use */
+ assert(!contains("Stop not added")); /* all three existing rows are in use */
  prepare(12000,1);assert(hud_events[HUD_EVENT_ACTION].left==4200);
- prepare(12600,1);assert(contains("STOP NOT ADDED")&&card()->box.h<=96);
+ prepare(12600,1);assert(contains("Stop not added")&&card()->box.h<=96);
  assert(card()->flags&HUD_KEYS);assert(card()->flags&HUD_PROGRESS);
  prepare(12680,1);fill(0,0,W,H,0x1234);hud_draw_all(12680,1);
  prepare(15000,0);assert(card()->box.h<=96);

@@ -6,7 +6,7 @@
 #include <string.h>
 int main(void){FILE*f=tmpfile();assert(f);routefd=fileno(f);routeok=1;rh.base_off=0;rh.base_edges=5;struct CprBase arcs[5];memzero(arcs,sizeof(arcs));for(int i=1;i<=3;i++){arcs[i].flags=4;arcs[i].pad=1;}assert(fwrite(arcs,sizeof(arcs),1,f)==1);fflush(f);cpr_bcache_count=0;
  route_status=R_READY;route_head=0;route_n=6;for(int i=0;i<6;i++){route_node[i]=ROUTE_NOARC;route_lat[i]=4880000+i*50;route_lon[i]=200000;route_seg_arc[i]=i?i-1:ROUTE_NOARC;route_seg_phys[i]=i?i:ROUTE_NOARC;}
- nav_maneuver_find();assert(nav_man_type==MAN_ROUNDABOUT&&nav_man_exit==3&&nav_man_idx==4&&nav_man_m>0);assert(!strcmp(nav_man_text(),"TAKE EXIT 3"));route_head=2;nav_maneuver_find();assert(nav_man_type==MAN_ROUNDABOUT&&nav_man_exit==0); // no invented exit number when joining midway
+ nav_maneuver_find();assert(nav_man_type==MAN_ROUNDABOUT&&nav_man_exit==3&&nav_man_idx==4&&nav_man_m>0);assert(!strcmp(nav_man_text(),"Take exit 3"));route_head=2;nav_maneuver_find();assert(nav_man_type==MAN_ROUNDABOUT&&nav_man_exit==0); // no invented exit number when joining midway
  region_flags=0;fill(0,0,W,H,0);draw_manoeuvre_icon(30,30,MAN_ROUNDABOUT);u16 right[FB_PIX];memcpy(right,fb,sizeof(fb));region_flags=4;fill(0,0,W,H,0);draw_manoeuvre_icon(30,30,MAN_ROUNDABOUT);assert(memcmp(right,fb,sizeof(fb)));
  // The circulation glyph is a true mirror; the unknown-exit centre stays
  // clear, edge coverage is antialiased, and it fits both 24/30-pixel HUD cells.

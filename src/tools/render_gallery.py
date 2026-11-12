@@ -108,9 +108,9 @@ def catalog(sender_receipts=None):
     add('Status notifications','menu-status','Action confirmation in the menu header',
         'screen=SCR_TRIP;notice_success(ui_tr("Favourite saved"));')
     add('Status notifications','menu-status-volume','Action confirmation and volume above Settings',
-        'screen=SCR_SET;set_volume(18);notice_fail(ui_tr("STOP NOT ADDED"));')
+        'screen=SCR_SET;set_volume(18);notice_fail(ui_tr("Stop not added"));')
     add('Status notifications','menu-status-calculating','Moving route progress and status above Trip',
-        'screen=SCR_TRIP;route_status=R_CALC;notice_success(ui_tr("STOP ADDED"));')
+        'screen=SCR_TRIP;route_status=R_CALC;notice_success(ui_tr("Stop added"));')
     add('Playback progress','hud-playback','Track progress above Bluetooth controls',
         'key_handle(K_BACK);btui.pos=65;btui.dur=180;draw();hud_capture_ms+=400u;')
     add('Playback progress','hud-playback-unknown','Controls with no reported track duration',

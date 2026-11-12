@@ -23,12 +23,12 @@ int main(int argc,char**argv){assert(argc==3&&load_font()&&cliou_load(argv[1]));
   copystr(btui.status,sizeof(btui.status),"BT DAEMON ERROR");pref.debug=0;assert(streq(bt_status_text(),lang?ui_tr("Phone connection unavailable"):"Bluetooth unavailable"));btui.status[0]=0;
   for(unsigned i=0;i<sizeof(locale_cases)/sizeof(locale_cases[0]);i++){assert(streq(ui_tr(locale_cases[i][0]),locale_cases[i][lang]));whole_utf8(locale_cases[i][lang]);assert(cliou_width(locale_cases[i][lang],1)>0);}
   kbd_language=lang;kbd_page=0;for(int i=36;i<40;i++){if(!keyboard_valid_focus(i))continue;char b[16];const char*key=key_label(i,b);int limit=101;if(width(key,0)>limit)fprintf(stderr,"Key overflow %s %d: %s (%d)\n",ui_language_codes[lang],i,key,width(key,0));assert(width(key,0)<=limit);}
-  const char*states[]={"READY","CALC","NO DATA","NO ROAD","NO ROUTE","MEM FULL","ERROR","WAIT","Done","Wait"};int over=0;for(unsigned i=0;i<sizeof(states)/sizeof(states[0]);i++){int w=width(ui_tr(states[i]),0);if(w>104){fprintf(stderr,"Status overflow %s %s: %s (%d)\n",ui_language_codes[lang],states[i],ui_tr(states[i]),w);over++;}}if(over)return 1;assert(width(ui_tr("CTRL"),0)<=52);
+  const char*states[]={"Ready","Calc","No data","No road","No route","Mem full","Error","Wait","Done","Wait"};int over=0;for(unsigned i=0;i<sizeof(states)/sizeof(states[0]);i++){int w=width(ui_tr(states[i]),0);if(w>104){fprintf(stderr,"Status overflow %s %s: %s (%d)\n",ui_language_codes[lang],states[i],ui_tr(states[i]),w);over++;}}if(over)return 1;assert(width(ui_tr("CTRL"),0)<=52);
   nav_man_type=MAN_ROUNDABOUT;nav_man_exit=123;const char*exit=nav_man_text();whole_utf8(exit);assert(strstr(exit,"123"));assert(slen(exit)<64);
   pref.debug=1;struct HudCard zoom={0};hud_nav_text(&zoom,6,HUD_MANUAL_ZOOM,1);whole_utf8(zoom.title);assert(streq(zoom.title,ui_tr("Manual zoom")));pref.debug=0;
  }
  if(cliou_missing())fprintf(stderr,"Missing glyphs after dictionary checks: %u\n",cliou_missing());assert(!cliou_missing());
- pref.language=1;nav_man_type=MAN_LEFT;assert(streq(nav_man_text(),"TOURNER À GAUCHE"));pref.units=1;assert(streq(units_value(),"Métrique"));pref.autozoom=0;pref.debug=0;struct HudCard zoom={0};hud_nav_text(&zoom,6,HUD_MANUAL_ZOOM,1);assert(streq(zoom.title,"Zoom manuel"));
+ pref.language=1;nav_man_type=MAN_LEFT;assert(streq(nav_man_text(),"Tourner à gauche"));pref.units=1;assert(streq(units_value(),"Métrique"));pref.autozoom=0;pref.debug=0;struct HudCard zoom={0};hud_nav_text(&zoom,6,HUD_MANUAL_ZOOM,1);assert(streq(zoom.title,"Zoom manuel"));
  // Keep the existing numeric IDs and persist every new one through real card I/O.
  for(int lang=0;lang<UI_LANGUAGE_COUNT;lang++){pref.language=lang;save_prefs();pref.language=-1;load_prefs();assert(pref.language==lang);}
  char invalid[]="language=999";parse_pref_line(invalid);assert(pref.language==0);

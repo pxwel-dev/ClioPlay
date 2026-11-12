@@ -1,5 +1,8 @@
 # Interface languages
 
+Fixed notifications, turn instructions, camera labels and route states use sentence
+case. Acronyms such as GPS, ETA and BT retain their normal spelling.
+
 The language setting changes interface text only. Road/destination names are kept
 as received. GPS country profiles independently select Auto units, driving side
 and camera policy; changing the interface language cannot change those policies.

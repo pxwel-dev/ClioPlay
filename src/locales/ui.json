@@ -396,61 +396,57 @@
       "Point sur la carte",
       "Punto del mapa"
     ],
-    "DESTINATION CHANGED": [
-      "DESTINATION MODIFIÉE",
-      "DESTINO CAMBIADO"
+    "Destination changed": [
+      "Destination modifiée",
+      "Destino cambiado"
     ],
     "No active route": [
       "Aucun trajet actif",
       "Sin ruta activa"
     ],
-    "ROUTE STARTED": [
-      "TRAJET LANCÉ",
-      "RUTA INICIADA"
+    "Route started": [
+      "Trajet lancé",
+      "Ruta iniciada"
     ],
-    "STOP ADDED": [
-      "ÉTAPE AJOUTÉE",
-      "PARADA AÑADIDA"
+    "Stop added": [
+      "Étape ajoutée",
+      "Parada añadida"
     ],
-    "STOP NOT ADDED": [
-      "ÉTAPE NON AJOUTÉE",
-      "PARADA NO AÑADIDA"
+    "Stop not added": [
+      "Étape non ajoutée",
+      "Parada no añadida"
     ],
-    "TRIP FULL - STOP NOT ADDED": [
-      "TRAJET PLEIN — ÉTAPE NON AJOUTÉE",
-      "VIAJE LLENO — PARADA NO AÑADIDA"
+    "Trip full - stop not added": [
+      "Trajet plein — étape non ajoutée",
+      "Viaje lleno — parada no añadida"
     ],
-    "READY": [
-      "PRÊT",
-      "LISTA"
+    "Ready": [
+      "Prêt",
+      "Lista"
     ],
-    "CALC": [
-      "CALCUL",
-      "CÁLCULO"
+    "Calc": [
+      "Calcul",
+      "Cálculo"
     ],
-    "NO DATA": [
-      "SANS DONNÉES",
-      "SIN DATOS"
+    "No data": [
+      "Sans données",
+      "Sin datos"
     ],
-    "NO ROAD": [
-      "SANS ROUTE",
-      "SIN VÍA"
+    "No road": [
+      "Sans route",
+      "Sin vía"
     ],
-    "NO ROUTE": [
-      "AUCUN TRAJET",
-      "SIN RUTA"
+    "No route": [
+      "Aucun trajet",
+      "Sin ruta"
     ],
-    "MEM FULL": [
-      "MÉM. PLEINE",
-      "MEM. LLENA"
+    "Mem full": [
+      "Mém. pleine",
+      "Mem. llena"
     ],
-    "ERROR": [
-      "ERREUR",
-      "ERROR"
-    ],
-    "WAIT": [
-      "ATT.",
-      "ESP."
+    "Error": [
+      "Erreur",
+      "Error"
     ],
     "Done": [
       "Fait",
@@ -460,61 +456,61 @@
       "Attente",
       "Espera"
     ],
-    "ROUNDABOUT": [
-      "ROND-POINT",
-      "ROTONDA"
+    "Roundabout": [
+      "Rond-point",
+      "Rotonda"
     ],
-    "TAKE EXIT ": [
-      "SORTIE ",
-      "SALIDA "
+    "Take exit ": [
+      "Sortie ",
+      "Salida "
     ],
-    "SLIGHT LEFT": [
-      "LÉGÈREMENT À GAUCHE",
-      "LEVE IZQUIERDA"
+    "Slight left": [
+      "Légèrement à gauche",
+      "Leve izquierda"
     ],
-    "TURN LEFT": [
-      "TOURNER À GAUCHE",
-      "GIRA A LA IZQUIERDA"
+    "Turn left": [
+      "Tourner à gauche",
+      "Gira a la izquierda"
     ],
-    "SHARP LEFT": [
-      "VIRAGE SERRÉ À GAUCHE",
-      "GIRO CERRADO IZQUIERDA"
+    "Sharp left": [
+      "Virage serré à gauche",
+      "Giro cerrado izquierda"
     ],
-    "SLIGHT RIGHT": [
-      "LÉGÈREMENT À DROITE",
-      "LEVE DERECHA"
+    "Slight right": [
+      "Légèrement à droite",
+      "Leve derecha"
     ],
-    "TURN RIGHT": [
-      "TOURNER À DROITE",
-      "GIRA A LA DERECHA"
+    "Turn right": [
+      "Tourner à droite",
+      "Gira a la derecha"
     ],
-    "SHARP RIGHT": [
-      "VIRAGE SERRÉ À DROITE",
-      "GIRO CERRADO DERECHA"
+    "Sharp right": [
+      "Virage serré à droite",
+      "Giro cerrado derecha"
     ],
-    "U-TURN": [
-      "DEMI-TOUR",
-      "CAMBIO DE SENTIDO"
+    "U-turn": [
+      "Demi-tour",
+      "Cambio de sentido"
     ],
-    "NOW": [
-      "MAINTENANT",
-      "AHORA"
+    "Now": [
+      "Maintenant",
+      "Ahora"
     ],
-    "RED LIGHT": [
-      "FEU ROUGE",
-      "SEMÁFORO"
+    "Red light": [
+      "Feu rouge",
+      "Semáforo"
     ],
-    "AVERAGE CHECK": [
-      "CONTRÔLE MOYEN",
-      "RADAR DE TRAMO"
+    "Average check": [
+      "Contrôle moyen",
+      "Radar de tramo"
     ],
-    "SPEED CAMERA": [
-      "RADAR",
-      "RADAR"
+    "Speed camera": [
+      "Radar",
+      "Radar"
     ],
-    "AVG ": [
-      "MOY. ",
-      "MEDIA "
+    "Avg ": [
+      "Moy. ",
+      "Media "
     ],
     "Phone audio": [
       "Audio téléphone",

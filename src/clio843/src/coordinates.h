@@ -93,8 +93,8 @@ static void coordinates_submit(void){
  int action=coordinates.action;
  if(action==DEST_PICK_ADD_STOP){
   if(!trip.active||!trip.count){notice_fail(ui_tr("No active route"));return;}
-  if(trip.count>=TRIP_MAX_TARGETS){notice_fail(ui_tr("TRIP FULL - STOP NOT ADDED"));return;}
-  if(!trip_add_stop(name,coordinates.lat,coordinates.lon)){notice_fail(ui_tr("STOP NOT ADDED"));return;}
+  if(trip.count>=TRIP_MAX_TARGETS){notice_fail(ui_tr("Trip full - stop not added"));return;}
+  if(!trip_add_stop(name,coordinates.lat,coordinates.lon)){notice_fail(ui_tr("Stop not added"));return;}
   add_recent(name,coordinates.lat,coordinates.lon);
  }else if(action==DEST_PICK_CHANGE_DEST){
   if(!trip.active||!trip.count){notice_fail(ui_tr("No active route"));return;}

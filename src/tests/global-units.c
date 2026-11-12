@@ -10,7 +10,7 @@ int main(void){assert(load_regions());mapfmt=5;
  country(5497000,-161000,"GB",1);country(3777000,-12242000,"US",1);country(-3386000,15120000,"AU",0);country(631000,-1080000,"LR",1);
  country(0,0,"",0);country(4885660,235220,"FR",0);pref.units=2;assert(display_imperial());assert(display_limit(130,0)==81);pref.units=1;assert(display_limit(70,2)==113);assert(display_limit(130,0)==130);
  gps.mph10=621;assert(display_speed()==100);pref.units=2;assert(display_speed()==62);
- char b[80]="";pref.units=1;append_nav_distance(b,sizeof(b),180);assert(!strcmp(b,"180 M"));b[0]=0;append_miles(b,sizeof(b),1300);assert(!strcmp(b,"1.3 KM"));
+ char b[80]="";pref.units=1;append_nav_distance(b,sizeof(b),180);assert(!strcmp(b,"180 m"));b[0]=0;append_miles(b,sizeof(b),1300);assert(!strcmp(b,"1.3 km"));
  struct RoadCtx r={0};r.valid=1;r.speed=130;r.speed_flags=0;b[0]=0;append_road_limit(b,sizeof(b),&r);assert(!strcmp(b,"130"));r.speed_flags=8;b[0]=0;append_road_limit(b,sizeof(b),&r);assert(!strcmp(b,"VAR"));r.speed_flags=4;b[0]=0;append_road_limit(b,sizeof(b),&r);assert(!strcmp(b,"INF"));
  assert(coslat_q15(0)==32767&&coslat_q15(6000000)==16384&&coslat_q15(-6000000)==16384&&coslat_q15(8500000)==2856);assert(lon_delta(35999900)==-100);assert(square_distance(10000000,10000000)==0xffffffffu);
  assert(seg_dist2(-10000,0,10000,0)<100);assert(seg_dist2(10000000,10000000,10000050,10000050)>100000000);

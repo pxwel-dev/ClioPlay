@@ -63,8 +63,8 @@ static void camera_service(void){u32 now=s_now_ms();if(camera_next_ms&&(s32)(now
  * Red-light records can contain maxspeed metadata, but it is not their alert. */
 static int camera_is_speed_alert(void){return camera_current.kind==1||camera_current.kind==3;}
 static void camera_alert_text(char*b,int size){b[0]=0;
- if(camera_average){appendstr(b,size,ui_tr("AVG "));int v=display_imperial()?(camera_average_speed*100000+80467)/160934:camera_average_speed;append_int(b,size,v);appendstr(b,size,display_imperial()?" mph":" km/h");}
- else appendstr(b,size,camera_current.kind==2?ui_tr("RED LIGHT"):camera_current.kind==3?ui_tr("AVERAGE CHECK"):ui_tr("SPEED CAMERA"));
+ if(camera_average){appendstr(b,size,ui_tr("Avg "));int v=display_imperial()?(camera_average_speed*100000+80467)/160934:camera_average_speed;append_int(b,size,v);appendstr(b,size,display_imperial()?" mph":" km/h");}
+ else appendstr(b,size,camera_current.kind==2?ui_tr("Red light"):camera_current.kind==3?ui_tr("Average check"):ui_tr("Speed camera"));
  if(camera_is_speed_alert()&&camera_current.speed&&!(camera_current.flags&12)){appendstr(b,size," / ");append_int(b,size,display_limit(camera_current.speed,camera_current.flags));}
 }
 static void camera_distance_text(char*b,int size){b[0]=0;
