@@ -39,9 +39,9 @@ The primary supported configuration is:
 - Non-live Carminat TomTom head unit
 - Bluetooth remote control used to operate the Carminat
 
-Expect support very soon for physical console controls found on vehicles that do not have a Bluetooth remote control for their Carminat unit, such as Renault Scenic and Megane models. 
+Expect support VERY SOON for physical console controls found on vehicles that do not have a Bluetooth remote control for their Carminat unit, such as Renault Scenic and Megane models.
 
-Confirmed that vehicles which use the physical console controls in place of Bluetooth remote control for their Carminat STILL have integrated Bluetooth hardware inside of their Carminat units, meaning that vehicles that don't have any factory Bluetooth capability in their radios will be able to benefit from Bluetooth audio implemented inside ClioPlay. 
+I've also confirmed that vehicles which use the physical console controls in place of Bluetooth remote control STILL have integrated Bluetooth hardware inside of their Carminat units, meaning that vehicles that don't have any factory Bluetooth capability in their radios will be able to benefit from Bluetooth audio implemented inside ClioPlay.
 
 ClioPlay handles the audio source as follows:
 
