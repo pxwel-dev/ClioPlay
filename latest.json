@@ -1,6 +1,6 @@
 {
   "format": "clioplay-latest-1",
-  "updated_at": "2026-11-12T00:00:16+00:00",
+  "updated_at": "2026-11-12T00:16:03+00:00",
   "edition": "Global",
   "version": "2.0.0",
   "payload": "Clean-install source package, current binaries, legacy bootstrap, CAB-based installer; no vendor firmware, navigation packs or companion website",
@@ -1080,12 +1080,12 @@
     "tools/prepare_card.py": "78547da397e67b383c8441ebfb4123cd01789c010f2ffcdb58eac40e2aaa070d",
     "tools/prepare_vendor.py": "f61f66057ef0b85f5c00d94e01a47acd26a17d8ebfa5ce0922e4452abcd08044",
     "tools/profile_boot.py": "9de488c69bd32ba2063f783dc48fc0c8095761bd3b80b2a0fc3e5c67f00c9fb1",
-    "tools/publication.py": "43c5d153a82e31dbd13dfb6750b085a9ae813194afdf004329ff3e3df0989a75",
+    "tools/publication.py": "01c495c95c9aa8bc35ccb3764e35ac9ed5822acac2db37683b1def60420a188f",
     "tools/publication_install.py": "14e5d6c44bb909a5f23beb655dcfbe23aabe54ced7169e859c13ce06e1bab429",
     "tools/refresh_latest.py": "c78c063f3195108e0bd09aeac7a59ab3d39643613b9a6bca9a70b4317b3c0285",
-    "tools/render_gallery.py": "1d56849889994c52009095c9ddb7d377bd9859decc75b62cf9aaac17e11cb9c4",
+    "tools/render_gallery.py": "f7610a1a58ed056a27e3b0777a6dc27fc71b05d37a041d4eb44200d92f3b95dd",
     "tools/render_locales.py": "dc11770d3298817f6079edf992be2f57c907c34940319fc43f7d54905a93c5be",
-    "tools/render_previews.py": "bfbf2ca46d65e1346056d3183c42c806bb73a58226670f283b371b3822fe56b0",
+    "tools/render_previews.py": "86969a651990abdf4c32349756e16b981f2892c5dd11e3d2d8c0f1c6a260b371",
     "tools/render_roundabout.py": "c72f8c7560b6a73bc39d7525934c28dcf270a7c87f6750ace097884938510924",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
     "tools/verify.py": "1c99fcc5756a67b912be1be7f83d0b289ad85d63db3ef6010e19f8aa7596cd97",
@@ -1208,7 +1208,7 @@
     "bootstrap-SHA256.json": "8570be2a8df210c93060abc258d185551dbcfbfc652b68a801510bc37e0765f7",
     "docs/source-status.md": "a0ea6ad82b7f3db1a7699b442f766063fb1def68d991f27f2074fafd17963cef",
     "docs/camera-support.md": "2a58059199ce658ddd838f21f02d063d453c415c934b6f44c2441b4081cb1f5e",
-    "docs/repository-readme.md": "c257bd585829a160cc600c5019945aa05b1d971a30ac51e0584f30c3588265de",
+    "docs/repository-readme.md": "ff147e9db957e34a5654091fa3ecee70c23781d436e678178e94c8bf36775bd3",
     "docs/next-release/hardware-trial.md": "e55dc92478f78da8b3597d02e2b18f5a79ceba56cd47cff0ca9a9874ed0596b8",
     "docs/github-launch.md": "1984ec4cd40617807a898758058488c151bfbd4052b38b11c7b39913a267028d",
     "legacy-binaries/clioaux-init": "35d046ba6ae04978227f83ecc6cd99367aef4149a711730a69f6e8f26ae52b47",
@@ -1225,8 +1225,8 @@
     "build-reports/cliospl.build.json": "cf414d18b84a02c5d940e36b08b09c39bb56f20803088b2d36f3a7cd76913c69",
     "clio843/clioa2dp": "46ff89d620896c3d3c578dd1c60ed025f22851380964ff01bdabc9b78a06100b",
     "build-reports/clioa2dp.build.json": "828226fe1acc6f81ba92aabb29ed2266b88c05c30e0c26a33c86ffef4f053797",
-    "docs/demo/README.md": "8c701a7fc66b128186a465b4bbf936e9552359b8cba197046081aca5bf90beeb",
-    "docs/demo/manifest.json": "664810d60dafcbdb5c44145fa15488e69f9290097db9735e72034a5b7745fadc",
+    "docs/demo/README.md": "8a69f8048c7b831cb27f7c02a1096461f35c730c5b3e2fbfc4328977b11dfa91",
+    "docs/demo/manifest.json": "261429a9080cb9c411f19fe6ca9bc5dbc9a0b11dcfd4340ee5de037cc2c06c9b",
     "docs/demo/driving.gif": "02bc03fe89b415bd4413ad1cff1dfa1c1345184be1dcf1d5f11f02f23dbd1c72",
     "docs/demo/menus.gif": "d6906d3352ae158d28ec8114b63e0fd2154cd3e8929e3137721d3df3859d9d88",
     "docs/demo/bluetooth.gif": "08ec762fbc3dff6fe27b61d4f1ef22f909aa53af1a83ee16debdbf7d94b11686",
@@ -1237,7 +1237,9 @@
     "docs/demo/add-stop.gif": "d3f1c46d7dd78d615a73e23a9979ffb628be4c8407752b1744c26ee927a2c1b4",
     "docs/demo/status-notifications.gif": "2e9ae9343267e8c198bcd3a36a6659c643436402e2c10cab774c006cdf37a292",
     "docs/demo/metadata-updates.gif": "ca67b4e095e27d47bf70520f3fbab982c6b5c99eb3bc5761ea834cd2a60b8b7e",
-    "docs/demo/coordinates.gif": "110729788d0dc492c08e2fa9441fe777da30caa38b654f0d7489528811b64852"
+    "docs/demo/coordinates.gif": "110729788d0dc492c08e2fa9441fe777da30caa38b654f0d7489528811b64852",
+    "docs/demo/coordinate-route.gif": "86d4adaf443c2af8f5e9f790cc80e1169509046f8589fbf57e7b46a38693a14f",
+    "docs/demo/map-point-route.gif": "3233ff8d5c3139f55c64f015d8fd9e14868ceda797f366c03435a06d61593e8e"
   },
   "files": {
     ".editorconfig": "70e0d0b849695d15411546b3d364a9f123e2187e097c80b146c24f07cebca65f",
@@ -1250,7 +1252,7 @@
     "Install.cmd": "b504a77b6d13c036d2e027a9759f06fa8a30c677144f1ee286f56953d2020fa6",
     "Install.command": "5a3df10333b2db1c445eccf5c2875f9d1051c90b9b86ffacc4da1b1e4d1e3d9a",
     "LICENSE": "b04ac8d0e455fe1b4c2f8b0e42531cd7b67add31f3b06c05d58e600feda6f464",
-    "README.md": "f89fdc2dc73d274f6114f0965088f6cd88c79a2c2899c674a2d2891b7b2fb9c1",
+    "README.md": "65d3abc4733b60c3dca9945b7337558a6e26de785d641dc50cdaf35617c81659",
     "SOURCE_STATUS.md": "a0ea6ad82b7f3db1a7699b442f766063fb1def68d991f27f2074fafd17963cef",
     "THIRD_PARTY_NOTICES.md": "909e3a7e5c7aee799d2b0050813f8f8cab34a7b0a4bb029382becf6454161690",
     "WINDOWS.md": "5cd90c64c5d06d8817ede04c972ce91a5588a92cd42dabcef0c6007c4b335200",
@@ -2279,13 +2281,15 @@
     "src/clio843/src/vendor/sheenbidi/Source/UBA/StatusStack.c": "e5cc2a6310e0b504f518568b48e95ef2616026bd17ec035f7c774de99cd7f325",
     "src/clio843/src/vendor/sheenbidi/Source/UBA/StatusStack.h": "348774283d029f4afa64b95ba9fe04240d754587b483a8bcc345e1d6e78c6261",
     "src/docs/camera-support.md": "2a58059199ce658ddd838f21f02d063d453c415c934b6f44c2441b4081cb1f5e",
-    "src/docs/demo/README.md": "8c701a7fc66b128186a465b4bbf936e9552359b8cba197046081aca5bf90beeb",
+    "src/docs/demo/README.md": "8a69f8048c7b831cb27f7c02a1096461f35c730c5b3e2fbfc4328977b11dfa91",
     "src/docs/demo/add-stop.gif": "d3f1c46d7dd78d615a73e23a9979ffb628be4c8407752b1744c26ee927a2c1b4",
     "src/docs/demo/bluetooth.gif": "08ec762fbc3dff6fe27b61d4f1ef22f909aa53af1a83ee16debdbf7d94b11686",
+    "src/docs/demo/coordinate-route.gif": "86d4adaf443c2af8f5e9f790cc80e1169509046f8589fbf57e7b46a38693a14f",
     "src/docs/demo/coordinates.gif": "110729788d0dc492c08e2fa9441fe777da30caa38b654f0d7489528811b64852",
     "src/docs/demo/driving.gif": "02bc03fe89b415bd4413ad1cff1dfa1c1345184be1dcf1d5f11f02f23dbd1c72",
-    "src/docs/demo/manifest.json": "664810d60dafcbdb5c44145fa15488e69f9290097db9735e72034a5b7745fadc",
+    "src/docs/demo/manifest.json": "261429a9080cb9c411f19fe6ca9bc5dbc9a0b11dcfd4340ee5de037cc2c06c9b",
     "src/docs/demo/map-browsing.gif": "3a0f111127112f3d40aac7a7125aaf67db64a4505afc2832d8bd8bf093fd7f12",
+    "src/docs/demo/map-point-route.gif": "3233ff8d5c3139f55c64f015d8fd9e14868ceda797f366c03435a06d61593e8e",
     "src/docs/demo/menus.gif": "d6906d3352ae158d28ec8114b63e0fd2154cd3e8929e3137721d3df3859d9d88",
     "src/docs/demo/metadata-updates.gif": "ca67b4e095e27d47bf70520f3fbab982c6b5c99eb3bc5761ea834cd2a60b8b7e",
     "src/docs/demo/phone-destination.gif": "f3571bbb30b1c3af792605f175b31991299c18f9ef70aefa921fa96a5b294fe3",
@@ -2294,7 +2298,7 @@
     "src/docs/demo/status-notifications.gif": "2e9ae9343267e8c198bcd3a36a6659c643436402e2c10cab774c006cdf37a292",
     "src/docs/github-launch.md": "1984ec4cd40617807a898758058488c151bfbd4052b38b11c7b39913a267028d",
     "src/docs/next-release/hardware-trial.md": "e55dc92478f78da8b3597d02e2b18f5a79ceba56cd47cff0ca9a9874ed0596b8",
-    "src/docs/repository-readme.md": "c257bd585829a160cc600c5019945aa05b1d971a30ac51e0584f30c3588265de",
+    "src/docs/repository-readme.md": "ff147e9db957e34a5654091fa3ecee70c23781d436e678178e94c8bf36775bd3",
     "src/docs/source-status.md": "a0ea6ad82b7f3db1a7699b442f766063fb1def68d991f27f2074fafd17963cef",
     "src/fonts/LGPL-2.1.txt": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95",
     "src/fonts/LICENSE.txt": "3361d054759a2fc686a2c058be82deaf9c2e6fe549be9004d7935a6c1736315d",
@@ -2453,12 +2457,12 @@
     "src/tools/prepare_card.py": "78547da397e67b383c8441ebfb4123cd01789c010f2ffcdb58eac40e2aaa070d",
     "src/tools/prepare_vendor.py": "f61f66057ef0b85f5c00d94e01a47acd26a17d8ebfa5ce0922e4452abcd08044",
     "src/tools/profile_boot.py": "9de488c69bd32ba2063f783dc48fc0c8095761bd3b80b2a0fc3e5c67f00c9fb1",
-    "src/tools/publication.py": "43c5d153a82e31dbd13dfb6750b085a9ae813194afdf004329ff3e3df0989a75",
+    "src/tools/publication.py": "01c495c95c9aa8bc35ccb3764e35ac9ed5822acac2db37683b1def60420a188f",
     "src/tools/publication_install.py": "14e5d6c44bb909a5f23beb655dcfbe23aabe54ced7169e859c13ce06e1bab429",
     "src/tools/refresh_latest.py": "c78c063f3195108e0bd09aeac7a59ab3d39643613b9a6bca9a70b4317b3c0285",
-    "src/tools/render_gallery.py": "1d56849889994c52009095c9ddb7d377bd9859decc75b62cf9aaac17e11cb9c4",
+    "src/tools/render_gallery.py": "f7610a1a58ed056a27e3b0777a6dc27fc71b05d37a041d4eb44200d92f3b95dd",
     "src/tools/render_locales.py": "dc11770d3298817f6079edf992be2f57c907c34940319fc43f7d54905a93c5be",
-    "src/tools/render_previews.py": "bfbf2ca46d65e1346056d3183c42c806bb73a58226670f283b371b3822fe56b0",
+    "src/tools/render_previews.py": "86969a651990abdf4c32349756e16b981f2892c5dd11e3d2d8c0f1c6a260b371",
     "src/tools/render_roundabout.py": "c72f8c7560b6a73bc39d7525934c28dcf270a7c87f6750ace097884938510924",
     "src/tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
     "src/tools/verify.py": "1c99fcc5756a67b912be1be7f83d0b289ad85d63db3ef6010e19f8aa7596cd97",
@@ -2483,11 +2487,11 @@
     "src/tools/verify_splash.py": "b288101d4d082f64a79279dd8a3f13c72c055d6cf69d82c2af088a9e7e1609eb",
     "src/tools/verify_text_cache.py": "aa5cad2c209ae1e03e8cf28b60e4b2d5888a484b6a25475d2c2efd4d90b1f80a",
     "src/tools/verify_unicode.py": "146d50e150f0671aad6a70de4bb41a869da4ce6f52b4f0708d7d43e0d7ce0bf1",
-    "SHA256SUMS": "f6eee08cfb3e3ede45e1448ebed46978f49c3470be767441db70f40f7a689546"
+    "SHA256SUMS": "afbe572a7386b5dee3d8dca0cc83b2a724160c9c43516c5a746375b6100a6b2b"
   },
   "checks": {
     "publication": {
-      "source_files": 1228,
+      "source_files": 1230,
       "text_and_links": {
         "credential_patterns": "no high-confidence matches; not an exhaustive secret audit",
         "owned_documentation_links": "verified local targets"
@@ -2531,6 +2535,14 @@
         "roundabout-eta.gif": {
           "duration_ms": 5600,
           "frames": 13
+        },
+        "coordinate-route.gif": {
+          "duration_ms": 8400,
+          "frames": 21
+        },
+        "map-point-route.gif": {
+          "duration_ms": 7000,
+          "frames": 29
         },
         "coordinates.gif": {
           "duration_ms": 6800,

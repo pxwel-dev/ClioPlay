@@ -33,6 +33,7 @@ BLUETOOTH_EVENTS = (
     (3900, ''),  # Second volume notice expires.
 )
 BLUETOOTH_SAMPLES = sorted({at + step for at, _ in BLUETOOTH_EVENTS for step in TWEEN_STEPS})
+ROUTE_READY_SAMPLES = sorted(set(TWEEN_STEPS) | {500+step for step in TWEEN_STEPS} | {1200,1650})
 PHONE_CALC_SAMPLES = tuple(range(0, 1300, 200))  # Whole UI targets 5 Hz while calculating.
 MENU_RETURN_SAMPLES = (0, *(400 + step for step in TWEEN_STEPS))
 MENU_ENTRY_SAMPLES = sorted({0, *(400+step for step in TWEEN_STEPS), *(950+step for step in TWEEN_STEPS), *(1400+step for step in TWEEN_STEPS)})
@@ -243,6 +244,30 @@ def catalog(sender_receipts=None):
     for stage, title in [('entry','Enter latitude'),('latitude','Latitude ready'),('longitude','Longitude ready'),('name','Optional destination name'),('review','Review coordinates and name'),('saved','Named destination saved to Recents')]:
         add('Coordinates','preview-coordinates-'+stage,title,
             f'coordinate_preview("{stage}");', note='Decimal-degree entry uses production remote keys; names and coordinates are controlled samples.')
+    add('Offline routing','coordinate-route-source','Choose Coordinates from an empty itinerary',
+        'clear_trip();gps.mph10=0;screen=SCR_TRIP;trip_pane=1;trip_right_focus=0;key_handle(K_DOWN);',
+        check='assert(!trip.active&&trip_right_focus==1);')
+    coordinate_start='coordinate_route_start();'
+    motion('Offline routing','coordinate-route-calculating','Coordinate destination calculation',
+           coordinate_start,((0,''),),PHONE_CALC_SAMPLES)
+    motion('Offline routing','coordinate-route-ready','Calculated coordinate route and journey estimate',
+           coordinate_start+'preview_finish_route();',((0,''),),ROUTE_READY_SAMPLES)
+    add('Offline routing','coordinate-route-recents','Coordinate route remains named in Recents',
+        coordinate_start+'preview_finish_route();key_handle(K_MENU);key_handle(K_ENTER);trip_pane=0;trip_tab=trip_focus=0;',
+        check='assert(route_status==R_READY&&streq(recents[0].name,"QUAYSIDE"));')
+    map_start='map_point_preview("calculating");'
+    add('Offline routing','map-point-driving','Start with no route', 'map_point_preview("driving");')
+    for elapsed in EXPLORE_SAMPLES:
+        add('Offline routing',f'map-point-explore-{elapsed:04d}','Enter map browsing',
+            f'map_point_preview("driving");key_handle(K_MAP);explore_sample({elapsed});gallery_motion=1;',
+            check='assert(freecam);')
+    add('Offline routing','map-point-selected','Pan the crosshair to a destination', 'map_point_preview("selected");')
+    add('Offline routing','map-point-confirm','OK opens the route-to-point confirmation', 'map_point_preview("confirm");',
+        check='assert(modal==MOD_ROUTE_POINT&&!pending_point_stop);')
+    motion('Offline routing','map-point-calculating','Calculate a route to the selected point',
+           map_start,((0,''),),PHONE_CALC_SAMPLES)
+    motion('Offline routing','map-point-ready','Calculated map-point route',
+           map_start+'preview_finish_route();',((0,''),),ROUTE_READY_SAMPLES)
     add('Coordinates','coordinates-invalid-latitude','Invalid latitude remains editable',
         'coordinate_preview("entry");coordinate_digits("90.00001");key_handle(K_SR);',check='assert(coordinates.error&&!trip.active);')
     add('Coordinates','coordinates-review-long-name','Long Unicode destination in review',
@@ -507,6 +532,31 @@ static void coordinate_preview(const char*stage){
  key_handle(K_ENTER);assert(coordinates.step==COORD_REVIEW&&!trip.active);if(streq(stage,"review"))return;
  key_handle(K_ENTER);screen=SCR_TRIP;trip_pane=0;trip_tab=trip_focus=0;
  assert(trip.active&&streq(recents[0].name,"QUAYSIDE"));
+}
+static void preview_finish_route(void){
+ /* Observe CALC before finishing, then let the shared HUD animate into ETA. */
+ draw();hud_capture_ms+=1300u;draw();
+ u32 deadline=s_now_ms()+120000u;
+ while(route_status==R_CALC&&time_before_u32(s_now_ms(),deadline))route_service_until(s_now_ms()+12u);
+ assert(route_status==R_READY&&route_n>1);
+ struct TripTarget*t=trip_current();assert(t&&route_target_lat==t->lat&&route_target_lon==t->lon);
+}
+static void coordinate_route_start(void){
+ coordinate_preview("review");gps.mph10=0;key_handle(K_ENTER);
+ assert(screen==SCR_MAP&&trip.active&&!freecam&&streq(recents[0].name,"QUAYSIDE"));
+ trip_service();trip_service();assert(route_status==R_CALC);
+}
+static void map_point_preview(const char*stage){
+ clear_trip();gps.mph10=0;screen=SCR_MAP;hud_navigation.kind=HUD_NONE;
+ if(streq(stage,"driving"))return;
+ key_handle(K_MAP);explore_sample(500);
+ for(int i=0;i<4;i++)key_handle(K_LEFT);for(int i=0;i<2;i++)key_handle(K_UP);
+ assert(freecam&&cam_lat!=car_lat()&&cam_lon!=car_lon());if(streq(stage,"selected"))return;
+ s32 lat=cam_lat,lon=cam_lon;key_handle(K_ENTER);
+ assert(modal==MOD_ROUTE_POINT&&pending_lat==lat&&pending_lon==lon&&!pending_point_stop);
+ if(streq(stage,"confirm"))return;
+ key_handle(K_ENTER);assert(screen==SCR_TRIP&&trip.active&&trip.target[0].lat==lat&&trip.target[0].lon==lon);
+ key_handle(K_MAP);trip_service();trip_service();assert(screen==SCR_MAP&&!freecam&&route_status==R_CALC);
 }
 static void three_stops(void){trip.count=4;trip.active_idx=0;for(int i=0;i<3;i++){trip.target[i].lat=5497300+i*100;trip.target[i].lon=-161300-i*100;snprintf(trip.target[i].name,sizeof(trip.target[i].name),"Stop %d",i+1);}trip.target[3]=trip.target[0];copystr(trip.target[3].name,sizeof(trip.target[3].name),"Home");}
 static void four_stops(void){three_stops();trip.count=5;trip.target[4]=trip.target[3];copystr(trip.target[3].name,sizeof(trip.target[3].name),"Stop 4");}

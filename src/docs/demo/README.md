@@ -11,6 +11,8 @@
 | [Speeding warning](speed-warning.gif) | The speed pill pulses red above a confirmed 30 mph limit and eases back when the car slows down. |
 | [Map browsing](map-browsing.gif) | Manual zoom is temporary; MAP restores Auto before entering Explore. Explore appears once on entry, stays silent during later pan/zoom, and returns to Auto with one notice. |
 | [Roundabout and ETA](roundabout-eta.gif) | The turn pill shows the third exit. OK displays the estimated time and remaining distance. |
+| [Coordinate route](coordinate-route.gif) | Choose Coordinates, enter latitude/longitude and a name, review, calculate a real route, return to driving and find the destination in Recents. |
+| [Map-point route](map-point-route.gif) | Enter Explore with MAP, pan to a point, press OK, confirm and calculate a real route back in the driving view. |
 | [Coordinates](coordinates.gif) | Enter decimal latitude/longitude, name and review a destination, then confirm it into the route and Recents. |
 | [Add a stop](add-stop.gif) | Trip adds a favourite as an intermediate stop and keeps the original destination. |
 
@@ -24,6 +26,13 @@ describe controlled host captures, not achieved head-unit frame rates. The runti
 uses separate map and animation schedules, capped together during calculation;
 Explore camera passes require extra drawing work. Head-unit performance, Bluetooth and audio require a
 [vehicle trial](../next-release/hardware-trial.md).
+
+The coordinate-route and map-point-route loops invoke the production remote
+handlers and routing code against the existing local navigation bundle. The
+requested target and nonempty computed route are checked before the ready-state
+frames are captured. Their calculation display is held for a controlled 1.3-second
+sampling window so its animation is visible; this is not a measurement of route
+calculation time on either the host or head unit. Sample GPS remains stationary.
 
 ## Regenerate
 

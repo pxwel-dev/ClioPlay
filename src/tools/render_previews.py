@@ -11,7 +11,7 @@ import tempfile
 
 from PIL import Image
 from render_gallery import (BLUETOOTH_SAMPLES, MENU_ENTRY_SAMPLES, MENU_RETURN_SAMPLES, PHONE_CALC_SAMPLES, ROUNDABOUT_ETA_SAMPLES,
-                            SPEED_WARNING_SAMPLES, EXPLORE_SAMPLES, TWEEN_STEPS, ZOOM_MODE_SAMPLES, ROOT, sha)
+                            SPEED_WARNING_SAMPLES, EXPLORE_SAMPLES, TWEEN_STEPS, ZOOM_MODE_SAMPLES, ROUTE_READY_SAMPLES, ROOT, sha)
 
 
 def timeline(theme, scenes):
@@ -49,6 +49,21 @@ def previews():
         'speed-warning.gif': timeline('night', timed_scenes('hud-speed-warning', SPEED_WARNING_SAMPLES, 3650)),
         'map-browsing.gif': timeline('night', timed_scenes('preview-zoom-modes', ZOOM_MODE_SAMPLES, 6500)),
         'roundabout-eta.gif': timeline('night', timed_scenes('preview-roundabout-eta', ROUNDABOUT_ETA_SAMPLES, 5600)),
+        'coordinate-route.gif': timeline('night', [
+            ('coordinate-route-source',800), ('preview-coordinates-latitude',900),
+            ('preview-coordinates-longitude',900), ('preview-coordinates-name',800),
+            ('preview-coordinates-review',1100),
+            *timed_scenes('coordinate-route-calculating', list(PHONE_CALC_SAMPLES), 1300),
+            *timed_scenes('coordinate-route-ready', list(ROUTE_READY_SAMPLES), 1700),
+            ('coordinate-route-recents',900),
+        ]),
+        'map-point-route.gif': timeline('night', [
+            ('map-point-driving',600),
+            *timed_scenes('map-point-explore', list(EXPLORE_SAMPLES), 1000),
+            ('map-point-selected',1000), ('map-point-confirm',1400),
+            *timed_scenes('map-point-calculating', list(PHONE_CALC_SAMPLES), 1300),
+            *timed_scenes('map-point-ready', list(ROUTE_READY_SAMPLES), 1700),
+        ]),
         'coordinates.gif': timeline('night', [(f'preview-coordinates-{stage}', ms) for stage, ms in [('entry',700),('latitude',1000),('longitude',1000),('name',1000),('review',1600),('saved',1500)]]),
         'add-stop.gif': timeline('night', [
             ('preview-add-stop', 1100), ('preview-add-source', 1200),
@@ -116,6 +131,12 @@ def main():
                 {'frame': relative, 'rgb565_sha256': capture['frames'][relative]['rgb565_sha256']}
                 for relative, _ in sequence
             ]}
+        for name in ('coordinate-route.gif','map-point-route.gif'):
+            reports[name]['routing_provenance'] = (
+                'Production remote handlers create the destination and production routing '
+                'runs to R_READY on the local map bundle; target coordinates and nonempty '
+                'route geometry are asserted. GPS is held stationary. The 1.3-second '
+                'calculation display is a controlled preview interval, not a timing benchmark.')
         generator_paths = ('tools/render_previews.py', 'tools/render_gallery.py', 'tools/text_engine.py',
                            'tests/native.c', 'tests/splash.c', 'tests/fixtures/route.h', 'clio843/font.bin')
         manifest = {

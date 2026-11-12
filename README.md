@@ -27,6 +27,10 @@
 | --- | --- |
 | ![GPS acquisition and recovery, phone connection, volume and no-active-route notices share one animated pill](src/docs/demo/status-notifications.gif) | ![A new song appears, updates inside Bluetooth control, then radio tuning changes the frequency](src/docs/demo/metadata-updates.gif) |
 
+| Manual coordinate route | Route to a point on the map |
+| --- | --- |
+| ![Enter latitude and longitude, name the destination, calculate the route and find it in Recents](src/docs/demo/coordinate-route.gif) | ![Enter Explore, pan the crosshair, press OK and confirm a route to the selected point](src/docs/demo/map-point-route.gif) |
+
 ## Compatibility
 
 The primary supported configuration is:
@@ -100,7 +104,13 @@ Confirmed places appear in **Recents**, where they can be reused or saved as
 favourites. Cancelling entry changes neither the route nor Recents. Routing uses
 your installed navigation data; entering coordinates does not download maps.
 
-![Entering and naming a destination with decimal-degree coordinates](src/docs/demo/coordinates.gif)
+[Quick coordinate entry preview](src/docs/demo/coordinates.gif)
+
+To choose a destination visually, press **MAP** to enter Explore, move the
+crosshair with the arrows, then press **OK** and confirm **Route to point**.
+With an active trip, the same action offers to add the point as a stop. If a
+temporary manual zoom is active, the first **MAP** restores Auto zoom; press it
+again to enter Explore.
 
 ## Use your remote
 

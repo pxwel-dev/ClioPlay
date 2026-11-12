@@ -496,8 +496,8 @@
     "clioa2dp": "46ff89d620896c3d3c578dd1c60ed025f22851380964ff01bdabc9b78a06100b"
   },
   "generator_inputs": {
-    "tools/render_previews.py": "bfbf2ca46d65e1346056d3183c42c806bb73a58226670f283b371b3822fe56b0",
-    "tools/render_gallery.py": "1d56849889994c52009095c9ddb7d377bd9859decc75b62cf9aaac17e11cb9c4",
+    "tools/render_previews.py": "86969a651990abdf4c32349756e16b981f2892c5dd11e3d2d8c0f1c6a260b371",
+    "tools/render_gallery.py": "f7610a1a58ed056a27e3b0777a6dc27fc71b05d37a041d4eb44200d92f3b95dd",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
     "tests/native.c": "f52b471b212f9edfb4f575cf53d818eb6b47b3f51db01c7fa8678cd2a839aec6",
     "tests/splash.c": "a564a2e45e6ff0dfbe38ea30174398c35873aeda601fcd37cbb58095a96d7e51",
@@ -2043,6 +2043,302 @@
           "rgb565_sha256": "631aeb4eaa2df7bc2394350cef836573db79c77ba958de845b52091ddbb343d3"
         }
       ]
+    },
+    "coordinate-route.gif": {
+      "sha256": "86d4adaf443c2af8f5e9f790cc80e1169509046f8589fbf57e7b46a38693a14f",
+      "frames": 21,
+      "duration_ms": 8400,
+      "source_frames": [
+        {
+          "frame": "night/coordinate-route-source.png",
+          "rgb565_sha256": "700bd89926da1005a9dbd3ad1a1c813d5bf0f7ae70564d379a20488f6a5a8508"
+        },
+        {
+          "frame": "night/preview-coordinates-latitude.png",
+          "rgb565_sha256": "ea14054655a904b31e87db9049f97a133fdaba4b00b0642585d35b8f56cf54f0"
+        },
+        {
+          "frame": "night/preview-coordinates-longitude.png",
+          "rgb565_sha256": "bbb6f1c5eca5d7231ac5280cf574b54912ef747434d1524312ec6fee642f32fe"
+        },
+        {
+          "frame": "night/preview-coordinates-name.png",
+          "rgb565_sha256": "8d44d5aa8f8ec64cc33de3c540ae614bb9ff4a3dd6a259bdb299e83ee2cf7325"
+        },
+        {
+          "frame": "night/preview-coordinates-review.png",
+          "rgb565_sha256": "d2d7fc3befc31e70a1b6d5f65243207711b23b379ba24d216c6b7c6678b3d0f7"
+        },
+        {
+          "frame": "night/coordinate-route-calculating-0000.png",
+          "rgb565_sha256": "cf0004f15b248ba645ca417e021d101f22f659fad2ddd5099f22ddfae7308b9d"
+        },
+        {
+          "frame": "night/coordinate-route-calculating-0200.png",
+          "rgb565_sha256": "16eb8acc8021200739037c440e980b05a4d3524014c56516f85f5c61f338c862"
+        },
+        {
+          "frame": "night/coordinate-route-calculating-0400.png",
+          "rgb565_sha256": "e5c9e482d90b686acfd3f1b0cb8138876b10baac6aad68d9c4bee289067d1495"
+        },
+        {
+          "frame": "night/coordinate-route-calculating-0600.png",
+          "rgb565_sha256": "724d83f09c5a6087ff8f95e6fa65dfdc98f296b4ea4db598748ce4193ddb8cab"
+        },
+        {
+          "frame": "night/coordinate-route-calculating-0800.png",
+          "rgb565_sha256": "059fc2609713fc1c829806fc8a84ae5f3103ad05bd606e66747e3368b40adb89"
+        },
+        {
+          "frame": "night/coordinate-route-calculating-1000.png",
+          "rgb565_sha256": "ceb925a5351bd7f78c56acd1ffc81c86495cb20e7444f4ad266fb109a9908e15"
+        },
+        {
+          "frame": "night/coordinate-route-calculating-1200.png",
+          "rgb565_sha256": "5a94080e13060b0c7e88584e559900ee534dece88580c999f8d4a227ba2a47bc"
+        },
+        {
+          "frame": "night/coordinate-route-ready-0000.png",
+          "rgb565_sha256": "512ad6dfdf31fb12defceba15d3faaa039e955ab376559d24a951f2c7f712ab0"
+        },
+        {
+          "frame": "night/coordinate-route-ready-0050.png",
+          "rgb565_sha256": "1d7ed3dfcc047e7db7a562d1224c1ad1856f807c3efec46991622c7253577848"
+        },
+        {
+          "frame": "night/coordinate-route-ready-0100.png",
+          "rgb565_sha256": "2090c5968e3bbd6f17554cc2d458f65ac4dbf0b3121a2d1982f003f29b827ca7"
+        },
+        {
+          "frame": "night/coordinate-route-ready-0150.png",
+          "rgb565_sha256": "33bfa3e46cb779cf4f42e9d1d1beec45bce78015eb3dcfd552e468603c99818c"
+        },
+        {
+          "frame": "night/coordinate-route-ready-0200.png",
+          "rgb565_sha256": "0435145700af7bc2bfabddefe265f4d78799333e489eaacb6494a5302ff93acb"
+        },
+        {
+          "frame": "night/coordinate-route-ready-0250.png",
+          "rgb565_sha256": "d34019d212321e13a1d28e53f6f6454fa7c34f94446821177b5dde54d0691760"
+        },
+        {
+          "frame": "night/coordinate-route-ready-0300.png",
+          "rgb565_sha256": "0510fe7ad8940657b34a465e3e859e91d3a353cb855ca304bb9f3368f711e81d"
+        },
+        {
+          "frame": "night/coordinate-route-ready-0350.png",
+          "rgb565_sha256": "fc056ccf5f3ee9cf00fcbf68fcc1dfcc0ff1ba10a4ac9739ff902b73ae4ad150"
+        },
+        {
+          "frame": "night/coordinate-route-ready-0500.png",
+          "rgb565_sha256": "fc056ccf5f3ee9cf00fcbf68fcc1dfcc0ff1ba10a4ac9739ff902b73ae4ad150"
+        },
+        {
+          "frame": "night/coordinate-route-ready-0550.png",
+          "rgb565_sha256": "fc056ccf5f3ee9cf00fcbf68fcc1dfcc0ff1ba10a4ac9739ff902b73ae4ad150"
+        },
+        {
+          "frame": "night/coordinate-route-ready-0600.png",
+          "rgb565_sha256": "fc056ccf5f3ee9cf00fcbf68fcc1dfcc0ff1ba10a4ac9739ff902b73ae4ad150"
+        },
+        {
+          "frame": "night/coordinate-route-ready-0650.png",
+          "rgb565_sha256": "fc056ccf5f3ee9cf00fcbf68fcc1dfcc0ff1ba10a4ac9739ff902b73ae4ad150"
+        },
+        {
+          "frame": "night/coordinate-route-ready-0700.png",
+          "rgb565_sha256": "fc056ccf5f3ee9cf00fcbf68fcc1dfcc0ff1ba10a4ac9739ff902b73ae4ad150"
+        },
+        {
+          "frame": "night/coordinate-route-ready-0750.png",
+          "rgb565_sha256": "fc056ccf5f3ee9cf00fcbf68fcc1dfcc0ff1ba10a4ac9739ff902b73ae4ad150"
+        },
+        {
+          "frame": "night/coordinate-route-ready-0800.png",
+          "rgb565_sha256": "fc056ccf5f3ee9cf00fcbf68fcc1dfcc0ff1ba10a4ac9739ff902b73ae4ad150"
+        },
+        {
+          "frame": "night/coordinate-route-ready-0850.png",
+          "rgb565_sha256": "fc056ccf5f3ee9cf00fcbf68fcc1dfcc0ff1ba10a4ac9739ff902b73ae4ad150"
+        },
+        {
+          "frame": "night/coordinate-route-ready-1200.png",
+          "rgb565_sha256": "fc056ccf5f3ee9cf00fcbf68fcc1dfcc0ff1ba10a4ac9739ff902b73ae4ad150"
+        },
+        {
+          "frame": "night/coordinate-route-ready-1650.png",
+          "rgb565_sha256": "fc056ccf5f3ee9cf00fcbf68fcc1dfcc0ff1ba10a4ac9739ff902b73ae4ad150"
+        },
+        {
+          "frame": "night/coordinate-route-recents.png",
+          "rgb565_sha256": "7e31c653bc145264c0b998565d41bc3f8388c4866e206f0ac8ccb8ffb7ebaab6"
+        }
+      ],
+      "routing_provenance": "Production remote handlers create the destination and production routing runs to R_READY on the local map bundle; target coordinates and nonempty route geometry are asserted. GPS is held stationary. The 1.3-second calculation display is a controlled preview interval, not a timing benchmark."
+    },
+    "map-point-route.gif": {
+      "sha256": "3233ff8d5c3139f55c64f015d8fd9e14868ceda797f366c03435a06d61593e8e",
+      "frames": 29,
+      "duration_ms": 7000,
+      "source_frames": [
+        {
+          "frame": "night/map-point-driving.png",
+          "rgb565_sha256": "1685edd75dd852858d8ddeb54556ab64fcd6997639e9df8deedce2835630b516"
+        },
+        {
+          "frame": "night/map-point-explore-0000.png",
+          "rgb565_sha256": "83a697edd7cdfa51c7cda7797f67ec97f38f3ee9de434212dfcfe1140827dd3d"
+        },
+        {
+          "frame": "night/map-point-explore-0050.png",
+          "rgb565_sha256": "47038376d939b4273e0acfcec20f682b6d6f4ad50bb43f181bd7e2953bce2b30"
+        },
+        {
+          "frame": "night/map-point-explore-0100.png",
+          "rgb565_sha256": "9e42fcaa95e0865e3e34ce73f55207de88eec941506fb81caa3bb96006305c6e"
+        },
+        {
+          "frame": "night/map-point-explore-0150.png",
+          "rgb565_sha256": "8188951a8b28e995c074fb37021577980b1f730941899beb5906f79b6c39fe4d"
+        },
+        {
+          "frame": "night/map-point-explore-0200.png",
+          "rgb565_sha256": "f0d79c42dbb3eeab3dd58af72aeced07b5e35bb531c9c06b31d21936fad9d553"
+        },
+        {
+          "frame": "night/map-point-explore-0250.png",
+          "rgb565_sha256": "4fbba45b15ac7eb35351c3118cb5f7412649a647d2549b4561920fea93772f38"
+        },
+        {
+          "frame": "night/map-point-explore-0300.png",
+          "rgb565_sha256": "c477b358f1919d214b3877bbff3539fa3d6e0fb88183a95e0f8346266c756ecc"
+        },
+        {
+          "frame": "night/map-point-explore-0350.png",
+          "rgb565_sha256": "5404c5ddc8ddcc59d83dc99f6d94cbad2f04d56bcee930afd615dab815b8602a"
+        },
+        {
+          "frame": "night/map-point-explore-0400.png",
+          "rgb565_sha256": "ca01db843918708537d6171b760929c1c80c419442eb1ce3bafda0b216f5c606"
+        },
+        {
+          "frame": "night/map-point-explore-0450.png",
+          "rgb565_sha256": "8c6c1dbaf07318cf416872c2da7c4ef761384d87332460ee70c1f334254bb3d6"
+        },
+        {
+          "frame": "night/map-point-explore-0500.png",
+          "rgb565_sha256": "283da36558dcf79953c7ff98725a59098b323cd815b630eae65788231452641c"
+        },
+        {
+          "frame": "night/map-point-selected.png",
+          "rgb565_sha256": "63e9f1bd10ffb26eba21ec8536e22f99ed3b1b85d1d30e75715bf8c960e9fa21"
+        },
+        {
+          "frame": "night/map-point-confirm.png",
+          "rgb565_sha256": "97abca0155b8759566d0546fd1d2bd7935a5c40f95abc0ce2dea8d6ba34ce15b"
+        },
+        {
+          "frame": "night/map-point-calculating-0000.png",
+          "rgb565_sha256": "cf0004f15b248ba645ca417e021d101f22f659fad2ddd5099f22ddfae7308b9d"
+        },
+        {
+          "frame": "night/map-point-calculating-0200.png",
+          "rgb565_sha256": "16eb8acc8021200739037c440e980b05a4d3524014c56516f85f5c61f338c862"
+        },
+        {
+          "frame": "night/map-point-calculating-0400.png",
+          "rgb565_sha256": "e5c9e482d90b686acfd3f1b0cb8138876b10baac6aad68d9c4bee289067d1495"
+        },
+        {
+          "frame": "night/map-point-calculating-0600.png",
+          "rgb565_sha256": "724d83f09c5a6087ff8f95e6fa65dfdc98f296b4ea4db598748ce4193ddb8cab"
+        },
+        {
+          "frame": "night/map-point-calculating-0800.png",
+          "rgb565_sha256": "059fc2609713fc1c829806fc8a84ae5f3103ad05bd606e66747e3368b40adb89"
+        },
+        {
+          "frame": "night/map-point-calculating-1000.png",
+          "rgb565_sha256": "ceb925a5351bd7f78c56acd1ffc81c86495cb20e7444f4ad266fb109a9908e15"
+        },
+        {
+          "frame": "night/map-point-calculating-1200.png",
+          "rgb565_sha256": "5a94080e13060b0c7e88584e559900ee534dece88580c999f8d4a227ba2a47bc"
+        },
+        {
+          "frame": "night/map-point-ready-0000.png",
+          "rgb565_sha256": "d3823f046ffcdcdfd3d550fe7eee1b624ced5868e167e9325a76211ac454c5ce"
+        },
+        {
+          "frame": "night/map-point-ready-0050.png",
+          "rgb565_sha256": "53d8ea8e804dd319d8b47118e09c3e335f3102608fd5b796fae1c17d9e92dc7c"
+        },
+        {
+          "frame": "night/map-point-ready-0100.png",
+          "rgb565_sha256": "c2c75c288fda87493783d1ff79a3c3bc084031bc3cd0ae2a3a0a324630bbc132"
+        },
+        {
+          "frame": "night/map-point-ready-0150.png",
+          "rgb565_sha256": "a304c82cbbb6df55b6a58528379ec0931de03154419b03577ddab6f4ec00c657"
+        },
+        {
+          "frame": "night/map-point-ready-0200.png",
+          "rgb565_sha256": "b39821b321aeb340edd2e622f28bdf31882ad0cadc4ba5fb73c0f499a313ddf9"
+        },
+        {
+          "frame": "night/map-point-ready-0250.png",
+          "rgb565_sha256": "ffc3f9d22f3d96db175544e96d7c21b303487d0bbf7e8c5a6dfe7ec131c3f99c"
+        },
+        {
+          "frame": "night/map-point-ready-0300.png",
+          "rgb565_sha256": "7a15e5895d46c7fe3c7e56edc4be794859b8b4972999043ce3cc0bd9fdcd0f9b"
+        },
+        {
+          "frame": "night/map-point-ready-0350.png",
+          "rgb565_sha256": "657ed1458b798b4e31f7fbee9b6d36033270b29765bcdccd5551e2b9d97faf26"
+        },
+        {
+          "frame": "night/map-point-ready-0500.png",
+          "rgb565_sha256": "657ed1458b798b4e31f7fbee9b6d36033270b29765bcdccd5551e2b9d97faf26"
+        },
+        {
+          "frame": "night/map-point-ready-0550.png",
+          "rgb565_sha256": "657ed1458b798b4e31f7fbee9b6d36033270b29765bcdccd5551e2b9d97faf26"
+        },
+        {
+          "frame": "night/map-point-ready-0600.png",
+          "rgb565_sha256": "657ed1458b798b4e31f7fbee9b6d36033270b29765bcdccd5551e2b9d97faf26"
+        },
+        {
+          "frame": "night/map-point-ready-0650.png",
+          "rgb565_sha256": "657ed1458b798b4e31f7fbee9b6d36033270b29765bcdccd5551e2b9d97faf26"
+        },
+        {
+          "frame": "night/map-point-ready-0700.png",
+          "rgb565_sha256": "657ed1458b798b4e31f7fbee9b6d36033270b29765bcdccd5551e2b9d97faf26"
+        },
+        {
+          "frame": "night/map-point-ready-0750.png",
+          "rgb565_sha256": "657ed1458b798b4e31f7fbee9b6d36033270b29765bcdccd5551e2b9d97faf26"
+        },
+        {
+          "frame": "night/map-point-ready-0800.png",
+          "rgb565_sha256": "657ed1458b798b4e31f7fbee9b6d36033270b29765bcdccd5551e2b9d97faf26"
+        },
+        {
+          "frame": "night/map-point-ready-0850.png",
+          "rgb565_sha256": "657ed1458b798b4e31f7fbee9b6d36033270b29765bcdccd5551e2b9d97faf26"
+        },
+        {
+          "frame": "night/map-point-ready-1200.png",
+          "rgb565_sha256": "657ed1458b798b4e31f7fbee9b6d36033270b29765bcdccd5551e2b9d97faf26"
+        },
+        {
+          "frame": "night/map-point-ready-1650.png",
+          "rgb565_sha256": "657ed1458b798b4e31f7fbee9b6d36033270b29765bcdccd5551e2b9d97faf26"
+        }
+      ],
+      "routing_provenance": "Production remote handlers create the destination and production routing runs to R_READY on the local map bundle; target coordinates and nonempty route geometry are asserted. GPS is held stationary. The 1.3-second calculation display is a controlled preview interval, not a timing benchmark."
     },
     "coordinates.gif": {
       "sha256": "110729788d0dc492c08e2fa9441fe777da30caa38b654f0d7489528811b64852",
