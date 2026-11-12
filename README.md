@@ -49,19 +49,19 @@ ClioPlay handles the audio source as follows:
 | FM / MW / LW | The reported radio source |
 
 BT playback is available on CD and when no valid live radio source can be read;
-BT CTRL also requires a connected phone. Unavailable radio/volume readings stay hidden. 
+BT CTRL also requires a connected phone. Unavailable radio/volume readings stay hidden.
 
 ## Features
 
 - Offline OpenStreetMap navigation, routing and rerouting.
-- Browse the map, choose destinations, manage stops, recents and favourites.
+- Browse the map, enter named decimal-degree coordinates offline, manage stops, recents and favourites.
 - Bluetooth phone audio with track information and remote playback controls.
 - Steering wheel audio controls.
 - Full-screen maps with animated, semi-transparent frosted glass notices for road names, camera alerts, route progress and audio changes.
 - Day/Night themes with custom daily switch times in Auto, automatic units and time zones, and 18 interface languages.
 - Mapped speed limits and camera alerts where the bundled country policy allows them.
 
-For new stops/destinations that aren’t already in ClioPlay’s recents/favourites list, use the separate [ClioPlay Send website](https://pxwel-dev.github.io/ClioPlay-Send/) to send the new route to ClioPlay from your phone via Bluetooth. For ease of use, add the website to your Home Screen as a web app. 
+For new stops/destinations, enter **Coordinates** on the head unit or use the separate [ClioPlay Send website](https://pxwel-dev.github.io/ClioPlay-Send/) to send the new route to ClioPlay from your phone via Bluetooth. For ease of use, add the website to your Home Screen as a web app.
 
 ## Install
 
@@ -86,6 +86,22 @@ It does not format the card. Replaced files are backed up. Any existing ClioPlay
 pairings and saved places are preserved. No previous ClioPlay install is needed.
 Map building can take substantial time for large extracts.
 
+## Enter a destination offline
+
+In **Trip**, press the **right soft key** to focus the itinerary, then select
+**Coordinates**. Enter decimal **latitude first**, then **longitude**, add an
+optional name, and review before confirming. Use negative values for south/west.
+The **±** key changes the sign; the left soft key deletes and the right soft key
+advances between coordinate fields. **BACK** returns to the previous step while
+keeping your entries. An empty name uses the coordinates in Recents.
+
+Coordinates are also available under **Add stop** and **Change destination**.
+Confirmed places appear in **Recents**, where they can be reused or saved as
+favourites. Cancelling entry changes neither the route nor Recents. Routing uses
+your installed navigation data; entering coordinates does not download maps.
+
+![Entering and naming a destination with decimal-degree coordinates](src/docs/demo/coordinates.gif)
+
 ## Use your remote
 
 | Control | Action |
@@ -96,8 +112,8 @@ Map building can take substantial time for large extracts.
 | **Centre / OK** | On the driving map, show the ETA and remaining distance, or the heading without a route. In map browsing, select the point under the crosshair. In **BT CTRL**, play or pause. In menus, select or confirm. |
 | **Up / Down** | Pan the map or move through menu rows. |
 | **Left / Right** | Pan the map or change the selected tab, option or value. In **BT CTRL**, play the previous or next track. |
-| **Left soft key** | Zoom out on the map, focus destinations in Trip, or delete while naming a favourite. |
-| **Right soft key** | Zoom in on the map, focus the itinerary in Trip, or insert a space while naming a favourite. |
+| **Left soft key** | Zoom out on the map, focus destinations in Trip, or delete a character while entering coordinates or a name. |
+| **Right soft key** | Zoom in on the map, focus the itinerary in Trip, advance to the next coordinate field, or insert a space while entering a name. |
 
 If you adjust the zoom while Auto zoom is enabled, **MAP** restores Auto zoom
 without entering Explore. Press **MAP** again to enter Explore, or use an arrow
@@ -120,4 +136,4 @@ Firmware, map extracts, generated navigation, personal settings and build caches
 are excluded from Git. The [UI previews](src/docs/demo/README.md) use the
 production renderer with controlled host inputs; it does not establish vehicle performance.
 
-<sub>Release files refreshed 11 November 2026 (Europe/London).</sub>
+<sub>Release files refreshed 12 November 2026 (Europe/London).</sub>
