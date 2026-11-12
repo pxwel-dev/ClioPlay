@@ -153,5 +153,17 @@
   "No track information": "곡 정보 없음",
   "Radio": "라디오",
   "Day starts": "주간 시작",
-  "Night starts": "야간 시작"
+  "Night starts": "야간 시작",
+  "Coordinates": "좌표",
+  "Latitude": "위도",
+  "Longitude": "경도",
+  "Name (optional)": "이름 (선택 사항)",
+  "Review": "확인",
+  "Edit coordinates": "좌표 수정",
+  "Edit name": "이름 수정",
+  "Decimal degrees": "십진 각도",
+  "Enter a valid latitude": "올바른 위도를 입력하세요",
+  "Enter a valid longitude": "올바른 경도를 입력하세요",
+  "Next": "다음",
+  "Clear": "모두 지우기"
 }

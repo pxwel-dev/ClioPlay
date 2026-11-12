@@ -240,6 +240,19 @@ def catalog(sender_receipts=None):
     add('Destinations','itinerary-full','Five-target itinerary','screen=SCR_TRIP;trip_pane=1;four_stops();')
     add('Destinations','itinerary-empty','No current route','screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;')
     key('Destinations','empty-receive','Receive first destination from phone','screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;','key_handle(K_ENTER);','assert(modal==MOD_WAIT_PHONE);')
+    for stage, title in [('entry','Enter latitude'),('latitude','Latitude ready'),('longitude','Longitude ready'),('name','Optional destination name'),('review','Review coordinates and name'),('saved','Named destination saved to Recents')]:
+        add('Coordinates','preview-coordinates-'+stage,title,
+            f'coordinate_preview("{stage}");', note='Decimal-degree entry uses production remote keys; names and coordinates are controlled samples.')
+    add('Coordinates','coordinates-invalid-latitude','Invalid latitude remains editable',
+        'coordinate_preview("entry");coordinate_digits("90.00001");key_handle(K_SR);',check='assert(coordinates.error&&!trip.active);')
+    add('Coordinates','coordinates-review-long-name','Long Unicode destination in review',
+        'coordinate_preview("review");copystr(coordinates.name,sizeof(coordinates.name),"東京駅 丸の内中央口 · Newcastle Central Station");')
+    add('Coordinates','coordinates-latitude-german','Translated numeric entry with valid clock and status',
+        'coordinate_preview("latitude");pref.language=3;set_volume(16);')
+    add('Coordinates','coordinates-latitude-arabic','Arabic numeric entry with inline validation',
+        'coordinate_preview("latitude");pref.language=12;coordinates.error=1;')
+    add('Coordinates','coordinates-review-hebrew','Hebrew review with left-to-right coordinates',
+        'coordinate_preview("review");pref.language=17;')
     key('Destinations','full-add-disabled','Full itinerary: add-stop limit','screen=SCR_TRIP;trip_pane=1;four_stops();trip_right_focus=5;','key_handle(K_ENTER);','assert(modal==MOD_NONE&&trip.count==5);')
     add_stop = 'key_handle(K_MENU);key_handle(K_ENTER);key_handle(K_SR);key_handle(K_DOWN);key_handle(K_DOWN);'
     add_source = add_stop + 'key_handle(K_ENTER);key_handle(K_DOWN);'
@@ -275,7 +288,7 @@ def catalog(sender_receipts=None):
     key('Itinerary actions','destination-unfavourite','Remove destination from favourites','screen=SCR_TRIP;faves[0].lat=trip.target[1].lat;faves[0].lon=trip.target[1].lon;trip_pane=1;trip_right_focus=1;key_handle(K_ENTER);modal_choice=1;','key_handle(K_ENTER);','assert(nfaves==3);')
     for change in (False,True):
         state='screen=SCR_TRIP;modal=MOD_SOURCE_PICK;dest_pick_action='+('DEST_PICK_CHANGE_DEST;' if change else 'DEST_PICK_ADD_STOP;')
-        for choice,title in enumerate(('Recents','Favourites','Send from phone','Cancel')):
+        for choice,title in enumerate(('Recents','Favourites','Send from phone','Coordinates','Cancel')):
             stem=('change' if change else 'add')+f'-source-{choice}'
             setup=state+f'modal_choice={choice};'
             add('Choose destination',stem+'-choice',title+' · '+('change destination' if change else 'add stop'),setup)
@@ -484,6 +497,17 @@ static void restore_route(void){route_n=saved_n;route_head=0;route_result_m=save
  memcpy(route_lat,saved_lat,sizeof(saved_lat));memcpy(route_lon,saved_lon,sizeof(saved_lon));memcpy(route_node,saved_node,sizeof(saved_node));memcpy(route_seg_arc,saved_arc,sizeof(saved_arc));memcpy(route_seg_phys,saved_phys,sizeof(saved_phys));memcpy(route_seg_m,saved_seg_m,sizeof(saved_seg_m));memcpy(route_seg_cost,saved_seg_cost,sizeof(saved_seg_cost));}
 static void explore(void){enter_freecam();explore_sample(500);}
 static void name_keyboard(void){screen=SCR_KEY;keyboard_open_fave_name(5497370,-161331);}
+static void coordinate_digits(const char*s){while(*s){char c=*s++;coordinates.focus=c=='-'?9:c=='.'?11:c=='0'?10:c-'1';key_handle(K_ENTER);}}
+static void coordinate_preview(const char*stage){
+ clear_trip();screen=SCR_TRIP;trip_pane=1;trip_right_focus=0;key_handle(K_DOWN);key_handle(K_ENTER);
+ assert(screen==SCR_COORDINATES&&coordinates_active);if(streq(stage,"entry"))return;
+ coordinate_digits("54.97548");coordinates.focus=12;if(streq(stage,"latitude"))return;
+ key_handle(K_SR);coordinate_digits("-1.64050");coordinates.focus=12;if(streq(stage,"longitude"))return;
+ key_handle(K_SR);const char*name="QUAYSIDE";while(*name)keyboard_type(*name++);kbd_focus=38;if(streq(stage,"name"))return;
+ key_handle(K_ENTER);assert(coordinates.step==COORD_REVIEW&&!trip.active);if(streq(stage,"review"))return;
+ key_handle(K_ENTER);screen=SCR_TRIP;trip_pane=0;trip_tab=trip_focus=0;
+ assert(trip.active&&streq(recents[0].name,"QUAYSIDE"));
+}
 static void three_stops(void){trip.count=4;trip.active_idx=0;for(int i=0;i<3;i++){trip.target[i].lat=5497300+i*100;trip.target[i].lon=-161300-i*100;snprintf(trip.target[i].name,sizeof(trip.target[i].name),"Stop %d",i+1);}trip.target[3]=trip.target[0];copystr(trip.target[3].name,sizeof(trip.target[3].name),"Home");}
 static void four_stops(void){three_stops();trip.count=5;trip.target[4]=trip.target[3];copystr(trip.target[3].name,sizeof(trip.target[3].name),"Stop 4");}
 static void incoming(const char*name,char action){phone_dest.valid=1;phone_dest.action=action;phone_dest.lat=5497370;phone_dest.lon=-161331;copystr(phone_dest.name,sizeof(phone_dest.name),name);phone_destination_apply();}
@@ -507,7 +531,7 @@ static void show_phone_connection(void){
 }
 static void gallery_reset(int night){
  hud_capture_clock=1;hud_capture_ms=s_now_ms();gallery_motion=0;
- bt_hud_link=0;bt_hud_peer[0]=0;bt_active_written=-1;
+ bt_hud_link=0;bt_hud_peer[0]=0;bt_active_written=-1;coordinates_active=0;memzero(&coordinates,sizeof(coordinates));
  route_cancel();fixture();restore_route();atlas_active=0;atlas_future_m=atlas_future_cost=0;
  pref=(struct Prefs){50,1,0,0,0,night?THEME_NIGHT:THEME_DAY,0,1,0,0,CLIO_DAY_START,CLIO_NIGHT_START};apply_palette(night);
  mapok=1;screen=SCR_MAP;trip_pane=trip_tab=trip_focus=trip_right_focus=0;menu_focus=set_focus=0;

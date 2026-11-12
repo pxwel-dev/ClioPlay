@@ -11,6 +11,7 @@
 | [Speeding warning](speed-warning.gif) | The speed pill pulses red above a confirmed 30 mph limit and eases back when the car slows down. |
 | [Map browsing](map-browsing.gif) | Manual zoom is temporary; MAP restores Auto before entering Explore. Explore appears once on entry, stays silent during later pan/zoom, and returns to Auto with one notice. |
 | [Roundabout and ETA](roundabout-eta.gif) | The turn pill shows the third exit. OK displays the estimated time and remaining distance. |
+| [Coordinates](coordinates.gif) | Enter decimal latitude/longitude, name and review a destination, then confirm it into the route and Recents. |
 | [Add a stop](add-stop.gif) | Trip adds a favourite as an intermediate stop and keeps the original destination. |
 
 These silent loops use 480 × 272 frames from the production C renderer.

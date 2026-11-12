@@ -153,5 +153,17 @@
   "No track information": "Δεν υπάρχουν πληροφορίες τραγουδιού",
   "Radio": "Ραδιόφωνο",
   "Day starts": "Έναρξη ημέρας",
-  "Night starts": "Έναρξη νύχτας"
+  "Night starts": "Έναρξη νύχτας",
+  "Coordinates": "Συντεταγμένες",
+  "Latitude": "Γεωγρ. πλάτος",
+  "Longitude": "Γεωγρ. μήκος",
+  "Name (optional)": "Όνομα (προαιρετικό)",
+  "Review": "Έλεγχος",
+  "Edit coordinates": "Αλλαγή συντεταγμένων",
+  "Edit name": "Αλλαγή ονόματος",
+  "Decimal degrees": "Δεκαδικές μοίρες",
+  "Enter a valid latitude": "Εισαγάγετε έγκυρο γεωγρ. πλάτος",
+  "Enter a valid longitude": "Εισαγάγετε έγκυρο γεωγρ. μήκος",
+  "Next": "Επόμενο",
+  "Clear": "Καθαρισμός"
 }

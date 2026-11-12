@@ -639,6 +639,54 @@
     "Night starts": [
       "Début de la nuit",
       "Inicio de la noche"
+    ],
+    "Coordinates": [
+      "Coordonnées",
+      "Coordenadas"
+    ],
+    "Latitude": [
+      "Latitude",
+      "Latitud"
+    ],
+    "Longitude": [
+      "Longitude",
+      "Longitud"
+    ],
+    "Name (optional)": [
+      "Nom (facultatif)",
+      "Nombre (opcional)"
+    ],
+    "Review": [
+      "Vérification",
+      "Revisar"
+    ],
+    "Edit coordinates": [
+      "Modifier les coordonnées",
+      "Editar coordenadas"
+    ],
+    "Edit name": [
+      "Modifier le nom",
+      "Editar nombre"
+    ],
+    "Decimal degrees": [
+      "Degrés décimaux",
+      "Grados decimales"
+    ],
+    "Enter a valid latitude": [
+      "Saisissez une latitude valide",
+      "Introduce una latitud válida"
+    ],
+    "Enter a valid longitude": [
+      "Saisissez une longitude valide",
+      "Introduce una longitud válida"
+    ],
+    "Next": [
+      "Suivant",
+      "Siguiente"
+    ],
+    "Clear": [
+      "Effacer",
+      "Borrar todo"
     ]
   },
   "language_names": {

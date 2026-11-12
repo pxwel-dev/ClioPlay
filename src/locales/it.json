@@ -153,5 +153,17 @@
   "No track information": "Informazioni brano assenti",
   "Radio": "Radio",
   "Day starts": "Inizio giorno",
-  "Night starts": "Inizio notte"
+  "Night starts": "Inizio notte",
+  "Coordinates": "Coordinate",
+  "Latitude": "Latitudine",
+  "Longitude": "Longitudine",
+  "Name (optional)": "Nome (facoltativo)",
+  "Review": "Verifica",
+  "Edit coordinates": "Modifica coordinate",
+  "Edit name": "Modifica nome",
+  "Decimal degrees": "Gradi decimali",
+  "Enter a valid latitude": "Inserisci una latitudine valida",
+  "Enter a valid longitude": "Inserisci una longitudine valida",
+  "Next": "Avanti",
+  "Clear": "Svuota"
 }

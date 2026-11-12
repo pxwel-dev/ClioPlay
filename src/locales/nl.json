@@ -153,5 +153,17 @@
   "No track information": "Geen nummerinformatie",
   "Radio": "Radio",
   "Day starts": "Dag vanaf",
-  "Night starts": "Nacht vanaf"
+  "Night starts": "Nacht vanaf",
+  "Coordinates": "Coördinaten",
+  "Latitude": "Breedtegraad",
+  "Longitude": "Lengtegraad",
+  "Name (optional)": "Naam (optioneel)",
+  "Review": "Controleren",
+  "Edit coordinates": "Coördinaten wijzigen",
+  "Edit name": "Naam wijzigen",
+  "Decimal degrees": "Decimale graden",
+  "Enter a valid latitude": "Voer een geldige breedtegraad in",
+  "Enter a valid longitude": "Voer een geldige lengtegraad in",
+  "Next": "Volgende",
+  "Clear": "Wissen"
 }

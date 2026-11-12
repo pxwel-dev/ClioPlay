@@ -153,5 +153,17 @@
   "No track information": "Brak informacji o utworze",
   "Radio": "Radio",
   "Day starts": "Początek dnia",
-  "Night starts": "Początek nocy"
+  "Night starts": "Początek nocy",
+  "Coordinates": "Współrzędne",
+  "Latitude": "Szerokość geogr.",
+  "Longitude": "Długość geogr.",
+  "Name (optional)": "Nazwa (opcjonalna)",
+  "Review": "Sprawdź",
+  "Edit coordinates": "Zmień współrzędne",
+  "Edit name": "Zmień nazwę",
+  "Decimal degrees": "Stopnie dziesiętne",
+  "Enter a valid latitude": "Wpisz poprawną szerokość geogr.",
+  "Enter a valid longitude": "Wpisz poprawną długość geogr.",
+  "Next": "Dalej",
+  "Clear": "Wyczyść"
 }

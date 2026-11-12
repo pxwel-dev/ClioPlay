@@ -3,7 +3,7 @@
 The language setting changes interface text only. Road/destination names are kept
 as received. GPS country profiles independently select Auto units, driving side
 and camera policy; changing the interface language cannot change those policies.
-The favourite keyboard has independent language layouts. The phone can still
+The naming keyboard has independent language layouts. The phone can still
 send destinations in native scripts.
 
 Supported: English, French, Spanish, German, Italian, Portuguese, Dutch, Polish,
@@ -23,7 +23,7 @@ and missing numeric-prefix spaces fail validation.
 
 Run `python3 tools/verify_locales.py` for native UBSan checks: all dictionary
 entries/glyphs, saved preferences, remote cycling/wrap, bounded labels/statuses,
-UTF-8 buffers and unchanged received names/units/policies. It renders ten states
+UTF-8 buffers and unchanged received names/units/policies. It renders fourteen states
 in day/night for every language. `tools/render_locales.py` (Pillow required)
 decodes those RGB565 captures and creates a browsable gallery. Captions are drawn
 outside native frames; UI pixels are not edited.
@@ -45,7 +45,9 @@ the language's accents.
 Uncased scripts retain their normal forms. Existing received/saved names keep
 their original case. For larger alphabets, the < / > keys below the letters page
 through characters; the language button shows the current page. One wide Save button sits
-beside it; the remote Back key leaves the editor without saving. Names are bounded to 40 Unicode code points and 160 UTF-8 bytes.
+beside it. When naming a coordinate destination this is **Next**, which opens
+review instead of saving immediately; Back returns to longitude without losing
+the name. When naming a favourite, Back leaves without saving. Names are bounded to 40 Unicode code points and 160 UTF-8 bytes.
 
 - Chinese uses per-character Pinyin candidates from Unicode 17 Unihan readings.
   Type a syllable (V represents Ü), move Up from the first letter row to the

@@ -61,7 +61,7 @@ static void render_background(void){
  u32 begin=hud_now_ms();renderer.building=1;render_fb=render_work;
  if(screen==SCR_MAP)draw_map_background();
  else if(screen==SCR_MENU)draw_menu();else if(screen==SCR_TRIP)draw_trip();
- else if(screen==SCR_BT)draw_bluetooth();else if(screen==SCR_KEY)draw_keyboard();else draw_settings();
+ else if(screen==SCR_BT)draw_bluetooth();else if(screen==SCR_KEY)draw_keyboard();else if(screen==SCR_COORDINATES)draw_coordinates();else draw_settings();
  renderer.building=0;render_fb=&display_fb;
  u16(*swap)[FB_PIX]=render_front;render_front=render_work;render_work=swap;
  renderer.valid=renderer.pending=1;renderer.camera_pending=0;renderer.page=screen;renderer.theme=theme_resolved;render_background_dirty=0;

@@ -153,5 +153,17 @@
   "No track information": "אין מידע על הרצועה",
   "Radio": "רדיו",
   "Day starts": "תחילת יום",
-  "Night starts": "תחילת לילה"
+  "Night starts": "תחילת לילה",
+  "Coordinates": "קואורדינטות",
+  "Latitude": "קו רוחב",
+  "Longitude": "קו אורך",
+  "Name (optional)": "שם (אופציונלי)",
+  "Review": "בדיקה",
+  "Edit coordinates": "עריכת קואורדינטות",
+  "Edit name": "עריכת שם",
+  "Decimal degrees": "מעלות עשרוניות",
+  "Enter a valid latitude": "יש להזין קו רוחב תקין",
+  "Enter a valid longitude": "יש להזין קו אורך תקין",
+  "Next": "הבא",
+  "Clear": "ניקוי"
 }

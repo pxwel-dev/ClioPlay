@@ -153,5 +153,17 @@
   "No track information": "Немає інформації про трек",
   "Radio": "Радіо",
   "Day starts": "Початок дня",
-  "Night starts": "Початок ночі"
+  "Night starts": "Початок ночі",
+  "Coordinates": "Координати",
+  "Latitude": "Широта",
+  "Longitude": "Довгота",
+  "Name (optional)": "Назва (необов’язкова)",
+  "Review": "Перевірка",
+  "Edit coordinates": "Змінити координати",
+  "Edit name": "Змінити назву",
+  "Decimal degrees": "Десяткові градуси",
+  "Enter a valid latitude": "Введіть правильну широту",
+  "Enter a valid longitude": "Введіть правильну довготу",
+  "Next": "Далі",
+  "Clear": "Очистити"
 }

@@ -153,5 +153,17 @@
   "No track information": "ट्रैक की जानकारी नहीं",
   "Radio": "रेडियो",
   "Day starts": "दिन की शुरुआत",
-  "Night starts": "रात की शुरुआत"
+  "Night starts": "रात की शुरुआत",
+  "Coordinates": "निर्देशांक",
+  "Latitude": "अक्षांश",
+  "Longitude": "देशांतर",
+  "Name (optional)": "नाम (वैकल्पिक)",
+  "Review": "समीक्षा",
+  "Edit coordinates": "निर्देशांक बदलें",
+  "Edit name": "नाम बदलें",
+  "Decimal degrees": "दशमलव डिग्री",
+  "Enter a valid latitude": "मान्य अक्षांश दर्ज करें",
+  "Enter a valid longitude": "मान्य देशांतर दर्ज करें",
+  "Next": "अगला",
+  "Clear": "साफ़ करें"
 }

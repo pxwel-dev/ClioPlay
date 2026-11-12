@@ -103,7 +103,7 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
   bidirectional text run on the device. Fonts cover major scripts, not all Unicode
   or emoji. English uses “Bluetooth” for the page title; other languages retain their
   translated phone labels. The audio notice uses “BT” in every language.
-  The favourite keyboard provides independent uppercase/accented and native-script
+  The naming keyboard provides independent uppercase/accented and native-script
   layouts, with left-soft backspace, right-soft space and a wide language chooser.
   See [keyboard controls and input methods](locales/README.md#favourite-keyboard).
 
@@ -144,8 +144,8 @@ styling, transitions and temporary display time.
   **OK** opens the place's actions or selects it for the current Add stop or
   Change destination task. In the itinerary, **Up / Down** moves through the
   route, and **OK** opens the selected stop or destination's actions, the
-  Add stop choices, or the cancel confirmation. With an empty itinerary, **OK**
-  opens the prompt to receive a destination from your phone. **BACK** or either
+  Add stop choices, or the cancel confirmation. With an empty itinerary, choose
+  **Send from phone** or **Coordinates**, then press **OK**. **BACK** or either
   soft key cancels an in-progress destination selection and returns to the itinerary.
 - **Bluetooth:** use **Up / Down** to move between the connected phone, saved
   phones and **Pair new phone**. On the connected phone, **Left / Right** selects
@@ -170,11 +170,12 @@ Use **Up / Down** to highlight a row. The available actions depend on the settin
 | Language | Cycle backwards or forwards. | Select the next language. |
 | Day starts / Night starts | Adjust the highlighted hour or minute. | Switch between editing hours and minutes. |
 
-### Favourite keyboard and dialogs
+### Naming keyboard and dialogs
 
 - In **Rename**, the **direction pad** moves between characters and actions.
   **OK** types the highlighted character or activates the highlighted action,
-  including character pages, the language chooser and Save. The **left soft key**
+  including character pages, the language chooser and Save (or Next when naming
+  a coordinate destination). The **left soft key**
   deletes, the **right soft key** inserts a space, and **BACK** returns to Trip
   without saving. In the language chooser, **Up / Down** moves one language,
   **Left / Right** jumps six, **OK** selects, and **BACK** or the **left soft key**
@@ -310,3 +311,31 @@ Source/track notices remain temporary and use the shared glass animations in
 navigation and menus. These paths have host checks; sound output and coexistence
 on other radios still need vehicle trials. No automatic radio-source selection
 or physical console control is implemented by these UI source rules.
+
+### Decimal-degree destinations
+
+**Trip → right soft key → Coordinates** opens latitude, longitude, optional name,
+and review. **Add stop** and **Change destination** expose the same Coordinates
+source. Arrow keys move around the numeric keypad; OK presses a key. **±** toggles
+the sign, **.** adds the decimal separator, **Delete** removes the last character,
+and **Clear** clears the current field. The left soft key deletes; the right soft
+key advances a numeric field. On the name keyboard, the right soft key inserts a
+space, and **Next** opens review. The existing keyboard-language selector works
+for destination names. BACK keeps entered values while going back; MAP/MENU leave
+without saving. Review offers the route/stop action, Edit coordinates, Edit name
+and Cancel. No saved places or itinerary targets change until confirmation.
+
+Latitude accepts −90…90, longitude −180…180; minus means south/west. Decimal
+points use `.` in every interface language. Up to seven fractional digits can be
+entered; the router stores 1e-5 degree integers and review displays the rounded
+five-decimal values. Exact geographic bounds are checked before rounding. Parsing
+uses bounded integer operations, without floating point or a geocoding service.
+An empty/space-only name becomes the coordinate pair. Saved names use the existing
+40-character Unicode limit and the existing Recents/favourites/trip formats.
+Existing nearby-place deduplication applies to Recents. Coordinate entry does not
+expand map coverage; normal navigation-data/routing errors still apply.
+
+Phone destinations wait while this editor is open. Explicit coordinate
+confirmation takes precedence over a phone destination received during entry;
+cancelling leaves the received destination available to the existing phone flow.
+Physical audio, controls and navigation behaviour still need the vehicle checks.

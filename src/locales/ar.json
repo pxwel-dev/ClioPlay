@@ -153,5 +153,17 @@
   "No track information": "لا توجد معلومات عن المقطع",
   "Radio": "الراديو",
   "Day starts": "بداية النهار",
-  "Night starts": "بداية الليل"
+  "Night starts": "بداية الليل",
+  "Coordinates": "الإحداثيات",
+  "Latitude": "خط العرض",
+  "Longitude": "خط الطول",
+  "Name (optional)": "الاسم (اختياري)",
+  "Review": "مراجعة",
+  "Edit coordinates": "تعديل الإحداثيات",
+  "Edit name": "تعديل الاسم",
+  "Decimal degrees": "درجات عشرية",
+  "Enter a valid latitude": "أدخل خط عرض صالحًا",
+  "Enter a valid longitude": "أدخل خط طول صالحًا",
+  "Next": "التالي",
+  "Clear": "مسح الكل"
 }

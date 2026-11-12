@@ -153,5 +153,17 @@
   "No track information": "Sem informações da faixa",
   "Radio": "Rádio",
   "Day starts": "Início do dia",
-  "Night starts": "Início da noite"
+  "Night starts": "Início da noite",
+  "Coordinates": "Coordenadas",
+  "Latitude": "Latitude",
+  "Longitude": "Longitude",
+  "Name (optional)": "Nome (opcional)",
+  "Review": "Rever",
+  "Edit coordinates": "Editar coordenadas",
+  "Edit name": "Editar nome",
+  "Decimal degrees": "Graus decimais",
+  "Enter a valid latitude": "Introduza uma latitude válida",
+  "Enter a valid longitude": "Introduza uma longitude válida",
+  "Next": "Seguinte",
+  "Clear": "Limpar"
 }

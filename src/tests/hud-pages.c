@@ -57,7 +57,7 @@ int main(void){
  assert(hud_tween[HC_STATUS].position_at==entrance_at&&hud_tween[HC_STATUS].content_at==content_at);
  assert(hud_status_pose(11200).a==hud_ease(200,320));
  prepare(11400);until=hud_audio.until;
- const int pages[]={SCR_TRIP,SCR_BT,SCR_SET,SCR_KEY,SCR_MENU};
+ const int pages[]={SCR_TRIP,SCR_BT,SCR_SET,SCR_KEY,SCR_COORDINATES,SCR_MENU};
  for(unsigned i=0;i<sizeof(pages)/sizeof(pages[0]);i++){
   screen=pages[i];prepare(11500+i*100);
   assert(hud_status_pose(hud_capture_ms).a==256&&hud_audio.until==until);

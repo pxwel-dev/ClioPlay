@@ -153,5 +153,17 @@
   "No track information": "无曲目信息",
   "Radio": "收音机",
   "Day starts": "日间开始",
-  "Night starts": "夜间开始"
+  "Night starts": "夜间开始",
+  "Coordinates": "坐标",
+  "Latitude": "纬度",
+  "Longitude": "经度",
+  "Name (optional)": "名称（可选）",
+  "Review": "确认",
+  "Edit coordinates": "修改坐标",
+  "Edit name": "修改名称",
+  "Decimal degrees": "十进制度数",
+  "Enter a valid latitude": "请输入有效纬度",
+  "Enter a valid longitude": "请输入有效经度",
+  "Next": "下一步",
+  "Clear": "清空"
 }

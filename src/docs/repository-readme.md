@@ -44,30 +44,24 @@ ClioPlay handles the audio source as follows:
 | Radio source read by ClioPlay | Source shown and used |
 | --- | --- |
 | CD / no-disc CD | **BT** |
-| AUX, with or without a connected phone | **AUX** (wired input) |
+| AUX | **AUX** |
 | No valid live radio source | **BT**, independent of radio source/volume telemetry |
 | FM / MW / LW | The reported radio source |
 
 BT playback is available on CD and when no valid live radio source can be read;
-BT CTRL also requires a connected phone. An unknown volume on first boot, or a
-saved volume from a previous boot, does not determine radio compatibility.
-Unavailable radio/volume readings stay hidden. The fallback BT label does not
-claim that a phone is connected. Physical volume controls remain with the vehicle;
-ClioPlay does not add software volume. Physical console controls are not
-implemented yet. Independent playback, volume/mute behaviour and coexistence
-still need vehicle validation on radios such as the Scénic's separate audio unit.
+BT CTRL also requires a connected phone. Unavailable radio/volume readings stay hidden.
 
 ## Features
 
 - Offline OpenStreetMap navigation, routing and rerouting.
-- Browse the map, choose destinations, manage stops, recents and favourites.
+- Browse the map, enter named decimal-degree coordinates offline, manage stops, recents and favourites.
 - Bluetooth phone audio with track information and remote playback controls.
 - Steering wheel audio controls.
 - Full-screen maps with animated, semi-transparent frosted glass notices for road names, camera alerts, route progress and audio changes.
 - Day/Night themes with custom daily switch times in Auto, automatic units and time zones, and 18 interface languages.
 - Mapped speed limits and camera alerts where the bundled country policy allows them.
 
-For new stops/destinations that aren’t already in ClioPlay’s recents/favourites list, use the separate [ClioPlay Send website](https://pxwel-dev.github.io/ClioPlay-Send/) to send the new route to ClioPlay from your phone via Bluetooth. For ease of use, add the website to your Home Screen as a web app. 
+For new stops/destinations, enter **Coordinates** on the head unit or use the separate [ClioPlay Send website](https://pxwel-dev.github.io/ClioPlay-Send/) to send the new route to ClioPlay from your phone via Bluetooth. For ease of use, add the website to your Home Screen as a web app.
 
 ## Install
 
@@ -92,6 +86,22 @@ It does not format the card. Replaced files are backed up. Any existing ClioPlay
 pairings and saved places are preserved. No previous ClioPlay install is needed.
 Map building can take substantial time for large extracts.
 
+## Enter a destination offline
+
+In **Trip**, press the **right soft key** to focus the itinerary, then select
+**Coordinates**. Enter decimal **latitude first**, then **longitude**, add an
+optional name, and review before confirming. Use negative values for south/west.
+The **±** key changes the sign; the left soft key deletes and the right soft key
+advances between coordinate fields. **BACK** returns to the previous step while
+keeping your entries. An empty name uses the coordinates in Recents.
+
+Coordinates are also available under **Add stop** and **Change destination**.
+Confirmed places appear in **Recents**, where they can be reused or saved as
+favourites. Cancelling entry changes neither the route nor Recents. Routing uses
+your installed navigation data; entering coordinates does not download maps.
+
+![Entering and naming a destination with decimal-degree coordinates](src/docs/demo/coordinates.gif)
+
 ## Use your remote
 
 | Control | Action |
@@ -102,8 +112,8 @@ Map building can take substantial time for large extracts.
 | **Centre / OK** | On the driving map, show the ETA and remaining distance, or the heading without a route. In map browsing, select the point under the crosshair. In **BT CTRL**, play or pause. In menus, select or confirm. |
 | **Up / Down** | Pan the map or move through menu rows. |
 | **Left / Right** | Pan the map or change the selected tab, option or value. In **BT CTRL**, play the previous or next track. |
-| **Left soft key** | Zoom out on the map, focus destinations in Trip, or delete while naming a favourite. |
-| **Right soft key** | Zoom in on the map, focus the itinerary in Trip, or insert a space while naming a favourite. |
+| **Left soft key** | Zoom out on the map, focus destinations in Trip, or delete a character while entering coordinates or a name. |
+| **Right soft key** | Zoom in on the map, focus the itinerary in Trip, advance to the next coordinate field, or insert a space while entering a name. |
 
 If you adjust the zoom while Auto zoom is enabled, **MAP** restores Auto zoom
 without entering Explore. Press **MAP** again to enter Explore, or use an arrow

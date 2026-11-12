@@ -153,5 +153,17 @@
   "No track information": "Keine Titelinformationen",
   "Radio": "Radio",
   "Day starts": "Tag ab",
-  "Night starts": "Nacht ab"
+  "Night starts": "Nacht ab",
+  "Coordinates": "Koordinaten",
+  "Latitude": "Breitengrad",
+  "Longitude": "Längengrad",
+  "Name (optional)": "Name (optional)",
+  "Review": "Prüfen",
+  "Edit coordinates": "Koordinaten ändern",
+  "Edit name": "Name ändern",
+  "Decimal degrees": "Dezimalgrad",
+  "Enter a valid latitude": "Gültigen Breitengrad eingeben",
+  "Enter a valid longitude": "Gültigen Längengrad eingeben",
+  "Next": "Weiter",
+  "Clear": "Leeren"
 }

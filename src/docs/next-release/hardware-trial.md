@@ -96,3 +96,12 @@ into passed tests. It hashes runtime/navigation manifests and copies diagnostic
 logs with MAC addresses redacted. It excludes paired keys, favourites, recents,
 trips and phone databases. Framebuffer/timing and audio recordings still need to
 be captured from the actual device/test setup.
+
+- Enter a named destination through Trip → Coordinates with the real remote.
+  Check negative longitude, decimal input, inline range errors, delete/clear and
+  BACK at every step. Review, confirm, restart and reuse the named Recent; save it
+  as a favourite. Repeat as Add stop and Change destination. Cancel without
+  changing the itinerary/Recents, including during a simultaneous phone send.
+  Check keyboard languages and day/night glass rendering, active audio notices
+  and the time/temperature row on numeric, name and review pages. Check a target
+  outside installed routing data reports the usual routing failure.

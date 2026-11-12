@@ -153,5 +153,17 @@
   "No track information": "曲の情報がありません",
   "Radio": "ラジオ",
   "Day starts": "昼モード開始",
-  "Night starts": "夜モード開始"
+  "Night starts": "夜モード開始",
+  "Coordinates": "座標",
+  "Latitude": "緯度",
+  "Longitude": "経度",
+  "Name (optional)": "名前（任意）",
+  "Review": "確認",
+  "Edit coordinates": "座標を編集",
+  "Edit name": "名前を編集",
+  "Decimal degrees": "十進度",
+  "Enter a valid latitude": "有効な緯度を入力してください",
+  "Enter a valid longitude": "有効な経度を入力してください",
+  "Next": "次へ",
+  "Clear": "クリア"
 }

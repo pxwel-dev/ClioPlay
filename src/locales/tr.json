@@ -153,5 +153,17 @@
   "No track information": "Parça bilgisi yok",
   "Radio": "Radyo",
   "Day starts": "Gündüz başlangıcı",
-  "Night starts": "Gece başlangıcı"
+  "Night starts": "Gece başlangıcı",
+  "Coordinates": "Koordinatlar",
+  "Latitude": "Enlem",
+  "Longitude": "Boylam",
+  "Name (optional)": "Ad (isteğe bağlı)",
+  "Review": "Gözden geçir",
+  "Edit coordinates": "Koordinatları düzenle",
+  "Edit name": "Adı düzenle",
+  "Decimal degrees": "Ondalık derece",
+  "Enter a valid latitude": "Geçerli bir enlem girin",
+  "Enter a valid longitude": "Geçerli bir boylam girin",
+  "Next": "İleri",
+  "Clear": "Temizle"
 }

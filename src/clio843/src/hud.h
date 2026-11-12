@@ -25,6 +25,7 @@ static const char* hud_page_title(void){
  case SCR_TRIP:return ui_tr("Trip");
  case SCR_BT:return bt_label();
  case SCR_KEY:return ui_tr("Rename");
+ case SCR_COORDINATES:return coordinates_title();
  default:return ui_tr("Settings");
  }
 }
