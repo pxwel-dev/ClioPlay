@@ -60,7 +60,18 @@ results against the executable SHA-256 values and navigation `build.json`.
    must follow elapsed time regardless of packet traffic. The receiver now
    uses exact reciprocal SBC division, bounded byte reads, direct PCM packing
    when no chime is active, and elapsed-time maintenance/metadata polling.
-   Stereo rate, bitpool capability, ring buffering and audio priority are unchanged.
+   Stereo rate, bitpool capability, secondary-ring capacity and audio priority
+   are unchanged. Synthesis now folds exact matrix symmetries; no approximate
+   coefficients or quality reduction are used. PCM copies use aligned words with
+   a byte fallback. Check transitions between BT and FM/AUX while the phone keeps
+   streaming: decoded-frame growth should stop off-source and resume cleanly.
+   Confirm phone destinations/metadata still arrive while output is disabled.
+   Pause without disconnecting, then resume, including an interrupted packet
+   stream without transport suspend. No old audio should loop; queued audio and
+   a paused-playback camera cue must finish before idle closure. Resume should
+   prefill normally. Where lower output rates are actually required, confirm
+   stable playback at the logged rate: primary chunk samples now scale with
+   rate to retain their duration, including at 11.025 kHz.
    Physical frame-rate gains and thermal behaviour remain unverified.
 5. On a recorded passenger-observed drive: motorway/urban roads, an active route,
    roundabout exits, recalculation, bridge-over-water drawing, day/night changes.

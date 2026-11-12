@@ -1,5 +1,5 @@
 /*
- * CLIOPLAY clioa2dp 1.9 AUDIOCPU1 AUTORECONNECT2 EARLYBOOT AUDIOGUARD1 PAIRFIX26 DEBUGGATE - stable A2DP/AVRCP sink with persistent legacy-BlueZ bond storage.
+ * CLIOPLAY clioa2dp 1.9 AUDIOCPU2 PLAYBACK2 AUTORECONNECT2 EARLYBOOT AUDIOGUARD1 PAIRFIX26 DEBUGGATE - stable A2DP/AVRCP sink with persistent legacy-BlueZ bond storage.
  *
  * Target: ARMv4T / ARM7TDMI, freestanding old-Linux ABI, no libc at runtime.
  * Bluetooth control uses the kernel L2CAP socket ABI directly.  SDP publication
@@ -94,6 +94,7 @@ __attribute__((naked)) void __aeabi_uidivmod(void){__asm__ volatile(
 #endif
 
 #include "audio_schedule.h"
+#include "audio_playback.h"
 
 /* ---------------- SBC decoder (8 subbands, stereo/joint stereo) ----------- */
 #define ASR32(v,b) ((s32)(v)>>(b))
@@ -185,8 +186,32 @@ static int sbc_unpack(const u8*d,u32 len,struct SbcFrame*f){
 static s16 clip16(s32 v){return v>32767?32767:(v<-32768?-32768:(s16)v);}
 static s32 madd(s32 a,s32 b,s32 r){return (s32)((u32)a*(u32)b+(u32)r);} /* intentional fixed-point wrap */
 static void sbc_state_init(struct SbcState*s){memzero(s,sizeof(*s));for(int ch=0;ch<2;ch++)for(int i=0;i<16;i++)s->offset[ch][i]=(s16)(10*i+10);s->initialized=1;}
+/* Fold exact quantised-matrix identities. Odd rows pair c and -c-1,
+ * rather than exact negatives: subtract the right-hand sum before shifting.
+ * All arithmetic stays modulo 2^32, preserving the original fixed-point PCM. */
+static inline u32 sbc_dot4(const s32*c,u32 a,u32 b,u32 d,u32 e){
+ return (u32)c[0]*a+(u32)c[1]*b+(u32)c[2]*d+(u32)c[3]*e;
+}
+static void sbc_matrix8(const s32*x,s32*out){
+ u32 e0=(u32)x[0]+(u32)x[7],e1=(u32)x[1]+(u32)x[6];
+ u32 e2=(u32)x[2]+(u32)x[5],e3=(u32)x[3]+(u32)x[4];
+ u32 d0=(u32)x[0]-(u32)x[7],d1=(u32)x[1]-(u32)x[6];
+ u32 d2=(u32)x[2]-(u32)x[5],d3=(u32)x[3]-(u32)x[4];
+ u32 tail=(u32)x[4]+(u32)x[5]+(u32)x[6]+(u32)x[7],total=e0+e1+e2+e3;
+ u32 r0=(u32)synmatrix8[0][0]*(e0+e3)+(u32)synmatrix8[0][1]*(e1+e2);
+ u32 r1=sbc_dot4(synmatrix8[1],d0,d1,d2,d3)-tail;
+ u32 r2=sbc_dot4(synmatrix8[2],e0,e1,e2,e3);
+ u32 r3=sbc_dot4(synmatrix8[3],d0,d1,d2,d3)-tail;
+ u32 r9=sbc_dot4(synmatrix8[9],d0,d1,d2,d3)-tail;
+ u32 r10=sbc_dot4(synmatrix8[10],e0,e1,e2,e3);
+ u32 r11=sbc_dot4(synmatrix8[11],d0,d1,d2,d3)-tail;
+ out[0]=(s32)r0;out[1]=(s32)r1;out[2]=(s32)r2;out[3]=(s32)r3;out[4]=0;
+ out[5]=(s32)(0u-r3-total);out[6]=(s32)(0u-r2-total);out[7]=(s32)(0u-r1-total);out[8]=(s32)(0u-r0-total);
+ out[9]=out[15]=(s32)r9;out[10]=out[14]=(s32)r10;out[11]=out[13]=(s32)r11;
+ out[12]=(s32)((u32)synmatrix8[12][0]*total);
+}
 static void sbc_synth8(struct SbcState*s,struct SbcFrame*f,int ch,int blk){
-  s16*off=s->offset[ch];for(int i=0;i<16;i++){off[i]--;if(off[i]<0){off[i]=159;for(int j=0;j<9;j++)s->V[ch][j+160]=s->V[ch][j];}s32 r=madd(synmatrix8[i][7],f->sb[blk][ch][7],0);for(int j=6;j>=0;j--)r=madd(synmatrix8[i][j],f->sb[blk][ch][j],r);s->V[ch][off[i]]=SCALE8(r);}
+  s32 matrix[16];sbc_matrix8(f->sb[blk][ch],matrix);s16*off=s->offset[ch];for(int i=0;i<16;i++){off[i]--;if(off[i]<0){off[i]=159;for(int j=0;j<9;j++)s->V[ch][j+160]=s->V[ch][j];}s->V[ch][off[i]]=SCALE8(matrix[i]);}
   for(int i=0,idx=0;i<8;i++,idx+=5){int k=(i+8)&15;s32 r=madd(s->V[ch][off[k]+9],sbc_proto_8_80m1[idx+4],0);r=madd(s->V[ch][off[i]+8],sbc_proto_8_80m0[idx+4],r);r=madd(s->V[ch][off[k]+7],sbc_proto_8_80m1[idx+3],r);r=madd(s->V[ch][off[i]+6],sbc_proto_8_80m0[idx+3],r);r=madd(s->V[ch][off[k]+5],sbc_proto_8_80m1[idx+2],r);r=madd(s->V[ch][off[i]+4],sbc_proto_8_80m0[idx+2],r);r=madd(s->V[ch][off[k]+3],sbc_proto_8_80m1[idx+1],r);r=madd(s->V[ch][off[i]+2],sbc_proto_8_80m0[idx+1],r);r=madd(s->V[ch][off[k]+1],sbc_proto_8_80m1[idx],r);r=madd(s->V[ch][off[i]],sbc_proto_8_80m0[idx],r);f->pcm[ch][blk*8+i]=clip16(SCALE8(r));}
 }
 static int sbc_decode(const u8*d,u32 len,struct SbcState*s,struct SbcFrame*f){int n=sbc_unpack(d,len,f);if(n<0)return n;if(!s->initialized)sbc_state_init(s);for(int ch=0;ch<2;ch++)for(int blk=0;blk<16;blk++)sbc_synth8(s,f,ch,blk);return n;}
@@ -197,7 +222,7 @@ static void sbc_pcm_interleave(u8*out,const struct SbcFrame*f){
   out[4*i]=(u8)l;out[4*i+1]=(u8)(l>>8);out[4*i+2]=(u8)r;out[4*i+3]=(u8)(r>>8);}
 }
 
-#ifndef HOST_TEST
+#if !defined(HOST_TEST) || defined(AUDIO_RUNTIME_TEST)
 /* -------------------------------------------------------------------------
  * clioa2dp 1.9 / A2DP3 STABLE + AVRCP SDP + MULTI-DEVICE BOND MANAGER
  *
@@ -377,15 +402,16 @@ struct SndFmt{u32 rate,channels,bits,frames,mode;};struct SndPair{u32 handle,pos
 static int sndfd=-1,snd_started=0,snd_mix_active=0,snd_div=1;
 static u32 sndhandle=0,snd_write=0,snd_queued=0,snd_used=0,snd_read_pos=0;
 static u32 snd_last_sample_ms=0,snd_output_bps=176400u;
-static int snd_clock_valid=0;
+static int snd_clock_valid=0,snd_feed_valid=0;
+static u32 snd_feed_now=0,snd_feed_at=0,snd_feed_bytes=0;
 static u32 snd_underruns=0,snd_pcm_drops=0;
 static u8*sndring=0;
 static u32 snd_now_ms(void){struct timeval0 tv;if(s_gettimeofday(&tv)<0)return 0;return (u32)tv.tv_sec*1000u+(u32)(tv.tv_usec/1000L);}
 static void snd_reg(int reg,int value){u32 packed=((u32)reg<<9)|((u32)value&0x1ffu);s_ioctl(sndfd,IO_SET_REG,(long)packed);}
 static void snd_mix_on(void){if(snd_mix_active)return;s_ioctl(sndfd,IO_MUTE_NAV,0);snd_reg(34,272);snd_reg(37,272);snd_reg(10,253);snd_reg(11,253);s_ioctl(sndfd,IO_SET_VOL,116);snd_mix_active=1;}
 static void snd_mix_restore(void){if(!snd_mix_active||sndfd<0)return;s_ioctl(sndfd,IO_UNMUTE_NAV,0);snd_reg(34,144);snd_reg(37,144);s_ioctl(sndfd,IO_SET_VOL_EXT,118);snd_mix_active=0;}
-static void snd_close(void){if(sndfd>=0){if(snd_started)s_ioctl(sndfd,IO_PAUSE,(long)sndhandle);struct SndPair p={sndhandle,0};s_ioctl(sndfd,IO_RESET,(long)&p);snd_mix_restore();if(sndring)s_munmap(sndring,SND_RING);if(sndhandle)s_ioctl(sndfd,IO_DESTROY,(long)sndhandle);s_close(sndfd);}sndfd=-1;sndring=0;sndhandle=0;snd_write=0;snd_queued=0;snd_used=0;snd_read_pos=0;snd_started=0;snd_mix_active=0;snd_div=1;snd_clock_valid=0;}
-static int snd_try_rate(u32 rate,int div){sndfd=(int)s_open(SOUND_PATH,O_RDWR_,0);if(sndfd<0)return 0;struct SndFmt f={rate,SND_CHANNELS,SND_BITS,SND_FRAMES,1};long h=s_ioctl(sndfd,IO_SET_FORMAT,(long)&f);if(h<0){s_close(sndfd);sndfd=-1;return 0;}sndhandle=(u32)h;if(s_ioctl(sndfd,IO_SELECT,(long)sndhandle)<0){snd_close();return 0;}sndring=(u8*)s_mmap2(0,SND_RING,PROT_READ_|PROT_WRITE_,MAP_SHARED_,sndfd,0);if(!sndring){snd_close();return 0;}memzero(sndring,SND_RING);f.frames=1024;f.mode=3;if(s_ioctl(sndfd,IO_SET_STREAM,(long)&f)!=0){snd_close();return 0;}struct SndPair p={sndhandle,0};if(s_ioctl(sndfd,IO_RESET,(long)&p)<0){snd_close();return 0;}snd_write=snd_queued=snd_used=snd_read_pos=0;snd_started=snd_mix_active=snd_clock_valid=0;snd_div=div;snd_output_bps=rate*4u;return 1;}
+static void snd_close(void){if(sndfd>=0){if(snd_started)s_ioctl(sndfd,IO_PAUSE,(long)sndhandle);struct SndPair p={sndhandle,0};s_ioctl(sndfd,IO_RESET,(long)&p);snd_mix_restore();if(sndring)s_munmap(sndring,SND_RING);if(sndhandle)s_ioctl(sndfd,IO_DESTROY,(long)sndhandle);s_close(sndfd);}sndfd=-1;sndring=0;sndhandle=0;snd_write=0;snd_queued=0;snd_used=0;snd_read_pos=0;snd_started=0;snd_mix_active=0;snd_div=1;snd_clock_valid=snd_feed_valid=0;}
+static int snd_try_rate(u32 rate,int div){sndfd=(int)s_open(SOUND_PATH,O_RDWR_,0);if(sndfd<0)return 0;struct SndFmt f={rate,SND_CHANNELS,SND_BITS,SND_FRAMES,1};long h=s_ioctl(sndfd,IO_SET_FORMAT,(long)&f);if(h<0){s_close(sndfd);sndfd=-1;return 0;}sndhandle=(u32)h;if(s_ioctl(sndfd,IO_SELECT,(long)sndhandle)<0){snd_close();return 0;}sndring=(u8*)s_mmap2(0,SND_RING,PROT_READ_|PROT_WRITE_,MAP_SHARED_,sndfd,0);if(!sndring){snd_close();return 0;}memzero(sndring,SND_RING);f.frames=audio_primary_frames(div);f.mode=3;if(s_ioctl(sndfd,IO_SET_STREAM,(long)&f)!=0){snd_close();return 0;}struct SndPair p={sndhandle,0};if(s_ioctl(sndfd,IO_RESET,(long)&p)<0){snd_close();return 0;}snd_write=snd_queued=snd_used=snd_read_pos=0;snd_started=snd_mix_active=snd_clock_valid=0;snd_div=div;snd_output_bps=rate*4u;return 1;}
 static void bt_log_rate(const char*tag,u32 rate){char b[80];b[0]=0;append_str(b,sizeof(b),tag);append_char(b,sizeof(b),' ');append_uint(b,sizeof(b),rate);append_char(b,sizeof(b),'\n');bt_log_append(b);}
 static int snd_open(void){if(sndfd>=0)return 1;/* Preserve the known-good device setup and sample-rate fallback. */if(snd_try_rate(44100,1)){bt_log_rate("BARC-SND OPEN",44100);return 1;}bt_log_rate("BARC-SND REJECT",44100);if(snd_try_rate(22050,2)){bt_log_rate("BARC-SND OPEN",22050);return 1;}bt_log_rate("BARC-SND REJECT",22050);if(snd_try_rate(11025,4)){bt_log_rate("BARC-SND OPEN",11025);return 1;}bt_log_rate("BARC-SND REJECT",11025);status_set("BT AUDIO ERR");return 0;}
 /* Do not destroy/recreate the sound handle to recover: pause + reset the
@@ -398,7 +424,7 @@ static void snd_reprime(void){
   if(s_ioctl(sndfd,IO_RESET,(long)&p)<0){snd_close();status_set("BT BUFFERING");return;}
   memzero(sndring,SND_RING);
   snd_write=snd_queued=snd_used=snd_read_pos=0;
-  snd_started=snd_clock_valid=0;
+  snd_started=snd_clock_valid=snd_feed_valid=0;
   status_set("BT BUFFERING");
 }
 /* A sample is taken ONCE per received media packet, not for each SBC frame.
@@ -428,10 +454,10 @@ static int snd_push(const u8*data,u32 n){
     if(n>SND_RING-SND_RING_GUARD-used){snd_pcm_drops++;return 0;}
   }
   u32 first=SND_RING-snd_write;if(first>n)first=n;
-  memcopy(sndring+snd_write,data,first);
-  if(n>first)memcopy(sndring,data+first,n-first);
+  audio_pcm_copy(sndring+snd_write,data,first);
+  if(n>first)audio_pcm_copy(sndring,data+first,n-first);
   snd_write=(snd_write+n)&(SND_RING-1u);
-  if(snd_started){snd_used+=n;return 1;}
+  if(snd_started){snd_used+=n;snd_feed_at=snd_feed_now;snd_feed_bytes=snd_used;snd_feed_valid=1;return 1;}
   snd_queued+=n;
   /* 150 ms at 44.1k or at the lower driver fallback rate. */
   if(snd_queued>=udiv32(SND_PREFILL_44K_BYTES,(u32)snd_div)){
@@ -440,6 +466,7 @@ static int snd_push(const u8*data,u32 n){
     snd_started=1;snd_used=snd_queued;snd_read_pos=0;
     snd_last_sample_ms=snd_now_ms();snd_clock_valid=snd_last_sample_ms!=0;
   }
+  snd_feed_at=snd_feed_now;snd_feed_bytes=snd_started?snd_used:snd_queued;snd_feed_valid=1;
   return 1;
 }
 
@@ -579,6 +606,7 @@ static int avrcp_sdp_register(void){
 /* ---------------- AVDTP / SBC Sink -------------------------------------- */
 static int listenfd=-1,ctrllistenfd=-1,sigfd=-1,mediafd=-1;
 static int cfg_ok=0,av_opened=0,av_started=0,manual_block=0;
+static int sbc_resume_reset=1,media_audio_idle=0;
 static int avrcp_delay_ticks=-1,reconnect_profile_ticks=-1;
 static struct SbcState decst;static struct SbcFrame decfr;static u8 pcm_out[512];
 /* Capability is a mask: 44.1 kHz + Stereo + Joint Stereo.  A SET_CONFIGURATION
@@ -600,7 +628,7 @@ static int av_parse_sbc(const u8*b,int n,int start,struct AvSbcCfg*out){memzero(
 static int av_sbc_supported(const struct AvSbcCfg*c){if(!c->found)return 0;if(c->c0!=0x21&&c->c0!=0x22)return 0;if(c->c1!=SBC_CAP1)return 0;if(c->mn<2||c->mn>53||c->mx<c->mn||c->mx>53)return 0;return 1;}
 static int av_seid_is_ours(const u8*b,int n){return n>=3&&((b[2]>>2)&0x3f)==1;}
 static void av_store_cfg(const struct AvSbcCfg*c){sbc_sel0=c->c0;sbc_sel1=c->c1;sbc_sel_min=c->mn;sbc_sel_max=c->mx;cfg_ok=1;av_opened=av_started=0;}
-static void av_reset_stream(void){media_epoch++;cfg_ok=av_opened=av_started=0;sbc_sel0=0x22;sbc_sel1=0x15;sbc_sel_min=2;sbc_sel_max=53;media_packets=media_bytes=media_frames=media_decode_errors=0;memzero(&decst,sizeof(decst));}
+static void av_reset_stream(void){sbc_resume_reset=1;media_audio_idle=0;media_epoch++;cfg_ok=av_opened=av_started=0;sbc_sel0=0x22;sbc_sel1=0x15;sbc_sel_min=2;sbc_sel_max=53;media_packets=media_bytes=media_frames=media_decode_errors=0;memzero(&decst,sizeof(decst));}
 static int av_signal(int fd,const u8*b,int n){if(n<2)return 1;int tl=(b[0]>>4)&15,ptype=(b[0]>>2)&3,msg=b[0]&3,sig=b[1]&0x3f;if(ptype!=0){hci_log("AVDTP FRAGMENT UNSUPPORTED",live_peer_valid?live_peer:0,ptype);return 1;}if(msg!=0){/* We are an acceptor for A2DP; ignore peer responses to commands we never originate. */return 1;}u8 p[16];av_log_msg("RX",sig,tl,n);
   if(sig==1){p[0]=1u<<2;p[1]=1u<<3;av_send(fd,b,sig,p,2,1);av_log_msg("TX ACCEPT",sig,tl,4);return 1;} /* SEID 1, Sink */
   if(sig==2||sig==12){if(!av_seid_is_ours(b,n)){p[0]=0x11;av_send(fd,b,sig,p,1,0);av_log_reject(sig,0x11);return 1;}av_caps(p);av_send(fd,b,sig,p,10,1);av_log_msg("TX ACCEPT CAPS",sig,tl,12);return 1;}
@@ -608,7 +636,7 @@ static int av_signal(int fd,const u8*b,int n){if(n<2)return 1;int tl=(b[0]>>4)&1
   if(sig==4){if(!cfg_ok||!av_seid_is_ours(b,n)){p[0]=cfg_ok?0x11:0x13;av_send(fd,b,sig,p,1,0);av_log_reject(sig,p[0]);return 1;}av_selected(p);av_send(fd,b,sig,p,10,1);av_log_msg("TX ACCEPT CONFIG",sig,tl,12);return 1;}
   if(sig==5){struct AvSbcCfg c;int ok=cfg_ok&&av_seid_is_ours(b,n)&&av_parse_sbc(b,n,3,&c)&&av_sbc_supported(&c);if(c.found)av_log_sbc("AVDTP SBC RECONFIG",&c);if(ok){av_store_cfg(&c);av_send(fd,b,sig,0,0,1);av_log_msg("TX ACCEPT",sig,tl,2);}else{p[0]=7;p[1]=0x29;av_send(fd,b,sig,p,2,0);av_log_reject(sig,0x29);}return 1;}
   if(sig==6){if(cfg_ok&&av_seid_is_ours(b,n)){av_opened=1;av_send(fd,b,sig,0,0,1);av_log_msg("TX ACCEPT",sig,tl,2);status_set("BT OPEN");}else{p[0]=!cfg_ok?0x13:0x11;av_send(fd,b,sig,p,1,0);av_log_reject(sig,p[0]);}return 1;}
-  if(sig==7){if(av_opened&&av_seid_is_ours(b,n)){av_started=1;meta_playing=1;meta_dirty=1;av_send(fd,b,sig,0,0,1);av_log_msg("TX ACCEPT",sig,tl,2);status_set(source_enabled()?"BT BUFFERING":"BT CONNECTED");avrcp_delay_ticks=10;}else{p[0]=0x31;av_send(fd,b,sig,p,1,0);av_log_reject(sig,0x31);}return 1;}
+  if(sig==7){if(av_opened&&av_seid_is_ours(b,n)){av_started=1;media_audio_idle=0;meta_playing=1;meta_dirty=1;av_send(fd,b,sig,0,0,1);av_log_msg("TX ACCEPT",sig,tl,2);status_set(source_enabled()?"BT BUFFERING":"BT CONNECTED");avrcp_delay_ticks=10;}else{p[0]=0x31;av_send(fd,b,sig,p,1,0);av_log_reject(sig,0x31);}return 1;}
   if(sig==9){if((av_opened||av_started)&&av_seid_is_ours(b,n)){av_started=0;meta_playing=0;meta_dirty=1;snd_close();av_send(fd,b,sig,0,0,1);av_log_msg("TX ACCEPT",sig,tl,2);status_set("BT PAUSED");}else{p[0]=0x31;av_send(fd,b,sig,p,1,0);av_log_reject(sig,0x31);}return 1;}
   if(sig==8){if((cfg_ok||av_opened)&&av_seid_is_ours(b,n)){av_started=0;av_opened=0;cfg_ok=0;meta_playing=0;meta_dirty=1;snd_close();av_send(fd,b,sig,0,0,1);av_log_msg("TX ACCEPT",sig,tl,2);status_set("BT CONNECTED");}else{p[0]=0x31;av_send(fd,b,sig,p,1,0);av_log_reject(sig,0x31);}return 1;}
   if(sig==10){av_started=0;av_opened=0;cfg_ok=0;meta_playing=0;meta_dirty=1;snd_close();av_send(fd,b,sig,0,0,1);av_log_msg("TX ACCEPT",sig,tl,2);status_set("BT CONNECTED");return 1;}
@@ -619,7 +647,7 @@ static int av_signal(int fd,const u8*b,int n){if(n<2)return 1;int tl=(b[0]>>4)&1
 static struct AudioChime camera_chime;
 static u32 alert_seq=0,alert_idle_until=0,alert_last_media=0;
 static u32 alert_now_ms(void){struct {long sec,nsec;}t;if(sc2(263,1,(long)&t)>=0)return (u32)t.sec*1000u+(u32)(t.nsec/1000000L);return snd_now_ms();}
-static void alert_service(void){u32 now=alert_now_ms(),msg[4];long f=s_open(CAMERA_ALERT_PATH,O_RDONLY_,0);
+static void alert_service(void){u32 now=alert_now_ms(),msg[4];snd_feed_now=now;long f=s_open(CAMERA_ALERT_PATH,O_RDONLY_,0);
  if(f>=0){long n=s_read((int)f,msg,sizeof(msg));s_close((int)f);if(n==sizeof(msg)&&msg[0]==0x4c414c43u&&msg[2]!=alert_seq){alert_seq=msg[2];if(!msg[3]){camera_chime.total=0;alert_idle_until=0;if(sndfd>=0&&now-alert_last_media>200)snd_close();}else if(source_active&&(s32)(msg[2]-now)>=0&&(s32)(msg[2]-now)<=1500&&snd_open()){chime_start(&camera_chime,udiv32(44100u,(u32)snd_div));alert_idle_until=now+1100u;}}}
  if(!source_active){camera_chime.total=0;alert_idle_until=0;return;}
  if(!alert_idle_until)return;
@@ -636,7 +664,7 @@ static void pcm_pack(void){int q=0,d=snd_div;
   sbc_pcm_interleave(pcm_out,&decfr);
   q=512;
  }else{if(d<1)d=1;for(int i=0;i<128;i+=d){s32 l=0,r=0;for(int j=0;j<d;j++){l+=decfr.pcm[0][i+j];r+=decfr.pcm[1][i+j];}if(d==2){l>>=1;r>>=1;}else if(d==4){l>>=2;r>>=2;}int gain,tone=chime_sample(&camera_chime,&gain);s16 ls=(s16)chime_mix(l,gain,tone),rs=(s16)chime_mix(r,gain,tone);pcm_out[q++]=(u8)ls;pcm_out[q++]=(u8)((u16)ls>>8);pcm_out[q++]=(u8)rs;pcm_out[q++]=(u8)((u16)rs>>8);}}if(!snd_push(pcm_out,(u32)q))status_set("BT BUFFERING");else status_set(snd_started?"BT STREAMING":"BT BUFFERING");}
-static void media_packet(const u8*b,int n){if(!av_started||n<14)return;alert_last_media=alert_now_ms();if(source_active&&snd_started)snd_sample_playback();media_packets++;media_bytes+=(u32)n;int cc=b[0]&15,off=12+4*cc;if(b[0]&0x10){if(off+4>n){media_decode_errors++;return;}int ext=((int)b[off+2]<<8)|b[off+3];off+=4+ext*4;}if(off>=n){media_decode_errors++;return;}u8 ph=b[off++];if(ph&0xe0){media_decode_errors++;return;}int frames=ph&15;if(frames<1){media_decode_errors++;return;}int decoded=0;for(int k=0;k<frames&&off<n;k++){int used=sbc_decode(b+off,(u32)(n-off),&decst,&decfr);if(used<=0){media_decode_errors++;break;}off+=used;decoded++;media_frames++;if(!source_active)continue;if(sndfd<0&&!snd_open())return;pcm_pack();}if(audio_profile_on){u32 elapsed=alert_now_ms()-alert_last_media;if(elapsed>audio_packet_max_ms)audio_packet_max_ms=elapsed;}if(media_packets==1||media_packets==10||(media_packets%100u)==0||decoded!=frames)av_log_media();}
+static void media_packet(const u8*b,int n){if(!av_started||n<14)return;alert_last_media=alert_now_ms();snd_feed_now=alert_last_media;if(source_active&&snd_started)snd_sample_playback();media_packets++;media_bytes+=(u32)n;int cc=b[0]&15,off=12+4*cc;if(b[0]&0x10){if(off+4>n){media_decode_errors++;return;}int ext=((int)b[off+2]<<8)|b[off+3];off+=4+ext*4;}if(off>=n){media_decode_errors++;return;}u8 ph=b[off++];if(ph&0xe0){media_decode_errors++;return;}int frames=ph&15;if(frames<1){media_decode_errors++;return;}if(!source_active){sbc_resume_reset=1;return;}media_audio_idle=0;if(sbc_resume_reset){memzero(&decst,sizeof(decst));sbc_resume_reset=0;}int decoded=0;for(int k=0;k<frames&&off<n;k++){int used=sbc_decode(b+off,(u32)(n-off),&decst,&decfr);if(used<=0){media_decode_errors++;break;}off+=used;decoded++;media_frames++;if(sndfd<0&&!snd_open())return;pcm_pack();}u32 finished=alert_now_ms();if(decoded&&snd_feed_valid)snd_feed_at=finished;if(audio_profile_on){u32 elapsed=finished-alert_last_media;if(elapsed>audio_packet_max_ms)audio_packet_max_ms=elapsed;}if(media_packets==1||media_packets==10||(media_packets%100u)==0||decoded!=frames)av_log_media();}
 
 /* ---------------- AVRCP Controller: metadata + 4 transport commands ----- */
 static int avrcpfd=-1,avrcp_state=0;/*0 none,1 connecting,2 ready*/static u8 avrcp_tl=0;static u32 avrcp_retry_at=0;
@@ -740,6 +768,17 @@ static void accept_avdtp(void){u8 peer[6];int c=bt_accept_peer(listenfd,peer);if
 }
 static void accept_avrcp(void){u8 peer[6];int c=bt_accept_peer(ctrllistenfd,peer);if(c<0)return;if(manual_block){s_close(c);return;}int known=bond_find(peer,0,0);int ok=(live_peer_valid&&addr_eq(peer,live_peer))||(!live_peer_valid&&((saved_peer_valid&&addr_eq(peer,saved_peer))||known));if(!ok){s_close(c);return;}if(!live_peer_valid){memcopy(live_peer,peer,6);live_peer_valid=1;peer_save(peer);meta_connected=1;meta_dirty=1;}hci_remote_name_request(peer);if(avrcpfd>=0)s_close(avrcpfd);avrcpfd=c;s_fcntl(avrcpfd,F_SETFL,O_NONBLOCK_);avrcp_state=2;avrcp_retry_at=0;hci_log("AVRCP ACCEPTED",peer,-1);reconnect_profile_ready(peer);}
 
+static void audio_source_refresh(void){
+ int en=source_enabled();if(en!=source_active)sbc_resume_reset=1;
+ source_active=en;if(!en&&sndfd>=0)snd_close();
+ if(av_started)status_set(!en||media_audio_idle?"BT CONNECTED":(snd_started?"BT STREAMING":"BT BUFFERING"));
+}
+static void audio_playback_service(u32 now){
+ /* Cue generation owns its existing window, including already queued tails. */
+ if(sndfd<0||!snd_feed_valid||alert_idle_until||chime_active(&camera_chime))return;
+ if(!audio_idle_expired(now,snd_feed_at,snd_feed_bytes,snd_output_bps))return;
+ snd_close();media_audio_idle=1;sbc_resume_reset=1;status_set("BT CONNECTED");
+}
 static void audio_profile_service(u32 now){
  static struct AudioPeriodic window;static u32 packets,frames,maintenance,underruns,drops,epoch;
  int enabled=debug_enabled();
@@ -785,8 +824,8 @@ static void serve(void){long prio=s_audio_priority();peer_load();local_bdaddr_lo
     }
     if(avrcp_delay_ticks==0&&meta_connected&&!manual_block){avrcp_open(tick);if(avrcp_state)avrcp_delay_ticks=-1;}
     else if(avrcp_delay_ticks<0&&meta_connected&&avrcp_state==0&&av_started&&!manual_block&&tick>=avrcp_retry_at)avrcp_open(tick);
-    int en=source_enabled();source_active=en;if(!en&&sndfd>=0)snd_close();if(av_started){if(!en)status_set("BT CONNECTED");else status_set(snd_started?"BT STREAMING":"BT BUFFERING");}
-    alert_service();
+    audio_source_refresh();
+    alert_service();audio_playback_service(now);
     if(meta_connected&&avrcp_state==2){
       if(audio_periodic(&status_poll,now,1000u))avrcp_get_status();
       if(audio_periodic(&metadata_poll,now,3000u))avrcp_get_meta();
@@ -817,7 +856,9 @@ static void serve(void){long prio=s_audio_priority();peer_load();local_bdaddr_lo
     }
   }}
 
+#ifndef HOST_TEST
 __attribute__((noreturn)) void _start(void){memzero(status_last,sizeof(status_last));s_unlink(CAMERA_ALERT_PATH);s_unlink(BT_STATUS_PATH);s_unlink(BT_META_PATH);s_unlink(BT_NAV_PATH);s_unlink(BT_NAV_TMP_PATH);s_unlink(BT_HCI_PATH);serve();s_exit(0);}
+#endif
 
 #else
 /* Host decoder validation: read the entire SBC stream, not just one chunk. */

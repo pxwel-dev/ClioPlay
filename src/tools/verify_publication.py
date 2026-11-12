@@ -97,7 +97,11 @@ def verify_previews(source, readme):
             sha(source / 'clio843' / name) != digest for name, digest in programs.items()):
         raise ValueError('Preview executables are stale; run tools/render_previews.py')
     for name, report in previews.items():
-        if f'](src/docs/demo/{name})' not in readme:
+        # The full coordinate-route preview supersedes the older entry-only
+        # loop in the main README. Keep that loop checked and linked in notes.
+        legacy_link = (name == 'coordinates.gif' and
+                       f']({name})' in (demo / 'README.md').read_text())
+        if f'](src/docs/demo/{name})' not in readme and not legacy_link:
             raise ValueError('README is missing a preview: ' + name)
         path = demo / name
         with path.open('rb') as stream:

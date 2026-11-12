@@ -46,6 +46,11 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
 - **Menus:** each page title shares the top row with the clock and temporary
   audio or connection notices. In Bluetooth control mode, Left and Right skip
   tracks, and OK toggles playback. The selected control briefly highlights.
+- **Bluetooth audio:** selecting another audio source suspends decoding while
+  keeping the phone connection, controls and destination reception available.
+  If a media stream stalls without suspending its transport, playback closes
+  after queued audio has had time to drain and restarts when packets return.
+  Phone-audio camera cues keep their own playback window, including while paused.
 - **Units:** Auto / Metric / Imperial. Country profiles cover 260 territories;
   explicit mph road evidence is a fallback when country resolution is unavailable. Speed, limits and distances agree.
   Numeric metric limits retain their exact value, including 130 km/h.
@@ -213,8 +218,9 @@ Host tests cover the unsplit reference graph versus restricted two- and three-pa
 including a long active via-way restriction,
 an actual Hendaye–Irun France/Spain route, native text, cameras, clock transitions,
 installer rollback, legacy remote screens, water/bridge layering and antialiasing.
-Audio regressions check exact SBC arithmetic, bounded reads, identical PCM and
-maintenance timers independent of Bluetooth packet wakeups.
+Audio regressions check exact SBC arithmetic and folded synthesis, bounded
+reads/copies, identical PCM, rate fallbacks, source changes, camera cues, idle
+drain and maintenance timers independent of Bluetooth packet wakeups.
 Country-scale France/Spain build status is recorded separately; downloaded inputs
 are not evidence of finished builds. Geographic metadata is not a legal boundary
 survey; Auto units retain a manual override. Dateline-spanning/planet extracts and

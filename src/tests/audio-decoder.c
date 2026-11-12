@@ -23,6 +23,11 @@ static int reference_unpack(const u8*d,u32 len,struct SbcFrame*f){
   if(consumed&7u)consumed+=8u-(consumed&7u);return (int)(consumed>>3);
 }
 
+static void reference_synth8(struct SbcState*s,struct SbcFrame*f,int ch,int blk){
+  s16*off=s->offset[ch];for(int i=0;i<16;i++){off[i]--;if(off[i]<0){off[i]=159;for(int j=0;j<9;j++)s->V[ch][j+160]=s->V[ch][j];}s32 r=madd(synmatrix8[i][7],f->sb[blk][ch][7],0);for(int j=6;j>=0;j--)r=madd(synmatrix8[i][j],f->sb[blk][ch][j],r);s->V[ch][off[i]]=SCALE8(r);}
+  for(int i=0,idx=0;i<8;i++,idx+=5){int k=(i+8)&15;s32 r=madd(s->V[ch][off[k]+9],sbc_proto_8_80m1[idx+4],0);r=madd(s->V[ch][off[i]+8],sbc_proto_8_80m0[idx+4],r);r=madd(s->V[ch][off[k]+7],sbc_proto_8_80m1[idx+3],r);r=madd(s->V[ch][off[i]+6],sbc_proto_8_80m0[idx+3],r);r=madd(s->V[ch][off[k]+5],sbc_proto_8_80m1[idx+2],r);r=madd(s->V[ch][off[i]+4],sbc_proto_8_80m0[idx+2],r);r=madd(s->V[ch][off[k]+3],sbc_proto_8_80m1[idx+1],r);r=madd(s->V[ch][off[i]+2],sbc_proto_8_80m0[idx+1],r);r=madd(s->V[ch][off[k]+1],sbc_proto_8_80m1[idx],r);r=madd(s->V[ch][off[i]],sbc_proto_8_80m0[idx],r);f->pcm[ch][blk*8+i]=clip16(SCALE8(r));}
+}
+
 static void bit_reader_checks(void){
  for(u32 len=1;len<=128;len++){
   u8*d=malloc(len);assert(d);for(u32 i=0;i<len;i++)d[i]=(u8)random_u32();
@@ -45,6 +50,14 @@ static void division_checks(void){
   }
  }
 }
+static void matrix_checks(void){
+ const u32 edge[]={0,1,0xffffffffu,0x80000000u,0x7fffffffu,0x80000001u,0x7ffffffeu};
+ for(int trial=0;trial<100000;trial++){
+  s32 x[8],out[16];for(int j=0;j<8;j++)x[j]=(s32)(trial<49?edge[(trial+j)%7]:random_u32());
+  sbc_matrix8(x,out);
+  for(int i=0;i<16;i++){u32 r=0;for(int j=0;j<8;j++)r+=(u32)synmatrix8[i][j]*(u32)x[j];assert((u32)out[i]==r);}
+ }
+}
 static void frame_checks(void){
  struct SbcState old_state={0},new_state={0};
  for(int mode=0;mode<2;mode++)for(int pool=2;pool<=53;pool++)for(int trial=0;trial<12;trial++){
@@ -59,7 +72,7 @@ static void frame_checks(void){
   }
   assert(sbc_decode(data,(u32)length,&new_state,&cur)==length);
   if(!old_state.initialized)sbc_state_init(&old_state);
-  for(int ch=0;ch<2;ch++)for(int blk=0;blk<16;blk++)sbc_synth8(&old_state,&old,ch,blk);
+  for(int ch=0;ch<2;ch++)for(int blk=0;blk<16;blk++)reference_synth8(&old_state,&old,ch,blk);
   assert(!memcmp(old.pcm,cur.pcm,sizeof(old.pcm)));
   u8 pcm[512];sbc_pcm_interleave(pcm,&cur);
   for(int i=0;i<128;i++)for(int ch=0;ch<2;ch++){
@@ -102,4 +115,4 @@ static void schedule_checks(void){
  assert(audio_periodic(&p,0x55u,100)==0);assert(audio_periodic_wait(&p,0x55u,100)==99);
  assert(audio_countdown(10,50)==0&&audio_countdown(-1,50)==-1&&audio_countdown(0,50)==0);
 }
-int main(void){bit_reader_checks();division_checks();frame_checks();schedule_checks();puts("Audio decoder: exact division/bit reads/PCM, bounded frames and packet-independent maintenance passed.");return 0;}
+int main(void){bit_reader_checks();division_checks();matrix_checks();frame_checks();schedule_checks();puts("Audio decoder: exact division/bit reads/folded synthesis/PCM, bounded frames and packet-independent maintenance passed.");return 0;}
