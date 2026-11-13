@@ -30,8 +30,8 @@ static long s_close(int fd){return sc1(6,fd);}
 static long s_rename(const char*a,const char*b){return sc2(38,(long)a,(long)b);}
 static long s_ioctl(int fd,u32 req,long arg){return sc3(54,fd,(long)req,arg);}
 static long s_poll(void*p,u32 n,int timeout){return sc3(168,(long)p,(long)n,timeout);}
-/* Legacy ARM Linux setpriority(2): PRIO_PROCESS=0, who=0 (self).  Best effort: no RT scheduling. */
-static long s_audio_priority(void){return sc3(97,0,0,-4);}
+/* Legacy ARM Linux setpriority(2): PRIO_PROCESS=0, who=0 (self).  Request normal nice 0; no RT scheduling. */
+static long s_audio_priority(void){return sc3(97,0,0,0);}
 static void*s_mmap2(void*addr,u32 len,int prot,int flags,int fd,u32 pgoff){long r=sc6(192,(long)addr,(long)len,prot,flags,fd,(long)pgoff);return (u32)r>=0xfffff001u?0:(void*)r;}
 static long s_munmap(void*p,u32 len){return sc2(91,(long)p,(long)len);}
 static long s_nanosleep(long sec,long ns){struct {long sec,nsec;}t={sec,ns};return sc2(162,(long)&t,0);}
@@ -794,7 +794,7 @@ static void audio_profile_service(u32 now){
  append_str(b,sizeof(b)," DROPS=");append_uint(b,sizeof(b),snd_pcm_drops-drops);append_char(b,sizeof(b),'\n');bt_log_append(b);
  packets=media_packets;frames=media_frames;maintenance=audio_maintenance_runs;underruns=snd_underruns;drops=snd_pcm_drops;audio_packet_max_ms=0;
 }
-static void serve(void){long prio=s_audio_priority();peer_load();local_bdaddr_load();meta_write();status_set("BT WAIT PHONE");hcifd=hci_raw_open();if(hcifd<0)hci_log("HCI MONITOR OPEN FAIL",0,-1);if(saved_peer_valid)bond_restore_hcid(saved_peer);device_list_write();hci_log("AVRCP SDP+MULTI-DEVICE KEYVAULT+PIN0000 AUDIOGUARD1 AUTORECONNECT2-EARLYBOOT",0,-1);hci_log(prio<0?"AUDIO PRIORITY REQUEST DENIED (NORMAL SCHEDULING)":"AUDIO PRIORITY -4 SET",0,-1);u32 tick=0;struct AudioPeriodic maintenance={0},status_poll={0},metadata_poll={0};for(;;){
+static void serve(void){long prio=s_audio_priority();peer_load();local_bdaddr_load();meta_write();status_set("BT WAIT PHONE");hcifd=hci_raw_open();if(hcifd<0)hci_log("HCI MONITOR OPEN FAIL",0,-1);if(saved_peer_valid)bond_restore_hcid(saved_peer);device_list_write();hci_log("AVRCP SDP+MULTI-DEVICE KEYVAULT+PIN0000 AUDIOGUARD1 AUTORECONNECT2-EARLYBOOT",0,-1);hci_log(prio<0?"AUDIO PRIORITY 0 REQUEST DENIED":"AUDIO PRIORITY 0 SET",0,-1);u32 tick=0;struct AudioPeriodic maintenance={0},status_poll={0},metadata_poll={0};for(;;){
     u32 now=alert_now_ms(),steps=audio_periodic(&maintenance,now,100u);
     if(steps){
     tick+=steps;audio_maintenance_runs++;

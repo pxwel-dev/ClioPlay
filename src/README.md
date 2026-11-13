@@ -273,11 +273,11 @@ is capped at 5 FPS**, including pills, loading indicators, playback, speed warni
 menus and Explore rotation. This leaves more CPU time for routing. New input and
 status changes queue for the next frame; input, GPS and audio services keep running.
 On completion, failure or cancellation, normal presentation resumes immediately.
-Outside calculation, a separate compositor targets 20 FPS while overlays animate. It
+Outside calculation, a separate compositor targets approximately 15 FPS while overlays animate. It
 restores the latest finished background before drawing each overlay frame, so
 map updates can continue during an animation without showing partial roads or
 retaining old glyphs. Two extra RGB565 backgrounds use about 510 KiB of RAM.
-Quiet screens do not redraw at 20 FPS unnecessarily.
+Quiet screens do not redraw at 15 FPS unnecessarily.
 
 Explore rotation and tilt follow a 500 ms elapsed-time transition rather than a
 fixed number of map frames. Camera presentation requests additional map drawing

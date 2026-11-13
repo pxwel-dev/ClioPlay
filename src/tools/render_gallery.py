@@ -21,8 +21,9 @@ from text_engine import build as build_text
 
 ROOT = Path(__file__).resolve().parents[1]
 SCENES = []
-TWEEN_STEPS = tuple(range(0, 351, 50))
-EXPLORE_SAMPLES = tuple(range(0, 501, 50))
+ANIMATION_SAMPLE_MS = 67  # Match FRAME_UI_MS: approximately 15 Hz.
+TWEEN_STEPS = tuple(range(0, 351, ANIMATION_SAMPLE_MS))
+EXPLORE_SAMPLES = tuple(range(0, 568, ANIMATION_SAMPLE_MS))  # Include the first completed pose.
 BLUETOOTH_EVENTS = (
     (0, 'set_volume(16);'),
     (650, 'key_handle(K_BACK);assert(bt_control_mode);'),
@@ -37,7 +38,7 @@ ROUTE_READY_SAMPLES = sorted(set(TWEEN_STEPS) | {500+step for step in TWEEN_STEP
 PHONE_CALC_SAMPLES = tuple(range(0, 1300, 200))  # Whole UI targets 5 Hz while calculating.
 MENU_RETURN_SAMPLES = (0, *(400 + step for step in TWEEN_STEPS))
 MENU_ENTRY_SAMPLES = sorted({0, *(400+step for step in TWEEN_STEPS), *(950+step for step in TWEEN_STEPS), *(1400+step for step in TWEEN_STEPS)})
-SPEED_WARNING_SAMPLES = (0, *range(400, 3401, 50))
+SPEED_WARNING_SAMPLES = (0, *range(400, 3401, ANIMATION_SAMPLE_MS))
 ROUNDABOUT_ETA_SAMPLES = (0, *(600 + step for step in TWEEN_STEPS),
                         *(4800 + step for step in TWEEN_STEPS))
 ZOOM_MODE_EVENTS = (
@@ -207,7 +208,7 @@ def catalog(sender_receipts=None):
         for frame,elapsed in enumerate(EXPLORE_SAMPLES):
             setup='' if mode=='enter' else 'explore();'
             action=f'key_handle(K_MAP);explore_sample({elapsed});'
-            key('Animations',f'explore-{mode}-{frame:02}',f'Explore {mode} · frame {frame}',setup,action,note='Elapsed-time camera samples at 20 Hz; map/model cadence is separate. Host captures do not measure hardware throughput.')
+            key('Animations',f'explore-{mode}-{frame:02}',f'Explore {mode} · frame {frame}',setup,action,note='Elapsed-time camera samples at approximately 15 Hz; map/model cadence is separate. Host captures do not measure hardware throughput.')
     browse = 'key_handle(K_MAP);' + 'explore_sample(100);' * 6
     pan = browse + 'key_handle(K_UP);'
     zoom = pan + 'key_handle(K_SR);'

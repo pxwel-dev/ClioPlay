@@ -20,13 +20,13 @@ These silent loops use 480 × 272 frames from the production C renderer.
 They show an example route around Newcastle upon Tyne. Car and phone inputs
 are controlled samples. The destination preview feeds a sample message into
 the ClioPlay daemon/UI handoff. Camera positions are illustrative. Motion is
-sampled at approximately 20 frames per second during short transitions, and
-5 frames per second while calculating a route. GIF timing uses 50 ms animation samples and 200 ms calculation samples. The timings
+sampled at approximately 15 frames per second during short transitions, and
+5 frames per second while calculating a route. GIF timing uses 67 ms animation samples and 200 ms calculation samples. The timings
 describe controlled host captures, not achieved head-unit frame rates. The runtime
 uses separate map and animation schedules, capped together during calculation;
 steady speed, distance, clock, volume and playback-progress values use the
 10 FPS map cadence. New information, fades, resizing and warning pulses retain
-the 20 FPS transition target.
+the 15 FPS transition target.
 Explore camera passes require extra drawing work. Head-unit performance, Bluetooth and audio require a
 [vehicle trial](../next-release/hardware-trial.md).
 

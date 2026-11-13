@@ -61,7 +61,7 @@ static void render_sync_ui(u32 now){
 static void render_advance_ui(u32 now){
  render_sync_ui(now);
  /* Rejoin the map clock after a transition, without delaying a finished map
-  * behind an unrelated 100 ms phase. The boundary frame is at least 50 ms. */
+  * behind an unrelated 100 ms phase. Keep the transition interval at the boundary. */
  if(renderer.ui_period==FRAME_MAP_MS&&screen==SCR_MAP){
   renderer.ui.next=frame_after(renderer.map_at,now,FRAME_MAP_MS);
   if((s32)(renderer.ui.next-(renderer.present_at+FRAME_UI_MS))<0)renderer.ui.next=renderer.present_at+FRAME_UI_MS;
@@ -131,7 +131,7 @@ static void render_runtime_step(u32 now,int model_changed){
   * Model/input services still run normally and queue the latest state. */
  if(calculating&&!frame_due(now,renderer.ui.next))return;
  /* Observe new content on model/input changes so it can promptly promote the
-  * next presentation to 20 Hz; routine values do not keep that promotion alive. */
+  * next presentation to about 15 Hz; routine values do not keep that promotion alive. */
  if(model_changed||render_background_dirty||!renderer.valid||renderer.page!=screen||renderer.theme!=theme_resolved)render_prepare(now);
  render_sync_ui(now);
  int invalid=!renderer.valid||renderer.page!=screen||renderer.theme!=theme_resolved;

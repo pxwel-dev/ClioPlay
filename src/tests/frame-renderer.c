@@ -17,15 +17,17 @@ static void at(u32 now,int model){hud_capture_ms=now;render_runtime_step(now,mod
 int main(void){
  struct FrameClock clock={0};unsigned frames=0;
  for(u32 t=0;t<1000;t++)if(frame_due(t,clock.next)){frames++;frame_advance_ui(&clock,t,0,1);}
- assert(frames==20&&clock.next==1000);
- clock=(struct FrameClock){0xffffff00u};u32 before=clock.next;frame_advance_ui(&clock,before,0,1);assert(clock.next-before==50);
- assert(frame_ui_period(0,0)==100&&frame_ui_period(0,1)==50&&frame_ui_period(1,1)==200);
+ assert(frames==15&&clock.next==1005);
+ for(u32 t=1000;t<5000;t++)if(frame_due(t,clock.next)){frames++;frame_advance_ui(&clock,t,0,1);}
+ assert(frames==75&&clock.next==5025);
+ clock=(struct FrameClock){0xffffff00u};u32 before=clock.next;frame_advance_ui(&clock,before,0,1);assert(clock.next-before==67);
+ assert(frame_ui_period(0,0)==100&&frame_ui_period(0,1)==67&&frame_ui_period(1,1)==200);
  assert(frame_after(100,450,100)==500&&frame_after(0xfffffff0u,0x30u,100u)==0x54u);
  assert(frame_route_budget(100,101)==0&&frame_route_budget(100,110)==5&&frame_route_budget(100,104)==2);
 
  setup(R_IDLE,10000);
  for(u32 t=10000;t<11000;t++)at(t,t%100==0);
- assert(render_stats.maps==10&&render_stats.presents>10&&render_stats.presents<20); /* 20 Hz during entrance, idle thereafter */
+ assert(render_stats.maps==10&&render_stats.presents>10&&render_stats.presents<=15); /* 15 Hz during entrance, idle thereafter */
  assert(render_stats.rotations==0);
  for(int i=0;i<FB_PIX;i++)assert((*render_front)[i]==C_BG); /* no pills in background */
  setup(R_CALC,10000);
@@ -60,9 +62,9 @@ int main(void){
   for(u32 t=17012;t<17211;t++){render_background_dirty=1;at(t,t%100==0);}
   assert(render_stats.presents==shown);
   route_status=exits[e];at(17210,1);
-  assert(render_stats.presents==shown+1&&renderer.ui.next==17260&&renderer.map_period==100);
+  assert(render_stats.presents==shown+1&&renderer.ui.next==17277&&renderer.map_period==100);
   for(u32 t=17211;t<17310;t++)at(t,t%100==0);
-  assert(render_stats.presents>=shown+2); /* 20 Hz animation resumes */
+  assert(render_stats.presents>=shown+2); /* 15 Hz animation resumes */
  }
 
  setup(R_IDLE,20000);at(20000,1);at(20400,1);
@@ -97,7 +99,7 @@ int main(void){
  u32 entrance=hud_tween[HC_STATUS].position_at,term=hud_audio.until;
  key_handle(K_MAP);
  for(u32 t=40001;t<41000;t++)at(t,t%100==0);
- assert(render_stats.maps==10&&render_stats.rotations>=4&&render_stats.presents>=15&&render_stats.presents<=20);
+ assert(render_stats.maps==10&&render_stats.rotations>=4&&render_stats.presents>=10&&render_stats.presents<=15);
  assert(!freecam_transition_active()&&hud_audio.until==term);
  /* Entering Explore adds its zoom notice, but cannot restart the volume term. */
  assert(entrance==40000);
@@ -126,12 +128,12 @@ int main(void){
  assert(render_stats.presents-steady==10&&render_stats.maps-steady_maps==10&&renderer.ui_period==100);
  /* New metadata promotes immediately without having to change pill size. */
  hud_capture_ms=78001;copystr(btui.title,sizeof(btui.title),"Track two");at(78001,1);
- assert(renderer.ui_period==50&&hud_tween[HC_STATUS].fast_content_at==78001);
+ assert(renderer.ui_period==67&&hud_tween[HC_STATUS].fast_content_at==78001);
  for(u32 t=78002;t<79000;t++)at(t,t%100==0);
  assert(renderer.ui_period==100);
  /* Adding volume is new information; repeated same-size values are not. */
  hud_capture_ms=79000;car.volume[0]=0;set_volume(15);at(79000,1);
- assert(renderer.ui_period==50);u32 volume_entry=hud_tween[HC_STATUS].fast_content_at;
+ assert(renderer.ui_period==67);u32 volume_entry=hud_tween[HC_STATUS].fast_content_at;
  for(u32 t=79001;t<80000;t++){
   if(t%100==0){hud_capture_ms=t;set_volume(15+(int)(t%300)/100);}
   at(t,t%100==0);
@@ -144,11 +146,11 @@ int main(void){
  }
  assert(render_stats.presents-steady==10);
  /* Eased warning colours remain genuine animations, including the safe fade. */
- gps.mph10=900;at(81000,1);assert(renderer.ui_period==50&&hud_speed_over);
+ gps.mph10=900;at(81000,1);assert(renderer.ui_period==67&&hud_speed_over);
  steady=render_stats.presents;
  for(u32 t=81001;t<=82000;t++)at(t,t%100==0);
- assert(render_stats.presents-steady==20);
- gps.mph10=350;at(82001,1);assert(renderer.ui_period==50&&!hud_speed_over);
+ assert(render_stats.presents-steady==14); /* 14 complete 67 ms intervals after the first presentation. */
+ gps.mph10=350;at(82001,1);assert(renderer.ui_period==67&&!hud_speed_over);
  for(u32 t=82002;t<82500;t++)at(t,t%100==0);
  assert(renderer.ui_period==100);
 
@@ -158,5 +160,5 @@ int main(void){
  pref.debug=1;render_profile_service(60000);render_profile_service(65000);
  long fd=s_open(STATE_LOG,O_RDONLY_,0);assert(fd>=0);char log[256]={0};assert(s_read((int)fd,log,255)>0);s_close((int)fd);
  assert(strstr(log,"FRAME 5S HUD="));s_unlink(STATE_LOG);pref.debug=0;
- puts("Frame renderer: 20 Hz transitions/warnings, 10 Hz steady values/playback, whole-UI 5 Hz calculation cap, routing budget, clean background yields, independent Explore and debug-only profiles passed.");
+ puts("Frame renderer: 15 Hz transitions/warnings, 10 Hz steady values/playback, whole-UI 5 Hz calculation cap, routing budget, clean background yields, independent Explore and debug-only profiles passed.");
 }

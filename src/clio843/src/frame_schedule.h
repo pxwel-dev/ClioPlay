@@ -1,6 +1,6 @@
 /* Independent clocks; expired frames are skipped, never replayed in a burst. */
 #define FRAME_MODEL_MS 100u
-#define FRAME_UI_MS 50u
+#define FRAME_UI_MS 67u /* Approximately 15 Hz on the millisecond clock. */
 #define FRAME_MAP_MS 100u
 #define FRAME_CALC_MAP_MS 200u
 #define FRAME_ROUTE_CHUNK_MS 5u

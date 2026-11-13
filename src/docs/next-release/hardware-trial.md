@@ -78,7 +78,7 @@ results against the executable SHA-256 values and navigation `build.json`.
    Measure frame interval and route calculation time; log memory/underrun symptoms.
    With Debug on, collect the five-second `FRAME 5S` lines from `state.log`.
    Outside calculation, fades, resizing, new content, warning pulses and Explore
-   transitions target about 100 HUD presentations per five seconds. Steady speed,
+   transitions target about 75 HUD presentations per five seconds. Steady speed,
    distance, time, volume and BT playback-progress updates target 50, matching
    the 50 scheduled map frames. Repeated value updates must not keep the faster
    clock active; a new track/notice should promptly promote it again.
@@ -95,10 +95,10 @@ results against the executable SHA-256 values and navigation `build.json`.
    Repeat BT CTRL expansion, volume/track changes and Explore entry/exit while
    streaming. Glass interiors, framebuffer copies and repeated camera math have
    scalar/pixel parity checks; their instruction savings are not measured unit
-   FPS. Audio priority remains unchanged. Confirm clarity, uninterrupted audio
+   FPS. Audio now requests normal nice 0, with the same 64 KiB ring and 150 ms prefill. Confirm clarity, uninterrupted audio
    and the same antialiased/frosted appearance during the transitions.
    Record route calculation time with Debug off too. These counters establish
-   device scheduling/output timing, not physical LCD scanout or a 20 FPS guarantee.
+   device scheduling/output timing, not physical LCD scanout or a 15 FPS guarantee.
 6. Use a journey crossing two installed atlas cores: continuous tiles, no false
    arrival at a gateway, correct final destination and remaining distance. Include
    leaving/rejoining the planned route near a pack boundary. Check turn cues
