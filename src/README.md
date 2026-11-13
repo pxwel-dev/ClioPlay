@@ -279,6 +279,12 @@ map updates can continue during an animation without showing partial roads or
 retaining old glyphs. Two extra RGB565 backgrounds use about 510 KiB of RAM.
 Quiet screens do not redraw at 15 FPS unnecessarily.
 
+Frosted pills average complete 8 × 8 backdrop areas, with fractional colour
+precision through sampling, tint, interpolation and opacity. Colours are rounded
+only at the final RGB565 write, without dithering. Samples are reused while the
+finished background and pill geometry remain unchanged; overlapping cards and
+speed-limit insets are sampled afresh.
+
 Explore rotation and tilt follow a 500 ms elapsed-time transition rather than a
 fixed number of map frames. Camera presentation requests additional map drawing
 passes using the tile cache; these still cost CPU time. Normal map deadlines keep

@@ -23,7 +23,7 @@
     }
   },
   "source": "clio843/src/cliospl.c",
-  "source_tree_sha256": "07b71c225df39fa163f3c5c74570f366acf1d67ab849801d21a57c9721089dc6",
+  "source_tree_sha256": "c0812ad8e92d501d661f2b03388bc92044f50e438bb274bb571c8201775b68ba",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "b0045a10c40374f77a1865d57be226f40dd313a23c5c38c68b60c3870f42a52b",
@@ -37,7 +37,7 @@
     "clio843/src/cliospl.c": "3ed913f73a028527a29b81ab1f3e4e49f8cab7ee26e715e4ee1715378e5e86e0",
     "clio843/src/coordinates.h": "023eacb74d76a57445c55f35f4938bd1b47205d526a6f3788df9ca5309e01526",
     "clio843/src/font_atlas.h": "0989a1e455dd2a047dfea49d3e4d2a66a30b178960b80a2c31603ee80ffc4ffc",
-    "clio843/src/frame_renderer.h": "b2954d9c829002a9dd0c448d5e780bade72029027c75b00291c10eb25f50203a",
+    "clio843/src/frame_renderer.h": "6bcd376a7806aed60081f8552f39adb08aea8264857a29eff3d5c0ee4cd690ca",
     "clio843/src/frame_schedule.h": "50bac892308f48eb49dbc30948b2531ca3b8d1ff71296820168f86a48a12751a",
     "clio843/src/global_cameras.h": "d07e8dabf65f3513a5ec88eb15e34bdcad628cdb291f08a518eb46a3ebed9cd9",
     "clio843/src/global_clock.h": "7d2e1ea55f19f1577d51d584ed5be882fc15116af65bd1cc294eadd2d884e893",
@@ -45,7 +45,7 @@
     "clio843/src/global_text.cc": "45b454fa97ec49eaaca230e4578da4361138ff2c5c410e0e552edd5629231858",
     "clio843/src/global_text.h": "49956b951783a12949ea41c4e2df829837eaa8ecfd644c68e6ca57c70a2208b6",
     "clio843/src/hud.h": "711a6c917355f171ceab58eb3f421ef68780f00f4f3268bc8ea18cd0611649ce",
-    "clio843/src/hud_glass.h": "013252baf21fb8bdc6c11acd09fe1e43eed6d7ba4eba1e0c8c49182bf3abebbb",
+    "clio843/src/hud_glass.h": "c1efcd7238ea3bfe6096311fb1c2014de507c39c6a8296f4a13de0bc83c7e613",
     "clio843/src/hud_playback.h": "a2757e57a552bf1e03a30b7b62b60bf2ade02cf62ddf565531d2eb753f86f881",
     "clio843/src/hud_status.h": "91f9d2cc57aeae72deebee57974292a8c3033631b4cd11b83d57fdececbaeaed",
     "clio843/src/hud_turn_masks.h": "ceb5cc2dfc83963855f1c04541c646ac49a88e6c2177c6584c673d9d97b3ad45",

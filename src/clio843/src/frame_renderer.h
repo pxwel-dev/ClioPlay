@@ -75,7 +75,7 @@ static void render_present(void){
  render_copy(fb,*render_front);
  /* Read the presentation clock after restoring the backdrop. */
  u32 now=hud_now_ms();render_prepare(now);renderer.present_at=now;
- hud_draw_all(now,screen==SCR_MAP);
+ hud_glass_frame_begin();hud_draw_all(now,screen==SCR_MAP);hud_glass_frame_end();
  if(screen!=SCR_MAP)hud_draw_page_title();
  draw_modal();fb_flush();
  clip_x=ox;clip_y=oy;clip_right=orr;clip_bottom=ob;hud_ink_alpha=oa;
@@ -103,11 +103,13 @@ static void render_background(void){
  else if(screen==SCR_BT)draw_bluetooth();else if(screen==SCR_KEY)draw_keyboard();else if(screen==SCR_COORDINATES)draw_coordinates();else draw_settings();
  renderer.building=0;render_fb=&display_fb;
  u16(*swap)[FB_PIX]=render_front;render_front=render_work;render_work=swap;
+ hud_glass_background_changed();
  renderer.valid=renderer.pending=1;renderer.camera_pending=0;renderer.page=screen;renderer.theme=theme_resolved;render_background_dirty=0;
  u32 elapsed=hud_now_ms()-begin;if(elapsed>render_stats.max_map_ms)render_stats.max_map_ms=elapsed;
 }
 static void render_runtime_reset(u32 now){
  memzero(&renderer,sizeof(renderer));memzero(&render_stats,sizeof(render_stats));
+ hud_glass_background_changed();
  renderer.initialized=1;renderer.page=-1;renderer.theme=-1;renderer.map_at=now;renderer.ui.next=now;
  renderer.last_route=route_status;renderer.map_period=route_status==R_CALC?FRAME_CALC_MAP_MS:FRAME_MAP_MS;
  renderer.ui_period=renderer.map_period;renderer.present_at=now-FRAME_MAP_MS;render_background_dirty=1;render_fb=&display_fb;

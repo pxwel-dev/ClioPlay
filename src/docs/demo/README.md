@@ -27,6 +27,9 @@ uses separate map and animation schedules, capped together during calculation;
 steady speed, distance, clock, volume and playback-progress values use the
 10 FPS map cadence. New information, fades, resizing and warning pulses retain
 the 15 FPS transition target.
+Glass uses complete 8 × 8 area filtering with higher-precision colour calculations
+and final RGB565 rounding, without dithering. Unchanged-background samples are
+cached during live overlay animations.
 Explore camera passes require extra drawing work. Head-unit performance, Bluetooth and audio require a
 [vehicle trial](../next-release/hardware-trial.md).
 

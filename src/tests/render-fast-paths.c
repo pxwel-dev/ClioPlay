@@ -1,5 +1,5 @@
-/* Pixel equivalence against the preceding scalar rasterizers. Reference
- * algorithms deliberately retain the branch-heavy glass and 64-bit bands. */
+/* Optimized surfaces versus scalar references, plus independent high-precision
+ * glass checks. Map references retain their preceding 64-bit bands. */
 #define HOST_TEST 1
 #define main unused_device_entry
 #include "../clio843/src/clio040.c"
@@ -9,28 +9,22 @@
 static u16 backdrop[FB_PIX],expected[FB_PIX];
 static void reference_glass(struct HudBox b,u16 tint,u16 edge,unsigned frost,int alert){
  if(b.a<=0||b.w<4||b.h<4||b.w>W||b.h>(HUD_GLASS_ROWS-1)*HUD_GLASS_STEP)return;
- const int r=10;
- int cols=(b.w-1)/HUD_GLASS_STEP+2,rows=(b.h-1)/HUD_GLASS_STEP+2;
- unsigned rim_strength=10u+(5u*(unsigned)alert+128u)/256u;
- hud_glass_sample(b,tint,frost,rows,cols);
- int oldj=-1;
- for(int yy=0;yy<b.h;yy++){
-  int sy=b.y+yy;if(sy<0||sy>=H)continue;
-  int j=yy/HUD_GLASS_STEP;
+ int cols=(b.w-1)/8+2,rows=(b.h-1)/8+2;unsigned rim_strength=10u+(5u*(unsigned)alert+128u)/256u;
+ hud_glass_sample(b,tint,frost,rows,cols);int oldj=-1;
+ for(int y=0;y<b.h;y++){
+  int sy=b.y+y;if(sy<0||sy>=H)continue;int j=y/8;
   if(j!=oldj){hud_glass_scan(hud_glass_row_a,j,b.w);hud_glass_scan(hud_glass_row_b,j+1,b.w);oldj=j;}
-  unsigned fy=(yy&(HUD_GLASS_STEP-1))*2u;
-  int dy=yy<b.h-1-yy?yy:b.h-1-yy;
-  for(int xx=0;xx<b.w;xx++){
-   int sx=b.x+xx;if(sx<0||sx>=W)continue;
-   int dx=xx<b.w-1-xx?xx:b.w-1-xx;
-   unsigned outer=hud_corner(dx,dy,r);if(!outer)continue;
-   unsigned inner=dx&&dy?hud_corner(dx-1,dy-1,r-1):0;
-   u16 colour=hud_mix16(hud_glass_row_a[xx],hud_glass_row_b[xx],fy);
-   unsigned rim=outer-inner;
-   if(rim)colour=hud_mix16(colour,edge,(rim*rim_strength+8u)>>4);
-   else if(alert&&(dx==1||dy==1))colour=hud_mix16(colour,edge,(unsigned)(alert+16)/32u);
+  unsigned fy=(y&7)*2u;int dy=y<b.h-1-y?y:b.h-1-y;
+  for(int x=0;x<b.w;x++){
+   int sx=b.x+x;if(sx<0||sx>=W)continue;int dx=x<b.w-1-x?x:b.w-1-x;
+   unsigned outer=hud_corner(dx,dy,10);if(!outer)continue;
+   unsigned inner=dx&&dy?hud_corner(dx-1,dy-1,9):0,rim=outer-inner;
+   struct HudGlassColour c=hud_glass_mix(hud_glass_row_a[x],hud_glass_row_b[x],fy);
+   if(rim)c=hud_glass_mix(c,hud_glass_expand(edge),(rim*rim_strength+8u)>>4);
+   else if(alert&&(dx==1||dy==1))c=hud_glass_mix(c,hud_glass_expand(edge),(unsigned)(alert+16)/32u);
    unsigned q=(outer*(unsigned)b.a+128u)>>8;
-   u16*p=&fb[sy*W+sx];*p=q==16?colour:hud_mix16(*p,colour,q);
+   u16*p=&fb[sy*W+sx];if(q<16)c=hud_glass_mix(hud_glass_expand(*p),c,q);
+   *p=hud_glass_quantize(c);
   }
  }
 }
@@ -143,6 +137,57 @@ static void reference_view_trig(int*ss,int*c){
 static int reference_coslat(s32 lat){int d=lat<0?-lat:lat;d/=100;if(d>=90000)return 0;static const u16 c[91]={32767,32762,32747,32722,32687,32642,32587,32523,32448,32364,32269,32165,32051,31927,31794,31650,31498,31335,31163,30982,30791,30591,30381,30162,29934,29697,29451,29196,28932,28659,28377,28087,27788,27481,27165,26841,26509,26169,25821,25465,25101,24730,24351,23964,23571,23170,22762,22347,21925,21497,21062,20621,20173,19720,19260,18794,18323,17846,17364,16876,16384,15886,15383,14876,14364,13848,13328,12803,12275,11743,11207,10668,10126,9580,9032,8481,7927,7371,6813,6252,5690,5126,4560,3993,3425,2856,2286,1715,1144,572,0};int i=d/1000,f=d%1000;return c[i]+((int)c[i+1]-c[i])*f/1000;}
 static unsigned rng=0x8bd13827u;
 static unsigned random_word(void){rng^=rng<<13;rng^=rng>>17;rng^=rng<<5;return rng;}
+/* Verify packed Q7 arithmetic independently with separate scalar channels. */
+static void glass_precision_checks(void){
+ for(unsigned c=0;c<65536;c++)assert(hud_glass_quantize(hud_glass_expand((u16)c))==c);
+ for(int n=0;n<8192;n++){
+  unsigned ar=random_word()%3969,ag=random_word()%8065,ab=random_word()%3969;
+  unsigned br=random_word()%3969,bg=random_word()%8065,bb=random_word()%3969;
+  struct HudGlassColour a={(ar<<16)|ab,ag},b={(br<<16)|bb,bg};
+  for(unsigned q=0;q<=16;q++){
+   struct HudGlassColour c=hud_glass_mix(a,b,q);
+   unsigned r=(ar*(16-q)+br*q)>>4,g=(ag*(16-q)+bg*q)>>4,blue=(ab*(16-q)+bb*q)>>4;
+   assert(c.rb==((r<<16)|blue)&&c.g==g);
+   u16 expected=(u16)((((r+64)>>7)<<11)|(((g+64)>>7)<<5)|((blue+64)>>7));
+   assert(hud_glass_quantize(c)==expected);
+  }
+ }
+}
+/* Independent complete-area reference, including screen-edge clamping and tint. */
+static void glass_sample_checks(void){
+ const int widths[]={4,21,128,282,480},heights[]={4,27,80,96};
+ for(int n=0;n<40;n++){
+  int w=widths[n%5],h=heights[n%4];
+  const int xs[]={-15,0,8,W-w+13},ys[]={-7,0,8,H-h+9};
+  struct HudBox box={xs[n%4],ys[(n/4)%4],w,h,256};
+  int cols=(w-1)/HUD_GLASS_STEP+2,rows=(h-1)/HUD_GLASS_STEP+2;
+  u16 tint=(u16)random_word();unsigned frost=n%17;
+  memcpy(fb,backdrop,sizeof backdrop);hud_glass_sample(box,tint,frost,rows,cols);
+  for(int j=0;j<rows;j++)for(int i=0;i<cols;i++){
+   unsigned r=0,g=0,b=0;
+   for(int iy=0;iy<8;iy++)for(int ix=0;ix<8;ix++){
+    int x=box.x+i*HUD_GLASS_STEP+ix-4,y=box.y+j*HUD_GLASS_STEP+iy-4;
+    if(x<0)x=0;if(x>=W)x=W-1;if(y<0)y=0;if(y>=H)y=H-1;
+    u16 c=backdrop[y*W+x];r+=c>>11;g+=(c>>5)&63;b+=c&31;
+   }
+   r=(r*2*(16-frost)+((tint>>11)<<7)*frost)>>4;
+   g=(g*2*(16-frost)+(((tint>>5)&63)<<7)*frost)>>4;
+   b=(b*2*(16-frost)+((tint&31)<<7)*frost)>>4;
+   assert(hud_glass_grid[j][i].rb==((r<<16)|b)&&hud_glass_grid[j][i].g==g);
+  }
+ }
+ /* A thin road must contribute equally at all eight source offsets. */
+ unsigned reference=0;
+ for(int phase=0;phase<8;phase++){
+  memset(fb,0,FB_PIX*sizeof(u16));for(int y=0;y<H;y++)fb[y*W+160+phase]=0xffff;
+  struct HudBox box={80,80,240,64,256};int rows=(box.h-1)/8+2,cols=(box.w-1)/8+2;
+  hud_glass_sample(box,0,0,rows,cols);unsigned sum=0;
+  for(int j=0;j<rows;j++)for(int i=0;i<cols;i++){
+   struct HudGlassColour c=hud_glass_grid[j][i];sum+=(c.rb>>16)+c.g+(c.rb&0xfffu);
+  }
+  assert(sum>0);if(!phase)reference=sum;else assert(sum==reference);
+ }
+}
 static void glass_checks(void){
  const int widths[]={4,11,19,20,21,62,128,282,480},heights[]={4,7,27,43,80,96};
  for(int i=0;i<=256;i++){
@@ -153,6 +198,57 @@ static void glass_checks(void){
   memcpy(fb,backdrop,sizeof backdrop);reference_glass(b,tint,edge,frost,alert);memcpy(expected,fb,sizeof expected);
   memcpy(fb,backdrop,sizeof backdrop);hud_glass_surface(b,tint,edge,frost,alert);
   if(memcmp(expected,fb,sizeof expected)){fprintf(stderr,"Glass mismatch case%d: %d,%d %dx%d alpha%d alert%d\n",i,b.x,b.y,w,h,i,alert);assert(0);}
+ }
+}
+static void glass_cache_checks(void){
+ const struct HudBox boxes[]={{8,8,240,80,256},{180,30,128,48,192},{350,8,120,48,256}};
+ for(int pass=0;pass<24;pass++){
+  if(!(pass%4)){
+   for(int i=0;i<FB_PIX;i++)backdrop[i]=(u16)random_word();
+   hud_glass_background_changed();
+  }
+  memcpy(fb,backdrop,sizeof backdrop);
+  for(int i=0;i<3;i++){
+   struct HudBox b=boxes[i];b.a=(pass*17+i*53)%257;if(pass&1)b.x+=3;
+   hud_glass_surface(b,(u16)(0x1234+pass*139+i*13),(u16)(0x5678+i*33),(unsigned)(pass+i)%17,(pass*13)%257);
+  }
+  memcpy(expected,fb,sizeof expected);
+  memcpy(fb,backdrop,sizeof backdrop);hud_glass_frame_begin();
+  for(int i=0;i<3;i++){
+   struct HudBox b=boxes[i];b.a=(pass*17+i*53)%257;if(pass&1)b.x+=3;
+   hud_glass_surface(b,(u16)(0x1234+pass*139+i*13),(u16)(0x5678+i*33),(unsigned)(pass+i)%17,(pass*13)%257);
+  }
+  hud_glass_frame_end();assert(!memcmp(expected,fb,sizeof expected));
+  /* Replay on the same backdrop: unchanged root cards may reuse their grids,
+   * but overlapping cards/insets must still see newly painted glass. */
+  memcpy(fb,backdrop,sizeof backdrop);hud_glass_frame_begin();
+  for(int i=0;i<3;i++){
+   struct HudBox b=boxes[i];b.a=(pass*17+i*53)%257;if(pass&1)b.x+=3;
+   hud_glass_surface(b,(u16)(0x1234+pass*139+i*13),(u16)(0x5678+i*33),(unsigned)(pass+i)%17,(pass*13)%257);
+  }
+  hud_glass_frame_end();assert(!memcmp(expected,fb,sizeof expected));
+ }
+ /* More surfaces than cache slots always retain the uncached result. */
+ for(int enabled=0;enabled<2;enabled++){
+  memcpy(fb,backdrop,sizeof backdrop);if(enabled)hud_glass_frame_begin();
+  for(int i=0;i<12;i++)hud_glass_surface((struct HudBox){8+i*35,8,32,40,256},0x1111,0x8888,8,0);
+  hud_glass_frame_end();if(!enabled)memcpy(expected,fb,sizeof expected);else assert(!memcmp(expected,fb,sizeof expected));
+ }
+ /* The final +3 pixel is outside the painted pill, but still contributes.
+  * A previous card touching precisely that point must prevent cached reuse. */
+ for(int axis=0;axis<2;axis++){
+  struct HudBox previous=axis?(struct HudBox){68,123,64,32,256}:(struct HudBox){123,68,32,64,256};
+  struct HudBox target=axis?(struct HudBox){80,80,32,40,256}:(struct HudBox){80,80,40,32,256};
+  hud_glass_background_changed();
+  for(int pass=0;pass<2;pass++){
+   u16 edge=pass?0xf800:0x001f;
+   memcpy(fb,backdrop,sizeof backdrop);
+   hud_glass_surface(previous,0x18c3,edge,8,0);hud_glass_surface(target,0x2222,0x8888,8,0);
+   memcpy(expected,fb,sizeof expected);
+   memcpy(fb,backdrop,sizeof backdrop);hud_glass_frame_begin();
+   hud_glass_surface(previous,0x18c3,edge,8,0);hud_glass_surface(target,0x2222,0x8888,8,0);
+   hud_glass_frame_end();assert(!memcmp(expected,fb,sizeof expected));
+  }
  }
 }
 static void line_checks(void){
@@ -191,6 +287,6 @@ static void copy_checks(void){
 int main(void){
  hud_capture_clock=1;hud_capture_ms=10000;render_fb=&display_fb;renderer.building=0;
  for(unsigned i=0;i<FB_PIX;i++)backdrop[i]=(u16)((i*641u+i/W*331u)^(i>>3));
- glass_checks();line_checks();trig_checks();copy_checks();
- puts("Render fast paths: all 257 glass opacities with corners/clipping/alerts, 600 scalar-reference AA lines including extreme endpoints, all camera angle/latitude cache cases, and 16 aligned/unaligned guarded framebuffer copies are pixel identical.");
+ glass_precision_checks();glass_sample_checks();glass_checks();glass_cache_checks();line_checks();trig_checks();copy_checks();
+ puts("Glass: Q7 colour/quantization, clamped full-area reference and background-cache parity passed. Render fast paths: all 257 glass opacities with corners/clipping/alerts, 600 scalar-reference AA lines including extreme endpoints, all camera angle/latitude cache cases, and 16 aligned/unaligned guarded framebuffer copies are pixel identical.");
 }

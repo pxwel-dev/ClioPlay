@@ -96,7 +96,11 @@ results against the executable SHA-256 values and navigation `build.json`.
    streaming. Glass interiors, framebuffer copies and repeated camera math have
    scalar/pixel parity checks; their instruction savings are not measured unit
    FPS. Audio now requests normal nice 0, with the same 64 KiB ring and 150 ms prefill. Confirm clarity, uninterrupted audio
-   and the same antialiased/frosted appearance during the transitions.
+   and the antialiased/frosted appearance during the transitions. Check contrasting
+   thin roads moving behind pills: full-area filtering is combined with
+   high-precision colour calculations and no dithering. Check colour transitions
+   and changing/reversing pill sizes, themes and speed-limit insets for stale cached
+   backgrounds. Inspect blur smoothness and colour banding on the physical display.
    Record route calculation time with Debug off too. These counters establish
    device scheduling/output timing, not physical LCD scanout or a 15 FPS guarantee.
 6. Use a journey crossing two installed atlas cores: continuous tiles, no false

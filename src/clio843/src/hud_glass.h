@@ -1,6 +1,6 @@
-/* Bounded RGB565 glass compositor and state transitions.
- * Sample the map before drawing each card. A small interpolated grid softens
- * what shows through, without a second framebuffer or a full-screen blur. */
+/* Area-filtered RGB565 frost with high-precision colour calculations.
+ * Cache unchanged backdrop samples; preserve fractions until final rounding.
+ * No dithering or full-screen blur. */
 struct HudBox {int x,y,w,h,a;}; /* opacity in Q8 */
 struct HudCard {
  struct HudBox box;
@@ -132,27 +132,110 @@ static unsigned hud_corner(int dx,int dy,int r){
  if(dx>=r||dy>=r)return 16;
  return r==10?hud_corner_10[dy*10+dx]:hud_corner_9[dy*9+dx];
 }
+/* Seven fractional bits per native channel retain colour detail through the
+ * sampler, tint, reconstruction, rim and opacity. RGB565 is rounded only at
+ * the final write. RB fields are 16 bits apart: 31*128*16 cannot carry. */
+struct HudGlassColour {u32 rb,g;};
+static inline __attribute__((always_inline)) struct HudGlassColour hud_glass_expand(u16 c){
+ return (struct HudGlassColour){((u32)(c&0xf800u)<<12)|((u32)(c&31u)<<7),(u32)(c&0x07e0u)<<2};
+}
+static inline __attribute__((always_inline)) struct HudGlassColour hud_glass_mix(struct HudGlassColour a,struct HudGlassColour b,unsigned q){
+ return (struct HudGlassColour){((a.rb*(16u-q)+b.rb*q)>>4)&0x0fff0fffu,(a.g*(16u-q)+b.g*q)>>4};
+}
+static inline __attribute__((always_inline)) u16 hud_glass_quantize(struct HudGlassColour c){
+ u32 rb=(c.rb+0x00400040u)>>7;
+ return (u16)(((rb>>5)&0xf800u)|(rb&31u)|(((c.g+64u)>>2)&0x07e0u));
+}
 #define HUD_GLASS_STEP 8
 #define HUD_GLASS_COLS (W/HUD_GLASS_STEP+2)
 #define HUD_GLASS_ROWS 13
-static u16 hud_glass_grid[HUD_GLASS_ROWS][HUD_GLASS_COLS];
-static u16 hud_glass_row_a[W],hud_glass_row_b[W];
+static struct HudGlassColour hud_glass_grid[HUD_GLASS_ROWS][HUD_GLASS_COLS];
+static struct HudGlassColour hud_glass_row_a[W],hud_glass_row_b[W];
+struct HudGlassSum {u32 rb,g;};
+static struct HudGlassSum hud_glass_cells[2][W/4+4];
+/* Only the clean-background compositor enables reuse. Reject a cached sample
+ * when an earlier card may have painted into its filter footprint; insets must
+ * still sample their current parent glass. Legacy/direct draws stay uncached. */
+#define HUD_GLASS_CACHE_COUNT 8
+static struct {
+ struct HudBox box;u32 background;u16 tint;unsigned frost;
+ struct HudGlassColour grid[HUD_GLASS_ROWS][HUD_GLASS_COLS];
+} hud_glass_cache[HUD_GLASS_CACHE_COUNT];
+static struct HudBox hud_glass_painted[HUD_GLASS_CACHE_COUNT];
+static u32 hud_glass_background=1;
+static unsigned hud_glass_calls;
+static int hud_glass_frame_active;
+static void hud_glass_background_changed(void){
+ hud_glass_frame_active=0;
+ if(!++hud_glass_background){
+  hud_glass_background=1;
+  for(unsigned i=0;i<HUD_GLASS_CACHE_COUNT;i++)hud_glass_cache[i].background=0;
+ }
+}
+static void hud_glass_frame_begin(void){hud_glass_calls=0;hud_glass_frame_active=1;}
+static void hud_glass_frame_end(void){hud_glass_frame_active=0;}
+static int hud_glass_cache_slot(struct HudBox b,int rows,int cols){
+ if(!hud_glass_frame_active||hud_glass_calls>=HUD_GLASS_CACHE_COUNT)return -1;
+ unsigned slot=hud_glass_calls++;int clear=1;
+ /* Each 8x8 footprint covers -4 through +3; the exclusive end is +4.
+  * Clamp to the source pixels actually read at the display edge. */
+ int left=b.x-4,top=b.y-4;
+ int right=b.x+(cols-1)*HUD_GLASS_STEP+4,bottom=b.y+(rows-1)*HUD_GLASS_STEP+4;
+ if(left<0)left=0;if(left>=W)left=W-1;if(top<0)top=0;if(top>=H)top=H-1;
+ if(right<1)right=1;if(right>W)right=W;if(bottom<1)bottom=1;if(bottom>H)bottom=H;
+ for(unsigned i=0;i<slot;i++){
+  struct HudBox p=hud_glass_painted[i];
+  if(left<p.x+p.w&&right>p.x&&top<p.y+p.h&&bottom>p.y)clear=0;
+ }
+ hud_glass_painted[slot]=b;
+ return clear?(int)slot:-1;
+}
 static u16 hud_sample(int x,int y){
  if(x<0)x=0;if(y<0)y=0;if(x>=W)x=W-1;if(y>=H)y=H-1;
  return fb[y*W+x];
 }
-static void hud_glass_sample(struct HudBox b,u16 tint,unsigned frost,int rows,int cols){
- for(int j=0;j<rows;j++)for(int i=0;i<cols;i++){
-  int x=b.x+i*HUD_GLASS_STEP,y=b.y+j*HUD_GLASS_STEP;
-  u16 a=hud_mix16(hud_sample(x-4,y-4),hud_sample(x+4,y-4),8);
-  u16 c=hud_mix16(hud_sample(x-4,y+4),hud_sample(x+4,y+4),8);
-  hud_glass_grid[j][i]=hud_mix16(hud_mix16(a,c,8),tint,frost);
+/* Combine 4x4 sums to cover EVERY pixel of each 8x8 filter footprint.
+ * Each source pixel is read only once per card, with clamping at screen edges.
+ * Up to 64 blue values fit below the packed red field, so RB can share a sum. */
+static void hud_glass_cell_row(struct HudGlassSum*out,int x,int y,int count){
+ const u16*line[4];
+ for(int k=0;k<4;k++){int sy=y+k;if(sy<0)sy=0;if(sy>=H)sy=H-1;line[k]=fb+sy*W;}
+ for(int i=0;i<count;i++,x+=4){
+  u32 rb=0,g=0;
+  if(x>=0&&x+3<W){
+   for(int k=0;k<4;k++){
+    const u16*p=line[k]+x;u32 a=p[0],b=p[1],c=p[2],d=p[3];
+    rb+=(a&0xf81fu)+(b&0xf81fu)+(c&0xf81fu)+(d&0xf81fu);
+    g+=(a&0x07e0u)+(b&0x07e0u)+(c&0x07e0u)+(d&0x07e0u);
+   }
+  }else{
+   for(int k=0;k<4;k++)for(int n=0;n<4;n++){
+    int sx=x+n;if(sx<0)sx=0;if(sx>=W)sx=W-1;
+    u32 c=line[k][sx];rb+=c&0xf81fu;g+=c&0x07e0u;
+   }
+  }
+  out[i]=(struct HudGlassSum){rb,g};
  }
 }
-static void hud_glass_scan(u16*row,int j,int w){
+static void hud_glass_sample(struct HudBox b,u16 tint,unsigned frost,int rows,int cols){
+ struct HudGlassSum*a=hud_glass_cells[0],*c=hud_glass_cells[1];
+ struct HudGlassColour wash=hud_glass_expand(tint);
+ for(int j=0;j<rows;j++){
+  hud_glass_cell_row(a,b.x-4,b.y+j*HUD_GLASS_STEP-4,cols*2);
+  hud_glass_cell_row(c,b.x-4,b.y+j*HUD_GLASS_STEP,cols*2);
+  for(int i=0;i<cols;i++){
+   int k=i*2;u32 rb=a[k].rb+a[k+1].rb+c[k].rb+c[k+1].rb;
+   u32 g=a[k].g+a[k+1].g+c[k].g+c[k+1].g;
+   /* Sum/64 in native-channel Q7 is exactly sum*2. No RGB565 rounding. */
+   struct HudGlassColour average={((rb>>11)<<17)|((rb&0x07ffu)<<1),g>>4};
+   hud_glass_grid[j][i]=hud_glass_mix(average,wash,frost);
+  }
+ }
+}
+static void hud_glass_scan(struct HudGlassColour*row,int j,int w){
  for(int x=0;x<w;x++){
-  int i=x/HUD_GLASS_STEP;unsigned q=(x&(HUD_GLASS_STEP-1))*2u;
-  row[x]=hud_mix16(hud_glass_grid[j][i],hud_glass_grid[j][i+1],q);
+  int i=x/HUD_GLASS_STEP;unsigned q=(x&(HUD_GLASS_STEP-1))*(16u/HUD_GLASS_STEP);
+  row[x]=hud_glass_mix(hud_glass_grid[j][i],hud_glass_grid[j][i+1],q);
  }
 }
 static void hud_glass_surface(struct HudBox b,u16 tint,u16 edge,unsigned frost,int alert){
@@ -160,36 +243,55 @@ static void hud_glass_surface(struct HudBox b,u16 tint,u16 edge,unsigned frost,i
  const int r=10;
  int cols=(b.w-1)/HUD_GLASS_STEP+2,rows=(b.h-1)/HUD_GLASS_STEP+2;
  unsigned rim_strength=10u+(5u*(unsigned)alert+128u)/256u;
- hud_glass_sample(b,tint,frost,rows,cols);
+ int slot=hud_glass_cache_slot(b,rows,cols);
+ int reuse=slot>=0&&hud_glass_cache[slot].background==hud_glass_background&&
+  hud_glass_cache[slot].box.x==b.x&&hud_glass_cache[slot].box.y==b.y&&
+  hud_glass_cache[slot].box.w==b.w&&hud_glass_cache[slot].box.h==b.h&&
+  hud_glass_cache[slot].tint==tint&&hud_glass_cache[slot].frost==frost;
+ if(reuse){
+  for(int j=0;j<rows;j++)for(int i=0;i<cols;i++)hud_glass_grid[j][i]=hud_glass_cache[slot].grid[j][i];
+ }else{
+  hud_glass_sample(b,tint,frost,rows,cols);
+  if(slot>=0){
+   hud_glass_cache[slot].background=hud_glass_background;hud_glass_cache[slot].box=b;
+   hud_glass_cache[slot].tint=tint;hud_glass_cache[slot].frost=frost;
+   for(int j=0;j<rows;j++)for(int i=0;i<cols;i++)hud_glass_cache[slot].grid[j][i]=hud_glass_grid[j][i];
+  }
+ }
+ struct HudGlassColour edge_colour=hud_glass_expand(edge);
+ struct HudGlassColour*row_a=hud_glass_row_a,*row_b=hud_glass_row_b;
  int oldj=-1;
  for(int yy=0;yy<b.h;yy++){
   int sy=b.y+yy;if(sy<0||sy>=H)continue;
   int j=yy/HUD_GLASS_STEP;
-  if(j!=oldj){hud_glass_scan(hud_glass_row_a,j,b.w);hud_glass_scan(hud_glass_row_b,j+1,b.w);oldj=j;}
-  unsigned fy=(yy&(HUD_GLASS_STEP-1))*2u;
+  if(j!=oldj){
+   if(oldj>=0&&j==oldj+1){struct HudGlassColour*swap=row_a;row_a=row_b;row_b=swap;hud_glass_scan(row_b,j+1,b.w);}
+   else{hud_glass_scan(row_a,j,b.w);hud_glass_scan(row_b,j+1,b.w);}
+   oldj=j;
+  }
+  unsigned fy=(yy&(HUD_GLASS_STEP-1))*(16u/HUD_GLASS_STEP);
   int dy=yy<b.h-1-yy?yy:b.h-1-yy;
-  /* The rectangular interior has full coverage and no rim. Corners retain
-   * exactly the same antialiasing path; avoid its tests on every body pixel. */
   int first=r,last=b.w-r;
   if(first< -b.x)first=-b.x;if(last>W-b.x)last=W-b.x;
   if(dy<2||first>=last)first=last=0;
   for(int xx=0;xx<b.w;xx++){
    if(xx==first&&first<last){
     u16*dest=&fb[sy*W+b.x+first];unsigned q=(16u*(unsigned)b.a+128u)>>8;
-    if(q==16){for(int i=first;i<last;i++)*dest++=hud_mix16(hud_glass_row_a[i],hud_glass_row_b[i],fy);}
-    else if(q){for(int i=first;i<last;i++,dest++)*dest=hud_mix16(*dest,hud_mix16(hud_glass_row_a[i],hud_glass_row_b[i],fy),q);}
+    if(q==16){for(int i=first;i<last;i++,dest++)*dest=hud_glass_quantize(hud_glass_mix(row_a[i],row_b[i],fy));}
+    else if(q){for(int i=first;i<last;i++,dest++)*dest=hud_glass_quantize(hud_glass_mix(hud_glass_expand(*dest),hud_glass_mix(row_a[i],row_b[i],fy),q));}
     xx=last-1;continue;
    }
    int sx=b.x+xx;if(sx<0||sx>=W)continue;
    int dx=xx<b.w-1-xx?xx:b.w-1-xx;
    unsigned outer=hud_corner(dx,dy,r);if(!outer)continue;
    unsigned inner=dx&&dy?hud_corner(dx-1,dy-1,r-1):0;
-   u16 colour=hud_mix16(hud_glass_row_a[xx],hud_glass_row_b[xx],fy);
+   struct HudGlassColour colour=hud_glass_mix(row_a[xx],row_b[xx],fy);
    unsigned rim=outer-inner;
-   if(rim)colour=hud_mix16(colour,edge,(rim*rim_strength+8u)>>4);
-   else if(alert&&(dx==1||dy==1))colour=hud_mix16(colour,edge,(unsigned)(alert+16)/32u);
+   if(rim)colour=hud_glass_mix(colour,edge_colour,(rim*rim_strength+8u)>>4);
+   else if(alert&&(dx==1||dy==1))colour=hud_glass_mix(colour,edge_colour,(unsigned)(alert+16)/32u);
    unsigned q=(outer*(unsigned)b.a+128u)>>8;
-   u16*p=&fb[sy*W+sx];*p=q==16?colour:hud_mix16(*p,colour,q);
+   u16*p=&fb[sy*W+sx];if(q<16)colour=hud_glass_mix(hud_glass_expand(*p),colour,q);
+   *p=hud_glass_quantize(colour);
   }
  }
 }
