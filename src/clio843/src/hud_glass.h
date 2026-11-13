@@ -11,7 +11,7 @@ struct HudCard {
 struct HudTween {
  struct HudBox from;
  struct HudCard target, previous;
- u32 position_at, content_at;
+ u32 position_at, content_at, fast_content_at;
  int seen;
 };
 enum {HC_STATUS,HC_CLOCK,HC_SPEED,HC_ROAD,HC_TURN,HC_ROAD_NAME,HC_COUNT};
@@ -33,6 +33,18 @@ static int hud_same_status_except_volume(const struct HudCard*a,const struct Hud
   (a->kind==HUD_VOLUME||streq(a->title,b->title))&&streq(a->detail,b->detail)&&
   streq(a->connection,b->connection)&&streq(a->feedback,b->feedback);
 }
+/* Existing numeric channels may crossfade at the map cadence. New labels,
+ * notification rows, symbols and geometry retain the faster transition clock. */
+static int hud_value_update(int id,const struct HudCard*a,const struct HudCard*b){
+ if(a->kind!=b->kind||a->flags!=b->flags||a->value!=b->value||a->ink!=b->ink||
+    !streq(a->tag,b->tag)||!streq(a->connection,b->connection)||!streq(a->feedback,b->feedback))return 0;
+ if(id==HC_STATUS)return hud_same_status_except_volume(a,b)&&!!a->badge[0]==!!b->badge[0]&&
+   (a->kind!=HUD_VOLUME||!!a->title[0]==!!b->title[0]);
+ if(id==HC_CLOCK)return !!a->title[0]==!!b->title[0]&&!!a->detail[0]==!!b->detail[0]&&streq(a->badge,b->badge);
+ if(id==HC_SPEED||id==HC_TURN)return streq(a->detail,b->detail)&&streq(a->badge,b->badge);
+ if(id==HC_ROAD)return streq(a->title,b->title)&&streq(a->detail,b->detail);
+ return 0;
+}
 static struct HudBox hud_pose(const struct HudTween*t,u32 now){
  struct HudBox b=t->target.box,a=t->from;
  int q=hud_ease(now-t->position_at,320);
@@ -41,7 +53,7 @@ static struct HudBox hud_pose(const struct HudTween*t,u32 now){
 }
 static void hud_set_card(int id,struct HudCard target,u32 now){
  struct HudTween*t=&hud_tween[id];
- if(!t->seen){t->seen=1;t->content_at=now-220u;t->position_at=now-320u;}
+ if(!t->seen){t->seen=1;t->content_at=t->fast_content_at=now-220u;t->position_at=now-320u;}
  int dy=id==HC_STATUS?-6:6;
  if(id==HC_CLOCK)dy=-4;
  if(!target.box.a){
@@ -58,6 +70,7 @@ static void hud_set_card(int id,struct HudCard target,u32 now){
  }else{
   if(!hud_box_eq(t->target.box,target.box)){t->from=here;t->position_at=now;}
   if(!hud_content_eq(&t->target,&target)){
+   if(!hud_value_update(id,&t->target,&target))t->fast_content_at=now;
    /* Rapid adjustments retarget the latest state instead of replaying the
     * card's entrance. Keep the more visible outgoing text as the handoff. */
    if(id!=HC_ROAD_NAME&&now-t->content_at<220u&&t->target.kind==target.kind&&t->target.flags==target.flags&&

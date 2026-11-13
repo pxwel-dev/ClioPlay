@@ -3,11 +3,11 @@
   "framebuffer": "480x272 RGB565 from production C draw() and key_handle()",
   "example": "Newcastle upon Tyne, with simulated car and phone inputs",
   "native_sources": {
-    "clio843/src/frame_schedule.h": "0ee1d54ccc38b6bf320f189766279183a11f434f626a81e0a40785fff56ccf5a",
+    "clio843/src/frame_schedule.h": "e97cd0712a96985d69adf0ad8a7b254cad4e904b0892279c5f2cedb2db755578",
     "clio843/src/global_clock.h": "7d2e1ea55f19f1577d51d584ed5be882fc15116af65bd1cc294eadd2d884e893",
     "clio843/src/map_thin_coverage.h": "d4632a1dd789176be35ded06a21b84d272d69910532f31e05dc03fbfc092e5fb",
     "clio843/src/atlas_router.h": "ae13e0cb3de1c5c75a377abced3f4332cecd1ca0ff124e9d3074c555d9068eb5",
-    "clio843/src/hud.h": "f3adc68860091522decf3c7ac6d5b7d24462567156dd362eec218cedad54f67b",
+    "clio843/src/hud.h": "439e6fd4f3c276c37c899ce9860a5059cddee179f952b03e6c6946fc0a6895a8",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
     "clio843/src/audio_schedule.h": "bf37e189f7a0f372567287380820a357878fc1aaf519f85309224cd0d5ae85a6",
     "clio843/src/coordinates.h": "023eacb74d76a57445c55f35f4938bd1b47205d526a6f3788df9ca5309e01526",
@@ -25,7 +25,7 @@
     "clio843/src/audio_playback.h": "25e0f01cd52eb89d447c5ecdf34f57bebeef36135c2912eaa3d49ec1ee7f13e1",
     "clio843/src/ui_raster.h": "50767eb3a56c5192daabb07944b255b34d4e77b1db48b14a30a6914871420284",
     "clio843/src/hud_playback.h": "a2757e57a552bf1e03a30b7b62b60bf2ade02cf62ddf565531d2eb753f86f881",
-    "clio843/src/hud_glass.h": "5aee66a01c4b307f8fd930e2252e921d76bb4fb78cf1228eed332af686ba1471",
+    "clio843/src/hud_glass.h": "8f56ea9710257546acf0a799bb2a969d2a309bc447f5baa6467a77d54cf3fc8d",
     "clio843/src/keyboard.h": "6da9c849cd024cb3d0b6ea3b480b1fb1e169157eabafe50be29ec202496128ed",
     "clio843/src/nav_roundabout.h": "470390303a8f18184a020710012ea0353d0425c26a1381bbaa4064ca2d7f39be",
     "clio843/src/hud_turn_masks.h": "ceb5cc2dfc83963855f1c04541c646ac49a88e6c2177c6584c673d9d97b3ad45",
@@ -36,7 +36,7 @@
     "clio843/src/audio_chime.h": "184c222e448db2707fc752bc38f7f6c735b6cb1f4d168d88ddc7da7cf20f4d75",
     "clio843/src/utf8.h": "e6e172fb98b7f4c9e958322d13296190fd003025562c05146bcc9a3d50af8b7c",
     "clio843/src/unicode_support.c": "43a20e8dde712fbdb5e087062ad68d3ae5aec704c1ab864dec9c57a99fd54b77",
-    "clio843/src/frame_renderer.h": "8f89718303c53f13ec080531a259c2ea9d10276064f545ef20ed4292ef246f4a",
+    "clio843/src/frame_renderer.h": "b8747248e27794ff9eb0504f5dda9b6b4645990bc0c95c2a98cc5208cc5d285b",
     "clio843/src/boot_theme.h": "fa46f1bda9c0f37306c90f34d497192953aa718b30fa688291bbc7a66ddab746",
     "clio843/src/ui_translations.h": "081ce81ae51ef700e2598476cf9dc858d45d2877ea99508925752b71ee893144",
     "clio843/src/keyboard-data/layouts.h": "22a3c1a36371612cf10b9db2811812d6320eef8065df4cd7586d4088ea25a6de",
@@ -493,7 +493,7 @@
     "clio843/src/vendor/sheenbidi/Headers/SheenBidi/SheenBidi.h": "44a644a72edf2300838d32c3e32aa14a7cb66b584fb9da643b8311aa21991cbe"
   },
   "executables": {
-    "clio040": "008e0fc7fe8ebf4862d655771f697fa8533b066d51eb760c1a777630da29e8d3",
+    "clio040": "7b4f41a5647914bb4f9c34984f6a8e1a7604c9e9b8cceb418d13f41ac3c45faf",
     "cliospl": "7f69eb4ae127ba0bd17911ecd9ee4ae0e0ab7e6119513dc72167027b3058e641",
     "clioa2dp": "fd96e68d64f39db2e9e7c2ab71c8714addb551e6f8370454d50ad195debf77e2"
   },

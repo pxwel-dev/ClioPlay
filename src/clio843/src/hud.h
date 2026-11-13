@@ -583,8 +583,8 @@ static void hud_draw_all(u32 now,int map){
  if(map){hud_draw_card(HC_SPEED,now);hud_draw_card(HC_ROAD,now);hud_draw_card(HC_TURN,now);}
  hud_draw_card(HC_CLOCK,now);hud_draw_card(HC_STATUS,now);
 }
-/* Menus refresh their content at 5 Hz; the compositor presents active
- * transitions at 20 Hz. Include the final frame after the tween ends. */
+/* New content and geometry use 20 Hz; routine values use the map cadence.
+ * Include the final frame after a transition ends. */
 static int hud_menu_animating(u32 now){
  if(hud_status_page!=screen)return 1;
  const int ids[]={HC_STATUS,HC_CLOCK};
@@ -592,7 +592,7 @@ static int hud_menu_animating(u32 now){
   const struct HudTween*t=&hud_tween[ids[i]];
   if(!t->seen||(!t->from.a&&!t->target.box.a))continue;
   if(now-t->position_at<320u||hud_status_frame_at-t->position_at<320u||
-     now-t->content_at<220u||hud_status_frame_at-t->content_at<220u)return 1;
+     now-t->fast_content_at<220u||hud_status_frame_at-t->fast_content_at<220u)return 1;
  }
  const struct HudTween*t=&hud_tween[HC_STATUS];
  if(t->seen&&(t->from.a||t->target.box.a)){
@@ -620,7 +620,7 @@ static void hud_reset_animations(void){
  bt_transport_press.kind=0;bt_playback_request=-1;
 }
 static void hud_settle_for_capture(u32 now){
- for(int i=0;i<HC_COUNT;i++)if(hud_tween[i].seen){hud_tween[i].position_at=now-320u;hud_tween[i].content_at=now-220u;}
+ for(int i=0;i<HC_COUNT;i++)if(hud_tween[i].seen){hud_tween[i].position_at=now-320u;hud_tween[i].content_at=hud_tween[i].fast_content_at=now-220u;}
  hud_status_layout.at=now-320u;
 }
 #endif

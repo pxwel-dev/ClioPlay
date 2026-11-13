@@ -5,27 +5,52 @@ static u16 render_maps[2][FB_PIX];
 static u16 (*render_front)[FB_PIX]=&render_maps[0],(*render_work)[FB_PIX]=&render_maps[1];
 static struct {
  struct FrameClock ui;
- u32 map_at,check_at;
+ u32 map_at,check_at,present_at;
  int valid,page,theme,building,pending,model_pending,initialized,last_route,camera_pending;
- u32 map_period;
+ u32 map_period,ui_period;
 } renderer;
 static struct {
  u32 at,presents,maps,rotations,late,max_late,max_present_ms,max_map_ms,route_ms;
 } render_stats;
 static void render_copy(u16*to,const u16*from){for(unsigned i=0;i<FB_PIX;i++)to[i]=from[i];}
-static int render_animation_active(u32 now){
+static int render_transition_active(u32 now){
  if(renderer.camera_pending||hud_menu_animating(now))return 1;
  if(screen==SCR_MAP){
   for(int id=HC_SPEED;id<HC_COUNT;id++){
    struct HudTween*t=&hud_tween[id];if(!t->seen||(!t->from.a&&!t->target.box.a))continue;
    if(now-t->position_at<320u||hud_status_frame_at-t->position_at<320u||
-      now-t->content_at<220u||hud_status_frame_at-t->content_at<220u)return 1;
+      now-t->fast_content_at<220u||hud_status_frame_at-t->fast_content_at<220u)return 1;
   }
-  if(hud_speed_over||freecam_transition_active())return 1;
+  if(hud_speed_over||now-hud_speed_at<360u||hud_status_frame_at-hud_speed_at<360u||freecam_transition_active())return 1;
   if(hud_pulse_live(&bt_transport_press,now))return 1;
-  if(bt_control_mode&&hud_playback.valid&&(hud_playback.playing||now-hud_playback.at<320u))return 1;
  }
  return 0;
+}
+static int render_animation_active(u32 now){
+ return render_transition_active(now)||(screen==SCR_MAP&&bt_control_mode&&hud_playback.valid&&
+  (hud_playback.playing||now-hud_playback.at<320u));
+}
+static void render_prepare(u32 now){
+ hud_prepare(active_zoom(),now,screen==SCR_MAP);
+ if(screen==SCR_MAP)hud_driver_prepare(now);
+}
+static u32 render_ui_period(u32 now){return frame_ui_period(route_status==R_CALC,render_transition_active(now));}
+static void render_sync_ui(u32 now){
+ u32 period=render_ui_period(now);
+ if(period<renderer.ui_period){
+  u32 next=renderer.present_at+period;if(frame_due(now,next))next=now;
+  renderer.ui.next=frame_earlier(renderer.ui.next,next);
+ }
+ renderer.ui_period=period;
+}
+static void render_advance_ui(u32 now){
+ render_sync_ui(now);
+ /* Rejoin the map clock after a transition, without delaying a finished map
+  * behind an unrelated 100 ms phase. The boundary frame is at least 50 ms. */
+ if(renderer.ui_period==FRAME_MAP_MS&&screen==SCR_MAP){
+  renderer.ui.next=frame_after(renderer.map_at,now,FRAME_MAP_MS);
+  if((s32)(renderer.ui.next-(renderer.present_at+FRAME_UI_MS))<0)renderer.ui.next=renderer.present_at+FRAME_UI_MS;
+ }else frame_advance_ui(&renderer.ui,now,route_status==R_CALC,render_transition_active(now));
 }
 static void render_present(void){
  if(!renderer.valid||renderer.page!=screen||renderer.theme!=theme_resolved)return;
@@ -34,8 +59,7 @@ static void render_present(void){
  render_fb=&display_fb;clip_x=clip_y=0;clip_right=W;clip_bottom=H;hud_ink_alpha=16;
  render_copy(fb,*render_front);
  /* Read the presentation clock after restoring the backdrop. */
- u32 now=hud_now_ms();hud_prepare(active_zoom(),now,screen==SCR_MAP);
- if(screen==SCR_MAP)hud_driver_prepare(now);
+ u32 now=hud_now_ms();render_prepare(now);renderer.present_at=now;
  hud_draw_all(now,screen==SCR_MAP);
  if(screen!=SCR_MAP)hud_draw_page_title();
  draw_modal();fb_flush();
@@ -55,7 +79,7 @@ static void render_checkpoint(void){
  if(!renderer.model_pending&&!render_animation_active(now))return;
  u16(*saved)[FB_PIX]=render_fb;
  render_present();render_fb=saved;
- frame_advance_ui(&renderer.ui,hud_now_ms(),route_status==R_CALC);
+ render_advance_ui(hud_now_ms());
 }
 static void render_background(void){
  u32 begin=hud_now_ms();renderer.building=1;render_fb=render_work;
@@ -70,7 +94,8 @@ static void render_background(void){
 static void render_runtime_reset(u32 now){
  memzero(&renderer,sizeof(renderer));memzero(&render_stats,sizeof(render_stats));
  renderer.initialized=1;renderer.page=-1;renderer.theme=-1;renderer.map_at=now;renderer.ui.next=now;
- renderer.last_route=route_status;renderer.map_period=route_status==R_CALC?FRAME_CALC_MAP_MS:FRAME_MAP_MS;render_background_dirty=1;render_fb=&display_fb;
+ renderer.last_route=route_status;renderer.map_period=route_status==R_CALC?FRAME_CALC_MAP_MS:FRAME_MAP_MS;
+ renderer.ui_period=renderer.map_period;renderer.present_at=now-FRAME_MAP_MS;render_background_dirty=1;render_fb=&display_fb;
 }
 static void render_runtime_step(u32 now,int model_changed){
  if(!renderer.initialized)render_runtime_reset(now);
@@ -90,6 +115,10 @@ static void render_runtime_step(u32 now,int model_changed){
  /* No dirty page, new input, camera or animation can bypass the 5 Hz cap.
   * Model/input services still run normally and queue the latest state. */
  if(calculating&&!frame_due(now,renderer.ui.next))return;
+ /* Observe new content on model/input changes so it can promptly promote the
+  * next presentation to 20 Hz; routine values do not keep that promotion alive. */
+ if(model_changed||render_background_dirty||!renderer.valid||renderer.page!=screen||renderer.theme!=theme_resolved)render_prepare(now);
+ render_sync_ui(now);
  int invalid=!renderer.valid||renderer.page!=screen||renderer.theme!=theme_resolved;
  int camera_due=renderer.camera_pending&&frame_due(now,renderer.ui.next);
  /* Normal map updates continue on their clock, even during Explore. Extra
@@ -103,7 +132,7 @@ static void render_runtime_step(u32 now,int model_changed){
  now=hud_now_ms();
  if(frame_due(now,renderer.ui.next)){
   if(renderer.pending||renderer.model_pending||render_animation_active(now))render_present();
-  frame_advance_ui(&renderer.ui,hud_now_ms(),route_status==R_CALC);
+  render_advance_ui(hud_now_ms());
  }
 }
 static u32 render_runtime_deadline(u32 now){

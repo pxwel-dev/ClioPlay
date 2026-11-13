@@ -77,8 +77,12 @@ results against the executable SHA-256 values and navigation `build.json`.
    roundabout exits, recalculation, bridge-over-water drawing, day/night changes.
    Measure frame interval and route calculation time; log memory/underrun symptoms.
    With Debug on, collect the five-second `FRAME 5S` lines from `state.log`.
-   Outside calculation, continuous animation targets about 100 HUD presentations
-   and 50 scheduled map frames per five seconds. During calculation/rerouting,
+   Outside calculation, fades, resizing, new content, warning pulses and Explore
+   transitions target about 100 HUD presentations per five seconds. Steady speed,
+   distance, time, volume and BT playback-progress updates target 50, matching
+   the 50 scheduled map frames. Repeated value updates must not keep the faster
+   clock active; a new track/notice should promptly promote it again.
+   During calculation/rerouting,
    both HUD and map target 25 per five seconds, including menus and Explore.
    Confirm that finishing, cancelling or failing restores the normal rates. `CAMERA` counts
    additional Explore drawing passes, separate from scheduled `MAP` frames.

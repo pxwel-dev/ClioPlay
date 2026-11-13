@@ -16,9 +16,10 @@ static void setup(int status,u32 now){
 static void at(u32 now,int model){hud_capture_ms=now;render_runtime_step(now,model);}
 int main(void){
  struct FrameClock clock={0};unsigned frames=0;
- for(u32 t=0;t<1000;t++)if(frame_due(t,clock.next)){frames++;frame_advance_ui(&clock,t,0);}
+ for(u32 t=0;t<1000;t++)if(frame_due(t,clock.next)){frames++;frame_advance_ui(&clock,t,0,1);}
  assert(frames==20&&clock.next==1000);
- clock=(struct FrameClock){0xffffff00u};u32 before=clock.next;frame_advance_ui(&clock,before,0);assert(clock.next-before==50);
+ clock=(struct FrameClock){0xffffff00u};u32 before=clock.next;frame_advance_ui(&clock,before,0,1);assert(clock.next-before==50);
+ assert(frame_ui_period(0,0)==100&&frame_ui_period(0,1)==50&&frame_ui_period(1,1)==200);
  assert(frame_after(100,450,100)==500&&frame_after(0xfffffff0u,0x30u,100u)==0x54u);
  assert(frame_route_budget(100,101)==0&&frame_route_budget(100,110)==5&&frame_route_budget(100,104)==2);
 
@@ -69,7 +70,7 @@ int main(void){
  render_fb=render_work;fill(0,0,W,H,0xf81f);renderer.building=1;
  map_mask_active=1;map_mask_shift=10;map_coverage[20]=31u<<10;
  renderer.model_pending=1;u32 yield_count=render_stats.presents;
- hud_capture_ms=20450;render_checkpoint();assert(render_stats.presents==yield_count+1);
+ hud_capture_ms=20450;renderer.ui.next=20450;render_checkpoint();assert(render_stats.presents==yield_count+1);
  assert(render_fb==render_work&&(*render_work)[100*W+250]==0xf81f);
  assert(display_fb[100*W+250]==C_BG&&(*render_front)[100*W+250]==C_BG);
  assert(map_mask_active==1&&map_mask_shift==10&&map_coverage[20]==31u<<10);
@@ -108,11 +109,54 @@ int main(void){
  assert(render_runtime_deadline(45501)==45550);
  at(45550,0);assert(!renderer.camera_pending&&map_tilt_q8==0&&view_course()==0);
 
+ /* A steady playing BT CTRL bar, speed, distance and clock values use 10 Hz,
+  * even when those values retarget their small text/progress interpolations. */
+ setup(R_READY,70000);gps.fix=1;roadctx.valid=1;roadctx.speed=80;roadctx.speed_flags=2;roadctx.street[0]=0;
+ trip.active=1;nav_man_type=MAN_RIGHT;nav_man_idx=1;nav_man_m=1000;
+ set_band("CD");hud_source.kind=HUD_NONE;bt_control_mode=1;
+ btui.connected=btui.playing=1;btui.pos=30;btui.dur=120;
+ copystr(btui.title,sizeof(btui.title),"Track one");copystr(btui.artist,sizeof(btui.artist),"Artist");
+ gps.mph10=350;
+ for(u32 t=70000;t<77000;t++)at(t,t%100==0);
+ u32 steady=render_stats.presents,steady_maps=render_stats.maps;
+ for(u32 t=77000;t<78000;t++){
+  if(t%100==0){gps.mph10=350+(int)(t%300)/100;nav_man_m=1000-(int)(t-77000)/10;btui.pos=37+(int)(t-77000)/500;gps.min=(int)(t/100)%60;}
+  at(t,t%100==0);
+ }
+ assert(render_stats.presents-steady==10&&render_stats.maps-steady_maps==10&&renderer.ui_period==100);
+ /* New metadata promotes immediately without having to change pill size. */
+ hud_capture_ms=78001;copystr(btui.title,sizeof(btui.title),"Track two");at(78001,1);
+ assert(renderer.ui_period==50&&hud_tween[HC_STATUS].fast_content_at==78001);
+ for(u32 t=78002;t<79000;t++)at(t,t%100==0);
+ assert(renderer.ui_period==100);
+ /* Adding volume is new information; repeated same-size values are not. */
+ hud_capture_ms=79000;car.volume[0]=0;set_volume(15);at(79000,1);
+ assert(renderer.ui_period==50);u32 volume_entry=hud_tween[HC_STATUS].fast_content_at;
+ for(u32 t=79001;t<80000;t++){
+  if(t%100==0){hud_capture_ms=t;set_volume(15+(int)(t%300)/100);}
+  at(t,t%100==0);
+ }
+ assert(renderer.ui_period==100&&hud_tween[HC_STATUS].fast_content_at==volume_entry);
+ steady=render_stats.presents;
+ for(u32 t=80000;t<81000;t++){
+  if(t%100==0){hud_capture_ms=t;set_volume(15+(int)(t%300)/100);}
+  at(t,t%100==0);
+ }
+ assert(render_stats.presents-steady==10);
+ /* Eased warning colours remain genuine animations, including the safe fade. */
+ gps.mph10=900;at(81000,1);assert(renderer.ui_period==50&&hud_speed_over);
+ steady=render_stats.presents;
+ for(u32 t=81001;t<=82000;t++)at(t,t%100==0);
+ assert(render_stats.presents-steady==20);
+ gps.mph10=350;at(82001,1);assert(renderer.ui_period==50&&!hud_speed_over);
+ for(u32 t=82002;t<82500;t++)at(t,t%100==0);
+ assert(renderer.ui_period==100);
+
  /* Profiling stays in memory unless Debug is explicitly enabled. */
  s_unlink(STATE_LOG);pref.debug=0;render_profile_service(50000);render_profile_service(56000);
  assert(s_open(STATE_LOG,O_RDONLY_,0)<0);
  pref.debug=1;render_profile_service(60000);render_profile_service(65000);
  long fd=s_open(STATE_LOG,O_RDONLY_,0);assert(fd>=0);char log[256]={0};assert(s_read((int)fd,log,255)>0);s_close((int)fd);
  assert(strstr(log,"FRAME 5S HUD="));s_unlink(STATE_LOG);pref.debug=0;
- puts("Frame renderer: 10/5 map clocks, whole-UI 5 Hz calculation cap, restored 20 Hz presentation, routing deadline budget, clean background yields, independent Explore, overlap and debug-only profiles passed.");
+ puts("Frame renderer: 20 Hz transitions/warnings, 10 Hz steady values/playback, whole-UI 5 Hz calculation cap, routing budget, clean background yields, independent Explore and debug-only profiles passed.");
 }
