@@ -168,7 +168,18 @@ static void hud_glass_surface(struct HudBox b,u16 tint,u16 edge,unsigned frost,i
   if(j!=oldj){hud_glass_scan(hud_glass_row_a,j,b.w);hud_glass_scan(hud_glass_row_b,j+1,b.w);oldj=j;}
   unsigned fy=(yy&(HUD_GLASS_STEP-1))*2u;
   int dy=yy<b.h-1-yy?yy:b.h-1-yy;
+  /* The rectangular interior has full coverage and no rim. Corners retain
+   * exactly the same antialiasing path; avoid its tests on every body pixel. */
+  int first=r,last=b.w-r;
+  if(first< -b.x)first=-b.x;if(last>W-b.x)last=W-b.x;
+  if(dy<2||first>=last)first=last=0;
   for(int xx=0;xx<b.w;xx++){
+   if(xx==first&&first<last){
+    u16*dest=&fb[sy*W+b.x+first];unsigned q=(16u*(unsigned)b.a+128u)>>8;
+    if(q==16){for(int i=first;i<last;i++)*dest++=hud_mix16(hud_glass_row_a[i],hud_glass_row_b[i],fy);}
+    else if(q){for(int i=first;i<last;i++,dest++)*dest=hud_mix16(*dest,hud_mix16(hud_glass_row_a[i],hud_glass_row_b[i],fy),q);}
+    xx=last-1;continue;
+   }
    int sx=b.x+xx;if(sx<0||sx>=W)continue;
    int dx=xx<b.w-1-xx?xx:b.w-1-xx;
    unsigned outer=hud_corner(dx,dy,r);if(!outer)continue;

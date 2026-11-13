@@ -1,7 +1,7 @@
 /* Finished background, background under construction, and displayed composite.
  * A background yield can present only the finished image, never partial roads.
  * Pill/camera clocks are independent; a rotation never resets HUD state. */
-static u16 render_maps[2][FB_PIX];
+static u16 render_maps[2][FB_PIX] __attribute__((aligned(4)));
 static u16 (*render_front)[FB_PIX]=&render_maps[0],(*render_work)[FB_PIX]=&render_maps[1];
 static struct {
  struct FrameClock ui;
@@ -12,7 +12,22 @@ static struct {
 static struct {
  u32 at,presents,maps,rotations,late,max_late,max_present_ms,max_map_ms,route_ms;
 } render_stats;
-static void render_copy(u16*to,const u16*from){for(unsigned i=0;i<FB_PIX;i++)to[i]=from[i];}
+/* Align a shared halfword offset before word bursts. Keep a scalar fallback
+ * for mismatched alignments; the RGB565 globals need only two-byte alignment. */
+typedef u32 FrameWord __attribute__((__may_alias__));
+static void render_copy(u16*to,const u16*from){
+ if(((unsigned long)to^(unsigned long)from)&3u){for(unsigned i=0;i<FB_PIX;i++)to[i]=from[i];return;}
+ unsigned count=FB_PIX;
+ if((unsigned long)to&3u){*to++=*from++;count--;}
+ FrameWord*d=(FrameWord*)to;const FrameWord*s=(const FrameWord*)from;
+ unsigned i=0,words=count/2;
+ for(;i+8<=words;i+=8){
+  FrameWord a=s[i],b=s[i+1],c=s[i+2],e=s[i+3],f=s[i+4],g=s[i+5],h=s[i+6],j=s[i+7];
+  d[i]=a;d[i+1]=b;d[i+2]=c;d[i+3]=e;d[i+4]=f;d[i+5]=g;d[i+6]=h;d[i+7]=j;
+ }
+ for(;i<words;i++)d[i]=s[i];
+ if(count&1u)to[count-1]=from[count-1];
+}
 static int render_transition_active(u32 now){
  if(renderer.camera_pending||hud_menu_animating(now))return 1;
  if(screen==SCR_MAP){

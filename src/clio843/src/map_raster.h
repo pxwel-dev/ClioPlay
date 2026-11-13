@@ -152,8 +152,12 @@ static void map_line_q8(int x0,int y0,int x1,int y1,u16 c,int wid){
  int thin_radius=soft?((int)map_minor_radius[thin_idx]*1024+1024):half+(slope>>1)+32768+1024;
  long long thin_len=(long long)dx*dx+(long long)dy*dy,thin_dotstep=(long long)dy*256;
  for(int major=first;major<=last;major++,pos+=step){
+  /* Clip the minor axis before converting the visible band to 32 bits.
+   * Offscreen endpoints may be huge; visible coverage is tightly bounded.
+   * This retains the original 64-bit interpolation and round-cap tests. */
+  int radius=stroke_width==1?thin_radius:half+65536;
+  if(pos<(long long)minorlo*65536-radius||pos>(long long)minorhi*65536+radius)continue;
   if(stroke_width==1){
-   if(pos<(long long)minorlo*65536-thin_radius||pos>(long long)minorhi*65536+thin_radius)continue;
    int center=(int)pos;
    int begin=(center-thin_radius+65535)>>16,end=(center+thin_radius)>>16;
    if(begin<minorlo)begin=minorlo;if(end>minorhi)end=minorhi;
@@ -172,10 +176,10 @@ static void map_line_q8(int x0,int y0,int x1,int y1,u16 c,int wid){
     else if(steep)map_blend(minor,major,c,cover);else map_blend(major,minor,c,cover);
    }continue;
   }
-  long long low=pos-half+32768,high=pos+half+32768;
-  int lo=(int)(low>>16),hi=(int)(high>>16);
-  int a=(int)((65536-(low-(long long)lo*65536)+1024)>>11);
-  int b=(int)(((high-(long long)hi*65536)+1024)>>11);
+  int low=(int)pos-half+32768,high=(int)pos+half+32768;
+  int lo=low>>16,hi=high>>16;
+  int a=(65536-(low&65535)+1024)>>11;
+  int b=((high&65535)+1024)>>11;
   /* Near endpoints, clamp the band to a round cap rather than letting a
    * square or diagonal corner poke out beyond the road's radius. */
   if(major*256<x0+cap*256||major*256>x1-cap*256){
@@ -189,7 +193,7 @@ static void map_line_q8(int x0,int y0,int x1,int y1,u16 c,int wid){
     if(round<cover)cover=round;if(steep)map_blend(minor,major,c,cover);else map_blend(major,minor,c,cover);
    }continue;
   }
-  if(lo==hi){int cover=(int)((high-low+1024)>>11);if(steep)map_blend(lo,major,c,cover);else map_blend(major,lo,c,cover);continue;}
+  if(lo==hi){int cover=(high-low+1024)>>11;if(steep)map_blend(lo,major,c,cover);else map_blend(major,lo,c,cover);continue;}
   if(steep){map_blend(lo,major,c,a);map_blend(hi,major,c,b);}
   else{map_blend(major,lo,c,a);map_blend(major,hi,c,b);}
   int begin=lo+1,end=hi;if(begin<minorlo)begin=minorlo;if(end>minorhi+1)end=minorhi+1;

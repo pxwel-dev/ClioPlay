@@ -92,6 +92,11 @@ results against the executable SHA-256 values and navigation `build.json`.
    Compare quiet driving, loading, speeding pulse and Explore with an active
    volume/zoom notice. Check new map frames continue during transitions, menus
    retain notice timers, and no partial roads or old glyph rectangles appear.
+   Repeat BT CTRL expansion, volume/track changes and Explore entry/exit while
+   streaming. Glass interiors, framebuffer copies and repeated camera math have
+   scalar/pixel parity checks; their instruction savings are not measured unit
+   FPS. Audio priority remains unchanged. Confirm clarity, uninterrupted audio
+   and the same antialiased/frosted appearance during the transitions.
    Record route calculation time with Debug off too. These counters establish
    device scheduling/output timing, not physical LCD scanout or a 20 FPS guarantee.
 6. Use a journey crossing two installed atlas cores: continuous tiles, no false

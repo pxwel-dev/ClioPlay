@@ -202,7 +202,7 @@ static void apply_palette(int night){
   if(changed)write_theme_state_raw(theme_resolved);
 }
 
-static u16 display_fb[FB_PIX];
+static u16 display_fb[FB_PIX] __attribute__((aligned(4)));
 /* Array indirection preserves sizeof(fb) for the native renderer/test tools. */
 static u16 (*render_fb)[FB_PIX]=&display_fb;
 #define fb (*render_fb)
@@ -789,7 +789,7 @@ static struct Tile* get_tile(u8 l,s32 x,s32 y){return get_tile_page(l,x,y,0);}
 static int span_for_level(int z){if(z>=8&&z<=11)z-=8;static const int sp[7]={16384,8192,4096,2048,1024,512,256};if(z<0)z=0;if(z>6)z=6;return sp[z];}
 static int clamp_map_zoom(int z){int lo=mapok?(int)mh.minlvl:0,hi=mapok?(int)mh.maxlvl:6;if(lo<0)lo=0;if(hi>6)hi=6;if(z<lo)z=lo;if(z>hi)z=hi;return z;}
 static int tile_div(int a,int z){int sh=14-z;if(a>=0)return a>>sh;return -(((-a)+(1<<sh)-1)>>sh);}
-static int coslat_q15(s32 lat){int d=lat<0?-lat:lat;d/=100;if(d>=90000)return 0;static const u16 c[91]={32767,32762,32747,32722,32687,32642,32587,32523,32448,32364,32269,32165,32051,31927,31794,31650,31498,31335,31163,30982,30791,30591,30381,30162,29934,29697,29451,29196,28932,28659,28377,28087,27788,27481,27165,26841,26509,26169,25821,25465,25101,24730,24351,23964,23571,23170,22762,22347,21925,21497,21062,20621,20173,19720,19260,18794,18323,17846,17364,16876,16384,15886,15383,14876,14364,13848,13328,12803,12275,11743,11207,10668,10126,9580,9032,8481,7927,7371,6813,6252,5690,5126,4560,3993,3425,2856,2286,1715,1144,572,0};int i=d/1000,f=d%1000;return c[i]+((int)c[i+1]-c[i])*f/1000;}
+static int coslat_q15(s32 lat){static s32 previous;static int cached,valid;if(valid&&lat==previous)return cached;previous=lat;valid=1;int d=lat<0?-lat:lat;d/=100;if(d>=90000){cached=0;return 0;}static const u16 c[91]={32767,32762,32747,32722,32687,32642,32587,32523,32448,32364,32269,32165,32051,31927,31794,31650,31498,31335,31163,30982,30791,30591,30381,30162,29934,29697,29451,29196,28932,28659,28377,28087,27788,27481,27165,26841,26509,26169,25821,25465,25101,24730,24351,23964,23571,23170,22762,22347,21925,21497,21062,20621,20173,19720,19260,18794,18323,17846,17364,16876,16384,15886,15383,14876,14364,13848,13328,12803,12275,11743,11207,10668,10126,9580,9032,8481,7927,7371,6813,6252,5690,5126,4560,3993,3425,2856,2286,1715,1144,572,0};int i=d/1000,f=d%1000;cached=c[i]+((int)c[i+1]-c[i])*f/1000;return cached;}
 static s32 lon_delta(s32 d){if(d>18000000)d-=36000000;if(d< -18000000)d+=36000000;return d;}
 static s32 lon_scale(s32 d,int cq){return(s32)(((long long)lon_delta(d)*cq)>>15);}
 static u32 square_distance(s32 x,s32 y){if(x>32767||x< -32767||y>32767||y< -32767)return 0xffffffffu;return(u32)(x*x+y*y);}
@@ -841,9 +841,12 @@ static int view_rotates(void){return view_course_valid();}
 /* Continuous camera angles avoid the former ten-degree presentation steps.
  * Interpolated trig is normalized once per angle, then cached per vertex pass. */
 static void view_trig(int*ss,int*c){
- static int previous=-1,sine,cosine;
- int angle=view_course();while(angle<0)angle+=360;angle%=360;
- if(angle!=previous){
+ static int previous,initialized,sine,cosine;
+ int input=view_course();
+ /* The camera angle is constant for a whole geometry pass. Check its raw
+  * value before normalizing, avoiding a software modulo at every vertex. */
+ if(!initialized||input!=previous){
+  int angle=input;while(angle<0)angle+=360;angle%=360;
   int k=angle/10,f=angle%10,n=(k+1)%36;
   sine=(SIN36[k]*(10-f)+SIN36[n]*f)/10;
   cosine=(COS36[k]*(10-f)+COS36[n]*f)/10;
@@ -851,7 +854,7 @@ static void view_trig(int*ss,int*c){
   sine=(sine*scale+16384)>>15;cosine=(cosine*scale+16384)>>15;
   if(sine>32767)sine=32767;if(cosine>32767)cosine=32767;
   if(sine< -32767)sine=-32767;if(cosine< -32767)cosine=-32767;
-  previous=angle;
+  previous=input;initialized=1;
  }
  *ss=sine;*c=cosine;
 }
