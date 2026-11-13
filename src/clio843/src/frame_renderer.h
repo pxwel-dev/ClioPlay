@@ -29,7 +29,7 @@ static void render_copy(u16*to,const u16*from){
  if(count&1u)to[count-1]=from[count-1];
 }
 static int render_transition_active(u32 now){
- if(renderer.camera_pending||hud_menu_animating(now))return 1;
+ if(renderer.camera_pending||hud_menu_animating(now)||popup_animating(now))return 1;
  if(screen==SCR_MAP){
   for(int id=HC_SPEED;id<HC_COUNT;id++){
    struct HudTween*t=&hud_tween[id];if(!t->seen||(!t->from.a&&!t->target.box.a))continue;
@@ -75,9 +75,9 @@ static void render_present(void){
  render_copy(fb,*render_front);
  /* Read the presentation clock after restoring the backdrop. */
  u32 now=hud_now_ms();render_prepare(now);renderer.present_at=now;
- hud_glass_frame_begin();hud_draw_all(now,screen==SCR_MAP);hud_glass_frame_end();
+ hud_glass_frame_begin();hud_draw_all(now,screen==SCR_MAP);
  if(screen!=SCR_MAP)hud_draw_page_title();
- draw_modal();fb_flush();
+ draw_modal();hud_glass_frame_end();fb_flush();
  clip_x=ox;clip_y=oy;clip_right=orr;clip_bottom=ob;hud_ink_alpha=oa;
  renderer.pending=renderer.model_pending=0;render_stats.presents++;
  u32 elapsed=hud_now_ms()-begin;if(elapsed>render_stats.max_present_ms)render_stats.max_present_ms=elapsed;
@@ -109,7 +109,7 @@ static void render_background(void){
 }
 static void render_runtime_reset(u32 now){
  memzero(&renderer,sizeof(renderer));memzero(&render_stats,sizeof(render_stats));
- hud_glass_background_changed();
+ hud_glass_background_changed();popup_reset();
  renderer.initialized=1;renderer.page=-1;renderer.theme=-1;renderer.map_at=now;renderer.ui.next=now;
  renderer.last_route=route_status;renderer.map_period=route_status==R_CALC?FRAME_CALC_MAP_MS:FRAME_MAP_MS;
  renderer.ui_period=renderer.map_period;renderer.present_at=now-FRAME_MAP_MS;render_background_dirty=1;render_fb=&display_fb;
@@ -132,6 +132,7 @@ static void render_runtime_step(u32 now,int model_changed){
  /* No dirty page, new input, camera or animation can bypass the 5 Hz cap.
   * Model/input services still run normally and queue the latest state. */
  if(calculating&&!frame_due(now,renderer.ui.next))return;
+ popup_prepare(now);
  /* Observe new content on model/input changes so it can promptly promote the
   * next presentation to about 15 Hz; routine values do not keep that promotion alive. */
  if(model_changed||render_background_dirty||!renderer.valid||renderer.page!=screen||renderer.theme!=theme_resolved)render_prepare(now);

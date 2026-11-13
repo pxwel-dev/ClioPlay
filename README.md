@@ -31,6 +31,10 @@
 | --- | --- |
 | ![Enter latitude and longitude, name the destination, calculate the route and find it in Recents](src/docs/demo/coordinate-route.gif) | ![Enter Explore, pan the crosshair, press OK and confirm a route to the selected point](src/docs/demo/map-point-route.gif) |
 
+Animated frosted-glass confirmations, choices and popups:
+
+![Route confirmation, destination choices, Bluetooth actions and keyboard language picker animate smoothly](src/docs/demo/popups.gif)
+
 ## Compatibility
 
 The primary supported configuration is:

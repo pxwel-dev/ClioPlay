@@ -208,6 +208,8 @@ static u16 (*render_fb)[FB_PIX]=&display_fb;
 #define fb (*render_fb)
 static int render_background_dirty=1;
 static void render_checkpoint(void);
+static void popup_reset(void);
+static void popup_settle_for_capture(u32 now);
 static int clip_x=0,clip_y=0,clip_right=W,clip_bottom=H;
 static u8 font[FONT_BYTES];
 static int font_ok=0;
@@ -269,7 +271,6 @@ static void ui_surface(int x,int y,int w,int h,u16 c){round_rect(x,y,w,h,4,c,15)
 static void ui_panel(int x,int y,int w,int h,int active){ui_surface(x,y,w,h,C_PANEL);if(active)round_rect(x+6,y,w-12,2,1,C_CYAN,15);}
 static void ui_choice(int x,int y,int w,int h,int selected){ui_surface(x,y,w,h,selected?C_ACTIVE:C_PANEL2);if(selected)round_rect(x+2,y+4,2,h-8,1,C_CYAN,15);}
 static u16 ui_choice_text(int selected){return selected?C_ACTIVE_TEXT:C_WHITE;}
-static void ui_modal(int x,int y,int w,int h){round_rect(x-1,y-1,w+2,h+2,6,C_BORDER,15);round_rect(x,y,w,h,5,C_PANEL,15);}
 static void line1(int x0,int y0,int x1,int y1,u16 c,int wid){int dx=x1>x0?x1-x0:x0-x1,sx=x0<x1?1:-1;int dy=-(y1>y0?y1-y0:y0-y1),sy=y0<y1?1:-1,err=dx+dy;for(;;){int a,b,r=wid/2;for(a=-r;a<=r;a++)for(b=-r;b<=r;b++)px(x0+a,y0+b,c);if(x0==x1&&y0==y1)break;int e2=2*err;if(e2>=dy){err+=dy;x0+=sx;}if(e2<=dx){err+=dx;y0+=sy;}}}
 
 static int load_font(void){long fd=s_open(FONT_PATH,O_RDONLY_,0);if(fd<0)return 0;long n=s_read((int)fd,font,FONT_BYTES);s_close((int)fd);font_ok=(n==FONT_BYTES);return font_ok;}
@@ -2469,7 +2470,6 @@ static const char* bt_display_name(int idx);
 static void bt_page_button(int x,int y,int w,const char*l,int f){ui_choice(x,y,w,22,f);compact_center(x+w/2,y+4,w-12,0,l,ui_choice_text(f));}
 static int bt_page_total(void){int ci=bt_connected_idx();return(ci>=0?1:0)+bt_saved_count()+1;}
 static void bt_page_clamp(void){int t=bt_page_total();if(t<1)t=1;if(bt_page_focus<0)bt_page_focus=0;if(bt_page_focus>=t)bt_page_focus=t-1;}
-static void draw_bt_page_dialog(void){if(bt_page_dialog<0||bt_page_dialog>=nbtdev)return;ui_modal(76,105,328,92);compact_center(240,117,300,1,bt_display_name(bt_page_dialog),C_WHITE);centered(240,138,0,ui_tr("Saved phone"),C_MUTED);bt_page_button(96,157,132,ui_tr("Reconnect"),bt_page_dialog_choice==0);bt_page_button(252,157,132,ui_tr("Forget"),bt_page_dialog_choice==1);}
 static const char* bt_display_name(int idx){if(idx<0||idx>=nbtdev)return ui_tr("Unknown phone");if(bt_name_unknown(btdev[idx].name)){const char*cn=bt_name_cache_get(btdev[idx].addr);if(cn)return cn;if(btdev[idx].connected&&!bt_name_unknown(btui.device))return btui.device;return ui_tr("Unknown phone");}return btdev[idx].name;}
 static const char*bt_status_text(void){if(pref.debug&&reading_present(btui.status))return btui.status;if(starts(btui.status,"BT DAEMON")||starts(btui.status,"BT L2CAP")||starts(btui.status,"BT AUDIO ERR"))return bt_unavailable_label();if(starts(btui.status,"BT PAIR"))return ui_tr("Pairing phone");if(starts(btui.status,"BT WAIT"))return ui_tr("Waiting for phone");return ui_tr("Ready to connect");}
 static void draw_bluetooth(void){
@@ -2491,7 +2491,6 @@ static void draw_bluetooth(void){
     if(ord<sc){int di=bt_saved_idx(ord);compact_fit(36,y-2,326,1,di>=0?bt_display_name(di):ui_tr("Unknown phone"),ui_choice_text(f));label(392,y,0,ui_tr("Saved"),f?C_ACTIVE_TEXT:C_MUTED,52);}
     else{label(36,y-2,1,ui_tr("+ Pair new phone"),ui_choice_text(f),326);label(388,y,0,"0000",f?C_ACTIVE_TEXT:C_MUTED,56);}
   }
-  if(bt_page_dialog>=0)draw_bt_page_dialog();
 }
 
 static int set_focus=0;
@@ -2584,18 +2583,8 @@ static void settings_key(int code){
  prefs_mark_dirty();
 }
 
-static void modal_option(int x,int y,int w,const char*s,int selected){ui_choice(x,y,w,22,selected);compact_center(x+w/2,y+3,w-16,1,s,ui_choice_text(selected));}
 static int modal_action_count(void){if(modal==MOD_RECENT)return trip.active?3:2;if(modal==MOD_FAVE)return trip.active?4:3;if(modal==MOD_TARGET){if(modal_index>=0&&modal_index<trip.count-1)return 3;return 2;}if(modal==MOD_SOURCE_PICK)return 5;return 0;}
-static void draw_modal(void){if(modal==MOD_NONE)return;if(modal==MOD_ARRIVED_STOP||modal==MOD_ARRIVED_DEST){ui_modal(74,100,332,74);compact_center(240,116,320,1,modal==MOD_ARRIVED_STOP?ui_tr("Arrived at stop"):ui_tr("Destination reached"),C_WHITE);char hint[64];copystr(hint,sizeof(hint),modal==MOD_ARRIVED_STOP?ui_tr("Continue in "):ui_tr("Finish in "));u32 now=s_now_ms(),left=arrival_modal_deadline&&time_before_u32(now,arrival_modal_deadline)?arrival_modal_deadline-now:0;append_int(hint,sizeof(hint),(int)((left+999u)/1000u));appendstr(hint,sizeof(hint),"s");compact_center(240,145,310,0,hint,C_CYAN);return;}
-  if(modal==MOD_WAIT_PHONE){ui_modal(62,82,356,112);compact_center(240,96,320,1,phone_wait_action==DEST_PICK_CHANGE_DEST?ui_tr("Change destination"):(phone_wait_action==DEST_PICK_ADD_STOP?ui_tr("Add stop"):ui_tr("Receive destination")),C_WHITE);compact_center(240,126,320,1,ui_tr("Send a destination"),C_CYAN);compact_center(240,143,320,1,ui_tr("from ClioPlay Send"),C_CYAN);return;}
-  if(modal==MOD_SOURCE_PICK){ui_modal(62,44,356,192);compact_center(240,56,320,1,dest_pick_action==DEST_PICK_CHANGE_DEST?ui_tr("Change destination"):ui_tr("Add stop"),C_WHITE);const char*options[]={ui_tr("Recents"),ui_tr("Favourites"),ui_tr("Send from phone"),ui_tr("Coordinates"),ui_tr("Cancel")};for(int i=0;i<5;i++)modal_option(100,84+i*29,280,options[i],modal_choice==i);return;}
-
-  int mody=78,modh=126;if(modal==MOD_FAVE&&trip.active){mody=54;modh=174;}ui_modal(62,mody,356,modh);const char*title=modal==MOD_ROUTE_POINT?(pending_point_stop?ui_tr("Add point as stop?"):ui_tr("Route to point?")):(modal==MOD_CANCEL_ROUTE?ui_tr("Cancel current route?"):(modal==MOD_REMOVE_STOP?ui_tr("Remove stop?"):(modal==MOD_RESUME_TRIP?ui_tr("Resume saved trip?"):(modal==MOD_RECENT?ui_tr("Recent trip"):(modal==MOD_FAVE?ui_tr("Favourite"):ui_tr("Manage target"))))));compact_center(240,mody+13,320,1,title,C_WHITE);
-  if(modal==MOD_ROUTE_POINT||modal==MOD_CANCEL_ROUTE||modal==MOD_REMOVE_STOP||modal==MOD_RESUME_TRIP){modal_option(135,130,90,ui_tr("Yes"),modal_choice==0);modal_option(255,130,90,ui_tr("No"),modal_choice==1);return;}
-  if(modal==MOD_RECENT){int row=0;if(trip.active)modal_option(100,112+row++*27,280,ui_tr("Add as stop"),modal_choice==0);modal_option(100,112+row*27,280,ui_tr("Route as new"),modal_choice==row);row++;modal_option(100,112+row*27,280,ui_tr("Add to favourites"),modal_choice==row);}
-  else if(modal==MOD_FAVE){int row=0,y0=trip.active?84:116;if(trip.active){modal_option(100,y0+row*24,280,ui_tr("Add as stop"),modal_choice==row);row++;}modal_option(100,y0+row*24,280,ui_tr("Route as new"),modal_choice==row);row++;modal_option(100,y0+row*24,280,ui_tr("Rename favourite"),modal_choice==row);row++;modal_option(100,y0+row*24,280,ui_tr("Remove favourite"),modal_choice==row);}
-  else if(modal==MOD_TARGET&&modal_index>=0&&modal_index<trip.count){if(modal_index<trip.count-1){modal_option(100,112,280,ui_tr("Remove stop"),modal_choice==0);modal_option(100,139,280,ui_tr("Move up"),modal_choice==1);modal_option(100,166,280,ui_tr("Move down"),modal_choice==2);}else{modal_option(100,125,280,ui_tr("Change destination"),modal_choice==0);int fi=fave_contains(trip.target[modal_index].lat,trip.target[modal_index].lon);modal_option(100,154,280,fi>=0?ui_tr("Remove favourite"):ui_tr("Add to favourites"),modal_choice==1);}}
-  }
+#include "popups.h"
 
 static void draw(void){freecam_orientation_anim_update(hud_now_ms());clock_service();region_service();camera_service();refresh_theme();if(screen==SCR_MAP){draw_map();}else if(screen==SCR_MENU)draw_menu();else if(screen==SCR_TRIP)draw_trip();else if(screen==SCR_BT)draw_bluetooth();else if(screen==SCR_KEY)draw_keyboard();else if(screen==SCR_COORDINATES)draw_coordinates();else draw_settings();if(screen!=SCR_MAP)header();draw_modal();fb_flush();}
 
@@ -2610,7 +2599,7 @@ static void input_log2(const char*tag,int ev,int code){if(!pref.debug)return;cha
 static void scan_inputs(void){char p[]="/dev/input/event0";for(int i=0;i<INPUT_MAX;i++){if(infd[i]>=0)continue;p[16]=(char)('0'+i);long fd=s_open(p,O_RDONLY_|O_NONBLOCK_,0);if(fd>=0){infd[i]=(int)fd;input_log2("INPUT OPEN",i,-1);}}}
 static void open_inputs(void){for(int i=0;i<INPUT_MAX;i++)infd[i]=-1;input_lock=-1;if(pref.debug)log_append(KEY_LOG,"--- CLIOPLAY GLOBAL 1.1.0-rc.1 COMPACT MEDIA INPUT ---");scan_inputs();}
 static void keydiag(int code){if(!pref.debug)return;char b[48]="KEY code=";append_int(b,sizeof(b),code);log_append(KEY_LOG,b);}
-static void key_handle(int code){render_background_dirty=1;keydiag(code);
+static void key_handle_state(int code){render_background_dirty=1;keydiag(code);
 /* Arrival/resume prompts cannot be silently escaped with MAP/BACK. */
 if(code==K_MAP&&screen!=SCR_MAP&&modal!=MOD_RESUME_TRIP&&modal!=MOD_ARRIVED_STOP&&modal!=MOD_ARRIVED_DEST){coordinates_active=0;modal=MOD_NONE;dest_pick_action=DEST_PICK_NONE;phone_wait_action=DEST_PICK_NONE;trip_pick_mode=DEST_PICK_NONE;screen=SCR_MAP;recenter_map();return;}
 if(modal!=MOD_NONE){
@@ -2697,6 +2686,18 @@ if(screen==SCR_TRIP){
   return;}
 if(screen==SCR_BT){if(code==K_ESC){bt_page_dialog=-1;return;}if(bt_page_dialog>=0){if(code==K_LEFT){bt_page_dialog_choice=0;return;}if(code==K_RIGHT){bt_page_dialog_choice=1;return;}if(code==K_ENTER){if(bt_page_dialog>=nbtdev){bt_page_dialog=-1;return;}if(bt_page_dialog_choice==0)bt_command_arg("CONNECT",btdev[bt_page_dialog].addr);else bt_forget_device(btdev[bt_page_dialog].addr);bt_page_dialog=-1;return;}return;}bt_page_clamp();int ci=bt_connected_idx(),base=ci>=0?1:0,sc=bt_saved_count(),total=base+sc+1;if(code==K_UP&&bt_page_focus>0){bt_page_focus--;return;}if(code==K_DOWN&&bt_page_focus+1<total){bt_page_focus++;return;}if(ci>=0&&bt_page_focus==0){if(code==K_LEFT){bt_page_connected_choice=0;return;}if(code==K_RIGHT){bt_page_connected_choice=1;return;}if(code==K_ENTER){if(bt_page_connected_choice==0)bt_command_arg("DISCONNECT",btdev[ci].addr);else bt_forget_device(btdev[ci].addr);return;}return;}if(code==K_ENTER){int ord=bt_page_focus-base;if(ord>=0&&ord<sc){int di=bt_saved_idx(ord);if(di>=0){bt_page_dialog=di;bt_page_dialog_choice=0;}return;}if(ord==sc){bt_command("PAIR");return;}}return;}
 if(screen==SCR_SET)settings_key(code);}
+
+
+/* Popup-only input changes presentation, not the underlying map/menu image. */
+static void key_handle(int code){
+ int dirty=render_background_dirty,old_screen=screen,old_popup=popup_requested_key();
+ key_handle_state(code);
+ int new_popup=popup_requested_key();
+ /* Opening a keyboard picker can commit a live Pinyin composition. */
+ int popup_only=old_screen==screen&&((!old_popup&&new_popup&&screen!=SCR_KEY)||
+  (old_popup&&(code==K_LEFT||code==K_RIGHT||code==K_UP||code==K_DOWN||code==K_BACK||code==K_ESC)));
+ if(popup_only)render_background_dirty=dirty;
+}
 
 
 static void poll_keys(void){for(int i=0;i<INPUT_MAX;i++){if(infd[i]<0)continue;for(;;){struct input_event16 e;long n=s_read(infd[i],&e,sizeof(e));if(n==(long)sizeof(e)){if(e.type==EV_KEY&&e.value==1&&known_remote_key(e.code)){if(input_lock<0){input_lock=i;input_log2("INPUT LOCK",i,e.code);}if(input_lock==i)key_handle(e.code);}continue;}if(n==0||(n<0&&n!=EAGAIN_NEG)){s_close(infd[i]);infd[i]=-1;if(input_lock==i){input_log2("INPUT LOST",i,-1);input_lock=-1;}}break;}}}

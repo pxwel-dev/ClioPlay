@@ -8,7 +8,7 @@ EXCLUDED_PARTS = {'.git', '.venv', '.cache', '.build', '__pycache__', 'node_modu
 EXCLUDED_NAMES = {'.DS_Store', 'build_qadj', 'build_uk.command',
                   'bond.dat', 'faves.dat', 'recent.dat', 'trip.dat', 'audlast.dat',
                   'ui_translations 2.h'}
-PREVIEW_GIFS = ('driving.gif', 'menus.gif', 'bluetooth.gif', 'phone-destination.gif',
+PREVIEW_GIFS = ('popups.gif', 'driving.gif', 'menus.gif', 'bluetooth.gif', 'phone-destination.gif',
                 'speed-warning.gif', 'map-browsing.gif', 'roundabout-eta.gif', 'add-stop.gif', 'status-notifications.gif', 'metadata-updates.gif', 'coordinates.gif', 'coordinate-route.gif', 'map-point-route.gif')
 
 def source_files(root, reports):

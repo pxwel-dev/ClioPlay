@@ -2,6 +2,7 @@
 
 | Preview | What it shows |
 | --- | --- |
+| [Popups](popups.gif) | Route confirmation, destination-source choices resizing into a phone prompt, saved-phone actions and the keyboard language picker share glass entrance, exit, text and focus transitions. |
 | [Song and radio updates](metadata-updates.gif) | New song titles animate in, including during BT CTRL. Radio tuning updates even when the station name stays the same. |
 | [Status notifications](status-notifications.gif) | GPS acquisition and recovery, phone connection, volume and no-active-route messages share one animated pill. |
 | [Driving](driving.gif) | A new road name appears. A camera alert joins the same pill and remains after the name fades. |
@@ -27,9 +28,18 @@ uses separate map and animation schedules, capped together during calculation;
 steady speed, distance, clock, volume and playback-progress values use the
 10 FPS map cadence. New information, fades, resizing and warning pulses retain
 the 15 FPS transition target.
-Glass uses complete 8 × 8 area filtering with higher-precision colour calculations
-and final RGB565 rounding, without dithering. Unchanged-background samples are
+Glass uses complete 8 × 8 area filtering plus a weighted blend of neighbouring
+areas over a 24 × 24 footprint, with higher-precision colour calculations
+and full-strength, screen-anchored 8 × 8 ordered dithering at the final RGB565
+write. This reduces gradient banding with fine fixed grain; text, symbols and
+exact selection colours retain their normal rendering. The pattern does not
+cycle between frames. GIF palette reduction can obscure this detail compared
+with the native RGB565 display. Unchanged-background samples are
 cached during live overlay animations.
+All popup windows use the same glass. Their entrances, exits, resizing, content
+changes and selection highlights share the pills' independent 15 FPS transition
+clock; map drawing remains on its normal schedule. The entire UI retains the
+5 FPS cap during route calculation. Popup actions are handled immediately.
 Explore camera passes require extra drawing work. Head-unit performance, Bluetooth and audio require a
 [vehicle trial](../next-release/hardware-trial.md).
 

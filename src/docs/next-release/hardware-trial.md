@@ -97,10 +97,23 @@ results against the executable SHA-256 values and navigation `build.json`.
    scalar/pixel parity checks; their instruction savings are not measured unit
    FPS. Audio now requests normal nice 0, with the same 64 KiB ring and 150 ms prefill. Confirm clarity, uninterrupted audio
    and the antialiased/frosted appearance during the transitions. Check contrasting
-   thin roads moving behind pills: full-area filtering is combined with
-   high-precision colour calculations and no dithering. Check colour transitions
+   thin roads moving behind pills: full-area filtering and a wider, weighted
+   24 × 24 background blend are combined with
+   high-precision colour calculations and full-strength, screen-anchored ordered
+   dithering. Check colour transitions
    and changing/reversing pill sizes, themes and speed-limit insets for stale cached
-   backgrounds. Inspect blur smoothness and colour banding on the physical display.
+   backgrounds. Inspect blur smoothness, reduced colour banding and fine grain
+   on the physical display, especially across large dark popup windows. Confirm
+   the dither pattern stays fixed on a stationary background without flicker,
+   and text, symbols and light-theme selection blue remain clear. Compare
+   popup and HUD responsiveness with and without Bluetooth streaming.
+   Repeat with route confirmations, saved-place/itinerary actions, arrival and
+   resume prompts, phone waiting, saved-phone actions and keyboard language choices.
+   Check glass buttons, animated selection, entrance/exit and prompt resizing;
+   rapidly confirm, dismiss or change selection during a transition. Verify no
+   retained popup pixels, missing final frame or second clock/temperature entrance.
+   Popup animation should continue between map frames and retain the whole-UI
+   5 FPS routing cap. Compare with and without Bluetooth streaming.
    Record route calculation time with Debug off too. These counters establish
    device scheduling/output timing, not physical LCD scanout or a 15 FPS guarantee.
 6. Use a journey crossing two installed atlas cores: continuous tiles, no false

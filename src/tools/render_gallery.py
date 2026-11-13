@@ -53,6 +53,22 @@ ZOOM_MODE_EVENTS = (
 ZOOM_MODE_SAMPLES = sorted({at+step for at in (0,1100,2200,4000,5200) for step in TWEEN_STEPS} |
                            {at+step for at in (2200,5200) for step in EXPLORE_SAMPLES} |
                            {4500,4700,4900,6000,6350})
+POPUP_EVENTS = (
+    (0, 'key_handle(K_ENTER);assert(modal==MOD_ROUTE_POINT);'),
+    (600, 'key_handle(K_RIGHT);'),
+    (1000, 'key_handle(K_BACK);'),
+    (1500, 'screen=SCR_TRIP;trip_pane=1;trip_right_focus=2;key_handle(K_ENTER);assert(modal==MOD_SOURCE_PICK);'),
+    (2100, 'key_handle(K_DOWN);key_handle(K_DOWN);'),
+    (2500, 'key_handle(K_ENTER);assert(modal==MOD_WAIT_PHONE);'),
+    (3200, 'key_handle(K_BACK);'),
+    (3700, 'screen=SCR_BT;bt_page_focus=1;key_handle(K_ENTER);assert(bt_page_dialog>=0);'),
+    (4300, 'key_handle(K_RIGHT);'),
+    (4700, 'key_handle(K_BACK);'),
+    (5200, 'screen=SCR_KEY;keyboard_open_fave_rename(0);kbd_focus=36;key_handle(K_ENTER);assert(kbd_picker);'),
+    (5800, 'key_handle(K_DOWN);key_handle(K_DOWN);'),
+    (6300, 'key_handle(K_BACK);'),
+)
+POPUP_SAMPLES = sorted({at+step for at, _ in POPUP_EVENTS for step in TWEEN_STEPS} | {6900})
 
 
 
@@ -81,6 +97,8 @@ def motion(group, name, title, setup, events, samples):
 def catalog(sender_receipts=None):
     SCENES.clear()
     add('Overview', 'driving', 'Driving with a route')
+    motion('Popup animations', 'preview-popups', 'Glass confirmations, animated choices, resizing and dismissal',
+           'explore();settle();', POPUP_EVENTS, POPUP_SAMPLES)
     status_events = (
         (0, 'gps.fix=0;'),
         (800, 'set_volume(16);'),

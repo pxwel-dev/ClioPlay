@@ -11,7 +11,7 @@ import tempfile
 
 from PIL import Image
 from render_gallery import (BLUETOOTH_SAMPLES, MENU_ENTRY_SAMPLES, MENU_RETURN_SAMPLES, PHONE_CALC_SAMPLES, ROUNDABOUT_ETA_SAMPLES,
-                            SPEED_WARNING_SAMPLES, EXPLORE_SAMPLES, TWEEN_STEPS, ZOOM_MODE_SAMPLES, ROUTE_READY_SAMPLES, ROOT, sha)
+                            SPEED_WARNING_SAMPLES, EXPLORE_SAMPLES, TWEEN_STEPS, ZOOM_MODE_SAMPLES, ROUTE_READY_SAMPLES, POPUP_SAMPLES, ROOT, sha)
 
 
 def timeline(theme, scenes):
@@ -28,6 +28,7 @@ def previews():
     status_samples = sorted({at+step for at in (0,800,1600,2600,6500,7000) for step in TWEEN_STEPS} | {4400,4800,5400,6100,6200,6280,6360,6440,8600})
     metadata_samples = sorted({at+step for at in (0,900,1700,2900,4300,8500) for step in TWEEN_STEPS} | {700,2600,3900,7200,9200})
     return {
+        'popups.gif': timeline('night', timed_scenes('preview-popups', POPUP_SAMPLES, 7200)),
         'metadata-updates.gif': timeline('night', timed_scenes('preview-metadata', metadata_samples, 9600)),
         'status-notifications.gif': timeline('night', timed_scenes('preview-status', status_samples, 9200)),
         'driving.gif': timeline('night', [

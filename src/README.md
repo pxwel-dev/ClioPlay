@@ -279,11 +279,27 @@ map updates can continue during an animation without showing partial roads or
 retaining old glyphs. Two extra RGB565 backgrounds use about 510 KiB of RAM.
 Quiet screens do not redraw at 15 FPS unnecessarily.
 
-Frosted pills average complete 8 × 8 backdrop areas, with fractional colour
-precision through sampling, tint, interpolation and opacity. Colours are rounded
-only at the final RGB565 write, without dithering. Samples are reused while the
+Frosted surfaces combine complete 8 × 8 backdrop areas with a separable
+1–2–1 blend over neighbouring areas in both axes, softening detail over a
+24 × 24 footprint. Three small rolling rows avoid a full-screen blur.
+They retain fractional colour
+precision through sampling, tint, interpolation and opacity. Full-strength,
+screen-anchored 8 × 8 ordered dithering at the final RGB565 write reduces colour
+banding in broad gradients, especially on large dark popups. It introduces fine
+fixed grain; the pattern does not cycle between frames. Text and symbols are
+drawn afterwards, and exact RGB565 colours such as selection blue stay exact.
+Only a 256-byte constant table is added, without diffusion buffers or another
+image pass. Samples are reused while the
 finished background and pill geometry remain unchanged; overlapping cards and
 speed-limit insets are sampled afresh.
+
+All popup windows use this glass, including route confirmations, saved-place and
+itinerary actions, phone prompts, Bluetooth actions and keyboard language choices.
+Their entrances, exits, resizing, text changes and moving selection highlights
+share the pills' independent 15 FPS animation clock (5 FPS during calculation).
+Popup-only input does not force a new map frame. Actions take effect immediately;
+copied popup content remains available while closing, including after deletion
+or a page change. A settled popup returns to the normal presentation cadence.
 
 Explore rotation and tilt follow a 500 ms elapsed-time transition rather than a
 fixed number of map frames. Camera presentation requests additional map drawing
