@@ -165,7 +165,6 @@ static void draw_modal(void){
   focus.x+=v->box.x+dx;focus.y+=v->box.y+dy;focus.a=alpha;
   /* Day selections retain the menu's exact blue rather than a pale blend. */
   hud_glass_surface(focus,C_ACTIVE,C_CYAN,theme_resolved?12u:16u,0);
-  hud_ink_alpha=(16*alpha+128)>>8;round_rect(focus.x+3,focus.y+5,2,focus.h-10,1,C_CYAN,15);
  }
  hud_ink_alpha=(16*alpha+128)>>8;
  for(int i=0;i<v->count;i++){

@@ -269,7 +269,7 @@ void cliou_pixel(int x,int y,unsigned short colour,int alpha){blend_pixel(x,y,co
 static void compact_center(int cx,int y,int w,int face,const char*s,u16 c){int tw=width(s,face);compact_fit(cx-(tw<w?tw:w)/2,y,w,face,s,c);}
 static void ui_surface(int x,int y,int w,int h,u16 c){round_rect(x,y,w,h,4,c,15);}
 static void ui_panel(int x,int y,int w,int h,int active){ui_surface(x,y,w,h,C_PANEL);if(active)round_rect(x+6,y,w-12,2,1,C_CYAN,15);}
-static void ui_choice(int x,int y,int w,int h,int selected){ui_surface(x,y,w,h,selected?C_ACTIVE:C_PANEL2);if(selected)round_rect(x+2,y+4,2,h-8,1,C_CYAN,15);}
+static void ui_choice(int x,int y,int w,int h,int selected){ui_surface(x,y,w,h,selected?C_ACTIVE:C_PANEL2);}
 static u16 ui_choice_text(int selected){return selected?C_ACTIVE_TEXT:C_WHITE;}
 static void line1(int x0,int y0,int x1,int y1,u16 c,int wid){int dx=x1>x0?x1-x0:x0-x1,sx=x0<x1?1:-1;int dy=-(y1>y0?y1-y0:y0-y1),sy=y0<y1?1:-1,err=dx+dy;for(;;){int a,b,r=wid/2;for(a=-r;a<=r;a++)for(b=-r;b<=r;b++)px(x0+a,y0+b,c);if(x0==x1&&y0==y1)break;int e2=2*err;if(e2>=dy){err+=dy;x0+=sx;}if(e2<=dx){err+=dx;y0+=sy;}}}
 
