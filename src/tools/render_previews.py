@@ -9,7 +9,7 @@ import subprocess
 import sys
 import tempfile
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFont
 from render_gallery import (BLUETOOTH_SAMPLES, MENU_ENTRY_SAMPLES, MENU_RETURN_SAMPLES, PHONE_CALC_SAMPLES, ROUNDABOUT_ETA_SAMPLES,
                             SPEED_WARNING_SAMPLES, EXPLORE_SAMPLES, TWEEN_STEPS, ZOOM_MODE_SAMPLES, ROUTE_READY_SAMPLES, POPUP_SAMPLES, ROOT, sha)
 
@@ -73,6 +73,23 @@ def previews():
     }
 
 
+# RGB565-expanded body/facet colours from the Day/Night vehicle palette.
+# Keep these small but important details out of whole-scene colour averaging.
+POINTER_COLOURS = ((239,113,24), (247,138,49), (247,158,66), (247,174,90))
+
+
+def quantize_preview(image, palette):
+    indexed = image.quantize(palette=palette, dither=Image.Dither.NONE)
+    # Pillow's nearest-colour cache can merge nearby RGB buckets even with
+    # reserved palette entries. Restore exact native core pixels explicitly.
+    for index, colour in enumerate(POINTER_COLOURS):
+        delta = ImageChops.difference(image, Image.new('RGB', image.size, colour))
+        red, green, blue = delta.split()
+        mask = ImageChops.lighter(ImageChops.lighter(red, green), blue).point([255]+[0]*255)
+        indexed.paste(index, mask=mask)
+    return indexed
+
+
 def encode_gif(captures, destination, sequence):
     images = []
     for relative, _ in sequence:
@@ -83,8 +100,11 @@ def encode_gif(captures, destination, sequence):
     palette_input = Image.new('RGB', (w, h * len(images)))
     for i, image in enumerate(images):
         palette_input.paste(image, (0, i * h))
-    palette = palette_input.quantize(colors=256)
-    indexed = [image.quantize(palette=palette, dither=Image.Dither.NONE) for image in images]
+    learned = palette_input.quantize(colors=256-len(POINTER_COLOURS))
+    palette = Image.new('P', (1, 1))
+    reserved = [channel for colour in POINTER_COLOURS for channel in colour]
+    palette.putpalette(reserved + learned.getpalette()[:(256-len(POINTER_COLOURS))*3])
+    indexed = [quantize_preview(image, palette) for image in images]
     # GIF has a 10 ms clock: carry rounding error to retain total timing.
     durations, elapsed, encoded = [], 0, 0
     for _, ms in sequence:
@@ -104,7 +124,8 @@ def encode_gif(captures, destination, sequence):
             duration += image.info['duration']
         if duration != sum(durations):
             raise ValueError(f'Preview duration changed during encoding: {destination.name}')
-        return {'sha256': sha(destination), 'frames': image.n_frames, 'duration_ms': duration}
+        return {'sha256': sha(destination), 'frames': image.n_frames, 'duration_ms': duration,
+                'reserved_pointer_colours': POINTER_COLOURS}
 
 
 def compose_phone(captures, output, sequence, supplied, previous):

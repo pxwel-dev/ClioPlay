@@ -501,7 +501,7 @@
     "clioa2dp": "b0264565bba720ab5eb43cc3fd6a42826d2be802685556d09bd8bb80ae5d5fa2"
   },
   "generator_inputs": {
-    "tools/render_previews.py": "0ac0796e5d32432a503b3a59002f49090253e704088dbce20cb7efbac452ea25",
+    "tools/render_previews.py": "f3396bca8e80bd120efd38ef28260a71888082e5762b92f42e3ba922d14cd932",
     "tools/render_gallery.py": "dd2106cea4bc696f4743a80dc97114eaeeb0cf58ff48437f4354804b581affca",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
     "tests/native.c": "000eee1ae95d9f51dc7a49fc7de4507da256b5c082f407bb955af5961e3b6555",
@@ -511,9 +511,31 @@
   },
   "previews": {
     "popups.gif": {
-      "sha256": "e6195dc0b264cbe896985ea45ddca1bd00de79b6164912724adbf9bc4be70801",
+      "sha256": "0e1e1eb4e5ea8be0090d567b1cee161a26d99a845aa8091fcf133e98f780d17e",
       "frames": 57,
       "duration_ms": 7200,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
       "source_frames": [
         {
           "frame": "night/preview-popups-0000.png",
@@ -834,9 +856,31 @@
       ]
     },
     "metadata-updates.gif": {
-      "sha256": "7161ba61b4c7eeb5a0ade43b3c0e154049894f0a6df307e0f98392f9269974ec",
+      "sha256": "8bc6dc22a3cd6c00f5d013c47b076a1c11e2dcd5ab5eb4cfebf07565d20bf48c",
       "frames": 32,
       "duration_ms": 9600,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
       "source_frames": [
         {
           "frame": "night/preview-metadata-0000.png",
@@ -1005,9 +1049,31 @@
       ]
     },
     "status-notifications.gif": {
-      "sha256": "0736dde88bbd0cd104a0ed7ddd23a05959c863a280927adc0fc8196e5dd7448e",
+      "sha256": "d3e7e15cfd471ef5ce7f1b6cc7911396c7d60f79fcc9245a46f18b764230e53b",
       "frames": 33,
       "duration_ms": 9200,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
       "source_frames": [
         {
           "frame": "night/preview-status-0000.png",
@@ -1192,9 +1258,31 @@
       ]
     },
     "driving.gif": {
-      "sha256": "fd2dd69466da9a317707b01ccd8a8f4552e0b2da8926891992abbbe113fb16e3",
+      "sha256": "1451e1ba2222aa72794e3713256182581d0ba00de4256e2f4444641d273d15d0",
       "frames": 17,
       "duration_ms": 5300,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
       "source_frames": [
         {
           "frame": "night/hud-road-then-camera-0000.png",
@@ -1275,9 +1363,31 @@
       ]
     },
     "menus.gif": {
-      "sha256": "828fe75565123fdd871f67e18e3e32cd4abed78316fe8bcd6bc8ae57d8ed0bb5",
+      "sha256": "9b234554c295ead26d4ce1c417647443e74ad52acf9fc5038525be86cfd177ae",
       "frames": 27,
       "duration_ms": 8750,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
       "source_frames": [
         {
           "frame": "night/preview-menu-entry-0000.png",
@@ -1414,9 +1524,31 @@
       ]
     },
     "bluetooth.gif": {
-      "sha256": "3135a359645380a833c69d94c942c1cbe9cfe49cd3c4fbe191aa468407d2b0a7",
+      "sha256": "0a68ca4dd0015b0e0ed8b9b8f3df7f8c3fa4c1fe63217b131f1e9c5e2e9f328e",
       "frames": 36,
       "duration_ms": 4750,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
       "source_frames": [
         {
           "frame": "night/hud-bluetooth-0000.png",
@@ -1589,9 +1721,31 @@
       ]
     },
     "phone-destination.gif": {
-      "sha256": "71a5f65f9ae4b46484782096f24151066392076227afab96611b150d153b51cf",
+      "sha256": "d9bd1d1c513d3cc26ba5a1e1d40963a4099dee1684851b3d9336868bb235e532",
       "frames": 11,
       "duration_ms": 7200,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
       "browser_capture": {
         "kind": "browser panel retained from published composite",
         "transport": "simulated",
@@ -1656,7 +1810,7 @@
           "transfer-056.jpg": "01cd1bf92bb29e65bba8e31beb96ba341b0e206a675d3970ef29cbae5f85a5fc"
         },
         "ready_sha256": "93bc757770a4188a9de3234f4f0d4a60d8c77855b80e625fb949db06a93ee37c",
-        "previous_gif_sha256": "37dd562b0fbff8ca17321af2bc2e9efb78d0e9268a789aac2f439ea9e3bf00fb"
+        "previous_gif_sha256": "71a5f65f9ae4b46484782096f24151066392076227afab96611b150d153b51cf"
       },
       "source_frames": [
         {
@@ -1706,9 +1860,31 @@
       ]
     },
     "speed-warning.gif": {
-      "sha256": "6a989ea9dd9f4e47168740f66013f96d88c1a2792739c0e70d008bae8d40e957",
+      "sha256": "ab4dde4d6ff870574412b8d2545d9ef1e9469c147bd19de53e23348f24d18a0f",
       "frames": 35,
       "duration_ms": 3650,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
       "source_frames": [
         {
           "frame": "night/hud-speed-warning-0000.png",
@@ -1897,9 +2073,31 @@
       ]
     },
     "map-browsing.gif": {
-      "sha256": "5ca15bdfa20307ae7cb2573f13d60588e071baff8e9bd57844a8d2ef6d16c0e5",
+      "sha256": "88ecef13cb992d996ab74cf1f94fa8241672e5e8f75340382e2284985ce0e301",
       "frames": 36,
       "duration_ms": 6500,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
       "source_frames": [
         {
           "frame": "night/preview-zoom-modes-0000.png",
@@ -2068,9 +2266,31 @@
       ]
     },
     "roundabout-eta.gif": {
-      "sha256": "4babd101d921e95ba30a9845e7896c301faa69b956eebf331365468f4b09b774",
+      "sha256": "52b9c218bb2b7d3efa8c1509339899a134b45207774da85cb984dcd74a7bbbdf",
       "frames": 11,
       "duration_ms": 5600,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
       "source_frames": [
         {
           "frame": "night/preview-roundabout-eta-0000.png",
@@ -2127,9 +2347,31 @@
       ]
     },
     "coordinate-route.gif": {
-      "sha256": "5dfed883f6cf77d50a9c3d84fb0fa67979f3a2093c89ad9eb1bf0f5492280ddf",
+      "sha256": "a988dabf1c1b4c1e62ddb1cbac01d0abe2c73308ca019dd66e463508449f1b60",
       "frames": 19,
       "duration_ms": 8400,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
       "source_frames": [
         {
           "frame": "night/coordinate-route-source.png",
@@ -2243,9 +2485,31 @@
       "routing_provenance": "Production remote handlers create the destination and production routing runs to R_READY on the local map bundle; target coordinates and nonempty route geometry are asserted. GPS is held stationary. The 1.3-second calculation display is a controlled preview interval, not a timing benchmark."
     },
     "map-point-route.gif": {
-      "sha256": "46f59d828f3a5326cec95b058be93e089863ad9ed955f6a591741356dd144f28",
+      "sha256": "b2cf1bc352f5d0dc576436dd36242fdfab823e761471a0b8ec4ba4f06752c097",
       "frames": 25,
       "duration_ms": 7000,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
       "source_frames": [
         {
           "frame": "night/map-point-driving.png",
@@ -2383,9 +2647,31 @@
       "routing_provenance": "Production remote handlers create the destination and production routing runs to R_READY on the local map bundle; target coordinates and nonempty route geometry are asserted. GPS is held stationary. The 1.3-second calculation display is a controlled preview interval, not a timing benchmark."
     },
     "coordinates.gif": {
-      "sha256": "e180fe98c55624836d88399848737677dad1bcfdfc8c36bcb497d017b81aa6f4",
+      "sha256": "6da5c2eb1b83eb4ef36a88cf62ad23a70af1eb10d00d16649a97f0f168cb2317",
       "frames": 6,
       "duration_ms": 6800,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
       "source_frames": [
         {
           "frame": "night/preview-coordinates-entry.png",
@@ -2414,9 +2700,31 @@
       ]
     },
     "add-stop.gif": {
-      "sha256": "dab89b7030d730e481ead3edfa24d187132eba05732eae07ff4715a0b749c8da",
+      "sha256": "d7dfafd8a0a337a712c0eeb011133e1558af0c90bdc07c4a2e8032e9ba22245a",
       "frames": 4,
       "duration_ms": 5250,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
       "source_frames": [
         {
           "frame": "night/preview-add-stop.png",

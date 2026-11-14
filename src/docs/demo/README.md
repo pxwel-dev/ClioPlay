@@ -50,6 +50,11 @@ frames are captured. Their calculation display is held for a controlled 1.3-seco
 sampling window so its animation is visible; this is not a measurement of route
 calculation time on either the host or head unit. Sample GPS remains stationary.
 
+GIF encoding reserves the vehicle pointer’s Day/Night body and facet colours,
+so its two-tone shading survives the shared 256-colour palette. Other map and
+glass colours are still reduced for GIF delivery. This does not affect the
+head-unit renderer.
+
 ## Regenerate
 
 Build and copy the current executables as described in [BUILDING.md](../../BUILDING.md).
