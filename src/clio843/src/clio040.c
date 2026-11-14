@@ -2293,19 +2293,59 @@ static int pan_step_for_zoom(int z){if(z<=6)return 80<<(6-z);z-=6;return 80>>z;}
 static s32 freecam_east_to_lon(s32 east,int cq){if(!east)return 0;if(cq<=0)return east;u32 a=(u32)(east<0?-east:east);u32 q=udiv32((a<<15)+(u32)(cq>>1),(u32)cq);return east<0?-(s32)q:(s32)q;}
 static void pan_freecam(int code){if(!gps.fix&&!freecam&&!track_valid)return;enter_freecam();if(!freecam)return;int z=active_zoom();int step=pan_step_for_zoom(z);if(step<1)step=1;int ss,c;view_trig(&ss,&c);s32 de=0,dn=0;if(code==103){de=(s32)(((s32)step*ss)>>15);dn=(s32)(((s32)step*c)>>15);}else if(code==108){de=-(s32)(((s32)step*ss)>>15);dn=-(s32)(((s32)step*c)>>15);}else if(code==106){de=(s32)(((s32)step*c)>>15);dn=-(s32)(((s32)step*ss)>>15);}else if(code==105){de=-(s32)(((s32)step*c)>>15);dn=(s32)(((s32)step*ss)>>15);}int cq=coslat_q15(cam_lat);cam_lat+=dn;if(cam_lat>8500000)cam_lat=8500000;if(cam_lat< -8500000)cam_lat=-8500000;cam_lon=lon_delta(cam_lon+freecam_east_to_lon(de,cq));}
 #include "vehicle_icon.h"
+/* The ground pointer flattens as the camera tilts. Use the camera's live tilt,
+ * not the freecam flag: that flag changes at the START of entry/exit. Rotate
+ * first, then foreshorten along screen depth, so all headings lie on the map. */
+static int vehicle_scale_q8(void){
+ int tilt=map_tilt_q8;if(tilt<0)tilt=0;if(tilt>256)tilt=256;
+ return 256-((100*tilt+128)>>8);
+}
+static int vehicle_source_edge(int row,int scale){
+ int n=(row-VEHICLE_ICON_SIZE/2)*65536,q=n/scale;
+ if(n<0&&n%scale)q--;
+ return q+VEHICLE_ICON_SIZE*128;
+}
+/* Pixel-area row filtering preserves coverage when compressing the footprint.
+ * At most three source rows contribute. No image buffer or mask rebuild. */
+static unsigned vehicle_row_mask(const u16*coverage,int col,int first,int count,const unsigned*weights){
+ unsigned sums[4]={0,0,0,0};
+ for(int i=0;i<count;i++){
+  int row=first+i;if(row<0||row>=VEHICLE_ICON_SIZE)continue;
+  unsigned mask=coverage[row*VEHICLE_ICON_SIZE+col];
+  for(int layer=0;layer<4;layer++)sums[layer]+=((mask>>(layer*4))&15)*weights[i];
+ }
+ unsigned mask=0;for(int layer=0;layer<4;layer++)mask|=((sums[layer]+2048)>>12)<<(layer*4);
+ return mask;
+}
 static void vehicle_icon(int x,int y,int heading){
  int k=((heading%360+360)%360+5)/10%VEHICLE_ICON_HEADINGS;
- const u16*coverage=vehicle_coverage[k];
+ const u16*coverage=vehicle_coverage[k];int scale=vehicle_scale_q8();
  u16 rim=theme_resolved?rgb(188,222,249):rgb(247,252,255);
  u16 facet=theme_resolved?rgb(160,218,255):rgb(112,197,255);
- for(int row=0;row<VEHICLE_ICON_SIZE;row++)for(int col=0;col<VEHICLE_ICON_SIZE;col++){
-  unsigned mask=coverage[row*VEHICLE_ICON_SIZE+col];if(!mask)continue;
-  int sx=x+col-VEHICLE_ICON_SIZE/2,sy=y+row-VEHICLE_ICON_SIZE/2;
-  if(sy<MAP_TOP||sy>=MAP_BOTTOM)continue;
-  int a=mask&15;if(a)blend_pixel(sx,sy,rgb(8,20,34),a);
-  a=(mask>>4)&15;if(a)blend_pixel(sx,sy,rim,a);
-  a=(mask>>8)&15;if(a)blend_pixel(sx,sy,C_CAR,a);
-  a=(mask>>12)&15;if(a)blend_pixel(sx,sy,facet,a);
+ int start=vehicle_source_edge(0,scale);
+ for(int row=0;row<VEHICLE_ICON_SIZE;row++){
+  int end=vehicle_source_edge(row+1,scale),first=start>>8;
+  int count=((end-1)>>8)-first+1;unsigned weights[3]={0,0,0},used=0;
+  if(scale!=256){
+   for(int i=0;i<count;i++){
+    int lo=start>=(first+i)*256?start:(first+i)*256;
+    int hi=end<=(first+i+1)*256?end:(first+i+1)*256;
+    weights[i]=i==count-1?4096-used:udiv32((u32)(hi-lo)*4096u+(u32)(end-start)/2u,(u32)(end-start));
+    used+=weights[i];
+   }
+  }
+  start=end;
+  int sy=y+row-VEHICLE_ICON_SIZE/2;if(sy<MAP_TOP||sy>=MAP_BOTTOM)continue;
+  if(scale!=256&&(first>=VEHICLE_ICON_SIZE||first+count<=0))continue;
+  for(int col=0;col<VEHICLE_ICON_SIZE;col++){
+   unsigned mask=scale==256?coverage[row*VEHICLE_ICON_SIZE+col]:vehicle_row_mask(coverage,col,first,count,weights);
+   if(!mask)continue;
+   int sx=x+col-VEHICLE_ICON_SIZE/2;
+   int a=mask&15;if(a)blend_pixel(sx,sy,rgb(8,20,34),a);
+   a=(mask>>4)&15;if(a)blend_pixel(sx,sy,rim,a);
+   a=(mask>>8)&15;if(a)blend_pixel(sx,sy,C_CAR,a);
+   a=(mask>>12)&15;if(a)blend_pixel(sx,sy,facet,a);
+  }
  }
 }
 static void draw_car_marker(int z){

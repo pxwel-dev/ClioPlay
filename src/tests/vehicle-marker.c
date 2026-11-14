@@ -7,6 +7,7 @@
 #include <string.h>
 static unsigned hash(void){unsigned h=0;for(int i=0;i<FB_PIX;i++)h=h*33u+fb[i];return h;}
 int main(void){
+ map_tilt_q8=0;
  unsigned theme_hash[2];
  for(int night=0;night<2;night++){
   apply_palette(night);
@@ -36,5 +37,28 @@ int main(void){
  gps.fix=0;fill(0,0,W,H,0xdead);unsigned blank=hash();draw_car_marker(5);assert(hash()==blank);
  /* The north-up tip is above its lower, notched base. */
  const u16*m=vehicle_coverage[0];assert(m[3*28+14]);assert(!m[25*28+14]);
- puts("Vehicle marker: all headings/themes, partial edge coverage, clipped writes, wrapped headings and no-GPS hiding passed.");
+ /* Foreshorten in screen depth, regardless of bearing. Preserve Explore. */
+ int last_height=100;
+ for(int tilt=0;tilt<=256;tilt+=16){
+  map_tilt_q8=tilt;fill(0,0,W,H,0xdead);vehicle_icon(100,100,0);
+  int top=H,bottom=0;
+  for(int y=80;y<120;y++)for(int x=80;x<120;x++)if(fb[y*W+x]!=0xdead){if(y<top)top=y;if(y>bottom)bottom=y;}
+  int height=bottom-top+1;assert(height<=last_height);last_height=height;
+ }
+ assert(last_height>=13&&last_height<=17);
+ map_tilt_q8=-1;assert(vehicle_scale_q8()==256);
+ map_tilt_q8=999;assert(vehicle_scale_q8()==156);
+ /* Follow the SAME tilt trajectory in both directions; mode flag must not snap it. */
+ gps.fix=track_valid=display_course_valid=1;display_course=track_course=gps.course=135;
+ freecam=0;freecam_anim_mode=FC_ANIM_NONE;map_tilt_q8=256;
+ hud_capture_clock=1;hud_capture_ms=10000;enter_freecam();assert(freecam&&vehicle_scale_q8()==156);
+ int scale=156;
+ for(int at=0;at<=500;at+=10){freecam_orientation_anim_update(10000+at);int next=vehicle_scale_q8();assert(next>=scale);scale=next;}
+ assert(scale==256);
+ hud_capture_ms=10500;leave_freecam();assert(!freecam&&vehicle_scale_q8()==256);
+ for(int at=0;at<=500;at+=10){freecam_orientation_anim_update(10500+at);int next=vehicle_scale_q8();assert(next<=scale);scale=next;}
+ assert(scale==156);
+ hud_capture_ms=11000;enter_freecam();hud_capture_ms=11200;freecam_orientation_anim_update(hud_capture_ms);
+ scale=vehicle_scale_q8();assert(scale>156&&scale<256);leave_freecam();assert(vehicle_scale_q8()==scale);
+ puts("Vehicle marker: headings/themes, AA, clipping, no-GPS hiding, depth compression, entry/exit interpolation and interrupted reversal passed.");
 }
