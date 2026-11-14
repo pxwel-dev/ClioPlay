@@ -11,13 +11,9 @@
 | --- | --- |
 | ![Driving with a temporary road name and a camera warning](src/docs/demo/driving.gif) | ![Opening Trip, browsing favourites and switching themes](src/docs/demo/menus.gif) |
 
-| Bluetooth playback and volume |
-| --- |
-| ![Temporary volume notice, Bluetooth playback controls and track progress](src/docs/demo/bluetooth.gif) |
-
-Send a destination with [ClioPlay Send](https://pxwel-dev.github.io/ClioPlay-Send/):
-
-![ClioPlay Send and the head unit receiving a destination side by side](src/docs/demo/phone-destination.gif)
+| Bluetooth playback and volume | Animated frosted-glass confirmations, choices and popups |
+| --- | --- |
+| ![Temporary volume notice, Bluetooth playback controls and track progress](src/docs/demo/bluetooth.gif) | ![Route confirmation, destination choices, Bluetooth actions and keyboard language picker animate smoothly](src/docs/demo/popups.gif) |
 
 | Speeding warning | Browse and zoom the map |
 | --- | --- |
@@ -35,26 +31,11 @@ Send a destination with [ClioPlay Send](https://pxwel-dev.github.io/ClioPlay-Sen
 | --- | --- |
 | ![Enter latitude and longitude, name the destination, calculate the route and find it in Recents](src/docs/demo/coordinate-route.gif) | ![Enter Explore, pan the crosshair, press OK and confirm a route to the selected point](src/docs/demo/map-point-route.gif) |
 
-<table align="center">
-  <thead>
-    <tr>
-      <th>Animated frosted-glass confirmations, choices and popups</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td align="center">
-        <img
-          src="src/docs/demo/popups.gif"
-          alt="Route confirmation, destination choices, Bluetooth actions and keyboard language picker animate smoothly"
-          width="480"
-        >
-      </td>
-    </tr>
-  </tbody>
-</table>
+### Send a destination with ClioPlay Send
 
+Use [ClioPlay Send](https://pxwel-dev.github.io/ClioPlay-Send/) on your phone:
 
+![ClioPlay Send and the head unit receiving a destination side by side](src/docs/demo/phone-destination.gif)
 
 ## Compatibility
 
