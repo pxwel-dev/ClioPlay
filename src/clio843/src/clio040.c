@@ -178,29 +178,45 @@ static void write_theme_state_raw(int night){char c=night?'1':'0',old=0;long fd=
  * C_WHITE remains the primary text role even though it is dark in DAY mode. */
 static u16 C_BG=0x0082,C_PANEL=0x1105,C_PANEL2=0x1146,C_BORDER=0x2a09;
 static u16 C_CYAN=0x64ff,C_WHITE=0xf7bf,C_BLUE=0x3c97,C_MUTED=0x9d76;
-static u16 C_DIM=0x63af,C_WARN=0xf524,C_ROAD=0x532d,C_WATER=0x1a4c,C_GREEN=0x2b4a;
+static u16 C_DIM=0x63af,C_WARN=0xf524,C_ROAD=0x326c,C_WATER=0x1a4c,C_GREEN=0x2b4a;
 static u16 C_HEADER=0x08c3,C_ACTIVE=0x1a2b,C_ACTIVE_TEXT=0xf7ff,C_ACCENT=0x46b9,C_SHADOW=0x0041,C_HILITE=0x21a7;
-static u16 C_CAR=0x557f; /* Vehicle body follows the map theme. */
-static const u16 C_ROUTE=0xf81f; /* fixed vivid magenta for map contrast */
+static u16 C_CAR=0xf4e8; /* Vehicle body follows the map theme. */
+static u16 C_ROUTE=0xac7e; /* Day violet / night lavender; separate from roads and vehicle. */
+/* Map road colours are independent of text, focus and HUD accent colours.
+ * Low-to-high coverage slots preserve the existing six-plane junction blend. */
+#define ROAD_RGB(r,g,b) (((r)>>3)<<11|((g)>>2)<<5|((b)>>3))
+static const u16 road_palette[2][6]={
+ {ROAD_RGB(240,246,250),ROAD_RGB(231,241,247),ROAD_RGB(244,249,252),
+  ROAD_RGB(255,255,255),ROAD_RGB(116,169,181),ROAD_RGB(78,144,193)},
+ {ROAD_RGB(49,77,96),ROAD_RGB(73,103,123),ROAD_RGB(106,135,153),
+  ROAD_RGB(158,181,197),ROAD_RGB(78,123,141),ROAD_RGB(85,141,190)}
+};
+static u16 road_colours[6]={ROAD_RGB(49,77,96),ROAD_RGB(73,103,123),ROAD_RGB(106,135,153),
+ ROAD_RGB(158,181,197),ROAD_RGB(78,123,141),ROAD_RGB(85,141,190)};
+static const u16 map_canvas[2]={ROAD_RGB(213,224,230),ROAD_RGB(9,20,29)};
+static u16 C_MAP_BG=ROAD_RGB(9,20,29);
+#undef ROAD_RGB
 static int theme_resolved=1; /* 0 DAY, 1 NIGHT */
 
 static void apply_palette(int night){
   int next=night?1:0,changed=(next!=theme_resolved);theme_resolved=next;
   if(night){
-    C_CAR=0x557f;
+    C_CAR=0xf4e8;C_ROUTE=0xac7e;
     /* NIGHT: deep charcoal-blue surfaces with a restrained teal focus colour. */
     C_BG=0x0082; C_PANEL=0x1105; C_PANEL2=0x1146; C_BORDER=0x2a09;
     C_CYAN=0x46b9; C_WHITE=0xf7bf; C_BLUE=0x3c97; C_MUTED=0x9d76;
-    C_DIM=0x63af; C_WARN=0xf524; C_ROAD=0x532d; C_WATER=0x1a4c; C_GREEN=0x2b4a;
+    C_DIM=0x63af; C_WARN=0xf524; C_ROAD=0x326c; C_WATER=0x1a4c; C_GREEN=0x2b4a;
     C_HEADER=0x08c3; C_PANEL=0x10e4; C_PANEL2=0x1926; C_BORDER=0x39e9; C_CYAN=0x64ff; C_ACTIVE=0x1a2b; C_ACTIVE_TEXT=0xffff; C_ACCENT=0x64ff; C_SHADOW=0x0041; C_HILITE=0x21a7;
   }else{
-    C_CAR=0x03de;
+    C_CAR=0xeb83;C_ROUTE=0x725b;
     /* DAY: warm/cool automotive greys rather than plain white inversion. */
     C_BG=0xef7d; C_PANEL=0xf7be; C_PANEL2=0xdf3c; C_BORDER=0xb618;
     C_CYAN=0x03f1; C_WHITE=0x1146; C_BLUE=0x33f3; C_MUTED=0x534e;
     C_DIM=0x7c51; C_WARN=0xb340; C_ROAD=0xadb6; C_WATER=0xa6bc; C_GREEN=0x9e55;
     C_HEADER=0xe73c; C_PANEL=0xf7be; C_PANEL2=0xe71c; C_BORDER=0xb618; C_CYAN=0x039b; C_ACTIVE=0x039b; C_ACTIVE_TEXT=0xffff; C_ACCENT=0x039b; C_SHADOW=0xb618; C_HILITE=0xffff;
   }
+  for(int i=0;i<6;i++)road_colours[i]=road_palette[next][i];
+  C_ROAD=road_colours[0];C_MAP_BG=map_canvas[next];
   if(changed)write_theme_state_raw(theme_resolved);
 }
 
@@ -993,8 +1009,17 @@ static int map_view_covered(s32 lat,s32 lon){
   if(atlas_ready)return atlas_owner(lat,lon)>=0;
   return lat>=mh.minlat-2&&lat<=mh.maxlat+2&&lon>=mh.minlon-2&&lon<=mh.maxlon+2;
 }
-static void road_style(int cls,u16*col,int*wid){switch(cls){case 1:*col=C_CYAN;*wid=4;break;case 2:*col=C_BLUE;*wid=3;break;case 3:*col=C_WHITE;*wid=3;break;case 4:*col=C_MUTED;*wid=2;break;case 5:*col=C_DIM;*wid=2;break;default:*col=C_ROAD;*wid=1;break;}}
-static void geom_style(int layer,int style,u16*col,int*wid){if(layer==0){road_style(style,col,wid);return;}if(layer==1){*col=C_WATER;*wid=style==1?2:1;return;}if(layer==2){*col=C_GREEN;*wid=1;return;}*col=C_BLUE;*wid=1;}
+static void road_style(int cls,int zoom,u16*col,int*wid){
+ /* Zoom increases towards street detail. Service roads stay narrow even
+  * when residential roads widen. No extra outlines or geometry passes. */
+ static const u8 widths[4][6]={{1,1,2,2,3,4},{1,2,2,3,3,4},
+  {1,2,3,3,4,5},{2,2,3,4,4,5}};
+ int slot=cls>=1&&cls<=5?6-cls:0;
+ int detail=zoom<=3?0:zoom==4?1:zoom==5?2:3;
+ *col=road_colours[slot];*wid=cls>=7?1:widths[detail][slot];
+}
+static void geom_style(int layer,int style,int zoom,u16*col,int*wid){if(layer==0){road_style(style,zoom,col,wid);return;}if(layer==1){*col=C_WATER;*wid=style==1?2:1;return;}if(layer==2){*col=C_GREEN;*wid=1;return;}*col=C_BLUE;*wid=1;}
+
 #include "map_raster.h"
 /* Keep road/route vertices below pixel precision until rasterization. The
  * driving camera and route engine are unchanged; only drawing gains precision. */
@@ -1077,7 +1102,7 @@ static void draw_closed_area(struct Tile*t,int span,int layer,int style,int np,c
   }
 }
 static void draw_path(struct Tile*t,int span,int layer,int style,int np,const u8**pp,const u8*end,int viewz){
- const u8*p=*pp;if(np<2||np>255||p+np*4>end){*pp=end;return;}u16 col;int wid;geom_style(layer,style,&col,&wid);
+ const u8*p=*pp;if(np<2||np>255||p+np*4>end){*pp=end;return;}u16 col;int wid;geom_style(layer,style,viewz,&col,&wid);
  map_mask_select(layer==0?((style>=1&&style<=5)?6-style:0):(layer==1?0:(layer==2?1:2)));
  int x[255],y[255];for(int i=0;i<np;i++){int lx=rd16(p),ly=rd16(p+2);p+=4;
   s32 lon=(s32)t->tx*span+map_tile_offset(lx,(u32)span),lat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);
@@ -2320,8 +2345,8 @@ static unsigned vehicle_row_mask(const u16*coverage,int col,int first,int count,
 static void vehicle_icon(int x,int y,int heading){
  int k=((heading%360+360)%360+5)/10%VEHICLE_ICON_HEADINGS;
  const u16*coverage=vehicle_coverage[k];int scale=vehicle_scale_q8();
- u16 rim=theme_resolved?rgb(188,222,249):rgb(247,252,255);
- u16 facet=theme_resolved?rgb(160,218,255):rgb(112,197,255);
+ u16 rim=theme_resolved?rgb(255,211,156):rgb(255,244,224);
+ u16 facet=theme_resolved?rgb(255,203,135):rgb(255,187,106);
  int start=vehicle_source_edge(0,scale);
  for(int row=0;row<VEHICLE_ICON_SIZE;row++){
   int end=vehicle_source_edge(row+1,scale),first=start>>8;
@@ -2356,7 +2381,7 @@ static void draw_car_marker(int z){
  vehicle_icon(cx,cy,rel);
 }
 static void draw_explore_crosshair(void){if(!freecam)return;int x=240,y=160;map_line(x-12,y,x-4,y,C_DIM,1);map_line(x+4,y,x+12,y,C_DIM,1);map_line(x,y-12,x,y-4,C_DIM,1);map_line(x,y+4,x,y+12,C_DIM,1);rect(x-2,y-2,5,5,C_DIM);}
-static void draw_map_geometry(int z){npoi=poi_visible=0;nlbox=nltxt=0;fill(0,MAP_TOP,W,MAP_BOTTOM-MAP_TOP,C_BG);if(!mapok||(!gps.fix&&!freecam&&!track_valid))return;s32 vl=view_lat(),vo=view_lon();if(!map_view_covered(vl,vo))return;int sourcez=z>6?6:clamp_map_zoom(z),tx0,tx1,ty0,ty1;
+static void draw_map_geometry(int z){npoi=poi_visible=0;nlbox=nltxt=0;fill(0,MAP_TOP,W,MAP_BOTTOM-MAP_TOP,C_MAP_BG);if(!mapok||(!gps.fix&&!freecam&&!track_valid))return;s32 vl=view_lat(),vo=view_lon();if(!map_view_covered(vl,vo))return;int sourcez=z>6?6:clamp_map_zoom(z),tx0,tx1,ty0,ty1;
   map_visible_tile_bounds(z,sourcez,&tx0,&tx1,&ty0,&ty1);
   /* Ocean polygons retain close-zoom precision in shared Z0..Z3 tiles.
    * Reuse Z3 at closer zooms to avoid millions of redundant offshore tiles.

@@ -33,7 +33,7 @@ def masks():
                         outer, inner = arrow(lx, ly), arrow(lx, ly, .78)
                         for layer, value in enumerate((shadow, outer, inner, inner and lx < 0)):
                             counts[layer] += value
-                # Four nibble masks: soft shadow, pale shell, blue body, facet.
+                # Four nibble masks: soft shadow, pale shell, orange body, facet.
                 alpha = [(count*maximum+32)//64 for count, maximum in zip(counts, (5,15,15,5))]
                 pixels.append(sum(a << (layer*4) for layer, a in enumerate(alpha)))
         result.append(pixels)

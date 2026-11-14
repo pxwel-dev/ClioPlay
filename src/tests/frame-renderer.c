@@ -29,7 +29,7 @@ int main(void){
  for(u32 t=10000;t<11000;t++)at(t,t%100==0);
  assert(render_stats.maps==10&&render_stats.presents>10&&render_stats.presents<=15); /* 15 Hz during entrance, idle thereafter */
  assert(render_stats.rotations==0);
- for(int i=0;i<FB_PIX;i++)assert((*render_front)[i]==C_BG); /* no pills in background */
+ for(int i=0;i<FB_PIX;i++)assert((*render_front)[i]==C_MAP_BG); /* no pills in background */
  setup(R_CALC,10000);
  for(u32 t=10000;t<11000;t++)at(t,t%100==0);
  assert(render_stats.maps==5&&render_stats.presents==5); /* whole presentation is capped */
@@ -74,14 +74,14 @@ int main(void){
  renderer.model_pending=1;u32 yield_count=render_stats.presents;
  hud_capture_ms=20450;renderer.ui.next=20450;render_checkpoint();assert(render_stats.presents==yield_count+1);
  assert(render_fb==render_work&&(*render_work)[100*W+250]==0xf81f);
- assert(display_fb[100*W+250]==C_BG&&(*render_front)[100*W+250]==C_BG);
+ assert(display_fb[100*W+250]==C_MAP_BG&&(*render_front)[100*W+250]==C_MAP_BG);
  assert(map_mask_active==1&&map_mask_shift==10&&map_coverage[20]==31u<<10);
  renderer.building=0;map_mask_active=0;map_coverage[20]=0;render_fb=&display_fb;
  /* A fully restored clean backdrop cannot retain old glyph/pill rectangles. */
  at(21000,1);u16 reference[FB_PIX];render_copy(reference,display_fb);
  fill(0,0,W,H,0xf81f);hud_capture_ms=21033;render_present();
  assert(!memcmp(reference,display_fb,sizeof(reference)));
- apply_palette(0);at(21100,1);assert(renderer.theme==0&&display_fb[150*W+250]==C_BG);
+ apply_palette(0);at(21100,1);assert(renderer.theme==0&&display_fb[150*W+250]==C_MAP_BG);
 
  /* All representable tile coordinates, every supported tile span. */
  for(unsigned span=256;span<=16384;span*=2)for(unsigned local=0;local<=65535;local++)

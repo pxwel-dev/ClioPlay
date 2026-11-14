@@ -44,7 +44,7 @@ static void scene(s32 lat,s32 lon,int z,int night,int driving,int heading){
 }
 static unsigned verify(int z,unsigned*water,unsigned*green){
   draw_map_geometry(z);memcpy(combined,fb,sizeof(fb));
-  fill(0,0,W,H,C_BG);
+  fill(0,0,W,H,C_MAP_BG);
   int a,b,c,d;map_visible_tile_bounds(z,z,&a,&b,&c,&d);
   for(int ty=c;ty<=d;ty++)for(int tx=a;tx<=b;tx++)
     if(map_tile_in_pack(z,tx,ty))draw_tile_geometry(get_tile(z,tx,ty),z,1);
@@ -92,6 +92,18 @@ static unsigned synthetic(void){
   assert(w>0);fclose(f);mapfd=-1;return hidden;
 }
 int main(int argc,char**argv){
+  /* Style lookup and packed coverage must agree in both palettes at all zooms.
+   * This also covers service roads sharing the local colour plane. */
+  for(int night=0;night<2;night++)for(int z=0;z<=9;z++){
+    apply_palette(night);map_mask_begin(1);
+    int previous=0;
+    for(int cls=7;cls>=1;cls--){
+      u16 colour;int width;road_style(cls,z,&colour,&width);
+      assert(colour==map_coverage_cols[cls<=5?6-cls:0]);
+      assert(width>=previous&&width<=5);previous=width;
+    }
+    map_mask_end();
+  }
   unsigned failures=synthetic();
   if(argc>1){
     mapfd=open(argv[1],O_RDONLY);assert(mapfd>=0);

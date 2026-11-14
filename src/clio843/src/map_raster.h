@@ -18,7 +18,7 @@ static void map_mask_begin(int kind){
  for(int y=0;y<MAP_BOTTOM-MAP_TOP;y++){map_dirty_lo[y]=W;map_dirty_hi[y]=-1;}
  map_mask_active=1;map_mask_shift=0;
  if(kind==0){map_mask_count=3;map_coverage_cols[0]=C_WATER;map_coverage_cols[1]=C_GREEN;map_coverage_cols[2]=C_BLUE;}
- else if(kind==1){map_mask_count=6;map_coverage_cols[0]=C_ROAD;map_coverage_cols[1]=C_DIM;map_coverage_cols[2]=C_MUTED;map_coverage_cols[3]=C_WHITE;map_coverage_cols[4]=C_BLUE;map_coverage_cols[5]=C_CYAN;}
+ else if(kind==1){map_mask_count=6;for(int i=0;i<6;i++)map_coverage_cols[i]=road_colours[i];}
  else{map_mask_count=1;map_coverage_cols[0]=kind==2?C_ROUTE:C_CAR;}
 }
 static void map_mask_select(int slot){map_mask_shift=slot*5;}
