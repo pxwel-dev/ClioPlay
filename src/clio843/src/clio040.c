@@ -270,6 +270,20 @@ static void compact_center(int cx,int y,int w,int face,const char*s,u16 c){int t
 static void ui_surface(int x,int y,int w,int h,u16 c){round_rect(x,y,w,h,4,c,15);}
 static void ui_panel(int x,int y,int w,int h,int active){ui_surface(x,y,w,h,C_PANEL);if(active)round_rect(x+6,y,w-12,2,1,C_CYAN,15);}
 static void ui_choice(int x,int y,int w,int h,int selected){ui_surface(x,y,w,h,selected?C_ACTIVE:C_PANEL2);}
+/* Proportional list position; no indicator when the complete list fits. */
+struct UiScroll {int top,height;};
+static struct UiScroll ui_scroll_geometry(int y,int height,int first,int visible,int total){
+ if(height<=0||visible<=0||total<=visible)return (struct UiScroll){0};
+ int thumb=(int)((long long)height*visible/total);if(thumb<8)thumb=8;if(thumb>height)thumb=height;
+ int last=total-visible;if(first<0)first=0;if(first>last)first=last;
+ return (struct UiScroll){y+(int)((long long)(height-thumb)*first/last),thumb};
+}
+static void ui_scrollbar(int x,int y,int height,int first,int visible,int total){
+ struct UiScroll b=ui_scroll_geometry(y,height,first,visible,total);if(!b.height)return;
+ /* Translucent rounded strokes preserve the backing glass and caller fade. */
+ round_rect(x,y,4,height,2,C_MUTED,4);
+ round_rect(x,b.top,4,b.height,2,C_CYAN,12);
+}
 static u16 ui_choice_text(int selected){return selected?C_ACTIVE_TEXT:C_WHITE;}
 static void line1(int x0,int y0,int x1,int y1,u16 c,int wid){int dx=x1>x0?x1-x0:x0-x1,sx=x0<x1?1:-1;int dy=-(y1>y0?y1-y0:y0-y1),sy=y0<y1?1:-1,err=dx+dy;for(;;){int a,b,r=wid/2;for(a=-r;a<=r;a++)for(b=-r;b<=r;b++)px(x0+a,y0+b,c);if(x0==x1&&y0==y1)break;int e2=2*err;if(e2>=dy){err+=dy;x0+=sx;}if(e2<=dx){err+=dx;y0+=sy;}}}
 
@@ -2450,6 +2464,7 @@ static void draw_trip(void){
  if(first+rows>count)first=count>rows?count-rows:0;
  if(!count)centered(119,122,1,trip_tab?ui_tr("No favourites yet"):ui_tr("No recent places"),C_MUTED);
  for(int row=0;row<rows&&first+row<count;row++){int i=first+row;trip_item(10,panel_y+48+row*20,218,trip_tab?faves[i].name:recents[i].name,trip_pane==0&&trip_focus==i);}
+ ui_scrollbar(230,panel_y+45,179,first,rows,count);
  if(trip.active){int rem=trip.count-trip.active_idx;
   for(int r=0;r<rem;r++)trip_target_row(route_y+r*route_step,trip.active_idx+r,trip_pane==1&&trip_right_focus==r);
   trip_item(249,route_y+rem*route_step,220,ui_tr("+ Add stop"),trip_pane==1&&trip_right_focus==rem);
@@ -2491,6 +2506,7 @@ static void draw_bluetooth(void){
     if(ord<sc){int di=bt_saved_idx(ord);compact_fit(36,y-2,326,1,di>=0?bt_display_name(di):ui_tr("Unknown phone"),ui_choice_text(f));label(392,y,0,ui_tr("Saved"),f?C_ACTIVE_TEXT:C_MUTED,52);}
     else{label(36,y-2,1,ui_tr("+ Pair new phone"),ui_choice_text(f),326);label(388,y,0,"0000",f?C_ACTIVE_TEXT:C_MUTED,56);}
   }
+  ui_scrollbar(466,108,159,first,rows,listn);
 }
 
 static int set_focus=0;
@@ -2539,6 +2555,7 @@ static void draw_settings(void){
    round_rect(x,y+16,width(part,1),1,0,C_ACTIVE_TEXT,15);
   }
  }
+ ui_scrollbar(468,MENU_BODY_Y,222,first,SETTING_VISIBLE_ROWS,SETTING_COUNT);
 }
 static void settings_key(int code){
  if(code==K_UP){if(set_focus>0)set_focus--;theme_time_part=0;return;}

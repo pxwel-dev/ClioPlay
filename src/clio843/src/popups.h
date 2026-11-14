@@ -2,7 +2,7 @@
  * modal state; copied view data survives closing, deletion and page changes. */
 enum {POPUP_PHONE=100,POPUP_KEYBOARD=101,POPUP_ITEMS=9};
 struct PopupItem {int x,y,w,face,button;u16 ink;char text[193];};
-struct PopupView {int key,count,selected;struct HudBox box;struct PopupItem item[POPUP_ITEMS];};
+struct PopupView {int key,count,selected,scroll_first,scroll_visible,scroll_total;struct HudBox box;struct PopupItem item[POPUP_ITEMS];};
 static struct {
  struct PopupView card,previous;
  struct HudBox from,to,focus_from,focus_to;
@@ -30,9 +30,10 @@ static void popup_build(struct PopupView*v,int key){
   v->box=hud_box(76,MENU_BODY_Y,328,222);
   popup_text(v,88,52,304,1,kbd_language_labels[pref.language],C_WHITE,0);
   int first=kbd_pick>=7?kbd_pick-6:0;if(first+7>UI_LANGUAGE_COUNT)first=UI_LANGUAGE_COUNT-7;
+  v->scroll_first=first;v->scroll_visible=7;v->scroll_total=UI_LANGUAGE_COUNT;
   for(int row=0;row<7;row++){
    int i=first+row;if(i==kbd_pick)v->selected=v->count;
-   popup_text(v,88,77+row*26,304,1,kbd_layouts[i].name,C_WHITE,1);
+   popup_text(v,88,77+row*26,296,1,kbd_layouts[i].name,C_WHITE,1);
   }return;
  }
  if(key==POPUP_PHONE){
@@ -167,6 +168,7 @@ static void draw_modal(void){
   hud_glass_surface(focus,C_ACTIVE,C_CYAN,theme_resolved?12u:16u,0);
  }
  hud_ink_alpha=(16*alpha+128)>>8;
+ ui_scrollbar(v->box.x+316+dx,v->box.y+35+dy,178,v->scroll_first,v->scroll_visible,v->scroll_total);
  for(int i=0;i<v->count;i++){
   const struct PopupItem*r=&v->item[i];
   u16 ink=r->ink;

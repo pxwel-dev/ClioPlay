@@ -19,6 +19,24 @@ static void setup(u32 now){
 static void at(u32 now,int changed){hud_capture_ms=now;render_runtime_step(now,changed);}
 static void gradient(void){for(int y=0;y<H;y++)for(int x=0;x<W;x++)fb[y*W+x]=rgb((x*3+y)%256,(x+y*2)%256,(x*2+y)%256);}
 int main(void){
+ /* The thumb reflects the viewport fraction and reaches both exact ends. */
+ for(int total=0;total<=100;total++)for(int visible=1;visible<=10;visible++){
+  struct UiScroll top=ui_scroll_geometry(42,222,0,visible,total);
+  if(total<=visible){assert(!top.height);continue;}
+  assert(top.top==42&&top.height>=8&&top.height<=222);
+  struct UiScroll bottom=ui_scroll_geometry(42,222,total-visible,visible,total);
+  assert(bottom.top+bottom.height==264&&bottom.height==top.height);
+  int previous=42;
+  for(int first=0;first<=total-visible;first++){
+   struct UiScroll b=ui_scroll_geometry(42,222,first,visible,total);
+   assert(b.top>=previous&&b.top+b.height<=264);previous=b.top;
+  }
+  assert(ui_scroll_geometry(42,222,-5,visible,total).top==42);
+  assert(ui_scroll_geometry(42,222,total+5,visible,total).top==bottom.top);
+ }
+ assert(ui_scroll_geometry(0,200,0,5,10).height==100);
+ assert(ui_scroll_geometry(0,200,0,5,20).height==50);
+
  setup(10000);at(10000,1);at(10400,1);
  u32 clock_at=hud_tween[HC_CLOCK].position_at;
  modal=MOD_ROUTE_POINT;popup_prepare(10401);

@@ -101,7 +101,9 @@ def verify_previews(source, readme):
         # loop in the main README. Keep that loop checked and linked in notes.
         legacy_link = (name == 'coordinates.gif' and
                        f']({name})' in (demo / 'README.md').read_text())
-        if f'](src/docs/demo/{name})' not in readme and not legacy_link:
+        embedded = (f'](src/docs/demo/{name})' in readme or
+                    f'src="src/docs/demo/{name}"' in readme)
+        if not embedded and not legacy_link:
             raise ValueError('README is missing a preview: ' + name)
         path = demo / name
         with path.open('rb') as stream:

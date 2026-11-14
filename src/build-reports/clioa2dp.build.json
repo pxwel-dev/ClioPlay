@@ -23,7 +23,7 @@
     }
   },
   "source": "clio843/src/clioa2dp.c",
-  "source_tree_sha256": "c8d6514a11c930f9bbabac4316b9bbf4b3a3a15aebc5aa8cb655996b2639ef18",
+  "source_tree_sha256": "b3b2abed084649ef311621524e21e35622f03168a74655cfd359fec27f48628e",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "b0045a10c40374f77a1865d57be226f40dd313a23c5c38c68b60c3870f42a52b",
@@ -32,7 +32,7 @@
     "clio843/src/audio_playback.h": "25e0f01cd52eb89d447c5ecdf34f57bebeef36135c2912eaa3d49ec1ee7f13e1",
     "clio843/src/audio_schedule.h": "bf37e189f7a0f372567287380820a357878fc1aaf519f85309224cd0d5ae85a6",
     "clio843/src/boot_theme.h": "fa46f1bda9c0f37306c90f34d497192953aa718b30fa688291bbc7a66ddab746",
-    "clio843/src/clio040.c": "3789b0cdc7ef21d05945c5490f7688c5fcbbcd91d29dc0d1d8e947f6603aa409",
+    "clio843/src/clio040.c": "9e5d2964e342478cdb01af901256ec75b97c9ccac02cf5e178b246b089fd3da1",
     "clio843/src/clioa2dp.c": "73bd71e6bb0f3b435c3d9d29653284549c1e71a33ddcf1e23545a68feb9076a1",
     "clio843/src/cliospl.c": "3ed913f73a028527a29b81ab1f3e4e49f8cab7ee26e715e4ee1715378e5e86e0",
     "clio843/src/coordinates.h": "023eacb74d76a57445c55f35f4938bd1b47205d526a6f3788df9ca5309e01526",
@@ -58,7 +58,7 @@
     "clio843/src/map_raster.h": "0b621cc17002433bd97581df2724f5dd16d2f254437c1b238feea5e25784c401",
     "clio843/src/map_thin_coverage.h": "d4632a1dd789176be35ded06a21b84d272d69910532f31e05dc03fbfc092e5fb",
     "clio843/src/nav_roundabout.h": "470390303a8f18184a020710012ea0353d0425c26a1381bbaa4064ca2d7f39be",
-    "clio843/src/popups.h": "4ef708d38c75b1a7c7911bd1d839b8885c7bc64dd689af321d9195fde4e14565",
+    "clio843/src/popups.h": "e0a6651259c957f2185a6754db7ebab9c51b5709be0726d4ade21ed4e8bb9745",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
     "clio843/src/splash_icon.h": "1c0cb3bf3be97ce49cdf626bc0184b0736b49fee877a92f5bf2e5cb2d0ec17eb",
     "clio843/src/ui_raster.h": "50767eb3a56c5192daabb07944b255b34d4e77b1db48b14a30a6914871420284",

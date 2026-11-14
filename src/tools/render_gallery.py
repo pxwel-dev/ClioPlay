@@ -97,6 +97,16 @@ def motion(group, name, title, setup, events, samples):
 def catalog(sender_receipts=None):
     SCENES.clear()
     add('Overview', 'driving', 'Driving with a route')
+    for name, setup, steps in (
+        ('recents','screen=SCR_TRIP;trip_pane=0;trip_tab=0;nrecents=25;',24),
+        ('favourites','screen=SCR_TRIP;trip_pane=0;trip_tab=1;nfaves=25;',24),
+        ('phones','screen=SCR_BT;bt_page_focus=0;',20),
+        ('settings','screen=SCR_SET;set_focus=0;',9),
+        ('languages','screen=SCR_KEY;keyboard_open_fave_rename(0);kbd_picker=1;kbd_pick=0;',17),
+    ):
+        add('Scrollbars',f'scrollbar-{name}-top',name+' · first page',setup)
+        key('Scrollbars',f'scrollbar-{name}-bottom',name+' · last page',setup,'key_handle(K_DOWN);'*steps)
+
     motion('Popup animations', 'preview-popups', 'Glass confirmations, animated choices, resizing and dismissal',
            'explore();settle();', POPUP_EVENTS, POPUP_SAMPLES)
     status_events = (

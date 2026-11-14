@@ -301,6 +301,12 @@ Popup-only input does not force a new map frame. Actions take effect immediately
 copied popup content remains available while closing, including after deletion
 or a page change. A settled popup returns to the normal presentation cadence.
 
+Scrollable Recents, Favourites, saved-phone, Settings and keyboard-language lists
+show a proportional scrollbar only when more rows exist than fit onscreen.
+The thumb tracks the actual list size and visible window, including the
+pairing action in the phone list. Popup scrollbars use translucent antialiased strokes over the glass
+and share its entrance, exit and content fades.
+
 Explore rotation and tilt follow a 500 ms elapsed-time transition rather than a
 fixed number of map frames. Camera presentation requests additional map drawing
 passes using the tile cache; these still cost CPU time. Normal map deadlines keep
