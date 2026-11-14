@@ -83,6 +83,9 @@ int main(void){
  assert(!memcmp(reference,display_fb,sizeof(reference)));
  apply_palette(0);at(21100,1);assert(renderer.theme==0&&display_fb[150*W+250]==C_BG);
 
+ /* All representable tile coordinates, every supported tile span. */
+ for(unsigned span=256;span<=16384;span*=2)for(unsigned local=0;local<=65535;local++)
+  assert(map_tile_offset(local,span)==(int)(local*span/4095u));
  /* 500 ms camera trajectory has identical results at any sampling cadence. */
  setup(R_IDLE,30000);gps.fix=1;enter_freecam();
  freecam_orientation_anim_update(30166);int angle=freecam_course,tilt=map_tilt_q8;
@@ -99,11 +102,29 @@ int main(void){
  u32 entrance=hud_tween[HC_STATUS].position_at,term=hud_audio.until;
  key_handle(K_MAP);
  for(u32 t=40001;t<41000;t++)at(t,t%100==0);
- assert(render_stats.maps==10&&render_stats.rotations>=4&&render_stats.presents>=10&&render_stats.presents<=15);
+ assert(render_stats.maps>=8&&render_stats.maps<=10&&render_stats.maps+render_stats.rotations<=14&&render_stats.presents>=10&&render_stats.presents<=15);
  assert(!freecam_transition_active()&&hud_audio.until==term);
  /* Entering Explore adds its zoom notice, but cannot restart the volume term. */
  assert(entrance==40000);
 
+ /* No full camera render between two presentation deadlines, even on input
+  * or a normal map deadline; no past deadline can cause a busy-wait loop. */
+ setup(R_IDLE,42000);gps.fix=1;at(42000,1);hud_capture_ms=42001;enter_freecam();
+ renderer.ui.next=42067;renderer.map_at=42020;render_background_dirty=1;
+ u32 builds=render_stats.maps+render_stats.rotations;
+ at(42030,1);assert(render_stats.maps+render_stats.rotations==builds);
+ assert(render_runtime_deadline(42030)>42030);
+ at(42067,0);assert(render_stats.maps+render_stats.rotations==builds+1);
+ /* The old interleaved clocks built 13 backgrounds for these same nine
+  * presentations. Audio UI state must not reintroduce duplicate camera work. */
+ for(int playing=0;playing<2;playing++){
+  u32 start=43000u+(u32)playing*1000u;
+  setup(R_IDLE,start);gps.fix=1;
+  if(playing){set_band("CD");btui.connected=btui.playing=1;bt_control_mode=1;}
+  at(start,1);key_handle(K_MAP);
+  for(u32 now=start+1;now<=start+550;now++)at(now,now%100==0);
+  assert(render_stats.maps+render_stats.rotations<=9&&render_stats.presents==9);
+ }
  /* A completion between presentation deadlines must still draw its final pose. */
  setup(R_IDLE,45000);gps.fix=1;at(45000,1);hud_capture_ms=45001;enter_freecam();
  at(45499,0);renderer.ui.next=45550;renderer.map_at=45600;at(45501,0);

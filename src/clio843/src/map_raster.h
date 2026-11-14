@@ -108,6 +108,12 @@ static int map_minor_cap(int dx,int dy){
 }
 static void map_line_q8(int x0,int y0,int x1,int y1,u16 c,int wid){
  if(!MAP_ANTIALIAS){line1(x0>>8,y0>>8,x1>>8,y1>>8,c,wid);return;}
+ /* Conservative screen bounds reject strokes parallel to an offscreen
+  * edge before a full major-axis scan. Keep cap/filter shoulders intact. */
+ int bleed=(wid+4)*256;
+ if((x0< -bleed&&x1< -bleed)||(x0>W*256+bleed&&x1>W*256+bleed)||
+    (y0<MAP_TOP*256-bleed&&y1<MAP_TOP*256-bleed)||
+    (y0>MAP_BOTTOM*256+bleed&&y1>MAP_BOTTOM*256+bleed))return;
  int soft=0;
 #if MAP_ANTIALIAS
  /* Only the thinnest road class gets the wider reconstruction filter. */

@@ -142,7 +142,12 @@ static void render_runtime_step(u32 now,int model_changed){
  /* Normal map updates continue on their clock, even during Explore. Extra
   * camera presentation passes reuse the map tile cache and never gate model
   * updates, routing, or HUD transitions on animation completion. */
- if(invalid||render_background_dirty||map_due||camera_due||route_finished){
+ /* Rotation already redraws live map data on the presentation clock. Do not
+  * insert a second full map render between those frames on the 100 ms clock. */
+ int camera_active=screen==SCR_MAP&&(renderer.camera_pending||freecam_transition_active());
+ int background_due=(render_background_dirty||map_due||camera_due)&&
+  (!camera_active||frame_due(now,renderer.ui.next));
+ if(invalid||background_due||route_finished){
   render_background();
   if(map_due){render_stats.maps++;renderer.map_at=frame_after(renderer.map_at,now,period);}
   else if(camera_due)render_stats.rotations++;
@@ -155,7 +160,7 @@ static void render_runtime_step(u32 now,int model_changed){
 }
 static u32 render_runtime_deadline(u32 now){
  if(route_status==R_CALC)return renderer.ui.next;
- u32 next=screen==SCR_MAP?renderer.map_at:now+FRAME_MODEL_MS;
+ u32 next=screen==SCR_MAP&&!renderer.camera_pending&&!freecam_transition_active()?renderer.map_at:now+FRAME_MODEL_MS;
  if(renderer.pending||renderer.model_pending||render_animation_active(now))next=frame_earlier(next,renderer.ui.next);
  return next;
 }

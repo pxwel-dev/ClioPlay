@@ -41,7 +41,7 @@ changes and selection highlights share the pills' independent 15 FPS transition
 clock; map drawing remains on its normal schedule. The entire UI retains the
 5 FPS cap during route calculation. Popup actions are handled immediately.
 Explore camera passes require extra drawing work. Head-unit performance, Bluetooth and audio require a
-[vehicle trial](../next-release/hardware-trial.md).
+physical head-unit trial.
 
 The coordinate-route and map-point-route loops invoke the production remote
 handlers and routing code against the existing local navigation bundle. The

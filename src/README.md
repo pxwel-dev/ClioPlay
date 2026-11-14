@@ -212,8 +212,7 @@ of driving, menus, Bluetooth playback and receiving a destination. See the
 | `tools/`, `tests/`, `docs/` | Build tools, tests and essential documentation |
 
 This is the single canonical Global edition. See
-[BUILDING.md](BUILDING.md), [third-party notices](THIRD_PARTY_NOTICES.md), and the
-[hardware trial procedure](docs/next-release/hardware-trial.md).
+[BUILDING.md](BUILDING.md) and [third-party notices](THIRD_PARTY_NOTICES.md).
 
 Host tests cover the unsplit reference graph versus restricted two- and three-pack atlases,
 including a long active via-way restriction,
@@ -228,8 +227,7 @@ survey; Auto units retain a manual override. Dateline-spanning/planet extracts a
 latitudes beyond ±85° remain unsupported.
 
 **Vehicle validation remains open:** boot, physical remote, AUX/radio, Bluetooth,
-frame timing and memory need the actual head unit. Use the concrete
-[hardware trial procedure](docs/next-release/hardware-trial.md). The legacy
+frame timing and memory need the actual head unit. The legacy
 `focusd`/embedded AUX helpers remain binary-only; their original C source has not
 been recovered. Their hashes and role are documented in
 [source status](docs/source-status.md).
@@ -310,7 +308,12 @@ and share its entrance, exit and content fades.
 
 Explore rotation and tilt follow a 500 ms elapsed-time transition rather than a
 fixed number of map frames. Camera presentation requests additional map drawing
-passes using the tile cache; these still cost CPU time. Normal map deadlines keep
+passes using the tile cache; these still cost CPU time. During rotation, live map
+updates are coalesced onto the 15 FPS presentation clock so the 10 FPS map
+clock cannot insert redundant full renders between camera frames. The existing
+500 ms eased trajectory and exact projection are retained. Offscreen strokes are rejected
+conservatively before rasterisation, and tile coordinates use an exactly
+equivalent shift/remainder conversion instead of repeated software division. Live model updates keep
 running, and rotation never resets a pill's appearance or notification timer.
 Outside calculation, long map drawing yields at safe points to present overlays.
 Routing uses spare
@@ -394,3 +397,8 @@ Fuel, parking and hospital POIs use 16 × 16 translucent rounded badges with
 precomputed antialiased vector symbols. Amber, blue and teal glyphs use stronger
 day inks and brighter night inks. The icons remain inside their existing layout
 footprints and add no runtime blur or font dependency.
+
+For device validation, compare Explore entry/exit with Bluetooth playing and
+paused, including simultaneous volume/track notices, reversal and route start.
+The 15 FPS camera/HUD cadence is a target, not measured physical head-unit FPS.
+During route calculation the whole UI remains capped at 5 FPS.

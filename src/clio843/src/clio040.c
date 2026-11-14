@@ -180,19 +180,21 @@ static u16 C_BG=0x0082,C_PANEL=0x1105,C_PANEL2=0x1146,C_BORDER=0x2a09;
 static u16 C_CYAN=0x64ff,C_WHITE=0xf7bf,C_BLUE=0x3c97,C_MUTED=0x9d76;
 static u16 C_DIM=0x63af,C_WARN=0xf524,C_ROAD=0x532d,C_WATER=0x1a4c,C_GREEN=0x2b4a;
 static u16 C_HEADER=0x08c3,C_ACTIVE=0x1a2b,C_ACTIVE_TEXT=0xf7ff,C_ACCENT=0x46b9,C_SHADOW=0x0041,C_HILITE=0x21a7;
-static const u16 C_CAR=0xfc60; /* fixed orange in both themes */
+static u16 C_CAR=0x557f; /* Vehicle body follows the map theme. */
 static const u16 C_ROUTE=0xf81f; /* fixed vivid magenta for map contrast */
 static int theme_resolved=1; /* 0 DAY, 1 NIGHT */
 
 static void apply_palette(int night){
   int next=night?1:0,changed=(next!=theme_resolved);theme_resolved=next;
   if(night){
+    C_CAR=0x557f;
     /* NIGHT: deep charcoal-blue surfaces with a restrained teal focus colour. */
     C_BG=0x0082; C_PANEL=0x1105; C_PANEL2=0x1146; C_BORDER=0x2a09;
     C_CYAN=0x46b9; C_WHITE=0xf7bf; C_BLUE=0x3c97; C_MUTED=0x9d76;
     C_DIM=0x63af; C_WARN=0xf524; C_ROAD=0x532d; C_WATER=0x1a4c; C_GREEN=0x2b4a;
     C_HEADER=0x08c3; C_PANEL=0x10e4; C_PANEL2=0x1926; C_BORDER=0x39e9; C_CYAN=0x64ff; C_ACTIVE=0x1a2b; C_ACTIVE_TEXT=0xffff; C_ACCENT=0x64ff; C_SHADOW=0x0041; C_HILITE=0x21a7;
   }else{
+    C_CAR=0x03de;
     /* DAY: warm/cool automotive greys rather than plain white inversion. */
     C_BG=0xef7d; C_PANEL=0xf7be; C_PANEL2=0xdf3c; C_BORDER=0xb618;
     C_CYAN=0x03f1; C_WHITE=0x1146; C_BLUE=0x33f3; C_MUTED=0x534e;
@@ -923,6 +925,12 @@ static int perspective_scale_for_forward(int d){
   if(d<=PERSPECTIVE_LUT_MAX)return perspective_scale_q12[d/PERSPECTIVE_LUT_STEP];
   return (int)udiv32(PERSPECTIVE_BASE*256u*4096u,PERSPECTIVE_BASE*256u+2u*(u32)map_tilt_q8*(u32)d);
 }
+/* Exact floor(local*span/4095), for 16-bit local coordinates and spans
+ * up to 16384. The shift estimate is at most one low; correct its remainder. */
+static int map_tile_offset(u32 local,u32 span){
+ u32 value=local*span,q=(value+(value>>12))>>12;
+ return (int)(q+(value-((q<<12)-q)>=4095u));
+}
 static void world_to_screen(s32 lat,s32 lon,int z,int*ox,int*oy){s32 vl=view_lat(),vo=view_lon();s32 dx=lon_delta(lon-vo),dy=lat-vl;int cq=coslat_q15(vl);s32 wx=lon_scale(dx,cq);int sh=14-z;long long xx=((long long)wx*256)>>sh,yy=-(((long long)dy*256)>>sh);s32 x=xx>16384?16384:xx< -16384?-16384:(s32)xx,y=yy>16384?16384:yy< -16384?-16384:(s32)yy;if(view_rotates()){int c,ss;view_trig(&ss,&c);int rx=(x*c+y*ss)>>15;int ry=(-x*ss+y*c)>>15;x=rx;y=ry;}
   if(y<0&&map_tilt_q8>0){int q=perspective_scale_for_forward(-y);x=(x*q)>>12;y=(y*q)>>12;}
   *ox=MAP_ANCHOR_X+x;*oy=view_anchor_y()+y;
@@ -1027,8 +1035,8 @@ static void draw_closed_area(struct Tile*t,int span,int layer,int style,int np,c
   struct MapAreaEdge edges[254];int ne=0,lo=MAP_BOTTOM,hi=MAP_TOP;
   int x0=0,y0=0;
   for(int i=0;i<np;i++){
-    s32 lon=(s32)t->tx*span+((s32)rd16(p+i*4)*span)/4095;
-    s32 lat=(s32)t->ty*span+((s32)rd16(p+i*4+2)*span)/4095;
+    s32 lon=(s32)t->tx*span+map_tile_offset(rd16(p+i*4),(u32)span);
+    s32 lat=(s32)t->ty*span+map_tile_offset(rd16(p+i*4+2),(u32)span);
     int x1,y1;world_to_screen(lat,lon,viewz,&x1,&y1);
     if(i&&y0!=y1){
       int ax=x0,ay=y0,bx=x1,by=y1;
@@ -1072,7 +1080,7 @@ static void draw_path(struct Tile*t,int span,int layer,int style,int np,const u8
  const u8*p=*pp;if(np<2||np>255||p+np*4>end){*pp=end;return;}u16 col;int wid;geom_style(layer,style,&col,&wid);
  map_mask_select(layer==0?((style>=1&&style<=5)?6-style:0):(layer==1?0:(layer==2?1:2)));
  int x[255],y[255];for(int i=0;i<np;i++){int lx=rd16(p),ly=rd16(p+2);p+=4;
-  s32 lon=(s32)t->tx*span+((s32)lx*span)/4095,lat=(s32)t->ty*span+((s32)ly*span)/4095;
+  s32 lon=(s32)t->tx*span+map_tile_offset(lx,(u32)span),lat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);
   map_project_q8(lat,lon,viewz,&x[i],&y[i]);
  }map_stroke_polyline(x,y,np,col,wid);*pp=p;
 }
@@ -1180,7 +1188,7 @@ static void poi_reserve(void){
  }
 }
 static void poi_render(void){for(int i=0;i<poi_visible;i++)poi_icon(poi_labels[i].kind,poi_labels[i].x,poi_labels[i].y);}
-static void draw_tile_labels(struct Tile*t,int viewz,int plo,int phi){if(mapfmt<2||!t)return;const u8*p=t->data,*end=t->data+t->len;int hs=mapfmt>=3?8:4;if(t->len<(u32)hs)return;u16 ng=rd16(p),nl=rd16(p+2);p+=hs;for(u16 f=0;f<ng&&p+4<=end;f++){int np=p[2];p+=4+(unsigned)np*4;if(p>end)return;}int span=span_for_level((int)t->lvl);for(u16 i=0;i<nl&&p+8<=end;i++){if(!(i&15))render_checkpoint();int kind=p[0],prio=p[1];u16 lx=rd16(p+2),ly=rd16(p+4);int tl=p[6];p+=8;if(p+tl>end)return;if(((plo==256&&kind>=6)||(plo!=256&&kind<6&&prio>=plo&&prio<=phi))&&tl>0&&tl<113){char b[113];int n=tl;for(int j=0;j<n;j++)b[j]=(char)p[j];b[n]=0;s32 lon=(s32)t->tx*span+((s32)lx*span)/4095;s32 lat=(s32)t->ty*span+((s32)ly*span)/4095;int x,y;world_to_screen(lat,lon,viewz,&x,&y);if(kind>=6){if(plo==256)poi_offer(x,y,kind,prio);}else if(plo!=256){if(!freecam)drive_label_offer(x,y,kind,prio,b);else{int w=textw(b,1),x0=x-w/2,y0=y-6;if(!label_text_seen(b)&&label_free(x0-2,y0-2,x0+w+2,y0+14)){u16 c=label_color(kind);text(x0+1,y0+1,b,C_BG,1);text(x0,y0,b,c,1);label_text_add(b);}}}}p+=tl;}}
+static void draw_tile_labels(struct Tile*t,int viewz,int plo,int phi){if(mapfmt<2||!t)return;const u8*p=t->data,*end=t->data+t->len;int hs=mapfmt>=3?8:4;if(t->len<(u32)hs)return;u16 ng=rd16(p),nl=rd16(p+2);p+=hs;for(u16 f=0;f<ng&&p+4<=end;f++){int np=p[2];p+=4+(unsigned)np*4;if(p>end)return;}int span=span_for_level((int)t->lvl);for(u16 i=0;i<nl&&p+8<=end;i++){if(!(i&15))render_checkpoint();int kind=p[0],prio=p[1];u16 lx=rd16(p+2),ly=rd16(p+4);int tl=p[6];p+=8;if(p+tl>end)return;if(((plo==256&&kind>=6)||(plo!=256&&kind<6&&prio>=plo&&prio<=phi))&&tl>0&&tl<113){char b[113];int n=tl;for(int j=0;j<n;j++)b[j]=(char)p[j];b[n]=0;s32 lon=(s32)t->tx*span+map_tile_offset(lx,(u32)span);s32 lat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);int x,y;world_to_screen(lat,lon,viewz,&x,&y);if(kind>=6){if(plo==256)poi_offer(x,y,kind,prio);}else if(plo!=256){if(!freecam)drive_label_offer(x,y,kind,prio,b);else{int w=textw(b,1),x0=x-w/2,y0=y-6;if(!label_text_seen(b)&&label_free(x0-2,y0-2,x0+w+2,y0+14)){u16 c=label_color(kind);text(x0+1,y0+1,b,C_BG,1);text(x0,y0,b,c,1);label_text_add(b);}}}}p+=tl;}}
 
 /* Current road context: at Z6 each road geometry may reference tile-local
  * metadata. CPM3 records are [speed_mph, text_len, text]; CPM4 records are
@@ -1211,7 +1219,7 @@ static void append_road_limit(char*b,unsigned cap,const struct RoadCtx*r){if(!r-
 
 static u32 seg_dist2(s32 ax,s32 ay,s32 bx,s32 by){int shift=0;while(ax>16383||ax< -16383||ay>16383||ay< -16383||bx>16383||bx< -16383||by>16383||by< -16383){ax>>=1;ay>>=1;bx>>=1;by>>=1;shift++;}s32 vx=bx-ax,vy=by-ay;u32 len2=(u32)(vx*vx+vy*vy);s32 dot=-(ax*vx+ay*vy),qx=ax,qy=ay;if(len2&&dot>0){if((u32)dot>=len2){qx=bx;qy=by;}else{u32 den=len2,num=(u32)dot;while(den>0xffffffu){den=(den+1)>>1;num>>=1;}u32 t=udiv32(num<<8,den);qx=ax+((vx*(s32)t)>>8);qy=ay+((vy*(s32)t)>>8);}}u32 d=square_distance(qx,qy);while(shift--){if(d>0x3fffffffu)return 0xffffffffu;d<<=2;}return d;}
 static u32 road_seg_m(s32 la0,s32 lo0,s32 la1,s32 lo1){int cq=coslat_q15((la0+la1)/2);u32 dx=(u32)iabs32(lon_scale(lo1-lo0,cq)),dy=(u32)iabs32(la1-la0);u32 hi=dx>dy?dx:dy,lo=dx>dy?dy:dx;u32 q=hi+((lo*3u)>>3);return udiv32(q*111u+50u,100u);}
-static void road_raw_point(struct Tile*t,const u8*p,s32*lat,s32*lon){int span=256;int lx=rd16(p),ly=rd16(p+2);*lon=(s32)t->tx*span+((s32)lx*span)/4095;*lat=(s32)t->ty*span+((s32)ly*span)/4095;}
+static void road_raw_point(struct Tile*t,const u8*p,s32*lat,s32*lon){int span=256;int lx=rd16(p),ly=rd16(p+2);*lon=(s32)t->tx*span+map_tile_offset(lx,(u32)span);*lat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);}
 static int road_ref_fill(struct Tile*t,u16 gi,int cls,int mi,const u8*p,int np,int seg,struct RoadGeomRef*r){if(!t||!p||np<2||!r)return 0;memzero(r,sizeof(*r));r->valid=1;r->tx=t->tx;r->ty=t->ty;r->gi=gi;r->cls=(u8)cls;r->mi=(u8)mi;r->seg=seg;road_raw_point(t,p,&r->slat,&r->slon);road_raw_point(t,p+4,&r->s2lat,&r->s2lon);road_raw_point(t,p+(np-1)*4,&r->elat,&r->elon);road_raw_point(t,p+(np-2)*4,&r->e2lat,&r->e2lon);return 1;}
 static int road_ref_same(const struct RoadGeomRef*a,const struct RoadGeomRef*b){return a&&b&&a->valid&&b->valid&&a->tx==b->tx&&a->ty==b->ty&&a->gi==b->gi;}
 static u32 road_join_d2(s32 alat,s32 alon,s32 blat,s32 blon){int cq=coslat_q15((alat+blat)/2);s32 dx=lon_scale(blon-alon,cq),dy=blat-alat;return square_distance(dx,dy);}
@@ -1241,7 +1249,7 @@ static int road_trace_pick(const struct RoadGeomRef*cur,int exit_side,const stru
   if(best<0||(second>=0&&best-second<ROAD_TRACE_AMBIG))return 0;*out=br;if(enter_side)*enter_side=benter;return 1;}
 static int road_trace_dir(const struct RoadGeomRef*start,int side,char*out,unsigned cap,u32*found_m){u32 used=road_initial_side_m(start,side);if(used>ROAD_TRACE_MAX_M)return 0;struct RoadGeomRef cur=*start,visited[ROAD_TRACE_MAX_STEPS+1];int nvis=0;visited[nvis++]=cur;int exit_side=side;for(int step=0;step<ROAD_TRACE_MAX_STEPS&&used<=ROAD_TRACE_MAX_M;step++){struct RoadGeomRef nx;int enter=0;if(!road_trace_pick(&cur,exit_side,visited,nvis,&nx,&enter))return 0;struct Tile*t=get_tile(6,nx.tx,nx.ty);struct RoadCtx nr;memzero(&nr,sizeof(nr));if(t&&read_road_meta(t,nx.mi,&nr)&&nr.street[0]){copystr(out,cap,nr.street);if(found_m)*found_m=used;return 1;}u32 add=road_feature_length_m(&nx);if(!add||add==0xffffffffu||used+add>ROAD_TRACE_MAX_M)return 0;used+=add;cur=nx;if(nvis<ROAD_TRACE_MAX_STEPS+1)visited[nvis++]=cur;exit_side=enter?0:1;}return 0;}
 static int road_trace_name(const struct RoadGeomRef*r,char*out,unsigned cap){char a[29],b[29];a[0]=b[0]=0;u32 am=0xffffffffu,bm=0xffffffffu;int ha=road_trace_dir(r,0,a,sizeof(a),&am),hb=road_trace_dir(r,1,b,sizeof(b),&bm);if(!ha&&!hb)return 0;if(ha&&hb&&!streq(a,b)){u32 dif=am>bm?am-bm:bm-am;if(dif<30u)return 0;}const char*s=ha&&(!hb||am<=bm)?a:b;copystr(out,cap,s);return out[0]!=0;}
-static void scan_road_tile(struct Tile*t,s32 plat,s32 plon,u32*best,struct RoadGeomRef*winner){if(!t||t->lvl!=6||t->len<8)return;const u8*p=t->data,*end=t->data+t->len;u16 ng=rd16(p);p+=8;int span=256,cq=coslat_q15(plat);for(u16 g=0;g<ng&&p+4<=end;g++){int layer=p[0],cls=p[1],np=p[2],mi=p[3];p+=4;if(p+(unsigned)np*4>end)return;if(layer==0&&mi!=255&&np>=2){int lx=rd16(p),ly=rd16(p+2);s32 alon=(s32)t->tx*span+((s32)lx*span)/4095,alat=(s32)t->ty*span+((s32)ly*span)/4095;s32 ax=lon_scale(alon-plon,cq),ay=alat-plat;const u8*q=p+4;for(int i=1;i<np;i++,q+=4){lx=rd16(q);ly=rd16(q+2);s32 blon=(s32)t->tx*span+((s32)lx*span)/4095,blat=(s32)t->ty*span+((s32)ly*span)/4095;s32 bx=lon_scale(blon-plon,cq),by=blat-plat;u32 d=seg_dist2(ax,ay,bx,by);if(gps.mph10>=20){int k=((shown_course()+5)/10)%36;int hx=SIN36[k],hy=COS36[k];s32 vx=bx-ax,vy=by-ay;u32 norm=(u32)(iabs32(vx)+iabs32(vy));if(norm){s32 dp=vx*hx+vy*hy;u32 ad=(u32)(dp<0?-dp:dp);u32 lo=norm*12000u,mid=norm*22000u;if(ad<lo)d+=900;else if(ad<mid)d+=225;}}if(d<*best){*best=d;road_ref_fill(t,g,cls,mi,p,np,i-1,winner);}ax=bx;ay=by;}}p+=(unsigned)np*4;}}
+static void scan_road_tile(struct Tile*t,s32 plat,s32 plon,u32*best,struct RoadGeomRef*winner){if(!t||t->lvl!=6||t->len<8)return;const u8*p=t->data,*end=t->data+t->len;u16 ng=rd16(p);p+=8;int span=256,cq=coslat_q15(plat);for(u16 g=0;g<ng&&p+4<=end;g++){int layer=p[0],cls=p[1],np=p[2],mi=p[3];p+=4;if(p+(unsigned)np*4>end)return;if(layer==0&&mi!=255&&np>=2){int lx=rd16(p),ly=rd16(p+2);s32 alon=(s32)t->tx*span+map_tile_offset(lx,(u32)span),alat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);s32 ax=lon_scale(alon-plon,cq),ay=alat-plat;const u8*q=p+4;for(int i=1;i<np;i++,q+=4){lx=rd16(q);ly=rd16(q+2);s32 blon=(s32)t->tx*span+map_tile_offset(lx,(u32)span),blat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);s32 bx=lon_scale(blon-plon,cq),by=blat-plat;u32 d=seg_dist2(ax,ay,bx,by);if(gps.mph10>=20){int k=((shown_course()+5)/10)%36;int hx=SIN36[k],hy=COS36[k];s32 vx=bx-ax,vy=by-ay;u32 norm=(u32)(iabs32(vx)+iabs32(vy));if(norm){s32 dp=vx*hx+vy*hy;u32 ad=(u32)(dp<0?-dp:dp);u32 lo=norm*12000u,mid=norm*22000u;if(ad<lo)d+=900;else if(ad<mid)d+=225;}}if(d<*best){*best=d;road_ref_fill(t,g,cls,mi,p,np,i-1,winner);}ax=bx;ay=by;}}p+=(unsigned)np*4;}}
 static void roadname_cache_set(const char*s,const struct RoadGeomRef*r){if(!r||!r->valid){roadname_cache.key_valid=roadname_cache.name_valid=0;return;}roadname_cache.key_valid=1;roadname_cache.last=*r;roadname_cache.name_valid=s&&s[0]?1:0;roadname_cache.name[0]=0;if(roadname_cache.name_valid)copystr(roadname_cache.name,sizeof(roadname_cache.name),s);}
 static void road_direction_select(struct Tile*t,const struct RoadGeomRef*r){if(mapfmt<5)return;int n=0;const u8*p=road_feature_points(t,r->gi,0,0,&n);if(!p||r->seg<0||r->seg+1>=n)return;s32 la,lo,lb,lob;road_raw_point(t,p+r->seg*4,&la,&lo);road_raw_point(t,p+(r->seg+1)*4,&lb,&lob);int k=((shown_course()+5)/10)%36;long long dot=(long long)lon_scale(lob-lo,coslat_q15(gps.lat))*SIN36[k]+(long long)(lb-la)*COS36[k];if(gps.mph10<30){if(roadctx.speed!=roadctx.reverse_speed||roadctx.speed_flags!=roadctx.reverse_flags){roadctx.speed=0;roadctx.speed_flags=0;}}else if(dot<0){roadctx.speed=roadctx.reverse_speed;roadctx.speed_flags=roadctx.reverse_flags;}}
 static void road_estimate_missing(const struct RoadGeomRef*r);
@@ -2284,32 +2292,29 @@ static int pan_step_for_zoom(int z){if(z<=6)return 80<<(6-z);z-=6;return 80>>z;}
  * the screen rather than suddenly becoming world-north/world-east controls. */
 static s32 freecam_east_to_lon(s32 east,int cq){if(!east)return 0;if(cq<=0)return east;u32 a=(u32)(east<0?-east:east);u32 q=udiv32((a<<15)+(u32)(cq>>1),(u32)cq);return east<0?-(s32)q:(s32)q;}
 static void pan_freecam(int code){if(!gps.fix&&!freecam&&!track_valid)return;enter_freecam();if(!freecam)return;int z=active_zoom();int step=pan_step_for_zoom(z);if(step<1)step=1;int ss,c;view_trig(&ss,&c);s32 de=0,dn=0;if(code==103){de=(s32)(((s32)step*ss)>>15);dn=(s32)(((s32)step*c)>>15);}else if(code==108){de=-(s32)(((s32)step*ss)>>15);dn=-(s32)(((s32)step*c)>>15);}else if(code==106){de=(s32)(((s32)step*c)>>15);dn=-(s32)(((s32)step*ss)>>15);}else if(code==105){de=-(s32)(((s32)step*c)>>15);dn=(s32)(((s32)step*ss)>>15);}int cq=coslat_q15(cam_lat);cam_lat+=dn;if(cam_lat>8500000)cam_lat=8500000;if(cam_lat< -8500000)cam_lat=-8500000;cam_lon=lon_delta(cam_lon+freecam_east_to_lon(de,cq));}
-static void fill_car_triangle(int nx,int ny,int lx,int ly,int rx,int ry){
- const int x[3]={nx,lx,rx},y[3]={ny,ly,ry};
- struct {int top,bottom,x,step;} edges[3];
- int count=0,first=MAP_BOTTOM,last=MAP_TOP;
- for(int i=0;i<3;i++){
-  int a=i,b=(i+1)%3;
-  if(y[a]==y[b])continue;
-  if(y[a]>y[b]){int swap=a;a=b;b=swap;}
-  edges[count].top=y[a];edges[count].bottom=y[b];edges[count].x=x[a]*4096;
-  edges[count++].step=(x[b]-x[a])*4096/(y[b]-y[a]);
-  if(y[a]<first)first=y[a];if(y[b]>last)last=y[b];
- }
- if(first<MAP_TOP)first=MAP_TOP;if(last>MAP_BOTTOM)last=MAP_BOTTOM;
- for(int row=first;row<last;row++){
-  int cuts[2],steps[2],n=0;
-  for(int i=0;i<count&&n<2;i++)if(row>=edges[i].top&&row<edges[i].bottom){
-   steps[n]=edges[i].step;
-   cuts[n++]=edges[i].x+edges[i].step*(row-edges[i].top)+edges[i].step/2;
-  }
-  if(n==2){
-   int a=cuts[0]>cuts[1];
-   map_area_span(row,cuts[a],cuts[1-a],steps[a],steps[1-a],C_CAR);
-  }
+#include "vehicle_icon.h"
+static void vehicle_icon(int x,int y,int heading){
+ int k=((heading%360+360)%360+5)/10%VEHICLE_ICON_HEADINGS;
+ const u16*coverage=vehicle_coverage[k];
+ u16 rim=theme_resolved?rgb(188,222,249):rgb(247,252,255);
+ u16 facet=theme_resolved?rgb(160,218,255):rgb(112,197,255);
+ for(int row=0;row<VEHICLE_ICON_SIZE;row++)for(int col=0;col<VEHICLE_ICON_SIZE;col++){
+  unsigned mask=coverage[row*VEHICLE_ICON_SIZE+col];if(!mask)continue;
+  int sx=x+col-VEHICLE_ICON_SIZE/2,sy=y+row-VEHICLE_ICON_SIZE/2;
+  if(sy<MAP_TOP||sy>=MAP_BOTTOM)continue;
+  int a=mask&15;if(a)blend_pixel(sx,sy,rgb(8,20,34),a);
+  a=(mask>>4)&15;if(a)blend_pixel(sx,sy,rim,a);
+  a=(mask>>8)&15;if(a)blend_pixel(sx,sy,C_CAR,a);
+  a=(mask>>12)&15;if(a)blend_pixel(sx,sy,facet,a);
  }
 }
-static void draw_car_marker(int z){if(!gps.fix)return;int cx,cy;world_to_screen(car_lat(),car_lon(),z,&cx,&cy);if(cx<-15||cx>W+15||cy<MAP_TOP-12||cy>MAP_BOTTOM+12)return;int carc=map_course(),vc=view_course();int rel=view_rotates()?carc-vc:carc;while(rel<0)rel+=360;while(rel>=360)rel-=360;int k=((rel+5)/10)%36,ss=SIN36[k],c=COS36[k];int nx=cx+(ss*10>>15),ny=cy-(c*10>>15);int lx=cx+((-c*7)>>15),ly=cy+((-ss*7)>>15);int rx=cx+((c*7)>>15),ry=cy+((ss*7)>>15);fill_car_triangle(nx,ny,lx,ly,rx,ry);map_mask_begin(3);map_line(nx,ny,lx,ly,C_CAR,2);map_line(nx,ny,rx,ry,C_CAR,2);map_line(lx,ly,rx,ry,C_CAR,2);map_mask_end();}
+static void draw_car_marker(int z){
+ if(!gps.fix)return;
+ int cx,cy;world_to_screen(car_lat(),car_lon(),z,&cx,&cy);
+ if(cx< -VEHICLE_ICON_SIZE/2||cx>W+VEHICLE_ICON_SIZE/2||cy<MAP_TOP-VEHICLE_ICON_SIZE/2||cy>MAP_BOTTOM+VEHICLE_ICON_SIZE/2)return;
+ int rel=map_course();if(view_rotates())rel-=view_course();
+ vehicle_icon(cx,cy,rel);
+}
 static void draw_explore_crosshair(void){if(!freecam)return;int x=240,y=160;map_line(x-12,y,x-4,y,C_DIM,1);map_line(x+4,y,x+12,y,C_DIM,1);map_line(x,y-12,x,y-4,C_DIM,1);map_line(x,y+4,x,y+12,C_DIM,1);rect(x-2,y-2,5,5,C_DIM);}
 static void draw_map_geometry(int z){npoi=poi_visible=0;nlbox=nltxt=0;fill(0,MAP_TOP,W,MAP_BOTTOM-MAP_TOP,C_BG);if(!mapok||(!gps.fix&&!freecam&&!track_valid))return;s32 vl=view_lat(),vo=view_lon();if(!map_view_covered(vl,vo))return;int sourcez=z>6?6:clamp_map_zoom(z),tx0,tx1,ty0,ty1;
   map_visible_tile_bounds(z,sourcez,&tx0,&tx1,&ty0,&ty1);

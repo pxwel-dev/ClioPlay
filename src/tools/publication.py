@@ -26,7 +26,7 @@ def source_files(root, reports):
     names = ('README.md', 'VERSION', 'BUILDING.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md',
              '.gitignore', 'Install.command', 'install.py', 'bootstrap-SHA256.json',
              'docs/source-status.md', 'docs/camera-support.md', 'docs/repository-readme.md',
-             'docs/next-release/hardware-trial.md', 'docs/github-launch.md', 'legacy-binaries/clioaux-init',
+             'docs/github-launch.md', 'legacy-binaries/clioaux-init',
              'legacy-binaries/manifest.json', 'clio843/font.bin',
              'card-template/ttn', 'card-template/clio843/btstart.sh', 'card-template/clio843/prefs.ini',
              'card-template/clio843/focusd', 'card-template/clio843/hidd')
