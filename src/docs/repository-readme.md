@@ -31,11 +31,28 @@
 | --- | --- |
 | ![Enter latitude and longitude, name the destination, calculate the route and find it in Recents](src/docs/demo/coordinate-route.gif) | ![Enter Explore, pan the crosshair, press OK and confirm a route to the selected point](src/docs/demo/map-point-route.gif) |
 
-### Send a destination with ClioPlay Send
+<table align="center">
+  <thead>
+    <tr>
+      <th>
+        Send a destination with
+        <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">
+        <img
+          src="src/docs/demo/phone-destination.gif"
+          alt="ClioPlay Send and the head unit receiving a destination side by side"
+          width="480"
+        >
+      </td>
+    </tr>
+  </tbody>
+</table>
 
-Use [ClioPlay Send](https://pxwel-dev.github.io/ClioPlay-Send/) on your phone:
-
-![ClioPlay Send and the head unit receiving a destination side by side](src/docs/demo/phone-destination.gif)
 
 ## Compatibility
 

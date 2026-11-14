@@ -383,7 +383,14 @@ Physical audio, controls and navigation behaviour still need the vehicle checks.
 
 POI layout uses a separate bounded candidate pool, reserves icon space before
 road/place names, and selects independently of tile traversal order. Driving
-retains a two-icon budget; Explore permits up to 16 non-overlapping icons.
+and Explore share a limit of 16 non-overlapping icons. Status-pill animation
+does not change which POIs belong in the map background; pills overlay the
+finished map instead of removing its icons.
 Parking, fuel and hospitals use the POIs available in the installed zoom tiles.
 No map rebuild is required for this renderer correction; missing source POIs
 cannot be added by the renderer.
+
+Fuel, parking and hospital POIs use 16 × 16 translucent rounded badges with
+precomputed antialiased vector symbols. Amber, blue and teal glyphs use stronger
+day inks and brighter night inks. The icons remain inside their existing layout
+footprints and add no runtime blur or font dependency.

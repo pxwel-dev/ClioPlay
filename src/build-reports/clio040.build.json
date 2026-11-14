@@ -1,29 +1,29 @@
 {
   "machine": "ARM7TDMI / ARMv4T",
   "abi": "ELF32 EABI5 soft-float; Linux OABI syscalls",
-  "entry": "0x74a74",
-  "bytes": 948832,
-  "sha256": "23f761d2054f4a1ce8b90dc90d58d6f17d716c1041a77f5455b04ac0cbac9702",
+  "entry": "0x74f74",
+  "bytes": 950092,
+  "sha256": "c8d3a340e85e102476685f17eb355eef69a0d392314dda56fca7c2def1b761f1",
   "sections": {
     ".text": {
-      "address": "0x74880",
-      "bytes": 433624
+      "address": "0x74d80",
+      "bytes": 433644
     },
     ".rodata": {
       "address": "0x10108",
-      "bytes": 345974
+      "bytes": 347254
     },
     ".data": {
-      "address": "0xee658",
+      "address": "0xeeb70",
       "bytes": 1160
     },
     ".bss": {
-      "address": "0xeeae0",
+      "address": "0xef000",
       "bytes": 11453312
     }
   },
   "source": "clio843/src/clio040.c",
-  "source_tree_sha256": "f51b7c5a98cf4e618609bf69c70f3425e97bd1f6867cafe8323ba6885acefbf0",
+  "source_tree_sha256": "1cf0515cef61ecfd47c786541251db6d64e7ed5e2e1adad33df2a8d972c49d0d",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "b0045a10c40374f77a1865d57be226f40dd313a23c5c38c68b60c3870f42a52b",
@@ -32,7 +32,7 @@
     "clio843/src/audio_playback.h": "25e0f01cd52eb89d447c5ecdf34f57bebeef36135c2912eaa3d49ec1ee7f13e1",
     "clio843/src/audio_schedule.h": "bf37e189f7a0f372567287380820a357878fc1aaf519f85309224cd0d5ae85a6",
     "clio843/src/boot_theme.h": "fa46f1bda9c0f37306c90f34d497192953aa718b30fa688291bbc7a66ddab746",
-    "clio843/src/clio040.c": "cbc5c67e6d765914e4a23117d9b0a06b3e9d8596e47880968d00334829da04cb",
+    "clio843/src/clio040.c": "73e2b26e40c8201d177d92a25cfd13d2fa0c5a9398f7ceed79327f4cf5651a32",
     "clio843/src/clioa2dp.c": "73bd71e6bb0f3b435c3d9d29653284549c1e71a33ddcf1e23545a68feb9076a1",
     "clio843/src/cliospl.c": "3ed913f73a028527a29b81ab1f3e4e49f8cab7ee26e715e4ee1715378e5e86e0",
     "clio843/src/coordinates.h": "c6145b9aadfcc57017b9b89c0d4f15d23681354228cf6a1f82990e7e1c581e0d",
@@ -58,6 +58,7 @@
     "clio843/src/map_raster.h": "0b621cc17002433bd97581df2724f5dd16d2f254437c1b238feea5e25784c401",
     "clio843/src/map_thin_coverage.h": "d4632a1dd789176be35ded06a21b84d272d69910532f31e05dc03fbfc092e5fb",
     "clio843/src/nav_roundabout.h": "470390303a8f18184a020710012ea0353d0425c26a1381bbaa4064ca2d7f39be",
+    "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
     "clio843/src/popups.h": "e63651756bd190224b6de6bf0d89df0d68c02071c1253c87e31dcf778240d492",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
     "clio843/src/splash_icon.h": "1c0cb3bf3be97ce49cdf626bc0184b0736b49fee877a92f5bf2e5cb2d0ec17eb",
@@ -1024,13 +1025,14 @@
     "clio843/src/vendor/sheenbidi/Source/UBA/RunQueue.h": "0066113585362ba76efa96e6844ebcacae5caf4198c4166813e68d9c8cf352a8",
     "clio843/src/vendor/sheenbidi/Source/UBA/StatusStack.c": "e5cc2a6310e0b504f518568b48e95ef2616026bd17ec035f7c774de99cd7f325",
     "clio843/src/vendor/sheenbidi/Source/UBA/StatusStack.h": "348774283d029f4afa64b95ba9fe04240d754587b483a8bcc345e1d6e78c6261",
-    "tools/build_ui.py": "cce75d2fcf23e51f7e25059fded365f13fb86fc6c5965c1934b4c405195ee075",
+    "tools/build_ui.py": "6324251fb43c9610b99e7d056491429de0f7c535131ccebf07f0bd52448aaeed",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
     "tools/build_translations.py": "f0970483186937bbbc3b86f4bab877a2a6fe244830e99ee9ac82c2f58858e6f0",
     "tools/build_splash_icon.py": "2a3e9130ef6d268bd1e2cc2364049e4d53c69a964cb5aa7a2a054f58f3393aad",
     "tools/build_keyboard_data.py": "78a7bd9b5cd0b48d750bb7731efc34cec070f30c917b1c496b7298fe437c60b5",
     "tools/build_speed_defaults.py": "238d3bf71ac4b074f8847525d6a9716611dfef5637eae35f4ee9c23bacefb9d3",
     "tools/build_roundabout_icon.py": "30c234c1eb372493fc0375b2996159f98ba6e4cec566d5305308b1177b420a18",
+    "tools/build_poi_icons.py": "55b1d4736ea5cd5cdf8786822fb8280c20beaa96344ca0210ec374fe25ee7413",
     "tools/build_thin_coverage.py": "b483abfb45f8156f6afab36f53fbe82a776d4c3267d95fc61a68a0d793f6920c",
     "navigation-builder/tools/global_speeds.py": "6b982546c655e144234d37fbc5c6da631a69be6e9041351861390636cd29bf50",
     "navigation-builder/data/speed-contexts.json": "400cbbebb7450e58602fe8be6c9ba7a04b942c5e71ef058ab0a84de5f1855f67",

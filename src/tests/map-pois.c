@@ -6,6 +6,30 @@
 #include <assert.h>
 #include <string.h>
 int main(void){
+
+ for(int night=0;night<2;night++){
+  apply_palette(night);
+  unsigned hashes[3];
+  for(int kind=6;kind<=8;kind++){
+   for(int i=0;i<FB_PIX;i++)fb[i]=0xdead;
+   poi_icon(kind,100,100);unsigned h=0;
+   for(int y=0;y<H;y++)for(int x=0;x<W;x++){
+    if(x<92||x>=108||y<92||y>=108)assert(fb[y*W+x]==0xdead);
+    else h=h*33u+fb[y*W+x];
+   }
+   hashes[kind-6]=h;
+  }
+  assert(hashes[0]!=hashes[1]&&hashes[1]!=hashes[2]&&hashes[0]!=hashes[2]);
+ }
+ for(int mask=0;mask<5;mask++){
+  int partial=0;for(int i=0;i<256;i++){assert(poi_coverage[mask][i]<=15);partial|=poi_coverage[mask][i]>0&&poi_coverage[mask][i]<15;}assert(partial);
+ }
+ /* Status geometry must not alter map icon membership or consume a slot. */
+ for(int mode=0;mode<2;mode++)for(int status=0;status<3;status++){
+  freecam=mode;nlbox=npoi=0;nav_card_x=20;nav_card_y=60;nav_card_w=status?300:0;nav_card_h=status*60;
+  for(int i=0;i<4;i++)poi_offer(60+i*70,145,6+i%3,34+i);
+  poi_reserve();assert(poi_visible==4);
+ }
  nav_card_w=nav_card_h=0;roadctx.valid=0;route_status=R_IDLE;
  for(int mode=0;mode<2;mode++){
   freecam=mode;nlbox=nltxt=npoi=poi_visible=ndrive_labels=0;

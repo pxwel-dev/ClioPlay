@@ -1107,7 +1107,7 @@ static void draw_tile_geometry(struct Tile*t,int viewz,int pass){
  * pool is bounded; no heap, new map format or extra tile reads. */
 #define DRIVE_LABEL_CANDIDATES 48
 #define DRIVE_ROAD_LABELS 6
-#define DRIVE_POI_LABELS 2
+#define MAP_POI_LABELS 16
 #define DRIVE_ROUTE_SEGS 128
 struct DriveLabel {char name[113];s16 x,y;u8 kind,prio;int score;};
 struct DriveRouteSeg {s16 x0,y0,x1,y1;};
@@ -1125,31 +1125,34 @@ static struct LBox lbox[LABEL_BOXES];static int nlbox=0;
 static char ltxt[LABEL_TEXTS][113];static int nltxt=0;
 static int label_text_seen(const char*s){for(int i=0;i<nltxt;i++)if(streq(ltxt[i],s))return 1;return 0;}
 static void label_text_add(const char*s){if(nltxt<LABEL_TEXTS)copystr(ltxt[nltxt++],29,s);}
-static int label_free(int x0,int y0,int x1,int y1){
+static int label_space_free(int x0,int y0,int x1,int y1,int avoid_status){
  if(x0<4||x1>W-4||y1<MAP_TOP+3||y1>MAP_BOTTOM-3)return 0;
  if(x1>=350&&y0<=38)return 0; /* clock and temperature */
  if(!freecam&&y1>=HUD_BOTTOM_Y-2)return 0;
  if(freecam&&x1>=390&&y1>=HUD_BOTTOM_Y+5)return 0;
- if(nav_card_w&&x1>=nav_card_x-3&&x0<=nav_card_x+nav_card_w+3&&y1>=nav_card_y-3&&y0<=nav_card_y+nav_card_h+3)return 0;
+ if(avoid_status&&nav_card_w&&x1>=nav_card_x-3&&x0<=nav_card_x+nav_card_w+3&&y1>=nav_card_y-3&&y0<=nav_card_y+nav_card_h+3)return 0;
  for(int i=0;i<nlbox;i++)if(!(x1<lbox[i].x0||x0>lbox[i].x1||y1<lbox[i].y0||y0>lbox[i].y1))return 0;
  if(nlbox<LABEL_BOXES){lbox[nlbox].x0=x0;lbox[nlbox].y0=y0;lbox[nlbox].x1=x1;lbox[nlbox].y1=y1;nlbox++;}
  return 1;
 }
+static int label_free(int x0,int y0,int x1,int y1){return label_space_free(x0,y0,x1,y1,1);}
 static u16 label_color(int kind){if(kind==3)return C_CYAN;if(kind==4)return C_WHITE;if(kind==5)return C_MUTED;if(kind>=6)return C_WARN;if(kind==1)return C_WHITE;return C_MUTED;}
+#include "poi_icons.h"
 static void poi_icon(int kind,int x,int y){
- if(kind==6){
-  round_rect(x-4,y-5,7,9,2,C_WARN,15);
-  round_rect(x-3,y-4,5,7,1,C_PANEL2,15);
-  round_rect(x-2,y-3,3,2,1,C_WARN,15);
-  map_line(x+3,y-2,x+6,y+1,C_WARN,1);
-  map_line(x+6,y+1,x+6,y+5,C_WARN,1);
- }else if(kind==8){
-  round_rect(x-5,y-1,11,3,1,C_WHITE,15);
-  round_rect(x-1,y-5,3,11,1,C_WHITE,15);
- }else{
-  round_rect(x-5,y-6,11,12,2,C_MUTED,15);
-  round_rect(x-4,y-5,9,10,1,C_PANEL2,15);
-  centered(x,y-8,0,"P",C_MUTED);
+ if(kind<6||kind>8)return;
+ int icon=kind==6?0:kind==7?1:2;
+ u16 backing=theme_resolved?rgb(13,26,41):rgb(237,245,253);
+ u16 rim=theme_resolved?rgb(83,111,143):rgb(158,182,208);
+ u16 ink=icon==0?(theme_resolved?rgb(255,199,102):rgb(157,85,8)):
+  icon==1?(theme_resolved?rgb(120,181,255):rgb(0,99,207)):
+  (theme_resolved?rgb(97,218,187):rgb(0,116,96));
+ /* Small translucent badges use precomputed coverage, not backdrop filtering.
+  * Their full antialiased footprint stays inside the reserved 16x16 box. */
+ for(int j=0;j<16;j++)for(int i=0;i<16;i++){
+  int at=j*16+i,sx=x+i-8,sy=y+j-8;
+  blend_pixel(sx,sy,backing,(poi_coverage[0][at]*13+7)/15);
+  blend_pixel(sx,sy,rim,(poi_coverage[1][at]*10+7)/15);
+  blend_pixel(sx,sy,ink,poi_coverage[2+icon][at]);
  }
 }
 #define POI_CANDIDATES 32
@@ -1161,7 +1164,7 @@ static int poi_before(struct PoiLabel a,struct PoiLabel b){
  if(a.y!=b.y)return a.y>b.y;return a.x<b.x;
 }
 static void poi_offer(int x,int y,int kind,int prio){
- if(x<12||x>W-12||y<MAP_TOP+12||y>HUD_BOTTOM_Y-10)return;
+ if(x<12||x>W-12||y<MAP_TOP+12||y>HUD_BOTTOM_Y-11)return;
  for(int i=0;i<npoi;i++)if(poi_labels[i].kind==kind&&iabs32(poi_labels[i].x-x)<=2&&iabs32(poi_labels[i].y-y)<=2)return;
  struct PoiLabel p={x,y,kind,prio};int at=0;
  while(at<npoi&&!poi_before(p,poi_labels[at]))at++;
@@ -1171,9 +1174,9 @@ static void poi_offer(int x,int y,int kind,int prio){
 }
 static void poi_reserve(void){
  int count=npoi;poi_visible=0;
- for(int i=0;i<count&&poi_visible<(freecam?16:DRIVE_POI_LABELS);i++){
+ for(int i=0;i<count&&poi_visible<MAP_POI_LABELS;i++){
   struct PoiLabel p=poi_labels[i];
-  if(label_free(p.x-8,p.y-8,p.x+8,p.y+8))poi_labels[poi_visible++]=p;
+  if(label_space_free(p.x-8,p.y-8,p.x+8,p.y+8,0))poi_labels[poi_visible++]=p;
  }
 }
 static void poi_render(void){for(int i=0;i<poi_visible;i++)poi_icon(poi_labels[i].kind,poi_labels[i].x,poi_labels[i].y);}
