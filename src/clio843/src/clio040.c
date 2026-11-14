@@ -181,7 +181,7 @@ static u16 C_CYAN=0x64ff,C_WHITE=0xf7bf,C_BLUE=0x3c97,C_MUTED=0x9d76;
 static u16 C_DIM=0x63af,C_WARN=0xf524,C_ROAD=0x326c,C_WATER=0x1a4c,C_GREEN=0x2b4a;
 static u16 C_HEADER=0x08c3,C_ACTIVE=0x1a2b,C_ACTIVE_TEXT=0xf7ff,C_ACCENT=0x46b9,C_SHADOW=0x0041,C_HILITE=0x21a7;
 static u16 C_CAR=0xf4e8; /* Vehicle body follows the map theme. */
-static u16 C_ROUTE=0xac7e; /* Day violet / night lavender; separate from roads and vehicle. */
+static u16 C_ROUTE=0xfb36; /* Day raspberry / night bright pink; separate from roads and vehicle. */
 /* Map road colours are independent of text, focus and HUD accent colours.
  * Low-to-high coverage slots preserve the existing six-plane junction blend. */
 #define ROAD_RGB(r,g,b) (((r)>>3)<<11|((g)>>2)<<5|((b)>>3))
@@ -201,14 +201,14 @@ static int theme_resolved=1; /* 0 DAY, 1 NIGHT */
 static void apply_palette(int night){
   int next=night?1:0,changed=(next!=theme_resolved);theme_resolved=next;
   if(night){
-    C_CAR=0xf4e8;C_ROUTE=0xac7e;
+    C_CAR=0xf4e8;C_ROUTE=0xfb36;
     /* NIGHT: deep charcoal-blue surfaces with a restrained teal focus colour. */
     C_BG=0x0082; C_PANEL=0x1105; C_PANEL2=0x1146; C_BORDER=0x2a09;
     C_CYAN=0x46b9; C_WHITE=0xf7bf; C_BLUE=0x3c97; C_MUTED=0x9d76;
     C_DIM=0x63af; C_WARN=0xf524; C_ROAD=0x326c; C_WATER=0x1a4c; C_GREEN=0x2b4a;
     C_HEADER=0x08c3; C_PANEL=0x10e4; C_PANEL2=0x1926; C_BORDER=0x39e9; C_CYAN=0x64ff; C_ACTIVE=0x1a2b; C_ACTIVE_TEXT=0xffff; C_ACCENT=0x64ff; C_SHADOW=0x0041; C_HILITE=0x21a7;
   }else{
-    C_CAR=0xeb83;C_ROUTE=0x725b;
+    C_CAR=0xeb83;C_ROUTE=0xe150;
     /* DAY: warm/cool automotive greys rather than plain white inversion. */
     C_BG=0xef7d; C_PANEL=0xf7be; C_PANEL2=0xdf3c; C_BORDER=0xb618;
     C_CYAN=0x03f1; C_WHITE=0x1146; C_BLUE=0x33f3; C_MUTED=0x534e;
