@@ -1152,7 +1152,32 @@ static void poi_icon(int kind,int x,int y){
   centered(x,y-8,0,"P",C_MUTED);
  }
 }
-static void draw_tile_labels(struct Tile*t,int viewz,int plo,int phi){if(mapfmt<2||!t)return;const u8*p=t->data,*end=t->data+t->len;int hs=mapfmt>=3?8:4;if(t->len<(u32)hs)return;u16 ng=rd16(p),nl=rd16(p+2);p+=hs;for(u16 f=0;f<ng&&p+4<=end;f++){int np=p[2];p+=4+(unsigned)np*4;if(p>end)return;}int span=span_for_level((int)t->lvl);for(u16 i=0;i<nl&&p+8<=end;i++){if(!(i&15))render_checkpoint();int kind=p[0],prio=p[1];u16 lx=rd16(p+2),ly=rd16(p+4);int tl=p[6];p+=8;if(p+tl>end)return;if(prio>=plo&&prio<=phi&&tl>0&&tl<113){char b[113];int n=tl;for(int j=0;j<n;j++)b[j]=(char)p[j];b[n]=0;s32 lon=(s32)t->tx*span+((s32)lx*span)/4095;s32 lat=(s32)t->ty*span+((s32)ly*span)/4095;int x,y;world_to_screen(lat,lon,viewz,&x,&y);if(!freecam)drive_label_offer(x,y,kind,prio,b);else if(kind>=6){if(label_free(x-8,y-8,x+8,y+8))poi_icon(kind,x,y);}else{int w=textw(b,1),x0=x-w/2,y0=y-6;if(!label_text_seen(b)&&label_free(x0-2,y0-2,x0+w+2,y0+14)){u16 c=label_color(kind);text(x0+1,y0+1,b,C_BG,1);text(x0,y0,b,c,1);label_text_add(b);}}}p+=tl;}}
+#define POI_CANDIDATES 32
+struct PoiLabel {int x,y,kind,prio;};
+static struct PoiLabel poi_labels[POI_CANDIDATES];static int npoi,poi_visible;
+static int poi_before(struct PoiLabel a,struct PoiLabel b){
+ if(a.prio!=b.prio)return a.prio<b.prio;
+ /* Stable ordering independent of tile/cache traversal. */
+ if(a.y!=b.y)return a.y>b.y;return a.x<b.x;
+}
+static void poi_offer(int x,int y,int kind,int prio){
+ if(x<12||x>W-12||y<MAP_TOP+12||y>HUD_BOTTOM_Y-10)return;
+ for(int i=0;i<npoi;i++)if(poi_labels[i].kind==kind&&iabs32(poi_labels[i].x-x)<=2&&iabs32(poi_labels[i].y-y)<=2)return;
+ struct PoiLabel p={x,y,kind,prio};int at=0;
+ while(at<npoi&&!poi_before(p,poi_labels[at]))at++;
+ if(at>=POI_CANDIDATES)return;
+ if(npoi<POI_CANDIDATES)npoi++;
+ for(int i=npoi-1;i>at;i--)poi_labels[i]=poi_labels[i-1];poi_labels[at]=p;
+}
+static void poi_reserve(void){
+ int count=npoi;poi_visible=0;
+ for(int i=0;i<count&&poi_visible<(freecam?16:DRIVE_POI_LABELS);i++){
+  struct PoiLabel p=poi_labels[i];
+  if(label_free(p.x-8,p.y-8,p.x+8,p.y+8))poi_labels[poi_visible++]=p;
+ }
+}
+static void poi_render(void){for(int i=0;i<poi_visible;i++)poi_icon(poi_labels[i].kind,poi_labels[i].x,poi_labels[i].y);}
+static void draw_tile_labels(struct Tile*t,int viewz,int plo,int phi){if(mapfmt<2||!t)return;const u8*p=t->data,*end=t->data+t->len;int hs=mapfmt>=3?8:4;if(t->len<(u32)hs)return;u16 ng=rd16(p),nl=rd16(p+2);p+=hs;for(u16 f=0;f<ng&&p+4<=end;f++){int np=p[2];p+=4+(unsigned)np*4;if(p>end)return;}int span=span_for_level((int)t->lvl);for(u16 i=0;i<nl&&p+8<=end;i++){if(!(i&15))render_checkpoint();int kind=p[0],prio=p[1];u16 lx=rd16(p+2),ly=rd16(p+4);int tl=p[6];p+=8;if(p+tl>end)return;if(((plo==256&&kind>=6)||(plo!=256&&kind<6&&prio>=plo&&prio<=phi))&&tl>0&&tl<113){char b[113];int n=tl;for(int j=0;j<n;j++)b[j]=(char)p[j];b[n]=0;s32 lon=(s32)t->tx*span+((s32)lx*span)/4095;s32 lat=(s32)t->ty*span+((s32)ly*span)/4095;int x,y;world_to_screen(lat,lon,viewz,&x,&y);if(kind>=6){if(plo==256)poi_offer(x,y,kind,prio);}else if(plo!=256){if(!freecam)drive_label_offer(x,y,kind,prio,b);else{int w=textw(b,1),x0=x-w/2,y0=y-6;if(!label_text_seen(b)&&label_free(x0-2,y0-2,x0+w+2,y0+14)){u16 c=label_color(kind);text(x0+1,y0+1,b,C_BG,1);text(x0,y0,b,c,1);label_text_add(b);}}}}p+=tl;}}
 
 /* Current road context: at Z6 each road geometry may reference tile-local
  * metadata. CPM3 records are [speed_mph, text_len, text]; CPM4 records are
@@ -2150,9 +2175,7 @@ static int drive_label_primary(const struct DriveLabel*d){
 }
 static void drive_label_offer(int x,int y,int kind,int prio,const char*name){
   if(freecam||!name||!name[0])return;
-  if(kind>=6){ /* only useful, nearby POIs; remove distant icon clutter */
-    if(prio>47||y<119||y>208||x<18||x>W-18)return;
-  }else{
+  if(kind>=6){poi_offer(x,y,kind,prio);return;}else{
     int w=textw(name,1),x0=x-w/2;
     if(x0<8||x0+w>W-8||y<80||y>202)return;
     if(roadctx.valid&&roadctx.street[0]&&drive_label_eq(name,roadctx.street))return;
@@ -2193,7 +2216,7 @@ static int drive_label_hits_route(int x0,int y0,int x1,int y1){
 }
 static void drive_label_render(void){
   if(freecam)return;
-  int road_count=0,poi_count=0,order[DRIVE_LABEL_CANDIDATES];
+  int road_count=0,order[DRIVE_LABEL_CANDIDATES];
   for(int i=0;i<ndrive_labels;i++)order[i]=i;
   /* A small, bounded insertion sort; no allocations or tile re-reads. */
   for(int i=1;i<ndrive_labels;i++){
@@ -2203,7 +2226,7 @@ static void drive_label_render(void){
     }
     order[j]=idx;
   }
-  nlbox=0;nltxt=0;
+  nltxt=0;
   for(int pass=0;pass<2&&road_count<DRIVE_ROAD_LABELS;pass++){
     /* Pass 0: unobtrusive REV12 names, ordered by road priority/vicinity.
      * Pass 1: only if under six, admit distant/minor names into free space. */
@@ -2220,14 +2243,7 @@ static void drive_label_render(void){
       }
     }
   }
-  /* POIs remain a separate two-icon budget and cannot steal road-label slots. */
-  for(int k=0;k<ndrive_labels&&poi_count<DRIVE_POI_LABELS;k++){
-    struct DriveLabel*d=&drive_labels[order[k]];
-    if(d->kind<6)continue;
-    int x=d->x,y=d->y;
-    if(drive_label_hits_route(x-7,y-7,x+7,y+7))continue;
-    if(label_free(x-8,y-8,x+8,y+8)){poi_icon(d->kind,x,y);poi_count++;}
-  }
+
 }
 static void append_miles_hud(char*b,unsigned cap,u32 m){if(!display_imperial()){append_metric_distance(b,cap,m,0);return;}u32 mi10=udiv32(m*10u+804u,1609u);if(mi10>=100u){append_int(b,cap,(int)udiv32(mi10+5u,10u));appendstr(b,cap,"mi");}else{append_int(b,cap,(int)(mi10/10u));appendstr(b,cap,".");char d[2]={(char)('0'+mi10%10u),0};appendstr(b,cap,d);appendstr(b,cap,"mi");}}
 static void append_eta_hud(char*b,unsigned cap,u32 ds){u32 min=udiv32(ds+300u,600u);if(min>=60u){append_int(b,cap,(int)(min/60u));appendstr(b,cap,"h");if(min%60u<10u)appendstr(b,cap,"0");append_int(b,cap,(int)(min%60u));}else{append_int(b,cap,(int)min);appendstr(b,cap,"min");}}
@@ -2292,7 +2308,7 @@ static void fill_car_triangle(int nx,int ny,int lx,int ly,int rx,int ry){
 }
 static void draw_car_marker(int z){if(!gps.fix)return;int cx,cy;world_to_screen(car_lat(),car_lon(),z,&cx,&cy);if(cx<-15||cx>W+15||cy<MAP_TOP-12||cy>MAP_BOTTOM+12)return;int carc=map_course(),vc=view_course();int rel=view_rotates()?carc-vc:carc;while(rel<0)rel+=360;while(rel>=360)rel-=360;int k=((rel+5)/10)%36,ss=SIN36[k],c=COS36[k];int nx=cx+(ss*10>>15),ny=cy-(c*10>>15);int lx=cx+((-c*7)>>15),ly=cy+((-ss*7)>>15);int rx=cx+((c*7)>>15),ry=cy+((ss*7)>>15);fill_car_triangle(nx,ny,lx,ly,rx,ry);map_mask_begin(3);map_line(nx,ny,lx,ly,C_CAR,2);map_line(nx,ny,rx,ry,C_CAR,2);map_line(lx,ly,rx,ry,C_CAR,2);map_mask_end();}
 static void draw_explore_crosshair(void){if(!freecam)return;int x=240,y=160;map_line(x-12,y,x-4,y,C_DIM,1);map_line(x+4,y,x+12,y,C_DIM,1);map_line(x,y-12,x,y-4,C_DIM,1);map_line(x,y+4,x,y+12,C_DIM,1);rect(x-2,y-2,5,5,C_DIM);}
-static void draw_map_geometry(int z){fill(0,MAP_TOP,W,MAP_BOTTOM-MAP_TOP,C_BG);if(!mapok||(!gps.fix&&!freecam&&!track_valid))return;s32 vl=view_lat(),vo=view_lon();if(!map_view_covered(vl,vo))return;int sourcez=z>6?6:clamp_map_zoom(z),tx0,tx1,ty0,ty1;
+static void draw_map_geometry(int z){npoi=poi_visible=0;nlbox=nltxt=0;fill(0,MAP_TOP,W,MAP_BOTTOM-MAP_TOP,C_BG);if(!mapok||(!gps.fix&&!freecam&&!track_valid))return;s32 vl=view_lat(),vo=view_lon();if(!map_view_covered(vl,vo))return;int sourcez=z>6?6:clamp_map_zoom(z),tx0,tx1,ty0,ty1;
   map_visible_tile_bounds(z,sourcez,&tx0,&tx1,&ty0,&ty1);
   /* Ocean polygons retain close-zoom precision in shared Z0..Z3 tiles.
    * Reuse Z3 at closer zooms to avoid millions of redundant offshore tiles.
@@ -2317,7 +2333,11 @@ static void draw_map_geometry(int z){fill(0,MAP_TOP,W,MAP_BOTTOM-MAP_TOP,C_BG);i
         phase==0?MAP_DRAW_AREAS:(phase==1?MAP_DRAW_CONTEXT:MAP_DRAW_ROADS));
     if(phase)map_mask_end();
   }
-  if(mapfmt>=2){nlbox=0;nltxt=0;static const int cuts[5]={0,16,32,48,255};
+  if(mapfmt>=2){
+    for(int ty=ty0;ty<=ty1;ty++)for(int tx=tx0;tx<=tx1;tx++)
+      if(map_tile_in_pack(sourcez,tx,ty))draw_tile_labels(get_tile((u8)sourcez,tx,ty),z,256,256);
+    poi_reserve();
+    static const int cuts[5]={0,16,32,48,256};
     for(int b=0;b<4;b++)for(int ty=ty0;ty<=ty1;ty++)for(int tx=tx0;tx<=tx1;tx++)
       if(map_tile_in_pack(sourcez,tx,ty))draw_tile_labels(get_tile((u8)sourcez,tx,ty),z,cuts[b],cuts[b+1]-1);
   }}
@@ -2365,10 +2385,10 @@ struct OldTripState {int active;s32 dest_lat,dest_lon;char dest_name[32];};
 static struct SavedPlace recents[RECENT_MAX],faves[FAVE_MAX];static int nrecents=0,nfaves=0;
 static struct TripState trip;static int trip_need_route=0,trip_route_defer=0,arrival_ticks=0;
 
-enum {MOD_NONE=0,MOD_ROUTE_POINT=1,MOD_RECENT=2,MOD_FAVE=3,MOD_CANCEL_ROUTE=4,MOD_TARGET=5,MOD_REMOVE_STOP=6,MOD_ARRIVED_STOP=7,MOD_ARRIVED_DEST=8,MOD_RESUME_TRIP=9,MOD_SOURCE_PICK=10,MOD_WAIT_PHONE=11};
+enum {MOD_NONE=0,MOD_ROUTE_POINT=1,MOD_RECENT=2,MOD_FAVE=3,MOD_CANCEL_ROUTE=4,MOD_TARGET=5,MOD_REMOVE_STOP=6,MOD_ARRIVED_STOP=7,MOD_ARRIVED_DEST=8,MOD_RESUME_TRIP=9,MOD_SOURCE_PICK=10};
 static int modal=MOD_NONE,modal_choice=0,modal_index=-1;static s32 pending_lat=0,pending_lon=0;static int pending_point_stop=0;
 enum {DEST_PICK_NONE=0,DEST_PICK_ADD_STOP=1,DEST_PICK_CHANGE_DEST=2};
-static int dest_pick_action=DEST_PICK_NONE,trip_pick_mode=DEST_PICK_NONE,phone_wait_action=DEST_PICK_NONE;
+static int dest_pick_action=DEST_PICK_NONE,trip_pick_mode=DEST_PICK_NONE;
 struct PhoneDestination {int valid;u16 seq;char action;s32 lat,lon;char name[161];};
 static struct PhoneDestination phone_dest;static int phone_seq_seen_valid=0;static u16 phone_seq_seen=0;
 #define ARRIVAL_MODAL_MS 5000u
@@ -2381,7 +2401,7 @@ static char notice_text[40]; /* Latest action, also used by native checks. */
 static void draw_map_background(void){
  int z=active_zoom();perspective_scale_update();
  if(!freecam)drive_label_prepare(z);
- draw_map_geometry(z);draw_route_overlay(z);if(!freecam)drive_label_render();
+ draw_map_geometry(z);draw_route_overlay(z);if(!freecam)drive_label_render();poi_render();
  draw_car_marker(z);draw_explore_crosshair();
 }
 static void draw_map(void){
@@ -2415,7 +2435,7 @@ static void notice_success(const char*s){notice_set(s,0);}
 static void notice_fail(const char*s){notice_set(s,1);}
 static void poll_phone_destination(void){char b[384];long fd=s_open(BT_NAV_PATH,O_RDONLY_,0);if(fd<0)return;long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n<=0)return;b[n]=0;int have_seq=0,have_action=0,have_lat=0,have_lon=0;int seqi=0;s32 lat=0,lon=0;char action=0,name[161];copystr(name,sizeof(name),"PHONE DESTINATION");char*ln=b;for(long i=0;i<=n;i++){if(b[i]=='\r'||b[i]=='\n'||b[i]==0){char save=b[i];b[i]=0;if(starts(ln,"SEQ=")){seqi=atoi0(ln+4);have_seq=seqi>=0&&seqi<=65535;}else if(starts(ln,"ACTION=")){action=ln[7];have_action=(action=='N'||action=='S')&&ln[8]==0;}else if(starts(ln,"LAT=")){lat=(s32)atoi0(ln+4);have_lat=lat>=-9000000&&lat<=9000000;}else if(starts(ln,"LON=")){lon=(s32)atoi0(ln+4);have_lon=lon>=-18000000&&lon<=18000000;}else if(starts(ln,"NAME=")){copystr_limit(name,sizeof(name),ln+5,40);}if(!save)break;ln=b+i+1;}}
   if(!have_seq||!have_action||!have_lat||!have_lon)return;u16 seq=(u16)seqi;if(phone_seq_seen_valid&&phone_seq_seen==seq)return;phone_seq_seen=seq;phone_seq_seen_valid=1;phone_dest.valid=1;phone_dest.seq=seq;phone_dest.action=action;phone_dest.lat=lat;phone_dest.lon=lon;copystr(phone_dest.name,sizeof(phone_dest.name),name[0]?name:"PHONE DESTINATION");}
-static void phone_destination_clear(void){phone_dest.valid=0;phone_wait_action=DEST_PICK_NONE;}
+static void phone_destination_clear(void){phone_dest.valid=0;}
 
 static struct TripTarget* trip_current(void){if(!trip.active||trip.count<1||trip.active_idx>=trip.count)return 0;return &trip.target[trip.active_idx];}
 static int trip_current_is_destination(void){return trip.active&&trip.count&&trip.active_idx==trip.count-1;}
@@ -2427,8 +2447,7 @@ static void set_destination(const char*name,s32 lat,s32 lon){memzero(&trip,sizeo
 static void clear_trip(void){memzero(&trip,sizeof(trip));save_trip();arrival_ticks=0;trip_need_route=trip_route_defer=0;route_cancel();}
 static int trip_add_stop(const char*name,s32 lat,s32 lon){if(!trip.active||trip.count<1||trip.count>=TRIP_MAX_TARGETS)return 0;int ins=trip.count-1;for(int i=trip.count;i>ins;i--)trip.target[i]=trip.target[i-1];trip.target[ins].lat=lat;trip.target[ins].lon=lon;copystr(trip.target[ins].name,sizeof(trip.target[ins].name),name&&name[0]?name:"MAP POINT");trip.count++;if(ins==trip.active_idx)trip_schedule_route();save_trip();notice_success(ui_tr("Stop added"));return 1;}
 static void trip_change_destination(const char*name,s32 lat,s32 lon){if(!trip.active||!trip.count){set_destination(name,lat,lon);return;}int i=trip.count-1;int changed=trip.target[i].lat!=lat||trip.target[i].lon!=lon||!streq(trip.target[i].name,name);trip.target[i].lat=lat;trip.target[i].lon=lon;copystr(trip.target[i].name,sizeof(trip.target[i].name),name&&name[0]?name:"MAP POINT");add_recent(trip.target[i].name,lat,lon);save_trip();if(i==trip.active_idx)trip_schedule_route();if(changed)notice_success(ui_tr("Destination changed"));}
-static void phone_destination_apply(void){if(coordinates_active&&screen!=SCR_COORDINATES&&!(screen==SCR_KEY&&kbd_action==KBD_NAME_COORDINATES))coordinates_active=0;if(!phone_dest.valid||coordinates_active)return;int action=phone_wait_action;if(action==DEST_PICK_NONE)action=phone_dest.action=='S'?DEST_PICK_ADD_STOP:0;if(modal!=MOD_NONE&&modal!=MOD_WAIT_PHONE)return;if(modal==MOD_WAIT_PHONE)modal=MOD_NONE;if(action==DEST_PICK_CHANGE_DEST){if(trip.active&&trip.count){trip_change_destination(phone_dest.name,phone_dest.lat,phone_dest.lon);}else notice_fail(ui_tr("No active route"));}
-  else if(action==DEST_PICK_ADD_STOP){if(!trip.active||!trip.count)notice_fail(ui_tr("No active route"));else if(trip.count>=TRIP_MAX_TARGETS)notice_fail(ui_tr("Trip full - stop not added"));else if(trip_add_stop(phone_dest.name,phone_dest.lat,phone_dest.lon)){add_recent(phone_dest.name,phone_dest.lat,phone_dest.lon);}else notice_fail(ui_tr("Stop not added"));}
+static void phone_destination_apply(void){if(coordinates_active&&screen!=SCR_COORDINATES&&!(screen==SCR_KEY&&kbd_action==KBD_NAME_COORDINATES))coordinates_active=0;if(!phone_dest.valid||coordinates_active)return;int action=phone_dest.action=='S'?DEST_PICK_ADD_STOP:DEST_PICK_NONE;if(modal!=MOD_NONE)return;if(action==DEST_PICK_ADD_STOP){if(!trip.active||!trip.count)notice_fail(ui_tr("No active route"));else if(trip.count>=TRIP_MAX_TARGETS)notice_fail(ui_tr("Trip full - stop not added"));else if(trip_add_stop(phone_dest.name,phone_dest.lat,phone_dest.lon)){add_recent(phone_dest.name,phone_dest.lat,phone_dest.lon);}else notice_fail(ui_tr("Stop not added"));}
   else{set_destination(phone_dest.name,phone_dest.lat,phone_dest.lon);screen=SCR_MAP;recenter_map();}
   phone_destination_clear();}
 static void trip_remove_stop(int idx){if(!trip.active||idx<trip.active_idx||idx<0||idx>=trip.count-1)return;int was_current=idx==trip.active_idx;for(int i=idx+1;i<trip.count;i++)trip.target[i-1]=trip.target[i];trip.count--;save_trip();if(was_current)trip_schedule_route();notice_success(ui_tr("Stop removed"));}
@@ -2471,8 +2490,7 @@ static void draw_trip(void){
   trip_item(249,route_y+(rem+1)*route_step,220,ui_tr("Cancel route"),trip_pane==1&&trip_right_focus==rem+1);
  }else{
   centered(359,110,1,ui_tr("Choose a destination"),C_WHITE);centered(359,132,0,ui_tr("from your saved places"),C_MUTED);
-  trip_item(253,168,214,ui_tr("Send from phone"),trip_pane==1&&trip_right_focus==0);
-  trip_item(253,198,214,ui_tr("Coordinates"),trip_pane==1&&trip_right_focus==1);
+  trip_item(253,198,214,ui_tr("Coordinates"),trip_pane==1);
  }
  if(trip.active&&route_status==R_READY){
   char m[64]="";append_miles(m,sizeof(m),route_path_m());appendstr(m,sizeof(m),"  ~");
@@ -2600,7 +2618,7 @@ static void settings_key(int code){
  prefs_mark_dirty();
 }
 
-static int modal_action_count(void){if(modal==MOD_RECENT)return trip.active?3:2;if(modal==MOD_FAVE)return trip.active?4:3;if(modal==MOD_TARGET){if(modal_index>=0&&modal_index<trip.count-1)return 3;return 2;}if(modal==MOD_SOURCE_PICK)return 5;return 0;}
+static int modal_action_count(void){if(modal==MOD_RECENT)return trip.active?3:2;if(modal==MOD_FAVE)return trip.active?4:3;if(modal==MOD_TARGET){if(modal_index>=0&&modal_index<trip.count-1)return 3;return 2;}if(modal==MOD_SOURCE_PICK)return 4;return 0;}
 #include "popups.h"
 
 static void draw(void){freecam_orientation_anim_update(hud_now_ms());clock_service();region_service();camera_service();refresh_theme();if(screen==SCR_MAP){draw_map();}else if(screen==SCR_MENU)draw_menu();else if(screen==SCR_TRIP)draw_trip();else if(screen==SCR_BT)draw_bluetooth();else if(screen==SCR_KEY)draw_keyboard();else if(screen==SCR_COORDINATES)draw_coordinates();else draw_settings();if(screen!=SCR_MAP)header();draw_modal();fb_flush();}
@@ -2618,12 +2636,12 @@ static void open_inputs(void){for(int i=0;i<INPUT_MAX;i++)infd[i]=-1;input_lock=
 static void keydiag(int code){if(!pref.debug)return;char b[48]="KEY code=";append_int(b,sizeof(b),code);log_append(KEY_LOG,b);}
 static void key_handle_state(int code){render_background_dirty=1;keydiag(code);
 /* Arrival/resume prompts cannot be silently escaped with MAP/BACK. */
-if(code==K_MAP&&screen!=SCR_MAP&&modal!=MOD_RESUME_TRIP&&modal!=MOD_ARRIVED_STOP&&modal!=MOD_ARRIVED_DEST){coordinates_active=0;modal=MOD_NONE;dest_pick_action=DEST_PICK_NONE;phone_wait_action=DEST_PICK_NONE;trip_pick_mode=DEST_PICK_NONE;screen=SCR_MAP;recenter_map();return;}
+if(code==K_MAP&&screen!=SCR_MAP&&modal!=MOD_RESUME_TRIP&&modal!=MOD_ARRIVED_STOP&&modal!=MOD_ARRIVED_DEST){coordinates_active=0;modal=MOD_NONE;dest_pick_action=DEST_PICK_NONE;trip_pick_mode=DEST_PICK_NONE;screen=SCR_MAP;recenter_map();return;}
 if(modal!=MOD_NONE){
   int yesno=modal==MOD_ROUTE_POINT||modal==MOD_CANCEL_ROUTE||modal==MOD_REMOVE_STOP||modal==MOD_RESUME_TRIP;
-  if(code==K_BACK&&modal!=MOD_ARRIVED_STOP&&modal!=MOD_ARRIVED_DEST&&modal!=MOD_RESUME_TRIP){if(modal==MOD_WAIT_PHONE)phone_wait_action=DEST_PICK_NONE;if(modal==MOD_SOURCE_PICK)dest_pick_action=DEST_PICK_NONE;modal=MOD_NONE;return;}
+  if(code==K_BACK&&modal!=MOD_ARRIVED_STOP&&modal!=MOD_ARRIVED_DEST&&modal!=MOD_RESUME_TRIP){if(modal==MOD_SOURCE_PICK)dest_pick_action=DEST_PICK_NONE;modal=MOD_NONE;return;}
   if(yesno&&(code==K_LEFT||code==K_RIGHT)){modal_choice=modal_choice?0:1;return;}
-  if(!yesno&&modal!=MOD_WAIT_PHONE&&modal!=MOD_ARRIVED_STOP&&modal!=MOD_ARRIVED_DEST){int n=modal_action_count();if((code==K_UP||code==K_LEFT)&&modal_choice>0){modal_choice--;return;}if((code==K_DOWN||code==K_RIGHT)&&modal_choice+1<n){modal_choice++;return;}}
+  if(!yesno&&modal!=MOD_ARRIVED_STOP&&modal!=MOD_ARRIVED_DEST){int n=modal_action_count();if((code==K_UP||code==K_LEFT)&&modal_choice>0){modal_choice--;return;}if((code==K_DOWN||code==K_RIGHT)&&modal_choice+1<n){modal_choice++;return;}}
   if(code==K_ENTER){
     if(modal==MOD_ROUTE_POINT){
       if(modal_choice==0){
@@ -2644,7 +2662,7 @@ if(modal!=MOD_NONE){
     if(modal==MOD_RESUME_TRIP){if(modal_choice==0){trip.paused=0;trip_need_route=1;trip_route_defer=1;notice_success(ui_tr("Trip resumed"));}else if(trip.active){clear_trip();notice_success(ui_tr("Route cancelled"));}modal=MOD_NONE;return;}
     if(modal==MOD_ARRIVED_STOP){arrival_modal_deadline=0;modal=MOD_NONE;trip_continue_after_stop();screen=SCR_MAP;recenter_map();return;}
     if(modal==MOD_ARRIVED_DEST){arrival_modal_deadline=0;modal=MOD_NONE;clear_trip();screen=SCR_MAP;recenter_map();return;}
-    if(modal==MOD_SOURCE_PICK){if(modal_choice==0||modal_choice==1){trip_pick_mode=dest_pick_action;trip_tab=modal_choice;trip_pane=0;trip_focus=0;dest_pick_action=DEST_PICK_NONE;modal=MOD_NONE;screen=SCR_TRIP;}else if(modal_choice==2){phone_wait_action=dest_pick_action;dest_pick_action=DEST_PICK_NONE;modal=MOD_WAIT_PHONE;modal_choice=0;}else if(modal_choice==3){int action=dest_pick_action;dest_pick_action=DEST_PICK_NONE;coordinates_open(action);}else{dest_pick_action=DEST_PICK_NONE;modal=MOD_NONE;}return;}
+    if(modal==MOD_SOURCE_PICK){if(modal_choice==0||modal_choice==1){trip_pick_mode=dest_pick_action;trip_tab=modal_choice;trip_pane=0;trip_focus=0;dest_pick_action=DEST_PICK_NONE;modal=MOD_NONE;screen=SCR_TRIP;}else if(modal_choice==2){int action=dest_pick_action;dest_pick_action=DEST_PICK_NONE;coordinates_open(action);}else{dest_pick_action=DEST_PICK_NONE;modal=MOD_NONE;}return;}
 
     if(modal==MOD_RECENT&&modal_index>=0&&modal_index<nrecents){struct SavedPlace*p=&recents[modal_index];if(trip.active){if(modal_choice==0){if(trip_add_stop(p->name,p->lat,p->lon))add_recent(p->name,p->lat,p->lon);}else if(modal_choice==1){set_destination(p->name,p->lat,p->lon);screen=SCR_TRIP;trip_pane=1;trip_right_focus=0;}else add_fave(p);}else{if(modal_choice==0){set_destination(p->name,p->lat,p->lon);screen=SCR_TRIP;trip_pane=1;trip_right_focus=0;}else add_fave(p);}modal=MOD_NONE;return;}
     if(modal==MOD_FAVE&&modal_index>=0&&modal_index<nfaves){struct SavedPlace p=faves[modal_index];if(trip.active){if(modal_choice==0){if(trip_add_stop(p.name,p.lat,p.lon))add_recent(p.name,p.lat,p.lon);}else if(modal_choice==1){set_destination(p.name,p.lat,p.lon);screen=SCR_TRIP;trip_pane=1;trip_right_focus=0;}else if(modal_choice==2){keyboard_open_fave_rename(modal_index);screen=SCR_KEY;modal=MOD_NONE;return;}else remove_fave(modal_index);}else{if(modal_choice==0){set_destination(p.name,p.lat,p.lon);screen=SCR_TRIP;trip_pane=1;trip_right_focus=0;}else if(modal_choice==1){keyboard_open_fave_rename(modal_index);screen=SCR_KEY;modal=MOD_NONE;return;}else remove_fave(modal_index);}modal=MOD_NONE;return;}
@@ -2699,7 +2717,7 @@ if(screen==SCR_TRIP){
   if(code==K_ESC){if(trip_pick_mode!=DEST_PICK_NONE){trip_pick_mode=DEST_PICK_NONE;trip_pane=1;trip_right_focus=0;}else trip_pane=0;return;}if(code==K_SR){if(trip_pick_mode!=DEST_PICK_NONE){trip_pick_mode=DEST_PICK_NONE;}trip_pane=1;trip_right_focus=0;return;}
   if(trip_pane==0){int maxf=trip_tab==0?(nrecents?nrecents-1:0):(nfaves?nfaves-1:0);if(code==K_LEFT||code==K_RIGHT){trip_tab=trip_tab?0:1;trip_focus=0;return;}if(code==K_UP&&trip_focus>0)trip_focus--;else if(code==K_DOWN&&trip_focus<maxf)trip_focus++;else if(code==K_ENTER){struct SavedPlace p;int ok=0;if(trip_tab==0&&trip_focus<nrecents){p=recents[trip_focus];ok=1;}else if(trip_tab==1&&trip_focus<nfaves){p=faves[trip_focus];ok=1;}if(ok&&trip_pick_mode!=DEST_PICK_NONE){if(trip_pick_mode==DEST_PICK_ADD_STOP){if(trip_add_stop(p.name,p.lat,p.lon)){add_recent(p.name,p.lat,p.lon);}else notice_fail(ui_tr("Stop not added"));}else{trip_change_destination(p.name,p.lat,p.lon);}trip_pick_mode=DEST_PICK_NONE;trip_pane=1;trip_right_focus=0;return;}if(ok){modal=trip_tab==0?MOD_RECENT:MOD_FAVE;modal_index=trip_focus;modal_choice=0;}return;}}
   else if(trip.active){int rem=trip.count-trip.active_idx,total=rem+2;if(code==K_UP&&trip_right_focus>0)trip_right_focus--;else if(code==K_DOWN&&trip_right_focus+1<total)trip_right_focus++;else if(code==K_ENTER){if(trip_right_focus<rem){modal=MOD_TARGET;modal_index=trip.active_idx+trip_right_focus;modal_choice=0;}else if(trip_right_focus==rem){if(trip.count<TRIP_MAX_TARGETS){dest_pick_action=DEST_PICK_ADD_STOP;modal=MOD_SOURCE_PICK;modal_choice=0;}}else{modal=MOD_CANCEL_ROUTE;modal_choice=1;}return;}}
-  else{if(code==K_UP)trip_right_focus=0;else if(code==K_DOWN)trip_right_focus=1;else if(code==K_ENTER){if(trip_right_focus==1)coordinates_open(DEST_PICK_NONE);else{phone_wait_action=DEST_PICK_NONE;modal=MOD_WAIT_PHONE;modal_choice=0;}}}
+  else{trip_right_focus=0;if(code==K_ENTER)coordinates_open(DEST_PICK_NONE);}
   return;}
 if(screen==SCR_BT){if(code==K_ESC){bt_page_dialog=-1;return;}if(bt_page_dialog>=0){if(code==K_LEFT){bt_page_dialog_choice=0;return;}if(code==K_RIGHT){bt_page_dialog_choice=1;return;}if(code==K_ENTER){if(bt_page_dialog>=nbtdev){bt_page_dialog=-1;return;}if(bt_page_dialog_choice==0)bt_command_arg("CONNECT",btdev[bt_page_dialog].addr);else bt_forget_device(btdev[bt_page_dialog].addr);bt_page_dialog=-1;return;}return;}bt_page_clamp();int ci=bt_connected_idx(),base=ci>=0?1:0,sc=bt_saved_count(),total=base+sc+1;if(code==K_UP&&bt_page_focus>0){bt_page_focus--;return;}if(code==K_DOWN&&bt_page_focus+1<total){bt_page_focus++;return;}if(ci>=0&&bt_page_focus==0){if(code==K_LEFT){bt_page_connected_choice=0;return;}if(code==K_RIGHT){bt_page_connected_choice=1;return;}if(code==K_ENTER){if(bt_page_connected_choice==0)bt_command_arg("DISCONNECT",btdev[ci].addr);else bt_forget_device(btdev[ci].addr);return;}return;}if(code==K_ENTER){int ord=bt_page_focus-base;if(ord>=0&&ord<sc){int di=bt_saved_idx(ord);if(di>=0){bt_page_dialog=di;bt_page_dialog_choice=0;}return;}if(ord==sc){bt_command("PAIR");return;}}return;}
 if(screen==SCR_SET)settings_key(code);}

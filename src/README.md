@@ -154,7 +154,8 @@ calculation uses the existing five-frame-per-second cap. Declining keeps Explore
   Change destination task. In the itinerary, **Up / Down** moves through the
   route, and **OK** opens the selected stop or destination's actions, the
   Add stop choices, or the cancel confirmation. With an empty itinerary, choose
-  **Send from phone** or **Coordinates**, then press **OK**. **BACK** or either
+  **Coordinates**, then press **OK**. Phone destinations and stops arrive
+  automatically without a head-unit receive option. **BACK** or either
   soft key cancels an in-progress destination selection and returns to the itinerary.
 - **Bluetooth:** use **Up / Down** to move between the connected phone, saved
   phones and **Pair new phone**. On the connected phone, **Left / Right** selects
@@ -379,3 +380,10 @@ Phone destinations wait while this editor is open. Explicit coordinate
 confirmation takes precedence over a phone destination received during entry;
 cancelling leaves the received destination available to the existing phone flow.
 Physical audio, controls and navigation behaviour still need the vehicle checks.
+
+POI layout uses a separate bounded candidate pool, reserves icon space before
+road/place names, and selects independently of tile traversal order. Driving
+retains a two-icon budget; Explore permits up to 16 non-overlapping icons.
+Parking, fuel and hospitals use the POIs available in the installed zoom tiles.
+No map rebuild is required for this renderer correction; missing source POIs
+cannot be added by the renderer.

@@ -8,7 +8,7 @@
 static void baseline(void){
  coordinates_active=0;memzero(&coordinates,sizeof(coordinates));memzero(&trip,sizeof(trip));
  nrecents=nfaves=0;trip_need_route=trip_route_defer=0;gps.fix=0;screen=SCR_TRIP;
- trip_pane=1;trip_right_focus=0;modal=MOD_NONE;trip_pick_mode=dest_pick_action=phone_wait_action=DEST_PICK_NONE;
+ trip_pane=1;trip_right_focus=0;modal=MOD_NONE;trip_pick_mode=dest_pick_action=DEST_PICK_NONE;
  phone_dest.valid=0;pref.language=0;pref_keyboard_language=-1;kbd_picker=0;kbd_action=KBD_NAME_FAVE;
  hud_capture_clock=1;hud_capture_ms=10000;route_status=hud_observed_route=R_IDLE;
  hud_navigation.kind=hud_source.kind=hud_audio.kind=hud_connection.kind=hud_bt_feedback.kind=HUD_NONE;
@@ -23,7 +23,7 @@ static void name(const char*s){assert(screen==SCR_KEY&&kbd_action==KBD_NAME_COOR
 static void location(const char*lat,const char*lon,const char*title){digits(lat);key_handle(K_SR);assert(coordinates.step==COORD_LON);digits(lon);key_handle(K_SR);assert(screen==SCR_KEY);name(title);}
 static void source(int action){
  screen=SCR_TRIP;modal=MOD_SOURCE_PICK;dest_pick_action=action;modal_choice=0;
- for(int i=0;i<3;i++)key_handle(K_DOWN);key_handle(K_ENTER);
+ for(int i=0;i<2;i++)key_handle(K_DOWN);key_handle(K_ENTER);
  assert(coordinates_active&&coordinates.action==action&&screen==SCR_COORDINATES);
 }
 static void parser(void){
@@ -44,8 +44,7 @@ static void parser(void){
  for(s32 v=-18000000;v<=18000000;v+=9973){char b[20];s32 back;coordinate_format(b,sizeof(b),v);assert(coordinate_parse(b,180,&back)&&back==v);}
 }
 static void entry_and_cancel(void){
- baseline();key_handle(K_ENTER);assert(modal==MOD_WAIT_PHONE);key_handle(K_BACK);
- key_handle(K_DOWN);key_handle(K_ENTER);assert(screen==SCR_COORDINATES&&coordinates_active);
+ baseline();key_handle(K_DOWN);key_handle(K_ENTER);assert(screen==SCR_COORDINATES&&coordinates_active);
  key_handle(K_SR);assert(coordinates.error&&coordinates.step==COORD_LAT&&!nrecents);
  digits("90.000001");key_handle(K_SR);assert(coordinates.error&&screen==SCR_COORDINATES);
  coordinates.focus=14;key_handle(K_ENTER);assert(!coordinates.value[0][0]&&!coordinates.error);
@@ -57,7 +56,7 @@ static void entry_and_cancel(void){
  key_handle(K_BACK);assert(coordinates.step==COORD_LON&&screen==SCR_COORDINATES);
  key_handle(K_BACK);assert(coordinates.step==COORD_LAT);key_handle(K_BACK);
  assert(screen==SCR_TRIP&&!coordinates_active&&!trip.active&&!nrecents);
- source(DEST_PICK_ADD_STOP);key_handle(K_BACK);assert(modal==MOD_SOURCE_PICK&&modal_choice==3&&!coordinates_active);
+ source(DEST_PICK_ADD_STOP);key_handle(K_BACK);assert(modal==MOD_SOURCE_PICK&&modal_choice==2&&!coordinates_active);
  key_handle(K_BACK);coordinates_open(DEST_PICK_NONE);digits("-");key_handle(K_ENTER); /* +/- selected: remove sign */
  assert(!coordinates.value[0][0]);coordinates.focus=11;key_handle(K_ENTER);assert(streq(coordinates.value[0],"0."));
  key_handle(K_ENTER);assert(streq(coordinates.value[0],"0."));key_handle(K_ESC);assert(streq(coordinates.value[0],"0"));
@@ -97,14 +96,14 @@ static void save_and_reuse(void){
  /* Choose the real itinerary Add stop action, then Coordinates. */
  screen=SCR_TRIP;trip_pane=1;trip_right_focus=0;key_handle(K_DOWN);key_handle(K_ENTER);
  assert(modal==MOD_SOURCE_PICK&&dest_pick_action==DEST_PICK_ADD_STOP);
- for(int i=0;i<3;i++)key_handle(K_DOWN);key_handle(K_ENTER);location("54.98000","-1.64000","");
+ for(int i=0;i<2;i++)key_handle(K_DOWN);key_handle(K_ENTER);location("54.98000","-1.64000","");
  assert(nrecents==1&&trip.count==1);key_handle(K_ENTER);
  assert(screen==SCR_TRIP&&trip_pane==1&&trip.count==2&&trip.target[0].lat==5498000);
  assert(streq(trip.target[0].name,"54.98000, -1.64000")&&streq(trip.target[1].name,"QUAYSIDE")&&nrecents==2);
  /* Replace only the final destination through its real action menu. */
  trip_right_focus=1;key_handle(K_ENTER);assert(modal==MOD_TARGET);key_handle(K_ENTER);
  assert(modal==MOD_SOURCE_PICK&&dest_pick_action==DEST_PICK_CHANGE_DEST);
- for(int i=0;i<3;i++)key_handle(K_DOWN);key_handle(K_ENTER);location("54.99000","-1.65000","GOSFORTH");key_handle(K_ENTER);
+ for(int i=0;i<2;i++)key_handle(K_DOWN);key_handle(K_ENTER);location("54.99000","-1.65000","GOSFORTH");key_handle(K_ENTER);
  assert(trip.count==2&&trip.target[0].lat==5498000&&trip.target[1].lat==5499000&&streq(trip.target[1].name,"GOSFORTH")&&nrecents==3);
  source(DEST_PICK_CHANGE_DEST);location("54.99000","-1.65000","RENAMED");key_handle(K_ENTER);
  assert(nrecents==3&&streq(recents[0].name,"RENAMED"));

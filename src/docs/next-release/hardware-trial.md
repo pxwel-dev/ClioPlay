@@ -108,7 +108,7 @@ results against the executable SHA-256 values and navigation `build.json`.
    and text, symbols and light-theme selection blue remain clear. Compare
    popup and HUD responsiveness with and without Bluetooth streaming.
    Repeat with route confirmations, saved-place/itinerary actions, arrival and
-   resume prompts, phone waiting, saved-phone actions and keyboard language choices.
+   resume prompts, saved-phone actions and keyboard language choices.
    Check glass buttons, animated selection, entrance/exit and prompt resizing;
    rapidly confirm, dismiss or change selection during a transition. Verify no
    retained popup pixels, missing final frame or second clock/temperature entrance.
@@ -164,3 +164,9 @@ be captured from the actual device/test setup.
   pill must stay visible without a second entrance, with time-only and valid
   temperature configurations. Declining leaves Explore unchanged. Route
   calculation must retain its existing five-FPS cap.
+
+Check incoming phone destinations and stops from ordinary map/menu screens without
+a receive option. Repeat while a confirmation or coordinate draft is open; the
+message should wait until that interaction completes. Inspect fuel, hospital and
+parking icons at supported zooms while panning, rotating, driving and crossing
+tile boundaries; dense road names must not displace reserved POI icons.

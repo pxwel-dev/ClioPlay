@@ -9,7 +9,7 @@ import subprocess
 import sys
 import tempfile
 
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from render_gallery import (BLUETOOTH_SAMPLES, MENU_ENTRY_SAMPLES, MENU_RETURN_SAMPLES, PHONE_CALC_SAMPLES, ROUNDABOUT_ETA_SAMPLES,
                             SPEED_WARNING_SAMPLES, EXPLORE_SAMPLES, TWEEN_STEPS, ZOOM_MODE_SAMPLES, ROUTE_READY_SAMPLES, POPUP_SAMPLES, ROOT, sha)
 
@@ -43,9 +43,9 @@ def previews():
         ]),
         'bluetooth.gif': timeline('night', timed_scenes('hud-bluetooth', BLUETOOTH_SAMPLES, 4750)),
         'phone-destination.gif': timeline('night', [
-            ('empty-receive', 1450),
-            *timed_scenes('phone-preview-calculating', list(PHONE_CALC_SAMPLES), 1300),
-            ('phone-preview-trip', 1750),
+            ('empty-receive',1000),('empty-receive',500),
+            *timed_scenes('phone-preview-calculating', list(PHONE_CALC_SAMPLES),1400),
+            ('phone-preview-trip',2100),('phone-preview-trip',2200),
         ]),
         'speed-warning.gif': timeline('night', timed_scenes('hud-speed-warning', SPEED_WARNING_SAMPLES, 3650)),
         'map-browsing.gif': timeline('night', timed_scenes('preview-zoom-modes', ZOOM_MODE_SAMPLES, 6500)),
@@ -95,7 +95,7 @@ def encode_gif(captures, destination, sequence):
     indexed[0].save(destination, save_all=True, append_images=indexed[1:],
                     duration=durations, loop=0, optimize=True)
     with Image.open(destination) as image:
-        if image.size != (480, 272) or image.n_frames < 2 or image.info.get('loop') != 0:
+        if image.size not in ((480,272),(936,510)) or image.n_frames < 2 or image.info.get('loop') != 0:
             raise ValueError(f'Invalid preview: {destination.name}')
         duration = 0
         for index in range(image.n_frames):
@@ -107,10 +107,50 @@ def encode_gif(captures, destination, sequence):
         return {'sha256': sha(destination), 'frames': image.n_frames, 'duration_ms': duration}
 
 
+def compose_phone(captures, output, sequence, supplied, previous):
+    """Combine native frames with external browser captures; no website tooling."""
+    output.mkdir()
+    frames=[]
+    if supplied:
+        shots=json.loads((supplied/'frames.json').read_text())
+        provenance={'kind':'local browser capture','transport':'simulated',
+                    'website':'https://pxwel-dev.github.io/ClioPlay-Send/',
+                    'screenshots':{Path(s['file']).name:sha(supplied/Path(s['file']).name) for s in shots},
+                    'ready_sha256':sha(supplied/'ready.jpg')}
+    else:
+        if not previous.is_file():raise ValueError('Provide --phone-capture for the first website composite')
+        with Image.open(previous) as image:
+            if image.size!=(936,510):raise ValueError('Provide --phone-capture to replace the old native-only phone GIF')
+            at=0
+            for i in range(image.n_frames):
+                image.seek(i);frames.append((at,image.convert('RGB').crop((16,40,416,484))))
+                at+=image.info['duration']
+        prior=json.loads((ROOT/'docs/demo/manifest.json').read_text())['previews']['phone-destination.gif'].get('browser_capture',{})
+        provenance={**prior,'kind':'browser panel retained from published composite','previous_gif_sha256':sha(previous),
+                    'website':'https://pxwel-dev.github.io/ClioPlay-Send/','transport':'simulated'}
+    font=ImageFont.truetype(str(ROOT/'fonts/Vera.ttf'),16)
+    timeline_out=[];at=0
+    for index,(native,ms) in enumerate(sequence):
+        if supplied:
+            source=supplied/'ready.jpg' if at<1000 else supplied/Path(min(shots,key=lambda x:abs(x['ms']-max(0,at-1000)))['file']).name
+            with Image.open(source) as image:panel=image.convert('RGB').crop((342,252,938,914)).resize((400,444),Image.Resampling.LANCZOS)
+        else:panel=max((f for f in frames if f[0]<=at),key=lambda f:f[0])[1]
+        image=Image.new('RGB',(936,510),(12,18,26));draw=ImageDraw.Draw(image)
+        draw.text((16,12),'ClioPlay Send',font=font,fill='white');draw.text((440,12),'ClioPlay',font=font,fill='white')
+        image.paste(panel,(16,40))
+        with Image.open(captures/native) as head:image.paste(head.convert('RGB'),(440,110))
+        caption='Send without opening a receive screen' if at<1500 else 'Calculating route' if at<2900 else 'Destination received'
+        draw.text((440,402),caption,font=font,fill='white')
+        draw.text((440,432),'Browser + native UI; transport simulated',font=font,fill=(151,166,185))
+        name=f'{index:03d}.png';image.save(output/name);timeline_out.append((name,ms));at+=ms
+    return timeline_out,provenance
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--maps', type=Path, default=ROOT / 'navigation-output',
                         help='existing UK map bundle covering Newcastle')
+    parser.add_argument('--phone-capture',type=Path,help='private external browser screenshots; otherwise reuse the published browser panel')
     args = parser.parse_args()
     output = ROOT / 'docs/demo'
     plans = previews()
@@ -127,7 +167,13 @@ def main():
         capture = json.loads((captures / 'manifest.json').read_text())
         reports = {}
         for name, sequence in plans.items():
-            result = encode_gif(captures, work / name, sequence)
+            encoded_sequence=sequence;image_root=captures;browser_report=None
+            if name=='phone-destination.gif':
+                image_root=work/'phone-composite'
+                encoded_sequence,browser_report=compose_phone(captures,image_root,sequence,args.phone_capture,output/name)
+            result = encode_gif(image_root, work / name, encoded_sequence)
+            if browser_report:result['browser_capture']=browser_report
+
             reports[name] = {**result, 'source_frames': [
                 {'frame': relative, 'rgb565_sha256': capture['frames'][relative]['rgb565_sha256']}
                 for relative, _ in sequence

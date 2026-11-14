@@ -59,7 +59,7 @@ POPUP_EVENTS = (
     (1000, 'key_handle(K_BACK);'),
     (1500, 'screen=SCR_TRIP;trip_pane=1;trip_right_focus=2;key_handle(K_ENTER);assert(modal==MOD_SOURCE_PICK);'),
     (2100, 'key_handle(K_DOWN);key_handle(K_DOWN);'),
-    (2500, 'key_handle(K_ENTER);assert(modal==MOD_WAIT_PHONE);'),
+    (2500, 'key_handle(K_BACK);'),
     (3200, 'key_handle(K_BACK);'),
     (3700, 'screen=SCR_BT;bt_page_focus=1;key_handle(K_ENTER);assert(bt_page_dialog>=0);'),
     (4300, 'key_handle(K_RIGHT);'),
@@ -269,13 +269,13 @@ def catalog(sender_receipts=None):
     key('Destinations','itinerary-up','Select previous itinerary item','screen=SCR_TRIP;trip_pane=1;trip_right_focus=1;','key_handle(K_UP);','assert(trip_right_focus==0);')
     add('Destinations','itinerary-full','Five-target itinerary','screen=SCR_TRIP;trip_pane=1;four_stops();')
     add('Destinations','itinerary-empty','No current route','screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;')
-    key('Destinations','empty-receive','Receive first destination from phone','screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;','key_handle(K_ENTER);','assert(modal==MOD_WAIT_PHONE);')
+    key('Destinations','empty-receive','Receive first destination from phone','screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;','', 'assert(modal==MOD_NONE);')
     for stage, title in [('entry','Enter latitude'),('latitude','Latitude ready'),('longitude','Longitude ready'),('name','Optional destination name'),('review','Review coordinates and name'),('saved','Named destination saved to Recents')]:
         add('Coordinates','preview-coordinates-'+stage,title,
             f'coordinate_preview("{stage}");', note='Decimal-degree entry uses production remote keys; names and coordinates are controlled samples.')
     add('Offline routing','coordinate-route-source','Choose Coordinates from an empty itinerary',
-        'clear_trip();gps.mph10=0;screen=SCR_TRIP;trip_pane=1;trip_right_focus=0;key_handle(K_DOWN);',
-        check='assert(!trip.active&&trip_right_focus==1);')
+        'clear_trip();gps.mph10=0;screen=SCR_TRIP;trip_pane=1;trip_right_focus=0;',
+        check='assert(!trip.active&&trip_right_focus==0);')
     coordinate_start='coordinate_route_start();'
     motion('Offline routing','coordinate-route-calculating','Coordinate destination calculation',
            coordinate_start,((0,''),),PHONE_CALC_SAMPLES)
@@ -342,7 +342,7 @@ def catalog(sender_receipts=None):
     key('Itinerary actions','destination-unfavourite','Remove destination from favourites','screen=SCR_TRIP;faves[0].lat=trip.target[1].lat;faves[0].lon=trip.target[1].lon;trip_pane=1;trip_right_focus=1;key_handle(K_ENTER);modal_choice=1;','key_handle(K_ENTER);','assert(nfaves==3);')
     for change in (False,True):
         state='screen=SCR_TRIP;modal=MOD_SOURCE_PICK;dest_pick_action='+('DEST_PICK_CHANGE_DEST;' if change else 'DEST_PICK_ADD_STOP;')
-        for choice,title in enumerate(('Recents','Favourites','Send from phone','Coordinates','Cancel')):
+        for choice,title in enumerate(('Recents','Favourites','Coordinates','Cancel')):
             stem=('change' if change else 'add')+f'-source-{choice}'
             setup=state+f'modal_choice={choice};'
             add('Choose destination',stem+'-choice',title+' · '+('change destination' if change else 'add stop'),setup)
@@ -366,13 +366,8 @@ def catalog(sender_receipts=None):
             add('Arrivals',f'arrived-{name}-{seconds}',f'Arrived at {name} · {seconds}-second countdown',state+f'arrival_modal_deadline=s_now_ms()+{seconds*1000};')
         key('Arrivals',f'arrived-{name}-continue',f'Confirm arrival at {name}',state,'key_handle(K_ENTER);','assert(modal==MOD_NONE);')
         add('Arrivals',f'arrived-{name}-timeout',f'Automatic arrival completion · {name}',state+'arrival_modal_deadline=s_now_ms()-1;arrival_modal_service();')
-    for name,mode in [('new','DEST_PICK_NONE'),('stop','DEST_PICK_ADD_STOP'),('change','DEST_PICK_CHANGE_DEST')]:
-        state=f'screen=SCR_TRIP;modal=MOD_WAIT_PHONE;phone_wait_action={mode};'
-        add('Phone destinations',f'phone-wait-{name}','Waiting for phone · '+name,state)
-        key('Phone destinations',f'phone-wait-{name}-back','Cancel waiting · '+name,state,'key_handle(K_BACK);','assert(modal==MOD_NONE);')
-        add('Phone destinations',f'phone-received-{name}','Received destination · '+name,state+'incoming("Central Station",\'N\');',note='A validated incoming destination is injected at the daemon/UI boundary, then production phone_destination_apply() runs.')
-    add('Phone destinations','incoming-native-name','Received native destination name','screen=SCR_TRIP;modal=MOD_WAIT_PHONE;phone_wait_action=DEST_PICK_CHANGE_DEST;incoming("東京駅 · محطة",\'N\');')
-    phone_received = ('screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;modal=MOD_WAIT_PHONE;settle();'
+    add('Phone destinations','incoming-native-name','Received native destination name','screen=SCR_TRIP;incoming("東京駅 · محطة",\'N\');')
+    phone_received = ('screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;modal=MOD_NONE;settle();'
                       'incoming_sender("Central Station",1,\'N\',5497370,-161331);'
                       'assert(modal==MOD_NONE&&trip.active&&streq(trip.target[0].name,"Central Station"));'
                       'trip_service();trip_service();')
@@ -492,7 +487,7 @@ def catalog(sender_receipts=None):
     for direction,code in [('left','K_LEFT'),('right','K_RIGHT')]:
         key('Dialog controls','confirmation-'+direction,'Toggle confirmation '+direction,
             'screen=SCR_TRIP;modal=MOD_CANCEL_ROUTE;modal_choice=1;',f'key_handle({code});','assert(modal_choice==0);')
-    for name,setup in [('source','modal=MOD_SOURCE_PICK;'),('waiting','modal=MOD_WAIT_PHONE;'),('saved-place','modal=MOD_RECENT;')]:
+    for name,setup in [('source','modal=MOD_SOURCE_PICK;'),('saved-place','modal=MOD_RECENT;')]:
         key('Dialog controls','dialog-map-'+name,'MAP leaves '+name+' dialog','screen=SCR_TRIP;'+setup,'key_handle(K_MAP);','assert(screen==SCR_MAP&&modal==MOD_NONE);')
     for name,setup in [('stop','MOD_ARRIVED_STOP'),('destination','MOD_ARRIVED_DEST')]:
         key('Dialog controls','arrival-protected-'+name,'Arrival prompt awaits confirmation · '+name,
@@ -531,7 +526,7 @@ def catalog(sender_receipts=None):
         'key_handle(K_ENTER);', 'assert(strstr(kbd_text,"É"));')
     for receipt in sender_receipts or []:
         name=receipt['id'];mode='DEST_PICK_ADD_STOP' if receipt['action']=='S' else 'DEST_PICK_NONE'
-        setup=f'screen=SCR_TRIP;modal=MOD_WAIT_PHONE;phone_wait_action={mode};'
+        setup=f'screen=SCR_TRIP;modal=MOD_NONE;'
         add('ClioPlay Send integration',f'sender-{name}-wait','Wait for '+name+' from ClioPlay Send',setup)
         payload=json.dumps(receipt['name'],ensure_ascii=False)
         add('ClioPlay Send integration',f'sender-{name}-result','Receive '+name+' from ClioPlay Send',
@@ -553,7 +548,7 @@ static void explore(void){enter_freecam();explore_sample(500);}
 static void name_keyboard(void){screen=SCR_KEY;keyboard_open_fave_name(5497370,-161331);}
 static void coordinate_digits(const char*s){while(*s){char c=*s++;coordinates.focus=c=='-'?9:c=='.'?11:c=='0'?10:c-'1';key_handle(K_ENTER);}}
 static void coordinate_preview(const char*stage){
- clear_trip();screen=SCR_TRIP;trip_pane=1;trip_right_focus=0;key_handle(K_DOWN);key_handle(K_ENTER);
+ clear_trip();screen=SCR_TRIP;trip_pane=1;trip_right_focus=0;key_handle(K_ENTER);
  assert(screen==SCR_COORDINATES&&coordinates_active);if(streq(stage,"entry"))return;
  coordinate_digits("54.97548");coordinates.focus=12;if(streq(stage,"latitude"))return;
  key_handle(K_SR);coordinate_digits("-1.64050");coordinates.focus=12;if(streq(stage,"longitude"))return;
@@ -619,7 +614,7 @@ static void gallery_reset(int night){
  pref=(struct Prefs){50,1,0,0,0,night?THEME_NIGHT:THEME_DAY,0,1,0,0,CLIO_DAY_START,CLIO_NIGHT_START};apply_palette(night);
  mapok=1;screen=SCR_MAP;trip_pane=trip_tab=trip_focus=trip_right_focus=0;menu_focus=set_focus=0;
  bt_page_focus=bt_page_connected_choice=bt_page_dialog_choice=0;
- trip_pick_mode=dest_pick_action=phone_wait_action=DEST_PICK_NONE;modal_choice=0;modal_index=-1;pending_point_stop=0;
+ trip_pick_mode=dest_pick_action=DEST_PICK_NONE;modal_choice=0;modal_index=-1;pending_point_stop=0;
  memzero(&phone_dest,sizeof(phone_dest));phone_seq_seen_valid=0;arrival_modal_deadline=0;
  nrecents=8;nfaves=4;copystr(faves[0].name,sizeof(faves[0].name),"Home");copystr(faves[1].name,sizeof(faves[1].name),"Work");for(int i=0;i<4;i++){faves[i].lat=5500000+i*300;faves[i].lon=-165000-i*300;}
  kbd_focus=0;kbd_action=KBD_NAME_FAVE;kbd_fave_idx=-1;kbd_text[0]=0;theme_time_part=0;

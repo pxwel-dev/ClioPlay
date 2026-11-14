@@ -109,7 +109,7 @@ def verify_previews(source, readme):
         with path.open('rb') as stream:
             header = stream.read(10)
         if (sha(path) != report['sha256'] or header[:6] != b'GIF89a'
-                or struct.unpack('<HH', header[6:]) != (480, 272)
+                or struct.unpack('<HH', header[6:]) != ((936,510) if name=='phone-destination.gif' else (480,272))
                 or report['frames'] < 2 or not 0 < report['duration_ms'] < 10000):
             raise ValueError('Invalid or changed preview: ' + name)
     return {name: {'duration_ms': report['duration_ms'], 'frames': report['frames']}

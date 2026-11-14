@@ -54,11 +54,11 @@ int main(void){
  modal=MOD_ROUTE_POINT;popup_prepare(10803);popup_settle_for_capture(10803);
  /* Parent smoothly resizes and hands text over when one prompt replaces another. */
  modal=MOD_SOURCE_PICK;dest_pick_action=DEST_PICK_ADD_STOP;popup_prepare(10900);
- assert(popup_pose(10900).h==126);mid=popup_pose(11060);assert(mid.h>126&&mid.h<192);
- popup_prepare(11220);assert(popup_pose(11220).h==192&&popup.card.count==6);
+ assert(popup_pose(10900).h==126);mid=popup_pose(11060);assert(mid.h>126&&mid.h<163);
+ popup_prepare(11220);assert(popup_pose(11220).h==163&&popup.card.count==5);
  /* Exit survives the model being cleared and the underlying screen changing. */
  modal=MOD_NONE;screen=SCR_MENU;popup_prepare(11221);
- assert(popup.card.count==6&&popup_pose(11221).a==256);
+ assert(popup.card.count==5&&popup_pose(11221).a==256);
  assert(popup_pose(11381).a>0&&popup_pose(11381).a<256);
  assert(popup_pose(11541).a==0&&popup_animating(11541));
  hud_capture_ms=11541;draw_modal();assert(!popup_animating(11541)); /* final clear is presented */
@@ -66,10 +66,10 @@ int main(void){
  /* Closing during entry, then opening another popup, starts at the current pose. */
  modal=MOD_FAVE;trip.active=1;popup_prepare(11600);popup_prepare(11700);
  mid=popup_pose(11700);modal=MOD_NONE;popup_prepare(11700);assert(hud_box_eq(mid,popup_pose(11700)));
- modal=MOD_WAIT_PHONE;popup_prepare(11750);assert(popup.from.a>0&&popup.at==11750);
+ modal=MOD_CANCEL_ROUTE;popup_prepare(11750);assert(popup.from.a>0&&popup.at==11750);
 
  /* Each modal family, both trip modes, tall glass and the non-modal dialogs. */
- for(int night=0;night<2;night++)for(int active=0;active<2;active++)for(int type=MOD_ROUTE_POINT;type<=MOD_WAIT_PHONE;type++){
+ for(int night=0;night<2;night++)for(int active=0;active<2;active++)for(int type=MOD_ROUTE_POINT;type<=MOD_SOURCE_PICK;type++){
   setup(20000);apply_palette(night);trip.active=active;modal=type;modal_index=0;popup_prepare(20000);popup_settle_for_capture(20000);
   assert(popup.card.count>0&&popup.card.count<=POPUP_ITEMS&&popup.card.box.h<=H);
   gradient();draw_modal();

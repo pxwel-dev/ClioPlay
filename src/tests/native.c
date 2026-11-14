@@ -67,7 +67,7 @@ static void scenes(void){
  fixture();screen=SCR_MAP;route_status=R_CALC;settle();snapshot("calculating");
  fixture();screen=SCR_MAP;route_status=R_IDLE;trip.active=0;settle();snapshot("driving-no-route");
  fixture();screen=SCR_MAP;roadctx.speed=120;gps.mph10=1200;settle();snapshot("speed-120");
- const int modes[]={MOD_ROUTE_POINT,MOD_RECENT,MOD_FAVE,MOD_CANCEL_ROUTE,MOD_TARGET,MOD_REMOVE_STOP,MOD_ARRIVED_STOP,MOD_ARRIVED_DEST,MOD_RESUME_TRIP,MOD_SOURCE_PICK,MOD_WAIT_PHONE};
+ const int modes[]={MOD_ROUTE_POINT,MOD_RECENT,MOD_FAVE,MOD_CANCEL_ROUTE,MOD_TARGET,MOD_REMOVE_STOP,MOD_ARRIVED_STOP,MOD_ARRIVED_DEST,MOD_RESUME_TRIP,MOD_SOURCE_PICK};
  for(unsigned i=0;i<sizeof(modes)/sizeof(modes[0]);i++){fixture();screen=SCR_TRIP;modal=modes[i];modal_index=0;modal_choice=0;arrival_modal_deadline=s_now_ms()+5000;settle();char name[64];snprintf(name,sizeof(name),"modal-%d",modal);snapshot(name);}
  puts("Framebuffer scenes passed: all pages, dense lists, 5 targets, empty state, long text, GPS, route calculation and source-specific metadata.");
 }
@@ -79,15 +79,15 @@ static void remote_tests(void){
  key_handle(K_SR);assert(active_zoom()==5);key_handle(K_ESC);assert(active_zoom()==4);
  pref.autozoom=1;zoom_override=4;key_handle(K_MAP);assert(zoom_override==-1&&!freecam);
  fixture();screen=SCR_TRIP;trip_pane=trip_tab=trip_focus=0;for(int i=0;i<30;i++)key_handle(K_DOWN);assert(trip_focus==24);key_handle(K_ENTER);assert(modal==MOD_RECENT&&modal_index==24);key_handle(K_BACK);key_handle(K_RIGHT);assert(trip_tab==1&&trip_focus==0);key_handle(K_ENTER);assert(modal==MOD_FAVE);key_handle(K_BACK);
- key_handle(K_SR);assert(trip_pane==1);trip_right_focus=2;key_handle(K_ENTER);assert(modal==MOD_SOURCE_PICK);key_handle(K_DOWN);key_handle(K_DOWN);key_handle(K_ENTER);assert(modal==MOD_WAIT_PHONE&&phone_wait_action==DEST_PICK_ADD_STOP);key_handle(K_BACK);assert(modal==MOD_NONE);
+ key_handle(K_SR);assert(trip_pane==1);trip_right_focus=2;key_handle(K_ENTER);assert(modal==MOD_SOURCE_PICK);key_handle(K_DOWN);key_handle(K_DOWN);key_handle(K_ENTER);assert(screen==SCR_COORDINATES);key_handle(K_BACK);assert(modal==MOD_SOURCE_PICK);key_handle(K_BACK);assert(modal==MOD_NONE);
  trip_right_focus=3;key_handle(K_ENTER);assert(modal==MOD_CANCEL_ROUTE&&modal_choice==1);key_handle(K_ENTER);assert(trip.active);key_handle(K_ESC);assert(trip_pane==0);
  fixture();screen=SCR_BT;bt_page_focus=0;bt_page_connected_choice=0;key_handle(K_ENTER);command_is(" DISCONNECT");key_handle(K_RIGHT);key_handle(K_ENTER);command_is(" UNPAIR");bt_page_focus=1;key_handle(K_ENTER);assert(bt_page_dialog>=0);key_handle(K_ENTER);command_is(" CONNECT");bt_page_focus=bt_page_total()-1;key_handle(K_ENTER);command_is(" PAIR");
  fixture();screen=SCR_KEY;keyboard_open_fave_name(5497000,-160000);copystr(kbd_text,sizeof(kbd_text),"HOME");kbd_focus=38;key_handle(K_ESC);assert(!strcmp(kbd_text,"HOM"));nfaves=0;key_handle(K_ENTER);assert(screen==SCR_TRIP&&nfaves==1&&!strcmp(faves[0].name,"HOM"));
  fixture();screen=SCR_MAP;hud_capture_clock=1;hud_capture_ms=s_now_ms();key_handle(K_MAP);assert(freecam&&freecam_transition_active());for(int i=0;i<5;i++){explore_sample(100);draw();char name[64];snprintf(name,sizeof(name),"explore-enter-%02d",i);snapshot(name);}assert(!freecam_transition_active()&&map_tilt_q8==0);s32 lon=cam_lon;key_handle(K_RIGHT);assert(cam_lon!=lon);key_handle(K_ENTER);assert(modal==MOD_ROUTE_POINT);key_handle(K_BACK);key_handle(K_MAP);assert(!freecam&&freecam_transition_active());for(int i=0;i<6;i++){explore_sample(100);draw();char name[64];snprintf(name,sizeof(name),"explore-leave-%02d",i);snapshot(name);}assert(!freecam_transition_active()&&map_tilt_q8==256);
- fixture();screen=SCR_TRIP;phone_dest.valid=1;phone_dest.action='S';phone_dest.lat=5497548;phone_dest.lon=-164050;copystr(phone_dest.name,sizeof(phone_dest.name),"Kareem's Grill");phone_wait_action=DEST_PICK_ADD_STOP;modal=MOD_WAIT_PHONE;phone_destination_apply();assert(trip.count==3&&!phone_dest.valid&&modal==MOD_NONE&&!strcmp(trip.target[1].name,"Kareem's Grill"));
+ fixture();screen=SCR_TRIP;phone_dest.valid=1;phone_dest.action='S';phone_dest.lat=5497548;phone_dest.lon=-164050;copystr(phone_dest.name,sizeof(phone_dest.name),"Kareem's Grill");modal=MOD_NONE;phone_destination_apply();assert(trip.count==3&&!phone_dest.valid&&modal==MOD_NONE&&!strcmp(trip.target[1].name,"Kareem's Grill"));
  fixture();modal=MOD_RESUME_TRIP;screen=SCR_MAP;key_handle(K_MAP);key_handle(K_BACK);assert(modal==MOD_RESUME_TRIP);modal_choice=1;key_handle(K_ENTER);assert(!trip.active&&modal==MOD_NONE);
 #ifndef BEFORE
- fixture();trip.active=0;screen=SCR_TRIP;trip_pane=1;key_handle(K_ENTER);assert(modal==MOD_WAIT_PHONE&&phone_wait_action==DEST_PICK_NONE);key_handle(K_BACK);assert(modal==MOD_NONE);
+ fixture();trip.active=0;screen=SCR_TRIP;trip_pane=1;key_handle(K_ENTER);assert(screen==SCR_COORDINATES);key_handle(K_BACK);assert(screen==SCR_TRIP&&modal==MOD_NONE);
 #endif
  puts("Original remote workflows passed: 3-item menu, integrated transport, zoom, saved places, stop/phone/cancel flows, pairing, naming, protected resume and bidirectional Explore animation.");
 }

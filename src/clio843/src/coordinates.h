@@ -53,11 +53,11 @@ static void coordinates_open_name(void){
 }
 static void coordinates_open(int action){
  memzero(&coordinates,sizeof(coordinates));coordinates.action=action;
- coordinates_active=1;phone_wait_action=DEST_PICK_NONE;modal=MOD_NONE;screen=SCR_COORDINATES;
+ coordinates_active=1;modal=MOD_NONE;screen=SCR_COORDINATES;
 }
 static void coordinates_leave(int sources){
  coordinates_active=0;screen=SCR_TRIP;
- if(sources&&coordinates.action!=DEST_PICK_NONE){dest_pick_action=coordinates.action;modal=MOD_SOURCE_PICK;modal_choice=3;}
+ if(sources&&coordinates.action!=DEST_PICK_NONE){dest_pick_action=coordinates.action;modal=MOD_SOURCE_PICK;modal_choice=2;}
 }
 static void coordinates_next(void){
  s32 value;int axis=coordinates.step;

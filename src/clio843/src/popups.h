@@ -52,17 +52,11 @@ static void popup_build(struct PopupView*v,int key){
   append_int(hint,sizeof(hint),(int)((left+999u)/1000u));appendstr(hint,sizeof(hint),"s");
   popup_text(v,85,145,310,0,hint,C_CYAN,0);return;
  }
- if(key==MOD_WAIT_PHONE){
-  v->key+=phone_wait_action*256;v->box=hud_box(62,82,356,112);
-  popup_text(v,80,96,320,1,ui_tr(phone_wait_action==DEST_PICK_CHANGE_DEST?"Change destination":phone_wait_action==DEST_PICK_ADD_STOP?"Add stop":"Receive destination"),C_WHITE,0);
-  popup_text(v,80,126,320,1,ui_tr("Send a destination"),C_CYAN,0);
-  popup_text(v,80,143,320,1,ui_tr("from ClioPlay Send"),C_CYAN,0);return;
- }
  if(key==MOD_SOURCE_PICK){
-  v->key+=dest_pick_action*256;v->box=hud_box(62,44,356,192);
-  popup_text(v,80,56,320,1,ui_tr(dest_pick_action==DEST_PICK_CHANGE_DEST?"Change destination":"Add stop"),C_WHITE,0);
-  const char*options[]={"Recents","Favourites","Send from phone","Coordinates","Cancel"};
-  for(int i=0;i<5;i++)popup_option(v,100,84+i*29,280,ui_tr(options[i]),i);return;
+  v->key+=dest_pick_action*256;v->box=hud_box(62,58,356,163);
+  popup_text(v,80,70,320,1,ui_tr(dest_pick_action==DEST_PICK_CHANGE_DEST?"Change destination":"Add stop"),C_WHITE,0);
+  const char*options[]={"Recents","Favourites","Coordinates","Cancel"};
+  for(int i=0;i<4;i++)popup_option(v,100,98+i*29,280,ui_tr(options[i]),i);return;
  }
  int y=key==MOD_FAVE&&trip.active?54:78,h=key==MOD_FAVE&&trip.active?174:126;
  v->box=hud_box(62,y,356,h);

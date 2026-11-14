@@ -11,9 +11,13 @@
 | --- | --- |
 | ![Driving with a temporary road name and a camera warning](src/docs/demo/driving.gif) | ![Opening Trip, browsing favourites and switching themes](src/docs/demo/menus.gif) |
 
-| Bluetooth playback and volume | Receiving a phone destination |
-| --- | --- |
-| ![Temporary volume notice, Bluetooth playback controls and track progress](src/docs/demo/bluetooth.gif) | ![Receiving a destination from the phone on the head unit](src/docs/demo/phone-destination.gif) |
+| Bluetooth playback and volume |
+| --- |
+| ![Temporary volume notice, Bluetooth playback controls and track progress](src/docs/demo/bluetooth.gif) |
+
+Send a destination with [ClioPlay Send](https://pxwel-dev.github.io/ClioPlay-Send/):
+
+![ClioPlay Send and the head unit receiving a destination side by side](src/docs/demo/phone-destination.gif)
 
 | Speeding warning | Browse and zoom the map |
 | --- | --- |
