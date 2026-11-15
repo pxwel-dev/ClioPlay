@@ -93,10 +93,9 @@ For new stops/destinations, enter **Coordinates** on the head unit or use the se
 
 ## Install
 
-You need an SD card for the head unit (minimum 8GB, ensuring that it’s already formatted to FAT32) and an `.osm.pbf` map extract covering your
-journeys. Get the map extract from [Geofabrik Downloads](https://download.geofabrik.de/)
-by choosing your region and downloading its `.osm.pbf` file. Download and extract
-this repository, then follow your desktop setup:
+You need a FAT32-formatted SD card (SDHC, minimum 2GB, recommended 8GB, theoretical max 32GB) for the head unit and an `.osm.pbf` map extract covering your journeys. 
+
+Get the map extract from [Geofabrik Downloads](https://download.geofabrik.de/) by choosing your region and downloading its `.osm.pbf` file. Download and extract this repository, then follow your desktop setup:
 
 | Computer | Start here |
 | --- | --- |
