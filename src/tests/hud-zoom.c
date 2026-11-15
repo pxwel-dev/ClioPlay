@@ -5,6 +5,9 @@
 #undef main
 #include <assert.h>
 #include <string.h>
+#ifdef CLIO_CONSOLE_TEST
+#include "fixtures/console-input.h"
+#endif
 static struct HudCard*card(void){return &hud_tween[HC_STATUS].target;}
 static void prepare(u32 now){hud_capture_ms=now;freecam_orientation_anim_update(now);hud_prepare(active_zoom(),now,1);}
 static void baseline(void){

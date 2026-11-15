@@ -1,6 +1,6 @@
-# QAD4 fast-query + locality reconstruction sidecar
+# QAD4 compatibility format
 
-QAD4 is derived directly from the exact CPR2-v4 `route.cpr` already installed in the car. No OSM rebuild is required and `route.cpr` remains unchanged.
+QAD4 describes a sidecar matched to an exact CPR2-v4 `route.cpr`. The CPR geometry remains authoritative.
 
 QAD4 retains QAD3's compact group-block query layout and small group index. The major change is reconstruction locality:
 
@@ -13,12 +13,9 @@ This means the winning path can be traced and recursively unpacked entirely from
 
 The embedded runtime uses a 256 KiB 4 KiB-page LRU reconstruction cache. The locality-renumbered record order is designed so parent shortcuts and the descendants immediately unpacked after them frequently share those pages.
 
-Generate from an existing CPR2-v4 file:
+## Current use
 
-```sh
-./build_qadj.command /path/to/route.cpr /path/to/route.qadj
-```
-
-Then copy `route.qadj` beside `route.cpr` in `clio843/maps/`.
-
-The runtime accepts QAD4, QAD3, QAD2, QAD1, or no sidecar. If QAD4 is absent or invalid, it safely falls back to older acceleration formats / CPR2 as available.
+The current navigation builder generates QAD7. QAD4 is retained as a runtime
+compatibility format for matching CPR2-v4 packs, not as an alternative build mode.
+Use the complete current builder/installer for new navigation data; see
+[the builder guide](README.md) and [QAD7](QAD7_FAST_QUERY.md).

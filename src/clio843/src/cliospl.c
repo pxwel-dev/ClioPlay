@@ -62,9 +62,9 @@ __attribute__((noreturn)) static void s_exit(int c){exit(c);}
 #define FB_PIX (W*H)
 #ifndef HOST_TEST
 #define SPLASH_FB "/dev/fb"
-#define SPLASH_PREF "/media/sdcard/clio843/prefs.ini"
-#define SPLASH_THEME "/media/sdcard/clio843/theme.dat"
-#define SPLASH_LASTGPS "/media/sdcard/clio843/gpslast.dat"
+#define SPLASH_PREF "./clio843/prefs.ini"
+#define SPLASH_THEME "./clio843/theme.dat"
+#define SPLASH_LASTGPS "./clio843/gpslast.dat"
 #define SPLASH_BL_MAX "/sys/class/backlight/s3c/max_brightness"
 #define SPLASH_BL_VAL "/sys/class/backlight/s3c/brightness"
 #else

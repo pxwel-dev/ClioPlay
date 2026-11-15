@@ -5,6 +5,9 @@
 #undef main
 #include <assert.h>
 #include <string.h>
+#ifdef CLIO_CONSOLE_TEST
+#include "fixtures/console-input.h"
+#endif
 static void baseline(void){
  coordinates_active=0;memzero(&coordinates,sizeof(coordinates));memzero(&trip,sizeof(trip));
  nrecents=nfaves=0;trip_need_route=trip_route_defer=0;gps.fix=0;screen=SCR_TRIP;

@@ -4,7 +4,7 @@
   "example": "Newcastle upon Tyne, with simulated car and phone inputs",
   "native_sources": {
     "clio843/src/frame_schedule.h": "50bac892308f48eb49dbc30948b2531ca3b8d1ff71296820168f86a48a12751a",
-    "clio843/src/global_clock.h": "7d2e1ea55f19f1577d51d584ed5be882fc15116af65bd1cc294eadd2d884e893",
+    "clio843/src/global_clock.h": "5fbcf43cb8aceb59e87d6f8118d121ce5798eec064c0ed5a7586a2eb25de8512",
     "clio843/src/map_thin_coverage.h": "d4632a1dd789176be35ded06a21b84d272d69910532f31e05dc03fbfc092e5fb",
     "clio843/src/atlas_router.h": "ae13e0cb3de1c5c75a377abced3f4332cecd1ca0ff124e9d3074c555d9068eb5",
     "clio843/src/popups.h": "e63651756bd190224b6de6bf0d89df0d68c02071c1253c87e31dcf778240d492",
@@ -17,14 +17,14 @@
     "clio843/src/splash_icon.h": "1c0cb3bf3be97ce49cdf626bc0184b0736b49fee877a92f5bf2e5cb2d0ec17eb",
     "clio843/src/hud_status.h": "91f9d2cc57aeae72deebee57974292a8c3033631b4cd11b83d57fdececbaeaed",
     "clio843/src/last_fix.h": "eaf9a30204c7b146bf83ea6ea6f2f4a9c25486dcbf69bc366824888426668cca",
-    "clio843/src/clioa2dp.c": "6d728d2713e6d80f1551402354d1c3cc750477313268cb97aefdf76faa877491",
-    "clio843/src/atlas_catalog.h": "b0045a10c40374f77a1865d57be226f40dd313a23c5c38c68b60c3870f42a52b",
+    "clio843/src/clioa2dp.c": "7a1e8dc00e36d863c7aadcda3c1058e8a4012b2f7ce0b2029abdfd06fe8ce7ed",
+    "clio843/src/atlas_catalog.h": "e68482414282efe29ca954b24778c89e03a3d70197bc9b29effd830dec97f8f0",
     "clio843/src/map_raster.h": "d5ab540a21b9e3495fd393960b9975731fb710131c378e17ab2d49e6404ea692",
-    "clio843/src/global_regions.h": "0d777b61772f626eb0dd47ac0c92cb16aaf79d1b6f3f2e6463dc5806bd88eebe",
+    "clio843/src/global_regions.h": "1d8341489f0394ce7d1cef200e252129bc9eebcbe60b29dc2923dfd156a77969",
     "clio843/src/release_version.h": "50c48abdb212e61eba651b53bf667efbd8e6882cbd863dc2327ed79512a2e481",
     "clio843/src/vehicle_icon.h": "dfcb48775858684a323506e4cb6f61eba56ce3d8c7507a5ef86b58d917f24b4a",
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
-    "clio843/src/cliospl.c": "80dd6ea45c5d5eebce80dcd8d9726a3da6cbc839e7cbe984034a1465b6cea307",
+    "clio843/src/cliospl.c": "747ad7fbc07b41fa8fd505386c636af14fdc76827dc823110a5871e88f4802df",
     "clio843/src/global_text.cc": "45b454fa97ec49eaaca230e4578da4361138ff2c5c410e0e552edd5629231858",
     "clio843/src/audio_playback.h": "25e0f01cd52eb89d447c5ecdf34f57bebeef36135c2912eaa3d49ec1ee7f13e1",
     "clio843/src/ui_raster.h": "50767eb3a56c5192daabb07944b255b34d4e77b1db48b14a30a6914871420284",
@@ -35,8 +35,10 @@
     "clio843/src/hud_turn_masks.h": "ceb5cc2dfc83963855f1c04541c646ac49a88e6c2177c6584c673d9d97b3ad45",
     "clio843/src/global_cameras.h": "d07e8dabf65f3513a5ec88eb15e34bdcad628cdb291f08a518eb46a3ebed9cd9",
     "clio843/src/urban_speed_defaults.h": "a719a3d065f16bc39727b01d7ed73f412beeb4d8703b5bde73a8c6ff1c35ac10",
-    "clio843/src/clio040.c": "4ac3577594811de1c51f0b4b4a6d3a5b27c3247f1d9ba2ed67fc6485385b6332",
+    "clio843/src/cswd.c": "707aa0a1fdcd8048d2fa252a14ce32176fae347d512e11869f2905a69380530c",
+    "clio843/src/clio040.c": "5f87de52e5ac8e269707e078f9660ba73dc2bbcc0805ec1c70b16821a695243e",
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
+    "clio843/src/vstatd.c": "a359d214853cdd511fb79e905fafc52f5413b635bb3288b268d04c15724a666f",
     "clio843/src/audio_chime.h": "184c222e448db2707fc752bc38f7f6c735b6cb1f4d168d88ddc7da7cf20f4d75",
     "clio843/src/utf8.h": "e6e172fb98b7f4c9e958322d13296190fd003025562c05146bcc9a3d50af8b7c",
     "clio843/src/unicode_support.c": "43a20e8dde712fbdb5e087062ad68d3ae5aec704c1ab864dec9c57a99fd54b77",
@@ -497,9 +499,9 @@
     "clio843/src/vendor/sheenbidi/Headers/SheenBidi/SheenBidi.h": "44a644a72edf2300838d32c3e32aa14a7cb66b584fb9da643b8311aa21991cbe"
   },
   "executables": {
-    "clio040": "bd954b6b663b034f8bdb9c9f1ffe917e2f568d355ea0dd94e640d7a5780427af",
-    "cliospl": "7f69eb4ae127ba0bd17911ecd9ee4ae0e0ab7e6119513dc72167027b3058e641",
-    "clioa2dp": "2faae08b20cba42e36f62bc1daabf72078a4f2e46ebe3041fcc0945efb7b8bf7"
+    "clio040": "0724ab088610f64189ba89c00203f677bc6c549d5ac73675a22f7887d40d9715",
+    "cliospl": "36e66c7467d1ad22218953b1cc5eedb5bdee5d59feb58bc8f190e77555acad97",
+    "clioa2dp": "65a5e67c23e0c7a931cb8804e170ce194c2ed71bddd2ef155533c8f223aa615d"
   },
   "generator_inputs": {
     "tools/render_previews.py": "f3396bca8e80bd120efd38ef28260a71888082e5762b92f42e3ba922d14cd932",
@@ -1364,7 +1366,7 @@
       ]
     },
     "menus.gif": {
-      "sha256": "9b234554c295ead26d4ce1c417647443e74ad52acf9fc5038525be86cfd177ae",
+      "sha256": "98909a877ba2ec9d4e587517cefa22faf1e5f633c3603cc986fe34c465825a65",
       "frames": 27,
       "duration_ms": 8750,
       "reserved_pointer_colours": [
@@ -1480,19 +1482,19 @@
         },
         {
           "frame": "night/settings.png",
-          "rgb565_sha256": "b7c2978529890c9f32155ff160e37480884ae9c5d0ce910df3008ee966b08d7d"
+          "rgb565_sha256": "5de741b803a7d8131792751bf9db001dfb41efee959da200492e404d4f714d40"
         },
         {
           "frame": "night/schedule-edit-day.png",
-          "rgb565_sha256": "6d3f057d1b813795ec4eb3bdfb934340ba976691380042c7bd1eb1a9e42b56d4"
+          "rgb565_sha256": "e0017261dc50d9179eb36f0ff4169ffec99ddbac04449a4585b1a1428ef30a32"
         },
         {
           "frame": "night/schedule-edit-minute.png",
-          "rgb565_sha256": "c386a0a96e08085709cb719f6db2e8f6805caa43810d0a950ca9846a21b68523"
+          "rgb565_sha256": "96f3564e5a7aac9f60e090850db8136ecd67e69f68578fdd276c508c59ebf950"
         },
         {
           "frame": "night/showcase-theme-day.png",
-          "rgb565_sha256": "56eda4160fd6006864d69f5fb49adaca603a4722195941ffc1e15aa623ed4f18"
+          "rgb565_sha256": "15fa463f72dfd3249fe31868b3eeb0a2e39d4a759c97043f38a84995cc752406"
         },
         {
           "frame": "night/preview-menu-return-0000.png",
@@ -1722,7 +1724,7 @@
       ]
     },
     "phone-destination.gif": {
-      "sha256": "b32d9f16ea044d0000da855bda6ae08a7cd8409cff0336b01bbceead0d254e65",
+      "sha256": "af0c41e3421ba94bd0e712791c3d10df431a3136e318ceea600ec2d61c800292",
       "frames": 11,
       "duration_ms": 7200,
       "reserved_pointer_colours": [
@@ -1811,7 +1813,7 @@
           "transfer-056.jpg": "01cd1bf92bb29e65bba8e31beb96ba341b0e206a675d3970ef29cbae5f85a5fc"
         },
         "ready_sha256": "93bc757770a4188a9de3234f4f0d4a60d8c77855b80e625fb949db06a93ee37c",
-        "previous_gif_sha256": "d9bd1d1c513d3cc26ba5a1e1d40963a4099dee1684851b3d9336868bb235e532"
+        "previous_gif_sha256": "af0c41e3421ba94bd0e712791c3d10df431a3136e318ceea600ec2d61c800292"
       },
       "source_frames": [
         {

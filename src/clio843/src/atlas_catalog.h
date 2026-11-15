@@ -1,7 +1,7 @@
 /* CPA1 bounded regional catalog. Cores are disjoint whole CPM Z0 tiles.
  * Cross-pack transfers use OSM identity and an exact default routing state. */
 #ifndef HOST_TEST
-#define ATLAS_ROOT "/mnt/sdcard/clio843/maps/"
+#define ATLAS_ROOT "./clio843/maps/"
 #else
 #define ATLAS_ROOT CLIO_HOST_ROOT "clio843/maps/"
 #endif

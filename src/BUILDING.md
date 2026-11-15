@@ -46,7 +46,7 @@ vendored LLVM compiler-rt for ARM7TDMI. HarfBuzz and SheenBidi are vendored too.
 Executables are freestanding static ARMv4T ELF32, EABI5 soft float, legacy Linux
 OABI syscalls, image base 0x10000 and 64 KiB segment alignment. Build checks reject
 dynamic loaders, missing entry points and unresolved symbols. The main executable
-has about 10.1 MiB BSS, including the bounded 2 MiB shaping arena and existing map/
+has about 10.9 MiB BSS, including the bounded 2 MiB shaping arena and existing map/
 route caches. Native font tables are mapped on demand; glyph bitmaps stay on the
 card, with a bounded RAM cache. Actual total memory/performance needs hardware
 measurement. `--no-map-antialias` is a build-time rendering fallback.
@@ -188,10 +188,9 @@ Keyboard layouts are baked from `locales/keyboards.json`; normal builds use the
 bundled Unicode Pinyin table and need no new SD-card data. See
 [locales/README.md](locales/README.md) for input methods and limitations.
 
-`verify.py` exercises the legacy UK pack with the real renderer/key handler,
-including smooth routes, polygon holes, remote screens/animations and 72 bridge
-views. Its historical `--compare` mode requires an optional old archive and is not
-part of Global validation. No test modifies the supplied source navigation packs.
+`verify.py` exercises a compatible UK pack with the production renderer/key
+handler, including routes, polygon holes, controls/animations and 72 bridge
+views. No test modifies the supplied source navigation packs.
 
 Publish the contents of the parent `CLIOPLAY-LATEST-VERSION/` folder as the
 repository root. Run `python3 tools/refresh_latest.py` and
@@ -220,12 +219,12 @@ The border checks require locally prepared real France/Spain extracts under
 Clock, roundabout and PCM cue C tests run under host UBSan. `build_ui.py` regenerates
 interface translations before compiling; edit the locale JSON dictionaries to maintain them. The language list and
 contribution workflow are in [locales/README.md](locales/README.md).
-Hardware trial and evidence collection are documented in `docs/next-release/`.
+The [hardware guide](docs/scenic-iii-hardware.md#hardware-evidence-and-validation)
+lists console and temperature checks that still require a vehicle trial.
 
 `verify_splash.py` captures both boot themes from the production C framebuffer,
 checks theme/brightness behaviour and icon compositing under UBSan, and writes
-previews to `docs/next-release/splash-antialias/`. Its optional before captures
-are historical reference data; they are not needed to build the splash.
+previews to `docs/next-release/splash-antialias/`. Generated captures are local diagnostics and are not part of the publication.
 
 ## Scheduled Auto theme
 
@@ -253,7 +252,7 @@ Both run under UBSan in `tools/verify_ci.py`.
 
 The bootstrap runs AUX initialization first, draws the splash, then starts
 Bluetooth and Focus. UI loading overlaps Focus readiness; only the vehicle
-daemon waits for `/tmp/cfready` (with the existing eight-second fallback).
+daemon waits for `/tmp/cfready` (with an eight-second fallback).
 Bluetooth launches the HID listener and starts phone setup immediately, without
 waiting for the button-woken remote. The remote listener remains available for
 later connections. Service-readiness waits are separate from kernel/firmware boot.
@@ -294,9 +293,31 @@ project helpers are included separately; see [source status](docs/source-status.
 
 `VERSION` is the release identity. `tools/build_ui.py` generates
 `clio843/src/release_version.h` from it and records the version in each binary’s
-build report. UI and Bluetooth startup logs use that generated value. Bootstrap
+build report. The Settings footer and UI/Bluetooth startup logs use that generated value. Bootstrap
 scripts declare the same `CLIOPLAY_VERSION`; update their declaration when
 changing `VERSION`, then refresh their entries in `bootstrap-SHA256.json`.
 `python3 tools/release_version.py --check` rejects mismatched labels before
 building or publishing. Downloader user agents also read `VERSION`. Map formats,
 protocol identifiers and third-party dependency versions are separate.
+
+## Vehicle input and temperature integration
+
+`clio040.c` contains the console FIFO reader and bounded nonblocking VehicleStatus
+receiver. The build still ships the same three native programs. `cswd.c` and
+`vstatd.c` are source-only contributed references, not additional startup services.
+`tests/vehicle-input.c` exercises the integrated code, including both input paths
+and temperature providers. The host suite also repeats coordinate/naming/trip,
+Explore/zoom/dialog, Bluetooth transport and Settings workflows through the
+production console decoder using the default physical bindings. Unix
+SOCK_SEQPACKET transport checks are skipped on
+hosts without that facility; protocol/FIFO/UI checks still run.
+
+`ttn` selects the mounted card containing `clio843/clio040`, changes to its root
+and prepares the console FIFO before Focus/vehicle startup. Both console and
+VehicleStatus readers start automatically; valid runtime input selects the
+available sources. An idle FIFO does not
+claim the evdev knob path. The factory daemon retains its normal vehicle
+configuration check. Native card paths are relative to this working directory. Direct experimental launches must
+therefore start from the SD-card root too. Bluetooth setup independently resolves
+its script directory, retaining early phone connection and the sleeping-remote
+behaviour. No always-on boot diagnostics or raw identity logs are introduced.

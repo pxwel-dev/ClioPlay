@@ -26,3 +26,8 @@ LOCAL-PROPRIETARY-FILES/
 .env.*
 /clio843/prefs.ini
 /clio843/routing-status.txt
+
+# Local vehicle controls / optional VehicleStatus selection
+**/cswmap.ini
+/csw
+/vstat

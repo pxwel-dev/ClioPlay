@@ -4,9 +4,12 @@ CLIOPLAY_VERSION=2.0.0
 # Launch the Renault HID listener, then start phone setup immediately. The
 # remote can connect whenever a button wakes it. Phone pairing uses TomTom's
 # factory blueserver/hcid runtime pairing gate; hcid/hidd are never restarted for pairing.
-LOG=/media/sdcard/clio843/bt.log
+SD=${0%/*}
+[ "$SD" = "$0" ] && SD=./clio843
+SD=`cd "$SD" && pwd` || exit 1
+cd "$SD/.." || exit 1
+LOG=$SD/bt.log
 DEBUG=${CLIO_DEBUG:-0}
-SD=/mnt/sdcard/clio843
 HREQ=/tmp/clbthci
 # Volatile boot barrier: never accept a marker left by an earlier launch.
 BOOT_READY=/tmp/clbtrdy

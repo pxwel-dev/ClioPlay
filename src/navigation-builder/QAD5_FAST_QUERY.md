@@ -1,6 +1,8 @@
-# QAD5 fast-query sidecar
+# QAD5 compatibility format
 
-QAD5 is an optional accelerator generated from the exact CPR2-v4 `route.cpr` already used by CLIOPLAY. It does not alter `route.cpr` and can be removed at any time to fall back to the older routing path.
+The runtime retains QAD5 compatibility for matching CPR2-v4 packs. New navigation
+builds generate [QAD7](QAD7_FAST_QUERY.md); this document describes the QAD5 layout
+and query rules still supported by the current reader.
 
 ## Query layout
 
@@ -17,7 +19,10 @@ QAD5 uses the opposite upward list in the same block for **stall-on-demand**. No
 
 ## Correctness note
 
-QAD5 deliberately uses the conservative CH termination condition (`min_forward >= best && min_backward >= best`). During development the earlier `min_forward + min_backward >= best` optimisation was found not to be generally valid for an upward-restricted contraction-hierarchy query and was removed. Conservative CH + stall-on-demand was checked against full Dijkstra over 146,502 randomized directed queries with zero cost mismatches.
+The reader uses conservative CH termination
+(`min_forward >= best && min_backward >= best`) and stall-on-demand. The sum of
+both minima is not a valid general termination bound for the upward-restricted
+query.
 
 ## Reconstruction
 

@@ -52,10 +52,10 @@ enum { PROT_READ_=1,PROT_WRITE_=2,MAP_SHARED_=1 };
 #define BT_ACTIVE_PATH "/tmp/clbt"
 #define CAMERA_ALERT_PATH "/tmp/clalert"
 #define BT_STATUS_PATH "/tmp/clbtstat"
-#define BT_LOG_PATH "/media/sdcard/clio843/bta2dp.log"
-#define BT_EVENT_LOG_PATH "/media/sdcard/clio843/bt.log"
+#define BT_LOG_PATH "./clio843/bta2dp.log"
+#define BT_EVENT_LOG_PATH "./clio843/bt.log"
 #define DEBUG_STATE_PATH "/tmp/cldebug"
-#define PREF_PATH "/media/sdcard/clio843/prefs.ini"
+#define PREF_PATH "./clio843/prefs.ini"
 
 static void memzero(void*p,u32 n){u8*d=(u8*)p;while(n--)*d++=0;}
 static void memcopy(void*d0,const void*s0,u32 n){u8*d=(u8*)d0;const u8*s=(const u8*)s0;while(n--)*d++=*s++;}
@@ -252,12 +252,12 @@ static void sbc_pcm_interleave(u8*out,const struct SbcFrame*f){
 #define BT_NAV_TMP_PATH "/tmp/clnav.tmp"
 #define BT_CMD_PATH "/tmp/clbtcmd"
 #define BT_HCI_PATH "/tmp/clbthci"
-#define BT_PHONE_PATH "/media/sdcard/clio843/btphone.dat"
+#define BT_PHONE_PATH "./clio843/btphone.dat"
 #define BT_PIN_PATH "/tmp/clbtpin"
 #define BT_LOCAL_PATH "/tmp/clbtlocal"
 #define BT_BOOT_READY_PATH "/tmp/clbtrdy"
-#define BT_BONDS_PATH "/media/sdcard/clio843/btbonds.dat"
-#define BT_NAMES_PATH "/media/sdcard/clio843/btnames.dat"
+#define BT_BONDS_PATH "./clio843/btbonds.dat"
+#define BT_NAMES_PATH "./clio843/btnames.dat"
 #define BT_DEVLIST_PATH "/tmp/clbtdevices"
 #define HCID_KEY_DB "/etc/bluetooth/link_key"
 

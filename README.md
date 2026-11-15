@@ -60,11 +60,20 @@ The primary supported configuration is:
 
 - Non-Bluetooth radio with a CD player
 - Non-live Carminat TomTom head unit
-- Bluetooth remote control used to operate the Carminat
+- Bluetooth remote control, or a supported Scénic III / Mégane physical console
 
-Expect support VERY SOON for physical console controls found on vehicles that do not have a Bluetooth remote control for their Carminat unit, such as Renault Scenic and Megane models.
+Physical console input and alternate VehicleStatus temperature are detected
+from incoming runtime events alongside the Bluetooth remote and Focus readings.
+Both sources are available automatically. Existing
+Focus temperature readings take priority when valid. See the
+[console setup and controls](src/README.md#physical-console-and-temperature-sources).
+The hardware protocol was contributed from a tested Scénic III; the combined
+ClioPlay implementation is host-tested and still needs validation on that unit.
 
-I've also confirmed that vehicles which use the physical console controls in place of Bluetooth remote control STILL have integrated Bluetooth hardware inside of their Carminat units, meaning that vehicles that don't have any factory Bluetooth capability in their radios will be able to benefit from Bluetooth audio implemented inside ClioPlay.
+ClioPlay requires Bluetooth hardware inside the head unit (`hw_bluetooth=1`),
+including on console-equipped vehicles. A separate factory Bluetooth radio does
+not establish compatibility with ClioPlay's audio path; output, volume/mute and
+hands-free coexistence need vehicle-specific testing.
 
 ClioPlay handles the audio source as follows:
 
@@ -84,7 +93,7 @@ BT CTRL also requires a connected phone. Unavailable radio/volume readings stay 
 - Browse the map and route to a selected point, send destination from a connected phone, or manually enter named decimal-degree lat/long coordinates
 - Manage stops, recents and favourites.
 - Bluetooth phone audio with track information and remote playback controls.
-- Steering wheel audio controls.
+- Vehicle audio controls remain responsible for physical volume and mute.
 - Full-screen maps with animated, semi-transparent frosted glass notices for road names, camera alerts, route progress and audio changes.
 - Day/Night themes with custom daily switch times in Auto, automatic units and time zones, and 18 interface languages.
 - Mapped speed limits and camera alerts where the bundled country policy allows them.
@@ -93,7 +102,7 @@ For new stops/destinations, enter **Coordinates** on the head unit or use the se
 
 ## Install
 
-You need a FAT32-formatted SD card (SDHC, minimum 2GB, recommended 8GB, theoretical max 32GB) for the head unit and an `.osm.pbf` map extract covering your journeys. 
+You need a FAT32-formatted SD card (SDHC, minimum 2GB, recommended 8GB, theoretical max 32GB) for the head unit and an `.osm.pbf` map extract covering your journeys.
 
 Get the map extract from [Geofabrik Downloads](https://download.geofabrik.de/) by choosing your region and downloading its `.osm.pbf` file. Download and extract this repository, then follow your desktop setup:
 
@@ -106,32 +115,46 @@ Get the map extract from [Geofabrik Downloads](https://download.geofabrik.de/) b
 1. Choose your PBF and confirm its region.
 2. Let the installer build and check navigation data.
 3. Select the SD-card root and confirm installation.
-4. Safely eject it before use and insert into your car. 
+4. Safely eject it before use and insert into your car.
 
 The installer downloads and checks the required official TomTom firmware.
 It does not format the card. Replaced files are backed up. Any existing ClioPlay preferences,
 pairings and saved places are preserved. No previous ClioPlay install is needed.
 Map building can take substantial time for large extracts.
 
-## Use your remote
+## Use your remote or console
 
-| Control | Action |
-| --- | --- |
-| **MAP** | Restore Auto zoom after temporary manual zoom; otherwise switch between driving and map browsing, or return to driving from a menu. |
-| **MENU** | Open the menu for Trip, Bluetooth and Settings. |
-| **BACK** | Go back or dismiss a dialog. On the driving map with Bluetooth audio selected and a phone connected, toggle **BT CTRL**. |
-| **Centre / OK** | On the driving map, show the ETA and remaining distance, or the heading without a route. In map browsing, select the point under the crosshair. In **BT CTRL**, play or pause. In menus, select or confirm. |
-| **Up / Down** | Pan the map or move through menu rows. |
-| **Left / Right** | Pan the map or change the selected tab, option or value. In **BT CTRL**, play the previous or next track. |
-| **Left soft key** | Zoom out on the map, focus destinations in Trip, or delete a character while entering coordinates or a name. |
-| **Right soft key** | Zoom in on the map, focus the itinerary in Trip, advance to the next coordinate field, or insert a space while entering a name. |
+Both inputs are available automatically and can be used together. Console names
+below refer to the Scénic III / Mégane armrest controls. The upper-left and
+upper-right console buttons act as the remote's soft keys.
+
+| Remote control | Console equivalent | Action |
+| --- | --- | --- |
+| **MAP** | **MAP** | Restore Auto zoom after temporary manual zoom; otherwise switch between driving and map browsing, or return to driving from a menu. |
+| **MENU** | **MENU** | Open the menu for Trip, Bluetooth and Settings. |
+| **BACK** | **BACK** | Go back or dismiss a dialog. On the driving map with Bluetooth audio selected and a phone connected, toggle **BT CTRL**. |
+| **Centre / OK** | **Press the knob** | On the driving map, show ETA and remaining distance, or heading without a route. In map browsing, select the crosshair point. In **BT CTRL**, play/pause. In menus, select or confirm. |
+| **Up / Down** | **Joystick up / down** | Enter map browsing and pan, or move through menu rows. |
+| **Left / Right** | **Joystick left / right** | Enter map browsing and pan, change tabs/options/settings, or select dialog choices. In **BT CTRL**, previous/next track. |
+| **Left soft key** | **Upper-left button** | Zoom out, focus destinations in Trip, or delete a character in coordinate/name entry. |
+| **Right soft key** | **Upper-right button** | Zoom in, focus the itinerary in Trip, advance a coordinate field, or insert a space in a name. |
+
+Turning the console knob also zooms the map, skips tracks in **BT CTRL**, scrolls
+lists and moves through keyboard/keypad buttons or dialog choices. In Settings,
+turn it to choose a row, use the joystick left/right to change its value, and
+press it for the row's OK action.
+
+Console shortcuts: **DEST** opens Trip; **LIGHT** cycles Day/Night/Auto;
+**INFO** and **REPEAT** show the journey overview on the map (heading without a
+route). REPEAT displays information; it does not speak instructions. Resume and
+arrival prompts must still be confirmed. No long press is needed for any remote action.
 
 If you adjust the zoom while Auto zoom is enabled, **MAP** restores Auto zoom
 without entering Explore. Press **MAP** again to enter Explore, or use an arrow
 to enter Explore and pan directly. **OK** shows the ETA during guidance, including
 while temporary Manual zoom is active.
 
-See the [full remote controls guide](src/README.md#remote-controls) for actions in
+See the [full remote and console controls guide](src/README.md#remote-and-console-controls) for actions in
 each screen, including settings, pairing and the favourite keyboard.
 
 ## Status and development
@@ -147,4 +170,4 @@ Firmware, map extracts, generated navigation, personal settings and build caches
 are excluded from Git. The [UI previews](src/docs/demo/README.md) use the
 production renderer with controlled host inputs; it does not establish vehicle performance.
 
-<sub>Release files refreshed 14 November 2026 (Europe/London).</sub>
+<sub>Release files refreshed 15 November 2026 (Europe/London).</sub>

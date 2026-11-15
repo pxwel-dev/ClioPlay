@@ -153,11 +153,13 @@ reviewed overrides remain in `tools/global_speeds.py`. Country polygons are
 Natural Earth with a higher-resolution IGN/geoBoundaries Spain refinement.
 These are not legal border surveys; a manual unit override remains available.
 
-Native names are NFC-normalized and retained in the map. Destination searching
-is handled by the phone sender. No offline search index is generated. The remote
-keyboard remains Latin and is
-only used to name favourites. Street/map labels are bounded to 28 code points;
-phone destination/place names to 40, with complete UTF‑8 character boundaries.
+Native names are NFC-normalized and retained in the map. Destinations can arrive
+from ClioPlay Send, be selected on the map or entered as decimal coordinates. No
+offline search index is generated. The head-unit naming keyboard supports 18
+independent language layouts for favourites and coordinate destinations; see
+[language and keyboard support](../locales/README.md). Street/map labels are
+bounded to 28 code points; destination/place names to 40, with complete UTF‑8
+character boundaries.
 
 ## Camera imports
 

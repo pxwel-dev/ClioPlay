@@ -57,6 +57,12 @@ __attribute__((noreturn)) static void s_exit(int c){sc1(1,c);for(;;){}}
 #include <time.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <poll.h>
+#include <errno.h>
+#include <string.h>
 static long s_read(int fd,void*p,unsigned n){return read(fd,p,n);} 
 static long s_write(int fd,const void*p,unsigned n){return write(fd,p,n);} 
 /* The runtime uses Linux flag values; native macOS tests need host flags. */
@@ -82,28 +88,110 @@ enum { O_RDONLY_=0,O_WRONLY_=1,O_RDWR_=2,O_CREAT_=64,O_TRUNC_=512,O_APPEND_=1024
 enum { SEEK_SET_=0,SEEK_CUR_=1,SEEK_END_=2 };
 enum { PROT_READ_=1,PROT_WRITE_=2,MAP_SHARED_=1,MAP_PRIVATE_=2,MAP_ANONYMOUS_=32 };
 
+/* Local control I/O. Linux 2.6 ARM OABI; host paths use native POSIX types. */
+struct ControlPoll {int fd;short events,revents;};
+static long control_read(int fd,void*b,unsigned n){
+ long rc=s_read(fd,b,n);
+#ifdef HOST_TEST
+ if(rc<0){if(errno==EAGAIN||errno==EWOULDBLOCK)return -11;if(errno==EINTR)return -4;return -errno;}
+#endif
+ return rc;
+}
+static int control_nonblock(int fd){
+#ifdef HOST_TEST
+ return fcntl(fd,F_SETFL,O_NONBLOCK);
+#else
+ return (int)sc3(55,fd,4,O_NONBLOCK_);
+#endif
+}
+static int control_fifo(const char*path){
+#ifdef HOST_TEST
+ if(mkfifo(path,0666)<0&&errno!=EEXIST)return -1;
+ int fd=open(path,O_RDWR|O_NONBLOCK|O_NOFOLLOW);struct stat st;
+ if(fd>=0&&(fstat(fd,&st)<0||!S_ISFIFO(st.st_mode))){close(fd);fd=-1;}
+ return fd;
+#else
+ long rc=sc3(14,(long)path,0010666,0);if(rc<0&&rc!=-17)return -1;
+ int fd=(int)s_open(path,O_RDWR_|O_NONBLOCK_|0x20000,0);if(fd<0)return -1;
+ /* ARM stat64 (Linux 2.6.13 asm-arm/stat.h): st_mode is at byte 16. */
+ u8 st[128] __attribute__((aligned(8)));rc=sc2(197,fd,(long)st);
+ if(rc<0){s_close(fd);return -1;}
+ u32 mode=(u32)st[16]|(u32)st[17]<<8|(u32)st[18]<<16|(u32)st[19]<<24;
+ if((mode&0170000)!=0010000){s_close(fd);return -1;}return fd;
+#endif
+}
+static int control_socket(void){
+#ifdef HOST_TEST
+ int fd=socket(AF_UNIX,SOCK_SEQPACKET,0);
+#else
+ unsigned long a[3]={1,5,0};int fd=(int)sc2(102,1,(long)a);
+#endif
+ if(fd>=0&&control_nonblock(fd)<0){s_close(fd);fd=-1;}return fd;
+}
+static int control_address(int fd,const char*path,int connect_peer){
+#ifdef HOST_TEST
+ struct sockaddr_un a;memset(&a,0,sizeof(a));a.sun_family=AF_UNIX;
+ unsigned n=0;while(path[n]&&n+1<sizeof(a.sun_path)){a.sun_path[n]=path[n];n++;}
+ if(path[n])return -36;
+ int rc=connect_peer?connect(fd,(struct sockaddr*)&a,sizeof(a)):bind(fd,(struct sockaddr*)&a,sizeof(a));
+ return rc<0?-errno:0;
+#else
+ struct {u16 family;char path[108];}a;a.family=1;
+ unsigned n=0;while(path[n]&&n+1<sizeof(a.path)){a.path[n]=path[n];n++;}a.path[n]=0;if(path[n])return -36;
+ unsigned long v[3]={(unsigned long)fd,(unsigned long)&a,2+n+1};
+ return (int)sc2(102,connect_peer?3:2,(long)v);
+#endif
+}
+static int control_listen(int fd){
+#ifdef HOST_TEST
+ return listen(fd,2);
+#else
+ unsigned long a[2]={(unsigned long)fd,2};return (int)sc2(102,4,(long)a);
+#endif
+}
+static int control_accept(int fd){
+#ifdef HOST_TEST
+ int c=accept(fd,0,0);
+#else
+ unsigned long a[3]={(unsigned long)fd,0,0};int c=(int)sc2(102,5,(long)a);
+#endif
+ if(c>=0&&control_nonblock(c)<0){s_close(c);c=-1;}return c;
+}
+static int control_poll(struct ControlPoll*p,unsigned n){
+#ifdef HOST_TEST
+ return poll((struct pollfd*)p,n,0);
+#else
+ return (int)sc3(168,(long)p,n,0);
+#endif
+}
+
 #ifndef HOST_TEST
+#define CSW_FIFO_PATH "/dev/input/CswEvent0"
+#define CSW_MAP_PATH "./cswmap.ini"
+#define CSW_MAP_ALT "./clio843/cswmap.ini"
+#define CSW_LOG_PATH "./clio843/csw.log"
+#define VSTAT_SOCKET_PREFIX "/var/run/PAC"
 #define FB_PATH "/dev/fb"
-#define FONT_PATH "/mnt/sdcard/clio843/font.bin"
-#define MAP_PATH "/mnt/sdcard/clio843/maps/map.cpm"
+#define FONT_PATH "./clio843/font.bin"
+#define MAP_PATH "./clio843/maps/map.cpm"
 #define FOCUS_BUS "/tmp/cfbus"
-#define LAST_PATH "/media/sdcard/clio843/audlast.dat"
+#define LAST_PATH "./clio843/audlast.dat"
 #define CAR_PATH "/tmp/cfstate"
 #define GPS_PATH "/var/run/gpspipe"
-#define PREF_PATH "/media/sdcard/clio843/prefs.ini"
-#define THEME_STATE_PATH "/media/sdcard/clio843/theme.dat"
-#define LASTGPS_PATH "/media/sdcard/clio843/gpslast.dat"
-#define PREF_TMP_PATH "/media/sdcard/clio843/prefs.tmp"
-#define RECENT_PATH "/media/sdcard/clio843/recent.dat"
-#define FAVES_PATH "/media/sdcard/clio843/faves.dat"
-#define TRIP_PATH "/media/sdcard/clio843/trip.dat"
-#define ROUTE_PATH "/mnt/sdcard/clio843/maps/route.cpr"
-#define QADJ_PATH "/mnt/sdcard/clio843/maps/route.qadj"
-#define STATE_LOG "/media/sdcard/clio843/state.log"
-#define ROUTING_STATUS_PATH "/media/sdcard/clio843/routing-status.txt"
-#define KEY_LOG "/media/sdcard/clio843/key.log"
-#define FOCUS_LOG "/media/sdcard/clio843/focus.log"
-#define BT_LOG "/media/sdcard/clio843/bt.log"
+#define PREF_PATH "./clio843/prefs.ini"
+#define THEME_STATE_PATH "./clio843/theme.dat"
+#define LASTGPS_PATH "./clio843/gpslast.dat"
+#define PREF_TMP_PATH "./clio843/prefs.tmp"
+#define RECENT_PATH "./clio843/recent.dat"
+#define FAVES_PATH "./clio843/faves.dat"
+#define TRIP_PATH "./clio843/trip.dat"
+#define ROUTE_PATH "./clio843/maps/route.cpr"
+#define QADJ_PATH "./clio843/maps/route.qadj"
+#define STATE_LOG "./clio843/state.log"
+#define ROUTING_STATUS_PATH "./clio843/routing-status.txt"
+#define KEY_LOG "./clio843/key.log"
+#define FOCUS_LOG "./clio843/focus.log"
+#define BT_LOG "./clio843/bt.log"
 #define DEBUG_STATE_PATH "/tmp/cldebug"
 #define BT_ACTIVE_PATH "/tmp/clbt"
 #define CAMERA_ALERT_PATH "/tmp/clalert"
@@ -112,10 +200,10 @@ enum { PROT_READ_=1,PROT_WRITE_=2,MAP_SHARED_=1,MAP_PRIVATE_=2,MAP_ANONYMOUS_=32
 #define BT_META_PATH "/tmp/clbtmeta"
 #define BT_NAV_PATH "/tmp/clnav"
 #define BT_DEVLIST_PATH "/tmp/clbtdevices"
-#define BT_NAMES_PATH "/media/sdcard/clio843/btnames.dat"
+#define BT_NAMES_PATH "./clio843/btnames.dat"
 #define BT_CMD_PATH "/tmp/clbtcmd"
-#define OLD_AUDIO_LOG "/media/sdcard/clio843/cpaud.log"
-#define OLD_GPS_LOG "/media/sdcard/clio843/gps.log"
+#define OLD_AUDIO_LOG "./clio843/cpaud.log"
+#define OLD_GPS_LOG "./clio843/gps.log"
 #define WD_PATH "/dev/watchdog"
 #define POWER_PATH "/proc/barcelona/onoff"
 #define BL_MAX "/sys/class/backlight/s3c/max_brightness"
@@ -124,6 +212,11 @@ enum { PROT_READ_=1,PROT_WRITE_=2,MAP_SHARED_=1,MAP_PRIVATE_=2,MAP_ANONYMOUS_=32
 #ifndef CLIO_HOST_ROOT
 #define CLIO_HOST_ROOT "/tmp/clioplay-ui-host/"
 #endif
+#define CSW_FIFO_PATH CLIO_HOST_ROOT "CswEvent0"
+#define CSW_MAP_PATH CLIO_HOST_ROOT "cswmap.ini"
+#define CSW_MAP_ALT CLIO_HOST_ROOT "clio843/cswmap.ini"
+#define CSW_LOG_PATH CLIO_HOST_ROOT "clio843/csw.log"
+#define VSTAT_SOCKET_PREFIX CLIO_HOST_ROOT "PAC"
 #define CAMERA_ALERT_PATH CLIO_HOST_ROOT "clalert"
 #define CAMERA_ALERT_TMP CLIO_HOST_ROOT "clalert.new"
 #define FB_PATH CLIO_HOST_ROOT "clio040.fb"
@@ -355,7 +448,7 @@ static void prefs_service(void){if(!prefs_dirty)return;if(prefs_delay>0){prefs_d
 static void remove_stale_logs(void){
   s_unlink(ROUTING_STATUS_PATH);
   s_unlink(STATE_LOG); s_unlink(KEY_LOG); s_unlink(FOCUS_LOG);
-  s_unlink(BT_LOG); s_unlink(OLD_AUDIO_LOG); s_unlink(OLD_GPS_LOG);
+  s_unlink(BT_LOG); s_unlink(CSW_LOG_PATH); s_unlink(OLD_AUDIO_LOG); s_unlink(OLD_GPS_LOG);
 }
 /* Shared volatile debug gate for helper daemons.  Publish the new state before
  * deleting logs so an independently-running producer cannot recreate them. */
@@ -453,6 +546,20 @@ static void hud_bt_notice(const char*message){
 
 struct Car {char source[32],volume[16];int temp,tempok;};static struct Car car;
 static int car_temp_valid(int c){return c>=-60&&c<=85;}
+static struct {int focus,focus_valid,vehicle,vehicle_valid,vehicle_connected;} temperature;
+static void temperature_select(void){
+ car.tempok=temperature.focus_valid||(temperature.vehicle_connected&&temperature.vehicle_valid);
+ if(temperature.focus_valid)car.temp=temperature.focus;
+ else if(car.tempok)car.temp=temperature.vehicle;
+ static int last_source=-1,last_value;
+ if(!pref.debug){last_source=-1;return;}
+ int source=temperature.focus_valid?1:car.tempok?2:0;
+ if(source!=last_source||(source&&car.temp!=last_value)){
+  char b[80];copystr(b,sizeof(b),source==1?"TEMPERATURE FOCUS":source==2?"TEMPERATURE VEHICLESTATUS":"TEMPERATURE UNAVAILABLE");
+  if(source){appendstr(b,sizeof(b)," ");append_int(b,sizeof(b),car.temp);}debug_log(STATE_LOG,b);
+  last_source=source;last_value=car.temp;
+ }
+}
 static int reading_present(const char*s){
  if(!s)return 0;
  while(*s==' '||*s=='\t'||*s=='-'||*s=='\r'||*s=='\n')s++;
@@ -552,27 +659,24 @@ static void process_decoded_line(const char*line){
 }
 static void process_audio_line(char*line){if(pref.debug)log_append(FOCUS_LOG,line);if(line[0]=='R'&&line[1]=='X'&&line[2]=='#')process_rx_line(line);else process_decoded_line(line);}
 static void poll_audio(void){if(audiofd<0){audiofd=(int)s_open(FOCUS_BUS,O_RDONLY_|O_NONBLOCK_,0);if(audiofd<0)return;}for(;;){long n=s_read(audiofd,audiobuf,sizeof(audiobuf));if(n<=0){if(n<0){s_close(audiofd);audiofd=-1;audioused=0;}break;}for(long i=0;i<n;i++){char c=audiobuf[i];if(c=='\r'||c=='\n'){if(audioused){audioline[audioused]=0;process_audio_line(audioline);audioused=0;}}else if(audioused+1<sizeof(audioline))audioline[audioused++]=c;else audioused=0;}}}
-static void car_read_temperature(const char*b){
- car.tempok=0;
+static int focus_temperature(const char*b,int*out){
  while(*b&&!starts(b,"temp=")){while(*b&&*b!='\n')b++;if(*b)b++;}
- if(!*b)return;
- b+=5;
+ if(!*b)return 0;b+=5;while(*b==' '||*b=='\t')b++;
+ int sign=*b=='-'?-1:1;if(*b=='-'||*b=='+')b++;
+ if(*b<'0'||*b>'9')return 0;
+ int value=0;do{value=value*10+(*b++-'0');if(value>85)return 0;}while(*b>='0'&&*b<='9');
  while(*b==' '||*b=='\t')b++;
- int sign=*b=='-'?-1:1;
- if(*b=='-'||*b=='+')b++;
- if(*b<'0'||*b>'9')return;
- int value=0;
- do{value=value*10+(*b++-'0');if(value>85)return;}while(*b>='0'&&*b<='9');
- while(*b==' '||*b=='\t')b++;
- if(*b&&*b!='\r'&&*b!='\n')return;
- value*=sign;
- if(car_temp_valid(value)){car.temp=value;car.tempok=1;}
+ if(*b&&*b!='\r'&&*b!='\n')return 0;value*=sign;
+ if(!car_temp_valid(value))return 0;*out=value;return 1;
+}
+static void car_read_temperature(const char*b){
+ temperature.focus_valid=focus_temperature(b,&temperature.focus);temperature_select();
 }
 static void poll_car(void){
  char b[256];long fd=s_open(CAR_PATH,O_RDONLY_,0);
- if(fd<0){car.tempok=0;return;}
+ if(fd<0){temperature.focus_valid=0;temperature_select();return;}
  long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);
- if(n<=0){car.tempok=0;return;}
+ if(n<=0){temperature.focus_valid=0;temperature_select();return;}
  b[n]=0;car_read_temperature(b);
 }
 
@@ -2437,6 +2541,11 @@ static s32 kbd_place_lat=0,kbd_place_lon=0;static int kbd_fave_idx=-1;
 #define K_DOWN 108
 #define K_MAP 67
 #define K_MENU 68
+#define K_ROTCW 191
+#define K_ROTCCW 192
+#define K_CONSOLE_INFO 4096
+#define K_CONSOLE_TRIP 4097
+#define K_CONSOLE_THEME 4098
 #include "keyboard.h"
 
 /* Trip navigation workspace. The Trip page is a
@@ -2601,9 +2710,9 @@ static void draw_bluetooth(void){
 }
 
 static int set_focus=0;
-static void settingrow(int y,const char*l,const char*v,int f){int vw=width(v,1);if(vw<76)vw=76;if(vw>180)vw=180;int vx=446-vw;ui_choice(18,y-5,444,26,f);compact_fit(30,y-2,vx-42,1,l,ui_choice_text(f));compact_fit(vx,y-2,vw,1,v,f?C_ACTIVE_TEXT:C_MUTED);}
+static void settingrow(int y,const char*l,const char*v,int f){int vw=width(v,1);if(vw<76)vw=76;if(vw>180)vw=180;int vx=446-vw;ui_choice(18,y-5,444,24,f);compact_fit(30,y-2,vx-42,1,l,ui_choice_text(f));compact_fit(vx,y-2,vw,1,v,f?C_ACTIVE_TEXT:C_MUTED);}
 static const char* theme_value(void){if(pref.theme==THEME_DAY)return"DAY";if(pref.theme==THEME_NIGHT)return"NIGHT";return"AUTO";}
-enum {SETTING_COUNT=10,SETTING_VISIBLE_ROWS=8};
+enum {SETTING_COUNT=10,SETTING_VISIBLE_ROWS=8,SETTING_ROW_STEP=26};
 static int theme_time_part;
 static const char* setting_names[]={"Brightness","Theme","Units","Auto zoom","Camera alerts","Clock","Debug log","Language","Day starts","Night starts"};
 static const char* units_value(void){return pref.units==1?ui_tr("Metric"):pref.units==2?ui_tr("Imperial"):ui_tr("Auto");}
@@ -2637,7 +2746,7 @@ static void draw_settings(void){
  fill(0,0,W,H,C_BG);
  int first=set_focus>=SETTING_VISIBLE_ROWS?set_focus-SETTING_VISIBLE_ROWS+1:0;
  for(int row=0;row<SETTING_VISIBLE_ROWS;row++){
-  int i=first+row,y=MENU_BODY_Y+5+row*28;
+  int i=first+row,y=MENU_BODY_Y+5+row*SETTING_ROW_STEP;
   char b[96];const char*value=setting_value(i,b);
   settingrow(y,ui_tr(setting_names[i]),value,set_focus==i);
   if(i==set_focus&&i>=8){
@@ -2646,7 +2755,8 @@ static void draw_settings(void){
    round_rect(x,y+16,width(part,1),1,0,C_ACTIVE_TEXT,15);
   }
  }
- ui_scrollbar(468,MENU_BODY_Y,222,first,SETTING_VISIBLE_ROWS,SETTING_COUNT);
+ ui_scrollbar(468,MENU_BODY_Y,SETTING_VISIBLE_ROWS*SETTING_ROW_STEP-2,first,SETTING_VISIBLE_ROWS,SETTING_COUNT);
+ centered(240,254,0,"ClioPlay " CLIOPLAY_VERSION,C_MUTED);
 }
 static void settings_key(int code){
  if(code==K_UP){if(set_focus>0)set_focus--;theme_time_part=0;return;}
@@ -2702,7 +2812,7 @@ struct input_event16 {s32 sec,usec;u16 type,code;s32 value;};
 #define EAGAIN_NEG (-11)
 static int infd[INPUT_MAX]={-1,-1,-1,-1,-1,-1,-1,-1};
 static int input_lock=-1;
-static int known_remote_key(int code){return code==K_ESC||code==K_BACK||code==K_SR||code==K_ENTER||code==K_UP||code==K_LEFT||code==K_RIGHT||code==K_DOWN||code==K_MAP||code==K_MENU;}
+static int known_remote_key(int code){return code==K_ESC||code==K_BACK||code==K_SR||code==K_ENTER||code==K_UP||code==K_LEFT||code==K_RIGHT||code==K_DOWN||code==K_MAP||code==K_MENU||code==K_ROTCW||code==K_ROTCCW;}
 static void input_log2(const char*tag,int ev,int code){if(!pref.debug)return;char b[72];b[0]=0;appendstr(b,sizeof(b),tag);appendstr(b,sizeof(b)," event");append_int(b,sizeof(b),ev);if(code>=0){appendstr(b,sizeof(b)," code=");append_int(b,sizeof(b),code);}log_append(KEY_LOG,b);}
 static void scan_inputs(void){char p[]="/dev/input/event0";for(int i=0;i<INPUT_MAX;i++){if(infd[i]>=0)continue;p[16]=(char)('0'+i);long fd=s_open(p,O_RDONLY_|O_NONBLOCK_,0);if(fd>=0){infd[i]=(int)fd;input_log2("INPUT OPEN",i,-1);}}}
 static void open_inputs(void){for(int i=0;i<INPUT_MAX;i++)infd[i]=-1;input_lock=-1;if(pref.debug)log_append(KEY_LOG,"--- CLIOPLAY GLOBAL " CLIOPLAY_VERSION " MEDIA INPUT ---");scan_inputs();}
@@ -2797,7 +2907,26 @@ if(screen==SCR_SET)settings_key(code);}
 
 
 /* Popup-only input changes presentation, not the underlying map/menu image. */
+static int control_key(int code){
+ if(code!=K_ROTCW&&code!=K_ROTCCW)return code;
+ int forward=code==K_ROTCW;
+ if(modal!=MOD_NONE){int choice=modal==MOD_ROUTE_POINT||modal==MOD_CANCEL_ROUTE||modal==MOD_REMOVE_STOP||modal==MOD_RESUME_TRIP;return choice?(forward?K_RIGHT:K_LEFT):(forward?K_DOWN:K_UP);}
+ if(screen==SCR_KEY&&!kbd_picker){
+  int next=kbd_focus+(forward?1:-1);while(next>=0&&next<48&&!keyboard_valid_focus(next))next+=forward?1:-1;
+  if(next>=0&&next<48){kbd_focus=next;kbd_column=keyboard_col(next);render_background_dirty=1;}return 0;
+ }
+ if(screen==SCR_COORDINATES&&coordinates.step!=COORD_REVIEW){
+  int next=coordinates.focus+(forward?1:-1);if(next>=0&&next<=14){coordinates.focus=next;render_background_dirty=1;}return 0;
+ }
+ if(screen==SCR_MAP)return bt_control_mode?(forward?K_RIGHT:K_LEFT):(forward?K_SR:K_ESC);
+ if(screen==SCR_BT&&(bt_page_dialog>=0||(bt_connected_idx()>=0&&bt_page_focus==0)))return forward?K_RIGHT:K_LEFT;
+ return forward?K_DOWN:K_UP;
+}
 static void key_handle(int code){
+ if(code==K_CONSOLE_THEME){pref.theme=(pref.theme+1)%3;prefs_mark_dirty();refresh_theme();render_background_dirty=1;return;}
+ if(code==K_CONSOLE_INFO){if(screen==SCR_MAP&&modal==MOD_NONE)hud_pulse(&hud_navigation,route_status==R_READY?HUD_JOURNEY:HUD_HEADING,route_status==R_READY?4200:2300);return;}
+ if(code==K_CONSOLE_TRIP){if(modal!=MOD_NONE)return;coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;screen=SCR_TRIP;trip_pane=1;trip_right_focus=0;render_background_dirty=1;return;}
+ code=control_key(code);if(!code)return;
  int dirty=render_background_dirty,old_screen=screen,old_popup=popup_requested_key();
  key_handle_state(code);
  int new_popup=popup_requested_key();
@@ -2808,7 +2937,209 @@ static void key_handle(int code){
 }
 
 
-static void poll_keys(void){for(int i=0;i<INPUT_MAX;i++){if(infd[i]<0)continue;for(;;){struct input_event16 e;long n=s_read(infd[i],&e,sizeof(e));if(n==(long)sizeof(e)){if(e.type==EV_KEY&&e.value==1&&known_remote_key(e.code)){if(input_lock<0){input_lock=i;input_log2("INPUT LOCK",i,e.code);}if(input_lock==i)key_handle(e.code);}continue;}if(n==0||(n<0&&n!=EAGAIN_NEG)){s_close(infd[i]);infd[i]=-1;if(input_lock==i){input_log2("INPUT LOST",i,-1);input_lock=-1;}}break;}}}
+static int csw_live(void);
+static void poll_keys(void){for(int i=0;i<INPUT_MAX;i++){if(infd[i]<0)continue;for(;;){struct input_event16 e;long n=control_read(infd[i],&e,sizeof(e));if(n==(long)sizeof(e)){if(e.type==EV_KEY&&e.value==1&&known_remote_key(e.code)){if(e.code==K_ROTCW||e.code==K_ROTCCW){if(!csw_live())key_handle(e.code);continue;}if(input_lock<0){input_lock=i;input_log2("INPUT LOCK",i,e.code);}if(input_lock==i)key_handle(e.code);}continue;}if(n==0||(n<0&&n!=EAGAIN_NEG)){s_close(infd[i]);infd[i]=-1;if(input_lock==i){input_log2("INPUT LOST",i,-1);input_lock=-1;}}break;}}}
+
+/* Console protocol/mapping adapted from bobczan/Renatka (MIT), PR #2,
+ * d7701fbe60566d3afa8c556ebf7fe7da3a2fcf6e; checked against Navcore's
+ * CswParser. No helper process or injected evdev events are involved. */
+#define CSW_RECORD 28
+#define CSW_QUEUE 32
+static struct {
+ int fd,verbose,active;u8 partial[CSW_RECORD],used,head,queued,seen[9],pressed,dir;
+ u16 map[17];struct {u16 key;u8 count;}queue[CSW_QUEUE];
+ u32 button_at[9],direction_at,press_at,retry_at,config_at,config_hash,records,invalid,dropped;
+} csw={.fd=-1};
+/* An open idle FIFO is not evidence of a console. Only valid received records
+ * take precedence over a duplicate evdev knob path. */
+static int csw_live(void){return csw.fd>=0&&csw.active;}
+static u32 control_u32(const u8*b){return (u32)b[0]|(u32)b[1]<<8|(u32)b[2]<<16|(u32)b[3]<<24;}
+static void control_number(char*b,unsigned cap,int value){
+ if(value==(s32)0x80000000u)appendstr(b,cap,"-2147483648");else append_int(b,cap,value);
+}
+static void control_log(const char*tag,int source,int value){
+ if(!pref.debug)return;
+ long fd=s_open(CSW_LOG_PATH,O_WRONLY_|O_CREAT_|O_APPEND_,0666);if(fd<0)return;
+ if(s_lseek((int)fd,0,SEEK_END_)<98304){
+  char b[128];b[0]=0;appendstr(b,sizeof(b),tag);appendstr(b,sizeof(b)," src=");control_number(b,sizeof(b),source);
+  appendstr(b,sizeof(b)," value=");control_number(b,sizeof(b),value);appendstr(b,sizeof(b),"\n");s_write((int)fd,b,slen(b));
+ }s_close((int)fd);
+}
+static void csw_defaults(u16*map){
+ const u16 defaults[17]={K_ESC,K_BACK,K_SR,K_CONSOLE_INFO,K_MENU,K_CONSOLE_THEME,K_CONSOLE_INFO,K_CONSOLE_TRIP,K_MAP,
+  K_UP,K_DOWN,K_RIGHT,K_LEFT,K_ROTCCW,K_ROTCW,K_ENTER,0};
+ for(int i=0;i<17;i++)map[i]=defaults[i];
+}
+static int csw_action(const char*name){
+ static const char*names[]={"UP","DOWN","LEFT","RIGHT","OK","ENTER","BACK","ESC","ZOOMOUT","ZOOMIN","SR","MAP","MENU","ROTNEXT","ROTPREV","KNOB+","KNOB-","INFO","TRIP","THEME","NONE","IGNORE"};
+ static const u16 codes[]={K_UP,K_DOWN,K_LEFT,K_RIGHT,K_ENTER,K_ENTER,K_BACK,K_ESC,K_ESC,K_SR,K_SR,K_MAP,K_MENU,K_ROTCW,K_ROTCCW,K_ROTCW,K_ROTCCW,K_CONSOLE_INFO,K_CONSOLE_TRIP,K_CONSOLE_THEME,0,0};
+ for(unsigned i=0;i<sizeof(codes)/sizeof(codes[0]);i++)if(streq(name,names[i]))return codes[i];return -1;
+}
+/* Parse into a temporary map. A bad/truncated edit cannot half-apply bindings. */
+static int csw_parse_config(char*b,u16*map,int*verbose){
+ csw_defaults(map);*verbose=0;char*line=b;
+ while(*line){
+  char*end=line;while(*end&&*end!='\n'&&*end!='\r')end++;char saved=*end;*end=0;
+  char*p=line;while(*p==' '||*p=='\t')p++;
+  if(*p&&*p!='#'&&*p!=';'&&*p!='['){
+   char name[24],value[24];unsigned n=0;
+   while(*p&&*p!='='&&*p!=' '&&*p!='\t'){if(n+1>=sizeof(name))return 0;name[n++]=upc(*p++);}name[n]=0;
+   while(*p==' '||*p=='\t')p++;if(*p++!='=')return 0;while(*p==' '||*p=='\t')p++;
+   n=0;while(*p&&*p!=' '&&*p!='\t'&&*p!='#'&&*p!=';'){if(n+1>=sizeof(value))return 0;value[n++]=upc(*p++);}value[n]=0;
+   while(*p==' '||*p=='\t')p++;if(*p&&*p!='#'&&*p!=';')return 0;
+   int slot=-1;
+   if(starts(name,"BTN")&&name[3]>='1'&&name[3]<='9'&&!name[4])slot=name[3]-'1';
+   else if(starts(name,"DIR")&&name[3]>='1'&&name[3]<='4'&&!name[4])slot=9+name[3]-'1';
+   else if(streq(name,"ROT1"))slot=13;else if(streq(name,"ROT2"))slot=14;
+   else if(streq(name,"PUSH"))slot=15;else if(streq(name,"LONGPUSH"))slot=16;
+   else if(streq(name,"VERBOSE")){if(!streq(value,"0")&&!streq(value,"1"))return 0;*verbose=value[0]=='1';}
+   else return 0;
+   if(slot>=0){int key=csw_action(value);if(key<0)return 0;map[slot]=(u16)key;}
+  }
+  if(!saved)break;line=end+1;
+ }return 1;
+}
+static void csw_config_load(void){
+ char b[2049];int fd=(int)s_open(CSW_MAP_PATH,O_RDONLY_|O_NONBLOCK_,0);
+ if(fd<0)fd=(int)s_open(CSW_MAP_ALT,O_RDONLY_|O_NONBLOCK_,0);
+ long n=0;if(fd>=0){n=control_read(fd,b,sizeof(b));s_close(fd);if(n<0||n>2048){control_log("CSW CONFIG TOO LARGE/UNREADABLE",0,(int)n);return;}}
+ u32 hash=2166136261u;for(long i=0;i<n;i++){if(!b[i]){control_log("CSW CONFIG CONTAINS NUL",0,0);return;}hash=(hash^(u8)b[i])*16777619u;}
+ if(hash==csw.config_hash)return;
+ b[n]=0;u16 map[17];int verbose;
+ if(!csw_parse_config(b,map,&verbose)){control_log("CSW CONFIG INVALID; KEEPING BINDINGS",0,0);return;}
+ for(int i=0;i<17;i++)csw.map[i]=map[i];csw.verbose=verbose;csw.config_hash=hash;
+ csw.head=csw.queued=0;control_log("CSW CONFIG LOADED",0,0);
+}
+static void csw_enqueue(int key,unsigned count){
+ if(key<=0||!count)return;
+ if(csw.queued==CSW_QUEUE){csw.dropped++;return;}
+ unsigned at=(csw.head+csw.queued)%CSW_QUEUE;csw.queue[at].key=(u16)key;csw.queue[at].count=(u8)count;csw.queued++;
+}
+static int csw_next(void){
+ if(!csw.queued)return 0;int key=csw.queue[csw.head].key;
+ if(!--csw.queue[csw.head].count){csw.head=(csw.head+1)%CSW_QUEUE;csw.queued--;}return key;
+}
+static void csw_record(const u8*b,u32 now){
+ u32 src=control_u32(b);csw.records++;
+ if(csw.verbose){
+  control_log("CSW SOURCE",(int)src,0);
+  if(!src){for(int i=1;i<6;i++)control_log("CSW FIELD",i,(int)control_u32(b+i*4));control_log("CSW STEPS",0,b[24]);}
+ }
+ if(src>=1&&src<=9){
+  /* No unrelated button fields are initialized reliably by the producer. */
+  csw.active=1;
+  unsigned i=src-1;int duplicate=csw.seen[i]&&now-csw.button_at[i]<250u;csw.button_at[i]=now;csw.seen[i]=1;if(duplicate)return;csw_enqueue(csw.map[i],1);return;
+ }
+ if(src){csw.invalid++;control_log("CSW UNKNOWN SOURCE",(int)src,0);return;}
+ u32 direction=control_u32(b+4),rotation=control_u32(b+8),pressed=control_u32(b+16);
+ if(direction<1||direction>5||rotation<1||rotation>3||pressed>1){csw.invalid++;return;}
+ csw.active=1;
+ if(direction>=1&&direction<=4){
+  if(direction!=csw.dir||now-csw.direction_at>=150u){csw_enqueue(csw.map[9+direction-1],1);csw.direction_at=now;}
+  csw.dir=(u8)direction;
+ }else if(direction==5)csw.dir=0;
+ if(rotation==1||rotation==2){unsigned count=b[24];if(count>=1&&count<=14)csw_enqueue(csw.map[rotation==1?13:14],count);else csw.invalid++;}
+ /* Neutral direction/rotation is NOT an OK press. Use the real pressed
+  * edge; elapsed UI/rendering time must never manufacture a second OK. */
+ if(pressed==1){
+  if(!csw.pressed){
+   int key=csw.map[15];if(control_u32(b+20)==2&&csw.map[16])key=csw.map[16];
+   csw_enqueue(key,1);
+  }
+  csw.pressed=1;csw.press_at=now;
+ }else if(pressed==0)csw.pressed=0;
+}
+static void csw_feed(const u8*b,unsigned n,u32 now){
+ for(unsigned i=0;i<n;i++){csw.partial[csw.used++]=b[i];if(csw.used==CSW_RECORD){csw_record(csw.partial,now);csw.used=0;}}
+}
+static void csw_init(void){
+ csw.active=0;csw_defaults(csw.map);
+ csw.fd=control_fifo(CSW_FIFO_PATH);csw.retry_at=s_now_ms();csw.config_at=csw.retry_at;csw_config_load();
+}
+static void poll_csw(void){
+ u32 now=s_now_ms();
+ if(now-csw.config_at>=5000u){csw.config_at=now;csw_config_load();}
+ if(csw.fd<0){if(now-csw.retry_at<1000u)return;csw.retry_at=now;csw.fd=control_fifo(CSW_FIFO_PATH);if(csw.fd<0){control_log("CSW FIFO UNAVAILABLE",0,0);return;}}
+ /* At most 16 input actions and two bounded reads per slice. Backpressure
+  * keeps detents queued in the FIFO instead of dropping a rapid rotation. */
+ unsigned budget=16;int key;
+ while(budget&&((key=csw_next())!=0)){key_handle(key);budget--;}
+ for(unsigned attempt=0;attempt<2&&csw.queued<=8;attempt++){
+  u8 b[CSW_RECORD*8];long n=control_read(csw.fd,b,sizeof(b));
+  if(n>0)csw_feed(b,(unsigned)n,now);else{if(n==0)csw.used=0;break;}
+ }
+ while(budget&&((key=csw_next())!=0)){key_handle(key);budget--;}
+}
+
+/* VehicleStatus alternative to Focus. Endpoint facts from Renatka PR #2;
+ * fixed storage, nonblocking sequenced packets, no replies or raw/VIN logs.
+ * Available hardware supplies records at runtime; no SD-card marker is needed. */
+static const unsigned short vehicle_ports[9]={3400,3401,3700,3800,4000,4001,5600,5700,5800};
+static struct {int enabled,listen[9],client[16];u8 port[16];u32 retry_at;} vehicle;
+static void vehicle_path(int port,char*out){
+ copystr(out,108,VSTAT_SOCKET_PREFIX);char digits[6];for(int i=4;i>=0;i--){digits[i]=(char)('0'+port%10);port/=10;}digits[5]=0;appendstr(out,108,digits);
+}
+static int vehicle_listener(int port){
+ char path[108];vehicle_path(port,path);int fd=control_socket();if(fd<0)return -1;
+ int rc=control_address(fd,path,0);
+ if(rc==-98||rc==-48){
+  /* Never remove a live endpoint owned by another service. Reclaim only a
+   * socket that refuses a connection (a prior crashed instance). */
+  int probe=control_socket();int status=probe<0?0:control_address(probe,path,1);if(probe>=0)s_close(probe);
+  if(status==-111||status==-61){s_unlink(path);rc=control_address(fd,path,0);}
+ }
+ if(rc<0||control_listen(fd)<0){s_close(fd);return -1;}return fd;
+}
+static void vehicle_disconnect(void){temperature.vehicle_connected=temperature.vehicle_valid=0;temperature_select();}
+static void vehicle_packet(const u8*b,unsigned n){
+ if(n!=11||b[0]!=37||b[1]!=0||b[2]!=1||control_u32(b+3)!=4)return;
+ int value=(s32)control_u32(b+7);temperature.vehicle_connected=1;
+ temperature.vehicle_valid=car_temp_valid(value);if(temperature.vehicle_valid)temperature.vehicle=value;
+ temperature_select();
+}
+static void vehicle_init(void){
+ vehicle.enabled=1;
+ for(int i=0;i<9;i++)vehicle.listen[i]=-1;
+ for(int i=0;i<16;i++)vehicle.client[i]=-1;
+ for(int i=0;i<9;i++)vehicle.listen[i]=vehicle_listener(vehicle_ports[i]);
+ vehicle.retry_at=s_now_ms();
+}
+static void poll_vehicle(void){
+ if(!vehicle.enabled)return;u32 now=s_now_ms();
+ if(now-vehicle.retry_at>=5000u){vehicle.retry_at=now;for(int i=0;i<9;i++)if(vehicle.listen[i]<0)vehicle.listen[i]=vehicle_listener(vehicle_ports[i]);}
+ struct ControlPoll p[25];int map[25];unsigned count=0;
+ for(int i=0;i<9;i++)if(vehicle.listen[i]>=0){p[count]=(struct ControlPoll){vehicle.listen[i],1,0};map[count++]=i;}
+ for(int i=0;i<16;i++)if(vehicle.client[i]>=0){p[count]=(struct ControlPoll){vehicle.client[i],1,0};map[count++]=9+i;}
+ if(!count||control_poll(p,count)<=0)return;
+ unsigned budget=16;
+ for(unsigned k=0;k<count&&budget;k++)if(p[k].revents){
+  if(map[k]<9){
+   int port=map[k],fd=control_accept(p[k].fd);if(fd<0)continue;
+   int slot=-1;
+   /* One current VehicleStatus producer: replacing a connection resets the
+    * old sample until the new producer publishes a complete valid update. */
+   if(vehicle_ports[port]==3700)for(int j=0;j<16;j++)if(vehicle.client[j]>=0&&vehicle.port[j]==port){s_close(vehicle.client[j]);vehicle.client[j]=-1;vehicle_disconnect();}
+   for(int j=0;j<16;j++)if(vehicle.client[j]<0){slot=j;break;}
+   if(slot<0&&vehicle_ports[port]==3700){
+    for(int j=0;j<16;j++)if(vehicle.port[j]!=port){s_close(vehicle.client[j]);vehicle.client[j]=-1;slot=j;break;}
+   }
+   if(slot<0)s_close(fd);else{vehicle.client[slot]=fd;vehicle.port[slot]=(u8)port;if(vehicle_ports[port]==3700)vehicle_disconnect();}
+  }else{
+   int slot=map[k]-9;if(vehicle.client[slot]!=p[k].fd)continue;u8 b[512];long n=control_read(p[k].fd,b,sizeof(b));
+   if(n>0&&vehicle_ports[vehicle.port[slot]]==3700)vehicle_packet(b,(unsigned)n);
+   else if(n==0||(n<0&&n!=-11&&n!=-4)){
+    s_close(vehicle.client[slot]);vehicle.client[slot]=-1;
+    if(vehicle_ports[vehicle.port[slot]]==3700)vehicle_disconnect();
+   }
+  }budget--;
+ }
+}
+static void vehicle_close(void){
+ if(!vehicle.enabled)return;
+ for(int i=0;i<16;i++)if(vehicle.client[i]>=0){s_close(vehicle.client[i]);vehicle.client[i]=-1;}
+ for(int i=0;i<9;i++)if(vehicle.listen[i]>=0){char path[108];s_close(vehicle.listen[i]);vehicle.listen[i]=-1;vehicle_path(vehicle_ports[i],path);s_unlink(path);}
+ vehicle_disconnect();vehicle.enabled=0;
+}
 
 #include "frame_renderer.h"
 
@@ -2816,25 +3147,28 @@ static int power_requested(void){char b[24];long fd=s_open(POWER_PATH,O_RDWR_,0)
 
 #ifndef HOST_TEST
 static void run(void){
+  csw_init();vehicle_init();
   memzero(&gps,sizeof(gps));gps.hour=-1;gps.min=0;memzero(&car,sizeof(car));memzero(&af,sizeof(af));memzero(&roadctx,sizeof(roadctx));
   load_font();
 #if CLIO_UNICODE
 #ifdef HOST_TEST
  cliou_load(CLIO_HOST_ROOT "clio843/maps/fonts.cpf");
 #else
- cliou_load("/mnt/sdcard/clio843/maps/fonts.cpf");
+ cliou_load("./clio843/maps/fonts.cpf");
 #endif
 #endif
  load_prefs();debug_state_write();load_last_fix();seed_boot_theme();if(!pref.debug)remove_stale_logs();load_last_audio();nrecents=read_places(RECENT_PATH,recents,RECENT_MAX);nfaves=read_places(FAVES_PATH,faves,FAVE_MAX);load_trip();apply_brightness();load_map();load_timezones();load_regions();load_cameras();seed_boot_map_view();load_route_data();s_unlink(BT_CMD_PATH);bt_write_small(BT_ACTIVE_PATH,"0\n");bt_active_written=0;bt_name_cache_load();bt_poll_status();if(trip.active){modal=MOD_RESUME_TRIP;modal_choice=0;}open_inputs();
+ control_log("CONSOLE READER",0,csw.fd);
+ if(vehicle.enabled)for(int i=0;i<9;i++)control_log("VEHICLE STATUS LISTENER",vehicle_ports[i],vehicle.listen[i]);
   int wdfd=(int)s_open(WD_PATH,O_WRONLY_,0);debug_log(STATE_LOG,"CLIOPLAY GLOBAL " CLIOPLAY_VERSION " START");debug_log(STATE_LOG,qadjmode==7?(qadj_map_ok?"QAD7 PACKET+MMAP QUERY ENABLED":"QAD7 PAGED QUERY ENABLED"):(qadjmode==6?(qadj_map_ok?"QAD6 GEOMMETA+MMAP QUERY ENABLED":"QAD6 PAGED QUERY ENABLED"):(qadjmode==5?(qadj_map_ok?"QAD5 MMAP+STALL QUERY ENABLED":"QAD5 PAGED+STALL QUERY ENABLED"):(qadjmode==4?"QAD4 LOCAL-RECON QUERY ENABLED":(qadjmode==3?"QAD3 GROUP QUERY+RECON ENABLED":(qadjmode==2?"QAD2 NODE-BLOCK QUERY ENABLED (PAGED INDEX)":(qadjmode==1?"QAD1 FAST QUERY ENABLED":"QADJ FAST QUERY FALLBACK CPR2")))))));if(qadjmode==6&&qadj6_legacy_header)debug_log(STATE_LOG,"QAD6 LEGACY HEADER COMPAT ENABLED");{char mb[96];mb[0]=0;appendstr(mb,sizeof(mb),"MMAP QAD=");append_int(mb,sizeof(mb),qadj_map_ok);appendstr(mb,sizeof(mb)," GEOM=");append_int(mb,sizeof(mb),route_geom_map_ok);debug_log(STATE_LOG,mb);}u32 tick=0,next_model=s_now_ms(),next_input=next_model;render_runtime_reset(next_model);
   for(;;){
     u32 now=s_now_ms();int model_due=frame_due(now,next_model);
-    if(frame_due(now,next_input)){poll_keys();next_input=frame_after(next_input,now,33u);}
+    if(frame_due(now,next_input)){poll_csw();poll_keys();next_input=frame_after(next_input,now,33u);}
     if(model_due){
       next_model=frame_after(next_model,now,FRAME_MODEL_MS);
       if((tick%5)==0)scan_inputs();int had_fix=gps.fix;poll_gps();if(gps.fix){if(!had_fix){track_valid=0;track_course=-1;}remember_live_fix();}
       update_smooth_track();update_display_course();
-      if((tick%2)==0){poll_audio();poll_car();bt_source_service();}
+      if((tick%2)==0){poll_audio();poll_car();poll_vehicle();bt_source_service();}
       if((tick%5)==0){bt_poll_status();poll_phone_destination();}
       if((tick%10)==0)update_road_context();
       phone_destination_apply();trip_service();arrival_modal_service();
@@ -2855,7 +3189,7 @@ static void run(void){
       continue;
     }
     if(model_due&&route_status==R_READY)route_service_until(now);
-    if(power_requested()){debug_log(STATE_LOG,"POWER REQUEST");bt_write_small(BT_ACTIVE_PATH,"0\n");if(prefs_dirty)save_prefs();save_last_audio();if(gps.fix)remember_live_fix();save_last_fix();save_trip();render_background_dirty=1;render_runtime_step(hud_now_ms(),1);s_sync();s_nanosleep(0,400000000);if(wdfd>=0)s_close(wdfd);for(int i=0;i<INPUT_MAX;i++)if(infd[i]>=0)s_close(infd[i]);if(gpsfd>=0)s_close(gpsfd);if(audiofd>=0)s_close(audiofd);if(mapfd>=0)s_close(mapfd);if(qadjfd>=0)s_close(qadjfd);if(routefd>=0)s_close(routefd);return;}
+    if(power_requested()){debug_log(STATE_LOG,"POWER REQUEST");bt_write_small(BT_ACTIVE_PATH,"0\n");if(prefs_dirty)save_prefs();save_last_audio();if(gps.fix)remember_live_fix();save_last_fix();save_trip();render_background_dirty=1;render_runtime_step(hud_now_ms(),1);s_sync();s_nanosleep(0,400000000);vehicle_close();if(wdfd>=0)s_close(wdfd);for(int i=0;i<INPUT_MAX;i++)if(infd[i]>=0)s_close(infd[i]);if(gpsfd>=0)s_close(gpsfd);if(audiofd>=0)s_close(audiofd);if(mapfd>=0)s_close(mapfd);if(qadjfd>=0)s_close(qadjfd);if(routefd>=0)s_close(routefd);return;}
     render_profile_service(s_now_ms());
     now=s_now_ms();if(!frame_due(now,wake)){u32 wait=wake-now;s_nanosleep((long)(wait/1000u),(long)(wait%1000u)*1000000L);}
   }

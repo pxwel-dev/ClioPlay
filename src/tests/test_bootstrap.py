@@ -123,5 +123,38 @@ fi
                     self.assertLess(events.index('PHONE_SETUP'), events.index('REMOTE_CONNECTED'))
 
 
+    def test_card_probe_and_console_creation_are_non_destructive(self):
+        source=(ROOT/'card-template/ttn').read_text()
+        helpers=source.split('# Resolve the actual card',1)[1].split('# End card helpers.',1)[0]
+        helpers='# Resolve the actual card'+helpers
+        with tempfile.TemporaryDirectory(prefix='clioplay-card-probe-') as folder:
+            work=Path(folder);card=work/'card with spaces';(card/'clio843').mkdir(parents=True)
+            (card/'clio843/clio040').write_bytes(b'fixture')
+            fifo=work/'CswEvent0'
+            script=helpers+'''
+SD=`find_card "$TEST_CARD"`
+[ "$SD" = "$TEST_CARD" ] || exit 11
+setup_console_fifo "$TEST_FIFO"
+[ -p "$TEST_FIFO" ] || exit 13
+[ ! -e "$SD/csw" ] && [ ! -e "$SD/vstat" ] || exit 12
+INODE=`ls -i "$TEST_FIFO"`
+setup_console_fifo "$TEST_FIFO"
+[ "$INODE" = "$(ls -i "$TEST_FIFO")" ] || exit 14
+'''
+            subprocess.run(['/bin/sh','-c',script],check=True,env={**os.environ,'TEST_CARD':str(card),'TEST_FIFO':str(fifo)})
+            fifo.unlink();fifo.write_text('existing file')
+            subprocess.run(['/bin/sh','-c',helpers+'\nsetup_console_fifo "$TEST_FIFO"'],check=True,env={**os.environ,'TEST_CARD':str(card),'TEST_FIFO':str(fifo)})
+            self.assertEqual(fifo.read_text(),'existing file')
+        self.assertLess(source.index('setup_console_fifo /dev/input/CswEvent0'),source.index('killall focusd'))
+        self.assertIn('cd "$SD" || exit 1',source)
+        self.assertIn('exec "$SD"/clio843/clio040',source)
+
+    def test_runtime_card_paths_do_not_require_mount_aliases(self):
+        for name in ('clio040.c','cliospl.c','clioa2dp.c','global_regions.h','atlas_catalog.h','global_clock.h'):
+            source=(ROOT/'clio843/src'/name).read_text()
+            self.assertNotIn('/mnt/sdcard/',source,name)
+            self.assertNotIn('/media/sdcard/',source,name)
+
+
 if __name__ == '__main__':
     unittest.main()

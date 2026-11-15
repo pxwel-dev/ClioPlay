@@ -19,7 +19,7 @@ English/French/Spanish dictionary. Each additional `<code>.json` contains a
 complete mapping of the same English keys. Append language codes: indices 0–2
 are existing card preferences and must remain English/French/Spanish.
 
-Run `python3 tools/build_translations.py` from the edition's root to regenerate
+Run `python3 tools/build_translations.py` from `src/` to regenerate
 the native header. Normal `tools/build_ui.py` does this automatically and hashes
 all locale JSON files. Missing/extra keys, empty strings, overlong UTF-8 strings
 and missing numeric-prefix spaces fail validation.
@@ -37,8 +37,8 @@ layout remain consistent when switching languages.
 
 ## Favourite keyboard
 
-The left soft key deletes; the right soft key inserts a space. The old on-screen
-Space/Delete buttons are replaced by one wide language button. Press it to choose
+The left soft key deletes; the right soft key inserts a space. The wide language
+button opens the layout chooser. Use it to choose
 one of the 18 layouts with Up/Down, then confirm. Left/Right jumps a page in that
 chooser; Back cancels without losing the name. Choosing a keyboard never changes
 the interface language, country, units or camera policy. The choice is saved.

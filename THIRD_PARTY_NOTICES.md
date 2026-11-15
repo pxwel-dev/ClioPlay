@@ -66,3 +66,11 @@ metadata and checksums are recorded in `clio843/src/keyboard-data/pinyin.json`;
 the full licence is in `clio843/src/keyboard-data/UNICODE-LICENSE.txt`.
 The modern Hangul composer follows Unicode's algorithmic syllable model:
 [Unicode 17, Chapter 3](https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/).
+
+Console record mappings and VehicleStatus endpoint/temperature findings were
+contributed by bobczan through [Renatka](https://github.com/bobczan/Renatka) and
+[ClioPlay PR #2](https://github.com/pxwel-dev/ClioPlay/pull/2), commit
+`d7701fbe60566d3afa8c556ebf7fe7da3a2fcf6e`, under the project’s MIT licence
+(see LICENSE). The original source-only `cswd.c` / `vstatd.c`, diagnostic tools
+and hardware notes are retained as references. ClioPlay integrates both readers
+into `clio040`; it does not build or launch those additional helpers.

@@ -2,8 +2,36 @@
 # ClioPlay bootstrap.
 CLIOPLAY_VERSION=2.0.0
 # Persistent logs exist only when prefs.ini has debug=1.
-SD=/mnt/sdcard
-CD=/media/sdcard/clio843
+# Resolve the actual card before any executable, preference or log lookup.
+find_card(){
+  for ROOT in "$@"; do
+    if [ -f "$ROOT/clio843/clio040" ]; then printf '%s\n' "$ROOT"; return 0; fi
+  done
+  while read -r DEVICE ROOT REST; do
+    ROOT=`printf '%b' "$ROOT"`
+    if [ -f "$ROOT/clio843/clio040" ]; then printf '%s\n' "$ROOT"; return 0; fi
+  done < /proc/mounts
+  return 1
+}
+# Legacy helpers may still use /mnt/sdcard. Supply missing compatibility
+# aliases, but never replace a populated directory, mount, or existing link.
+card_alias(){
+  [ "$1" = "$SD" ] && return 0
+  [ -L "$1" ] && return 0
+  if [ -d "$1" ]; then rmdir "$1" 2>/dev/null || return 0; fi
+  [ -e "$1" ] && return 0
+  ln -s "$SD" "$1" 2>/dev/null || return 0
+}
+# Must run before focusd / vehicledaemon. Never unlink an active FIFO.
+setup_console_fifo(){
+  if [ ! -e "$1" ] && [ ! -L "$1" ]; then mkfifo -m 666 "$1"; fi
+}
+# End card helpers.
+SD=`find_card /media/sdcard /mnt/sdcard /mnt/mmc /media/mmc` || exit 1
+cd "$SD" || exit 1
+card_alias /mnt/sdcard
+card_alias /media/sdcard
+CD=$SD/clio843
 PREF=$CD/prefs.ini
 STATE=$CD/state.log
 DEBUG=0
@@ -113,8 +141,8 @@ if [ "$DEBUG" = "1" ]; then
 fi
 
 # AUX initialization has finished; splash may now own the framebuffer.
-if [ -x $SD/clio843/cliospl ]; then
-  $SD/clio843/cliospl >/dev/null 2>&1
+if [ -x "$SD"/clio843/cliospl ]; then
+  "$SD"/clio843/cliospl >/dev/null 2>&1
   log "CLIOPLAY SPLASH DRAWN"
 fi
 
@@ -123,13 +151,16 @@ fi
 # saved-phone reconnect can proceed in parallel with vehicle/GPS acquisition.
 # btstart launches the Renault HID listener without waiting for the remote to
 # wake, and publishes /tmp/clbtrdy once the Bluetooth core is ready to reconnect.
-CLIO_DEBUG=$DEBUG /bin/sh $SD/clio843/btstart.sh >/dev/null 2>&1 &
+CLIO_DEBUG=$DEBUG /bin/sh "$SD"/clio843/btstart.sh >/dev/null 2>&1 &
 log "BT START REQUESTED EARLY (GPS-INDEPENDENT)"
+
+# The physical console producer requires its consumer FIFO to exist first.
+setup_console_fifo /dev/input/CswEvent0 >/dev/null 2>&1
 
 # 3) Replace the Focus endpoint, then reconnect the stock vehicle daemon.
 # focusd publishes /tmp/cfstate plus a volatile /tmp/cfbus event stream.
 killall focusd >/dev/null 2>&1
-$SD/clio843/focusd >/dev/null 2>&1 &
+"$SD"/clio843/focusd >/dev/null 2>&1 &
 log "FOCUS START REQUESTED"
 start_vehicle(){
 N=0
@@ -155,4 +186,4 @@ start_vehicle &
 # owns audlast.dat persistence and later publishes /tmp/clbt solely as the
 # Bluetooth-audio source gate; it is not a reconnect readiness dependency.
 log "UI EXEC (FOCUS/VEHICLE STARTUP IN PARALLEL)"
-exec $SD/clio843/clio040
+exec "$SD"/clio843/clio040

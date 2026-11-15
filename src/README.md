@@ -4,9 +4,10 @@ The current release is recorded in [VERSION](VERSION).
 
 A standalone edition of the compact 480×272 ClioPlay interface for non-LIVE
 Carminat TomTom. It keeps the remote workflow, continuous antialiased roads/routes,
-Trip workspace, our Bluetooth receiver and physical AUX initialization. It targets
-cars **without factory Bluetooth**. Factory Bluetooth/hands-free coexistence stays
-outside this version.
+Trip workspace, Bluetooth receiver, physical console input and AUX initialization.
+The head unit must have Bluetooth hardware (`hw_bluetooth=1`). Playback on factory
+Bluetooth radios and hands-free coexistence require vehicle-specific validation;
+unreadable radio telemetry does not disable ClioPlay’s Bluetooth controls.
 
 ## Set up a card
 
@@ -87,8 +88,7 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
 - **Camera policy:** information-only alerts enabled in **19 reviewed countries**;
   **FR/DE/CH/CY** excluded, with a conservative export border buffer. Other
   territories stay disabled pending review. Imports cannot bypass policy. See the
-  [country list and review sources](docs/camera-support.md). No invented French
-  danger zones are substituted.
+  [country list and review sources](docs/camera-support.md).
 - **Camera sound:** Off / Visual / **Phone audio**. The two-tone cue ducks and mixes
   into our existing Bluetooth PCM stream, including paused playback. Radio/AUX
   retain visual alerts; FM interruption is not implemented. Physical playback
@@ -114,7 +114,98 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
   layouts, with left-soft backspace, right-soft space and a wide language chooser.
   See [keyboard controls and input methods](locales/README.md#favourite-keyboard).
 
-## Remote controls
+## Physical console and temperature sources
+
+The Bluetooth remote and Scénic III / Mégane armrest console feed the same UI
+handlers and can be used together. No extra input or temperature daemon is
+needed. Both input paths and both temperature readers are available automatically;
+the installer requires no hardware-specific setup.
+ClioPlay uses valid incoming events/readings from whichever hardware is present.
+An absent source adds no UI notice or placeholder. The factory vehicle daemon
+uses its normal vehicle configuration to supply physical console events.
+
+| Console control | Action |
+| --- | --- |
+| Top-left / top-right soft buttons | Same as remote soft-left / soft-right: zoom, delete, next or space according to the current page. |
+| BACK | Same as remote BACK, including BT CTRL on the driving map. |
+| INFO | Show the driving journey/ETA overview. |
+| MENU | Open Menu. |
+| LIGHT | Cycle Day, Night and custom-schedule Auto. |
+| REPEAT | Redisplay the journey overview; spoken navigation is not implemented. |
+| DEST | Open Trip directly, unless a confirmation is awaiting a decision. |
+| MAP | The existing Auto/manual zoom, Explore and return-to-map behaviour. |
+| Joystick | The existing arrow actions, including Explore panning. |
+| Knob rotation | Zoom the map; previous/next track in BT CTRL; scroll menus; select dialog choices; traverse keyboard characters and coordinate fields. |
+| Knob press | OK/confirm; play/pause in BT CTRL. |
+
+Duplicate evdev knob events are ignored only after a valid console FIFO record
+has been received. An open but idle FIFO does not claim the controls. Without
+valid FIFO input, evdev knob events remain usable and never acquire the
+Bluetooth remote’s input lock. The optional `cswmap.ini` mapping file is retained
+across installations.
+
+Default mappings work without a configuration file. For overrides, copy
+[the contributed example](card-template/cswmap.example.ini) to the card as
+`clio843/cswmap.ini` (or `cswmap.ini` in the card root, which takes precedence).
+The example contains the contributor’s conservative bindings; it disables LIGHT
+and REPEAT and maps DEST to Menu. Change `btn6=THEME`, `btn7=INFO`, `btn8=TRIP`
+and `btn4=INFO` to keep the integrated defaults. Actions accept upper/lower case;
+`ROTNEXT`/`ROTPREV` or `knob+`/`knob-` select contextual knob movement.
+`NONE` disables a control. Add `verbose=1` for interpreted console-field logging
+while Debug is enabled. File edits, including same-size edits, reload within
+five seconds; invalid/oversize files keep the last valid bindings. Deleting the
+file restores defaults. Long-press mapping is optional and remains unverified;
+neutral records never act as OK, and holds do not become repeated confirmations.
+
+**Both temperature sources remain active.** Valid Focus `cfstate` temperature
+wins. When it is absent/invalid, a valid VehicleStatus item 4 from interface 37
+is used. Unknown `-1024`, `999`, malformed packets and out-of-range readings
+are hidden. A connected source is not expired just because the temperature has
+not changed. Disconnecting VehicleStatus invalidates its cached reading; it
+falls back to Focus or hides the temperature until a fresh reading arrives.
+VehicleStatus temperature works independently of console input: no button press
+or prior console detection is needed.
+
+The inline receiver supplies the navigation-side PAC sinks reported by the
+contributor (3400/3401/3700/3800/4000/4001/5600/5700/5800), decodes only the
+11-byte temperature update, sends no replies and never logs identity/VIN
+payloads. It does not replace a live socket owned by another service or write
+into `focusd`'s state file. Startup creates the console FIFO before reconnecting
+the stock daemon, preserves existing FIFOs, and resolves the card mount before
+using relative runtime paths. Diagnostics remain Debug-only.
+
+The original protocol was vehicle-tested by the contributor on a 2010 Scénic
+III. The combined implementation has host tests for input framing, real FIFO
+reconnects, both inputs, UI contexts, temperature precedence and malformed data.
+Linux Unix-sequenced-packet transport tests run when that facility is available;
+some hosts cannot exercise that transport. Physical validation of this integrated
+build is still required, including detents, neutral/release frames, temperature
+reconnect and unchanged Bluetooth operation. Factory-radio audio remains a
+separate compatibility question. See [the contributed hardware findings](docs/scenic-iii-hardware.md).
+
+## Remote and console controls
+
+Every remote action below is available with the default console mapping. Use
+these equivalents throughout the driving, Trip, Bluetooth, Settings, keyboard,
+coordinate-entry and dialog instructions:
+
+| Remote input | Physical console input |
+| --- | --- |
+| MAP / MENU / BACK | MAP / MENU / BACK buttons |
+| Centre / OK | Press the knob |
+| Up / Down / Left / Right | Move the joystick in that direction |
+| Left / right soft keys | Upper-left / upper-right console buttons |
+
+Turning the knob is an additional convenience: it zooms the map, selects tracks
+in BT CTRL, scrolls lists and traverses keyboard/keypad buttons and dialog choices.
+In Settings, turn it to select a row; joystick Left/Right changes the value and
+knob press performs OK. In Trip, the upper soft buttons select destinations or
+the itinerary, joystick Left/Right changes Recents/Favourites, and turning the
+knob scrolls the selected list. No long-press binding is required.
+
+The [console action table](#physical-console-and-temperature-sources) also covers
+INFO, REPEAT, LIGHT and DEST shortcuts. Optional custom mappings can change these
+bindings; the defaults provide complete remote-equivalent control.
 
 ### Driving, map browsing and BT CTRL
 
@@ -182,6 +273,8 @@ Use **Up / Down** to highlight a row. The available actions depend on the settin
 | Language | Cycle backwards or forwards. | Select the next language. |
 | Day starts / Night starts | Adjust the highlighted hour or minute. | Switch between editing hours and minutes. |
 
+The release version is shown at the bottom of Settings.
+
 ### Naming keyboard and dialogs
 
 - In **Rename**, the **direction pad** moves between characters and actions.
@@ -219,13 +312,13 @@ This is the single canonical Global edition. See
 Host tests cover the unsplit reference graph versus restricted two- and three-pack atlases,
 including a long active via-way restriction,
 an actual Hendaye–Irun France/Spain route, native text, cameras, clock transitions,
-installer rollback, legacy remote screens, water/bridge layering and antialiasing.
+installer rollback, remote controls, water/bridge layering and antialiasing.
 Audio regressions check exact SBC arithmetic and folded synthesis, bounded
 reads/copies, identical PCM, rate fallbacks, source changes, camera cues, idle
 drain and maintenance timers independent of Bluetooth packet wakeups.
-Country-scale France/Spain build status is recorded separately; downloaded inputs
-are not evidence of finished builds. Geographic metadata is not a legal boundary
-survey; Auto units retain a manual override. Dateline-spanning/planet extracts and
+Navigation bundles must finish building and pass their checks before installation.
+Host fixtures do not establish complete country-scale coverage. Geographic metadata
+is not a legal boundary survey; Auto units retain a manual override. Dateline-spanning/planet extracts and
 latitudes beyond ±85° remain unsupported.
 
 **Vehicle validation remains open:** boot, physical remote, AUX/radio, Bluetooth,
@@ -289,7 +382,7 @@ screen-anchored 8 × 8 ordered dithering at the final RGB565 write reduces colou
 banding in broad gradients, especially on large dark popups. It introduces fine
 fixed grain; the pattern does not cycle between frames. Text and symbols are
 drawn afterwards, and exact RGB565 colours such as selection blue stay exact.
-Only a 256-byte constant table is added, without diffusion buffers or another
+The dither uses a 256-byte constant table, without diffusion buffers or another
 image pass. Samples are reused while the
 finished background and pill geometry remain unchanged; overlapping cards and
 speed-limit insets are sampled afresh.
@@ -346,17 +439,9 @@ it does not establish that our mixer setup works on every radio. Independent
 playback, physical volume/mute response and coexistence with factory Bluetooth
 need vehicle testing. Missing telemetry alone does not prove a missing audio path.
 
-Renault's [2009 Grand Scénic announcement](https://media.renault.at/772/article/827)
-lists an MP3-CD radio with AUX. Primary [radio hardware research](https://hackaday.io/page/20334-types-of-renault-radios-displays-protocols)
-distinguishes basic R1 CD radios from R2 Bluetooth radios and their different
-protocols. The surveyed evidence does not establish a factory AUX-only radio
-without CD or Bluetooth in the target 2009–2012 non-LIVE range, so AUX is not used
-as a heuristic for Bluetooth routing or radio capability.
-
 Source/track notices remain temporary and use the shared glass animations in
-navigation and menus. These paths have host checks; sound output and coexistence
-on other radios still need vehicle trials. No automatic radio-source selection
-or physical console control is implemented by these UI source rules.
+navigation and menus. Console input uses the independent reader described in the
+[controls guide](#physical-console-and-temperature-sources).
 
 ### Decimal-degree destinations
 

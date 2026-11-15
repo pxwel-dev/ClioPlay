@@ -1,8 +1,8 @@
 /* CPG1 offline country polygons. No heap allocation, network or floating point.
  * Country boundaries are generalized: Auto has a manual unit override. */
 #ifndef HOST_TEST
-#define REGIONS_PATH "/mnt/sdcard/clio843/maps/regions.cpg"
-#define CAMERAS_PATH "/mnt/sdcard/clio843/maps/cameras.cpc"
+#define REGIONS_PATH "./clio843/maps/regions.cpg"
+#define CAMERAS_PATH "./clio843/maps/cameras.cpc"
 #else
 #define REGIONS_PATH CLIO_HOST_ROOT "clio843/maps/regions.cpg"
 #define CAMERAS_PATH CLIO_HOST_ROOT "clio843/maps/cameras.cpc"

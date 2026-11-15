@@ -1,4 +1,4 @@
-# GitHub launch
+# Publishing ClioPlay
 
 Publish the **contents of `CLIOPLAY-LATEST-VERSION/`** as the public repository
 root. Its `src/` is the canonical source. The enclosing local workspace, private
@@ -26,26 +26,19 @@ Copy the verified release contents into the repository working tree and include
 deletions for files retired by the new release. Review the changed files and
 run the checks above from the checkout before committing and pushing.
 
-## First push
+## Commit and release
 
-Create an empty **public** GitHub repository. From the publication folder:
+Review the diff and the files selected for commit. Commit and push from the
+existing checkout when satisfied; the preparation and verification tools do not
+stage files, create commits, push or publish releases.
 
-```sh
-git init -b main
-git add .
-git diff --cached --stat
-git commit -m "Initial ClioPlay Global release"
-```
+For a GitHub release, use a tag matching `src/VERSION` and describe the actual
+changes and validation limits. GitHub's source ZIP contains the committed files;
+private navigation data, firmware and website sources must remain excluded.
 
-Add the new repository's actual URL as `origin`, then push `main`. No remote,
-repository or release is created by the local checks. Do not add the private
-phone website or local data to this Git history.
-
-Enable Issues and private vulnerability reporting if wanted. No GitHub Actions
-workflow is included: pushes and pull requests do not automatically run the host
-or Windows launcher checks. The local verification commands above remain
-available for manual use. Do not require the removed **Host and publication
-checks** or **Windows launcher checks** as branch-protection status checks.
+No GitHub Actions workflow is included. Run the local host and Windows launcher
+checks manually; branch protection should reference checks actually available in
+the repository.
 
 ## Release status
 

@@ -6,6 +6,9 @@
 #undef main
 #include <assert.h>
 #include <string.h>
+#ifdef CLIO_CONSOLE_TEST
+#include "fixtures/console-input.h"
+#endif
 
 static void preferences(const char*text){
  FILE*f=fopen(PREF_PATH,"wb");assert(f);
@@ -66,6 +69,23 @@ int main(void){
  key_handle(K_RIGHT);assert(pref.night_start==1140);
  key_handle(K_ENTER);key_handle(K_LEFT);assert(pref.night_start==1139);
  save_prefs();load_prefs();assert(pref.day_start==361&&pref.night_start==1139);
+#ifdef CLIO_CONSOLE_TEST
+ // Compare real console input against the remote handler for every setting,
+ // both hour/minute edit modes, including navigation and confirmation keys.
+ struct Prefs saved=pref;
+ const int keys[]={K_LEFT,K_RIGHT,K_ENTER,K_UP,K_DOWN};
+ for(int row=0;row<SETTING_COUNT;row++)for(int part=0;part<2;part++)
+  for(unsigned k=0;k<sizeof(keys)/sizeof(keys[0]);k++){
+   screen=SCR_SET;modal=MOD_NONE;pref=saved;set_focus=row;theme_time_part=part;
+   (key_handle)(keys[k]); // Parentheses select the real remote function.
+   struct Prefs expected=pref;int focus=set_focus,edit=theme_time_part;
+   pref=saved;set_focus=row;theme_time_part=part;
+   key_handle(keys[k]);
+   assert(memcmp(&pref,&expected,sizeof(pref))==0&&set_focus==focus&&theme_time_part==edit);
+  }
+ pref=saved;set_focus=9;theme_time_part=0;
+ puts("Console Settings parity: every row, both edit parts and all navigation/value/OK actions match remote input.");
+#endif
  // Draw both scrolled schedule rows through the normal page entry point.
  draw_settings();
  puts("AUTO schedule: every minute, midnight wrap, exact custom boundaries, local offsets, GPS-free boot/time-only input, legacy/corrupt preferences, persistence, schedule controls and manual overrides passed.");

@@ -1,6 +1,8 @@
-# QAD6 geometry-arithmetic sidecar
+# QAD6 compatibility format
 
-QAD6 extends QAD5 without changing `route.cpr`.
+The current reader supports QAD6's geometry metadata alongside older matching
+packs. New navigation builds generate [QAD7](QAD7_FAST_QUERY.md). QAD6 extends
+QAD5 without changing the authoritative `route.cpr`.
 
 ## Query
 
@@ -32,7 +34,7 @@ segment-distance calculation -> software division
 
 with mmap reads plus multiplication/addition. Start and destination partial-edge snapping still uses the original runtime arithmetic because the snap location can lie at an arbitrary sub-segment fraction.
 
-QAD6 also stores per-route-segment metres while emitting the route. Remaining distance can then be updated by subtraction as `route_head` advances, and the old post-build `route_compute_m()` pass is no longer needed.
+QAD6 also stores per-route-segment metres while emitting the route. Remaining distance can then be updated by subtraction as `route_head` advances, without a separate post-build `route_compute_m()` pass.
 
 ## Correctness
 

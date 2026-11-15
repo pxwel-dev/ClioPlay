@@ -1,5 +1,9 @@
 # QAD7 unified reconstruction packets
 
+The current single-pack and atlas builders generate `route.qadj` in this format
+for each matching CPR2-v5 graph. Install matching files together using the
+[complete navigation installer](README.md#outputs).
+
 QAD7 keeps the safe QAD5 query architecture (rank-ordered node blocks, direct successor offsets, mmap and validated stall-on-demand) and replaces QAD6's split reconstruction streams with self-contained geometry packets.
 
 For every unique physical geometry range used by CH base arcs, the builder stores one canonical packet stream containing:

@@ -15,7 +15,8 @@ and copy this pack; users need not find or install fonts separately.
 
 `camera-policy.json` records the exact-location exclusion policy and review date.
 It is product configuration, not a worldwide legal permission list. Runtime
-policy is carried in the generated `regions.cpg`. See the audit for limitations.
+policy is carried in the generated `regions.cpg`. See
+[camera support and limitations](../../docs/camera-support.md).
 
 Reviewed mph fallback references beyond the usual GB/US profiles include:
 

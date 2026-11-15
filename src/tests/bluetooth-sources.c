@@ -5,6 +5,9 @@
 #undef main
 #include <assert.h>
 #include <string.h>
+#ifdef CLIO_CONSOLE_TEST
+#include "fixtures/console-input.h"
+#endif
 static void file(const char*p,const char*s){FILE*f=fopen(p,"w");assert(f);assert(fputs(s,f)>=0&&fclose(f)==0);}
 static struct HudCard*prepare(void){hud_prepare(5,hud_capture_ms,screen==SCR_MAP);return &hud_tween[HC_STATUS].target;}
 static void gate(int expected){char b[4]={0};long fd=s_open(BT_ACTIVE_PATH,O_RDONLY_,0);assert(fd>=0);assert(s_read((int)fd,b,3)==2);s_close((int)fd);assert(b[0]=='0'+expected);}

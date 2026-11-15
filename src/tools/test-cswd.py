@@ -132,7 +132,7 @@ def main():
     root = tempfile.mkdtemp(prefix="cswd-host-")
     if args.build:
         here = os.path.dirname(os.path.abspath(__file__))
-        src = os.path.join(here, "..", "src", "clio843", "src", "cswd.c")
+        src = os.path.join(here, "..", "clio843", "src", "cswd.c")
         binary = os.path.join(root, "cswd_host")
         cc = os.environ.get("CC", "cc")
         cmd = [cc, "-O1", "-g", "-Wall", "-Wextra", "-DHOST_TEST",
@@ -208,7 +208,7 @@ def main():
 
         # --- phase 2: a map file rebinds without a rebuild ------------------
         here = os.path.dirname(os.path.abspath(__file__))
-        example = os.path.join(here, "..", "src", "card-template", "cswmap.example.ini")
+        example = os.path.join(here, "..", "card-template", "cswmap.example.ini")
         shutil.copyfile(example, os.path.join(root, "cswmap.ini"))
         d = Cswd(binary, root)
         try:

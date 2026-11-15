@@ -1,7 +1,7 @@
 /* CPT1 offline timezone polygons and UTC transitions. Manual offset is fallback.
  * UTC seconds are unsigned, so the clock table is not limited by signed 2038. */
 #ifndef HOST_TEST
-#define TIMEZONES_PATH "/mnt/sdcard/clio843/maps/timezones.cpt"
+#define TIMEZONES_PATH "./clio843/maps/timezones.cpt"
 #else
 #define TIMEZONES_PATH CLIO_HOST_ROOT "clio843/maps/timezones.cpt"
 #endif

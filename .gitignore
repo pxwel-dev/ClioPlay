@@ -18,6 +18,9 @@
 **/recent.dat
 **/trip.dat
 **/audlast.dat
+**/cswmap.ini
+/csw
+/vstat
 **/*.log
 **/*.rgb565
 **/*.dSYM/

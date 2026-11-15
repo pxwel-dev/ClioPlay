@@ -38,7 +38,7 @@ def main():
         run(sys.executable, '-m', 'unittest', 'discover', '-s', ROOT/'tests', '-p', name)
     with tempfile.TemporaryDirectory(prefix='clioplay-ci-') as temp:
         (Path(temp)/'clio843').mkdir()
-        for name in ('map-antialias', 'map-areas', 'map-layers', 'map-pois', 'vehicle-marker', 'roundabout', 'ui-labels-alerts', 'hud-status', 'hud-metadata', 'bluetooth-sources', 'coordinates', 'hud-playback', 'hud-pages', 'hud-zoom', 'popups', 'frame-renderer', 'render-fast-paths', 'audio-chime', 'audio-decoder', 'audio-runtime', 'auto-theme', 'splash'):
+        for name in ('map-antialias', 'map-areas', 'map-layers', 'map-pois', 'vehicle-marker', 'vehicle-input', 'roundabout', 'ui-labels-alerts', 'hud-status', 'hud-metadata', 'bluetooth-sources', 'coordinates', 'hud-playback', 'hud-pages', 'hud-zoom', 'popups', 'frame-renderer', 'render-fast-paths', 'audio-chime', 'audio-decoder', 'audio-runtime', 'auto-theme', 'splash'):
             exe = Path(temp)/name
             run('cc', '-O1', '-g', '-fsanitize=undefined',
                 '-fno-sanitize-recover=all', '-DCLIO_HOST_ROOT="'+temp+'/"', ROOT/'tests'/f'{name}.c', '-lm', '-o', exe)
@@ -48,6 +48,14 @@ def main():
             if name == 'splash':
                 args.append(temp)
             run(*args)
+        # Repeat complete workflows using physical records rather than key injection.
+        for name in ('coordinates', 'hud-zoom', 'bluetooth-sources', 'auto-theme'):
+            exe = Path(temp)/('console-'+name)
+            run('cc', '-O1', '-g', '-fsanitize=undefined',
+                '-fno-sanitize-recover=all', '-DCLIO_CONSOLE_TEST=1',
+                '-DCLIO_HOST_ROOT="'+temp+'/"', ROOT/'tests'/f'{name}.c', '-lm', '-o', exe)
+            run(exe)
+        print('Console parity: coordinate/naming/trip, Explore/zoom/dialog, Bluetooth transport and all Settings workflows passed.')
     if not options.host_only:
         run(sys.executable, ROOT/'tools/refresh_latest.py', '--check')
     print('ClioPlay host checks passed; no hardware validation claimed.')
