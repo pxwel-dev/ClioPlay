@@ -17,7 +17,7 @@ def get(cache,name):
  filename=name+'-Regular.'+('otf' if 'CJK' in name else 'ttf');target=cache/filename
  url=('https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/OTF/SimplifiedChinese/'+filename if 'CJK' in name else 'https://raw.githubusercontent.com/notofonts/noto-fonts/main/hinted/ttf/'+name+'/'+filename)
  if not target.exists():
-  request=urllib.request.Request(url,headers={'User-Agent':'ClioPlay-Global/1.0'})
+  request=urllib.request.Request(url,headers={'User-Agent':'ClioPlay-Global/'+(Path(__file__).resolve().parents[2]/'VERSION').read_text().strip()})
   with urllib.request.urlopen(request,timeout=60) as f:raw=f.read()
   tmp=target.with_suffix('.download');tmp.write_bytes(raw);os.replace(tmp,target)
  return target,url

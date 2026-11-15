@@ -36,7 +36,7 @@ def _coast_source(cache):
     if not archive.exists():
         temporary = archive.with_suffix('.download')
         log('Downloading OSM coastal water polygons (about 865 MB; cached for later builds)...')
-        request = urllib.request.Request(URL, headers={'User-Agent': 'CLIOPLAY-navigation-builder/1.0'})
+        request = urllib.request.Request(URL, headers={'User-Agent': 'ClioPlay-navigation-builder/'+(Path(__file__).resolve().parents[2]/'VERSION').read_text().strip()})
         try:
             with urllib.request.urlopen(request, timeout=120) as source, temporary.open('wb') as out:
                 total = 0; last = time.monotonic()

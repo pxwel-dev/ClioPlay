@@ -289,3 +289,14 @@ Only `ttsystem` and `vehicledaemon` are extracted from the CAB. AUX initializati
 is embedded in the custom `ttn` startup script, so `PNDNavigator` is not installed.
 The custom `focusd` and other
 project helpers are included separately; see [source status](docs/source-status.md).
+
+## Release version
+
+`VERSION` is the release identity. `tools/build_ui.py` generates
+`clio843/src/release_version.h` from it and records the version in each binary’s
+build report. UI and Bluetooth startup logs use that generated value. Bootstrap
+scripts declare the same `CLIOPLAY_VERSION`; update their declaration when
+changing `VERSION`, then refresh their entries in `bootstrap-SHA256.json`.
+`python3 tools/release_version.py --check` rejects mismatched labels before
+building or publishing. Downloader user agents also read `VERSION`. Map formats,
+protocol identifiers and third-party dependency versions are separate.

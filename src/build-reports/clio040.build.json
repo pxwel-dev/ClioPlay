@@ -1,29 +1,30 @@
 {
   "machine": "ARM7TDMI / ARMv4T",
   "abi": "ELF32 EABI5 soft-float; Linux OABI syscalls",
-  "entry": "0x82c2c",
-  "bytes": 1006992,
-  "sha256": "628b653fe2a744988980f0f97cba38b794c56b02b060f057dd6104f1d100741b",
+  "entry": "0x82b44",
+  "bytes": 1006760,
+  "sha256": "bd954b6b663b034f8bdb9c9f1ffe917e2f568d355ea0dd94e640d7a5780427af",
   "sections": {
     ".text": {
-      "address": "0x82a38",
+      "address": "0x82950",
       "bytes": 433772
     },
     ".rodata": {
       "address": "0x10108",
-      "bytes": 403758
+      "bytes": 403526
     },
     ".data": {
-      "address": "0xfc8a8",
+      "address": "0xfc7c0",
       "bytes": 1176
     },
     ".bss": {
-      "address": "0xfcd40",
+      "address": "0xfcc60",
       "bytes": 11453312
     }
   },
+  "version": "2.0.0",
   "source": "clio843/src/clio040.c",
-  "source_tree_sha256": "1db449e5557cd70e81fa2774a90473b5e9e9f13017857eed9bc96c16c88ad127",
+  "source_tree_sha256": "afbb2911f07f7efce80f34d4bc57ef3a9ef0b249019f442625034475a78e25a1",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "b0045a10c40374f77a1865d57be226f40dd313a23c5c38c68b60c3870f42a52b",
@@ -32,9 +33,9 @@
     "clio843/src/audio_playback.h": "25e0f01cd52eb89d447c5ecdf34f57bebeef36135c2912eaa3d49ec1ee7f13e1",
     "clio843/src/audio_schedule.h": "bf37e189f7a0f372567287380820a357878fc1aaf519f85309224cd0d5ae85a6",
     "clio843/src/boot_theme.h": "fa46f1bda9c0f37306c90f34d497192953aa718b30fa688291bbc7a66ddab746",
-    "clio843/src/clio040.c": "cb50a239029bae692f624e484fdce8e8e93e2c973c23e59bc423026c022dcca2",
-    "clio843/src/clioa2dp.c": "73bd71e6bb0f3b435c3d9d29653284549c1e71a33ddcf1e23545a68feb9076a1",
-    "clio843/src/cliospl.c": "3ed913f73a028527a29b81ab1f3e4e49f8cab7ee26e715e4ee1715378e5e86e0",
+    "clio843/src/clio040.c": "4ac3577594811de1c51f0b4b4a6d3a5b27c3247f1d9ba2ed67fc6485385b6332",
+    "clio843/src/clioa2dp.c": "6d728d2713e6d80f1551402354d1c3cc750477313268cb97aefdf76faa877491",
+    "clio843/src/cliospl.c": "80dd6ea45c5d5eebce80dcd8d9726a3da6cbc839e7cbe984034a1465b6cea307",
     "clio843/src/coordinates.h": "c6145b9aadfcc57017b9b89c0d4f15d23681354228cf6a1f82990e7e1c581e0d",
     "clio843/src/font_atlas.h": "0989a1e455dd2a047dfea49d3e4d2a66a30b178960b80a2c31603ee80ffc4ffc",
     "clio843/src/frame_renderer.h": "519b9576be1d8d2bc45214041b0833f39ac78e974e1fdb960571624c7769ed4a",
@@ -60,6 +61,7 @@
     "clio843/src/nav_roundabout.h": "470390303a8f18184a020710012ea0353d0425c26a1381bbaa4064ca2d7f39be",
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
     "clio843/src/popups.h": "e63651756bd190224b6de6bf0d89df0d68c02071c1253c87e31dcf778240d492",
+    "clio843/src/release_version.h": "50c48abdb212e61eba651b53bf667efbd8e6882cbd863dc2327ed79512a2e481",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
     "clio843/src/splash_icon.h": "1c0cb3bf3be97ce49cdf626bc0184b0736b49fee877a92f5bf2e5cb2d0ec17eb",
     "clio843/src/ui_raster.h": "50767eb3a56c5192daabb07944b255b34d4e77b1db48b14a30a6914871420284",
@@ -1026,7 +1028,9 @@
     "clio843/src/vendor/sheenbidi/Source/UBA/RunQueue.h": "0066113585362ba76efa96e6844ebcacae5caf4198c4166813e68d9c8cf352a8",
     "clio843/src/vendor/sheenbidi/Source/UBA/StatusStack.c": "e5cc2a6310e0b504f518568b48e95ef2616026bd17ec035f7c774de99cd7f325",
     "clio843/src/vendor/sheenbidi/Source/UBA/StatusStack.h": "348774283d029f4afa64b95ba9fe04240d754587b483a8bcc345e1d6e78c6261",
-    "tools/build_ui.py": "48c3ae7c60f4bccfc2ca66897307a6b0e438d11988a55865add67d4cfdd7d3d9",
+    "tools/build_ui.py": "b5874193f7b1903d2da65043e329011c3df07a4b5fcfedd9e424814a905c5c05",
+    "VERSION": "c28fcca53637bc88e124af1725df13cb98c69dedefd62fb3cdbe1cdb6b760624",
+    "tools/release_version.py": "61fe6a14178f6a7b6aeaeac4456c95c27df9ca746c4c777339ff1953d2b43e02",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
     "tools/build_translations.py": "f0970483186937bbbc3b86f4bab877a2a6fe244830e99ee9ac82c2f58858e6f0",
     "tools/build_splash_icon.py": "2a3e9130ef6d268bd1e2cc2364049e4d53c69a964cb5aa7a2a054f58f3393aad",

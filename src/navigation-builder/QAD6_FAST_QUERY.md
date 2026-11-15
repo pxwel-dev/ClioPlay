@@ -1,4 +1,4 @@
-# QAD6 / PERF7 geometry-arithmetic sidecar
+# QAD6 geometry-arithmetic sidecar
 
 QAD6 extends QAD5 without changing `route.cpr`.
 
@@ -32,7 +32,7 @@ segment-distance calculation -> software division
 
 with mmap reads plus multiplication/addition. Start and destination partial-edge snapping still uses the original runtime arithmetic because the snap location can lie at an arbitrary sub-segment fraction.
 
-PERF7 also stores per-route-segment metres while emitting the route. Remaining distance can then be updated by subtraction as `route_head` advances, and the old post-build `route_compute_m()` pass is no longer needed.
+QAD6 also stores per-route-segment metres while emitting the route. Remaining distance can then be updated by subtraction as `route_head` advances, and the old post-build `route_compute_m()` pass is no longer needed.
 
 ## Correctness
 

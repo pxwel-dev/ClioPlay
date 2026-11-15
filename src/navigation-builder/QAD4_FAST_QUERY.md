@@ -1,4 +1,4 @@
-# QAD4 fast-query + locality reconstruction sidecar (DEV5.28 PERF5)
+# QAD4 fast-query + locality reconstruction sidecar
 
 QAD4 is derived directly from the exact CPR2-v4 `route.cpr` already installed in the car. No OSM rebuild is required and `route.cpr` remains unchanged.
 
@@ -21,4 +21,4 @@ Generate from an existing CPR2-v4 file:
 
 Then copy `route.qadj` beside `route.cpr` in `clio843/maps/`.
 
-DEV5.28 accepts QAD4, QAD3, QAD2, QAD1, or no sidecar. If QAD4 is absent or invalid, it safely falls back to older acceleration formats / CPR2 as available.
+The runtime accepts QAD4, QAD3, QAD2, QAD1, or no sidecar. If QAD4 is absent or invalid, it safely falls back to older acceleration formats / CPR2 as available.

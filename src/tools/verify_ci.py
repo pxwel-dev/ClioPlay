@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import release_version
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -23,6 +24,7 @@ def main():
     parser.add_argument('--host-only', action='store_true',
                         help='run the local regression suite without release packaging checks')
     options = parser.parse_args()
+    release_version.check()
     if sys.version_info < (3, 11):
         raise SystemExit('Python 3.11+ is required')
     for tool in ('git', 'cc'):
@@ -32,7 +34,7 @@ def main():
         run(sys.executable, ROOT/'tools/refresh_latest.py', '--check')
         run(sys.executable, ROOT/'tools/verify_publication.py')
     for name in ('test_vendor_download.py', 'test_clean_install.py',
-                 'test_bundle_layout.py', 'test_publication.py', 'test_bootstrap.py'):
+                 'test_bundle_layout.py', 'test_publication.py', 'test_bootstrap.py', 'test_release_version.py'):
         run(sys.executable, '-m', 'unittest', 'discover', '-s', ROOT/'tests', '-p', name)
     with tempfile.TemporaryDirectory(prefix='clioplay-ci-') as temp:
         (Path(temp)/'clio843').mkdir()

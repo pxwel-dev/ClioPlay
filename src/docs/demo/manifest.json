@@ -17,13 +17,14 @@
     "clio843/src/splash_icon.h": "1c0cb3bf3be97ce49cdf626bc0184b0736b49fee877a92f5bf2e5cb2d0ec17eb",
     "clio843/src/hud_status.h": "91f9d2cc57aeae72deebee57974292a8c3033631b4cd11b83d57fdececbaeaed",
     "clio843/src/last_fix.h": "eaf9a30204c7b146bf83ea6ea6f2f4a9c25486dcbf69bc366824888426668cca",
-    "clio843/src/clioa2dp.c": "73bd71e6bb0f3b435c3d9d29653284549c1e71a33ddcf1e23545a68feb9076a1",
+    "clio843/src/clioa2dp.c": "6d728d2713e6d80f1551402354d1c3cc750477313268cb97aefdf76faa877491",
     "clio843/src/atlas_catalog.h": "b0045a10c40374f77a1865d57be226f40dd313a23c5c38c68b60c3870f42a52b",
     "clio843/src/map_raster.h": "d5ab540a21b9e3495fd393960b9975731fb710131c378e17ab2d49e6404ea692",
     "clio843/src/global_regions.h": "0d777b61772f626eb0dd47ac0c92cb16aaf79d1b6f3f2e6463dc5806bd88eebe",
+    "clio843/src/release_version.h": "50c48abdb212e61eba651b53bf667efbd8e6882cbd863dc2327ed79512a2e481",
     "clio843/src/vehicle_icon.h": "dfcb48775858684a323506e4cb6f61eba56ce3d8c7507a5ef86b58d917f24b4a",
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
-    "clio843/src/cliospl.c": "3ed913f73a028527a29b81ab1f3e4e49f8cab7ee26e715e4ee1715378e5e86e0",
+    "clio843/src/cliospl.c": "80dd6ea45c5d5eebce80dcd8d9726a3da6cbc839e7cbe984034a1465b6cea307",
     "clio843/src/global_text.cc": "45b454fa97ec49eaaca230e4578da4361138ff2c5c410e0e552edd5629231858",
     "clio843/src/audio_playback.h": "25e0f01cd52eb89d447c5ecdf34f57bebeef36135c2912eaa3d49ec1ee7f13e1",
     "clio843/src/ui_raster.h": "50767eb3a56c5192daabb07944b255b34d4e77b1db48b14a30a6914871420284",
@@ -34,7 +35,7 @@
     "clio843/src/hud_turn_masks.h": "ceb5cc2dfc83963855f1c04541c646ac49a88e6c2177c6584c673d9d97b3ad45",
     "clio843/src/global_cameras.h": "d07e8dabf65f3513a5ec88eb15e34bdcad628cdb291f08a518eb46a3ebed9cd9",
     "clio843/src/urban_speed_defaults.h": "a719a3d065f16bc39727b01d7ed73f412beeb4d8703b5bde73a8c6ff1c35ac10",
-    "clio843/src/clio040.c": "cb50a239029bae692f624e484fdce8e8e93e2c973c23e59bc423026c022dcca2",
+    "clio843/src/clio040.c": "4ac3577594811de1c51f0b4b4a6d3a5b27c3247f1d9ba2ed67fc6485385b6332",
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/audio_chime.h": "184c222e448db2707fc752bc38f7f6c735b6cb1f4d168d88ddc7da7cf20f4d75",
     "clio843/src/utf8.h": "e6e172fb98b7f4c9e958322d13296190fd003025562c05146bcc9a3d50af8b7c",
@@ -496,9 +497,9 @@
     "clio843/src/vendor/sheenbidi/Headers/SheenBidi/SheenBidi.h": "44a644a72edf2300838d32c3e32aa14a7cb66b584fb9da643b8311aa21991cbe"
   },
   "executables": {
-    "clio040": "628b653fe2a744988980f0f97cba38b794c56b02b060f057dd6104f1d100741b",
+    "clio040": "bd954b6b663b034f8bdb9c9f1ffe917e2f568d355ea0dd94e640d7a5780427af",
     "cliospl": "7f69eb4ae127ba0bd17911ecd9ee4ae0e0ab7e6119513dc72167027b3058e641",
-    "clioa2dp": "b0264565bba720ab5eb43cc3fd6a42826d2be802685556d09bd8bb80ae5d5fa2"
+    "clioa2dp": "2faae08b20cba42e36f62bc1daabf72078a4f2e46ebe3041fcc0945efb7b8bf7"
   },
   "generator_inputs": {
     "tools/render_previews.py": "f3396bca8e80bd120efd38ef28260a71888082e5762b92f42e3ba922d14cd932",
@@ -1721,7 +1722,7 @@
       ]
     },
     "phone-destination.gif": {
-      "sha256": "d9bd1d1c513d3cc26ba5a1e1d40963a4099dee1684851b3d9336868bb235e532",
+      "sha256": "b32d9f16ea044d0000da855bda6ae08a7cd8409cff0336b01bbceead0d254e65",
       "frames": 11,
       "duration_ms": 7200,
       "reserved_pointer_colours": [
@@ -1810,7 +1811,7 @@
           "transfer-056.jpg": "01cd1bf92bb29e65bba8e31beb96ba341b0e206a675d3970ef29cbae5f85a5fc"
         },
         "ready_sha256": "93bc757770a4188a9de3234f4f0d4a60d8c77855b80e625fb949db06a93ee37c",
-        "previous_gif_sha256": "71a5f65f9ae4b46484782096f24151066392076227afab96611b150d153b51cf"
+        "previous_gif_sha256": "d9bd1d1c513d3cc26ba5a1e1d40963a4099dee1684851b3d9336868bb235e532"
       },
       "source_frames": [
         {

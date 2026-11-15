@@ -74,8 +74,8 @@ elif magic==b'QAD6':
     if len(qb)<80: raise SystemExit('sidecar too small')
     ver,entry=struct.unpack_from('<HH',qb,4); vals=struct.unpack_from('<18I',qb,8)
     n,ca,fc,rc,re,rbytes,index_off,index_bytes,data_off,data_bytes,rmeta_off,rmeta_bytes=vals[:12]
-    # Correct DEV5.32+ layout: flags,reserved,gmeta_off,gmeta_bytes,gpoints,gmeta_entry.
-    # DEV5.31 builder layout accidentally wrote gmeta fields first; accept it for diagnosis.
+    # Current QAD6 layout: flags,reserved,gmeta_off,gmeta_bytes,gpoints,gmeta_entry.
+    # An earlier QAD6 builder wrote gmeta fields first; accept it for diagnosis.
     if (vals[12]&62)==62:
         flags,res0,gmeta_off,gmeta_bytes,gpoints,gmeta_entry=vals[12:18]; legacy=False
     else:
@@ -161,5 +161,5 @@ elif magic in (b'QAD3',b'QAD4'):
     if gidx!=64 or data!=gidx+(gc+1)*4 or rmeta!=data+data_bytes or rmeta_bytes!=ch*recsz or len(qb)!=rmeta+rmeta_bytes or (flags&needflags)!=needflags: raise SystemExit('QAD layout/size mismatch')
     print(f'{magic.decode()} v{ver} OK: nodes={nodes:,} CH arcs={ch:,} forward={uf:,} reverse={ur:,} groups={gc:,} shift={shift} index={(gc+1)*4/1048576:.2f} MiB query-data={data_bytes/1048576:.1f} MiB recon={rmeta_bytes/1048576:.1f} MiB total={len(qb)/1048576:.1f} MiB')
 elif magic in (b'QAD2',b'QAD1'):
-    print(magic.decode(),'legacy sidecar detected; PERF7 can fall back to it, but QAD6 is recommended.')
+    print(magic.decode(),'legacy sidecar detected; the runtime can fall back to it, but QAD7 is recommended.')
 else: raise SystemExit('not a QAD sidecar')

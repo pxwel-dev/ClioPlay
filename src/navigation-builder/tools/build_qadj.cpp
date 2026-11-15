@@ -92,7 +92,7 @@ int main(int argc,char**argv){
    geom_units[b]=total;
  }
 
- /* PERF8/QAD7: self-contained reconstruction packets.  A packet is shared by
+ /* QAD7: self-contained reconstruction packets.  A packet is shared by
   * physical base edges that reference the same canonical geometry range, so
   * reverse directed edges do not duplicate their point stream.  Packets are
   * assigned in sidecar-local reconstruction order so the winning shortcut DAG

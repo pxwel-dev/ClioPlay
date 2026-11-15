@@ -18,6 +18,8 @@ def sha(path):
 
 def inputs(published_reports):
  from build_ui import inspect_elf
+ from release_version import check as check_release_version
+ check_release_version(ROOT)
  files={};reports={};report_paths={};expected={}
  for name in PROGRAMS:
   report=ROOT/'build'/f'{name}.build.json'

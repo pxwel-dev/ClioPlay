@@ -1,5 +1,6 @@
 #!/bin/sh
-# ClioPlay 0.4.0-dev9.4 bootstrap
+# ClioPlay bootstrap.
+CLIOPLAY_VERSION=2.0.0
 # Persistent logs exist only when prefs.ini has debug=1.
 SD=/mnt/sdcard
 CD=/media/sdcard/clio843
@@ -26,7 +27,7 @@ log(){
     fi
   fi
 }
-log "CLIOPLAY 0.4.0-dev9.4 START"
+log "CLIOPLAY $CLIOPLAY_VERSION START"
 
 # Clear volatile state from any previous runtime without touching audlast.dat.
 rm -f /tmp/cfready /tmp/cfstate /tmp/cfbus /tmp/cpaudio /tmp/cfout /tmp/clvd /tmp/clbt >/dev/null 2>&1

@@ -1,5 +1,5 @@
 /*
- * CLIOPLAY clioa2dp 1.9 AUDIOCPU2 PLAYBACK2 AUTORECONNECT2 EARLYBOOT AUDIOGUARD1 PAIRFIX26 DEBUGGATE - stable A2DP/AVRCP sink with persistent legacy-BlueZ bond storage.
+ * ClioPlay Bluetooth audio receiver with persistent legacy-BlueZ bond storage.
  *
  * Target: ARMv4T / ARM7TDMI, freestanding old-Linux ABI, no libc at runtime.
  * Bluetooth control uses the kernel L2CAP socket ABI directly.  SDP publication
@@ -10,6 +10,7 @@
  * advertises the validated 44.1 kHz stereo/joint-stereo family:
  * 16 blocks, 8 subbands, loudness allocation, bitpool 2..53.
  */
+#include "release_version.h"
 
 typedef unsigned char u8;
 typedef unsigned short u16;
@@ -224,13 +225,13 @@ static void sbc_pcm_interleave(u8*out,const struct SbcFrame*f){
 
 #if !defined(HOST_TEST) || defined(AUDIO_RUNTIME_TEST)
 /* -------------------------------------------------------------------------
- * clioa2dp 1.9 / A2DP3 STABLE + AVRCP SDP + MULTI-DEVICE BOND MANAGER
+ * A2DP/AVRCP receiver and multi-device bond manager
  *
  * Bluetooth ownership rules:
  *   - hcid/sdpd and the Renault HID hidd are owned by btstart.sh.
  *   - this daemon never resets hci0 and never touches the HID PSMs.
  *   - incoming AVDTP uses authenticated+encrypted L2CAP on PSM 0x19.
- *   - PAIRFIX25 retains the real AVRCP Controller SDP record, persistent profile-first reconnect, and stable remembered names.
+ *   - Retain the real AVRCP Controller SDP record, persistent profile-first reconnect, and stable remembered names.
  *   - Explicit PAIR uses the proven legacy PIN 0000. RECONNECT never enters pairing mode.
  *   - Phone link keys are captured from HCI LINK_KEY_NOTIFICATION and persisted by CLIOPLAY for up to eight remembered devices.
  *   - Before reconnect, the saved key is restored into TomTom's legacy hcid link-key database.
@@ -239,7 +240,7 @@ static void sbc_pcm_interleave(u8*out,const struct SbcFrame*f){
  *   - address-specific HCI actions (pair scan / disconnect / delkey) are
  *     requested through /tmp/clbthci and performed by btstart.sh's tiny helper.
  *
- * UI IPC matches clio040 DEV5.34 MEDIA1:
+ * UI IPC shared with clio040:
  *   /tmp/clbt       selected Bluetooth PCM output (CD or no readable radio source), 0/1
  *   /tmp/clbtstat   one-line status
  *   /tmp/clbtmeta   DEVICE/TITLE/ARTIST/ALBUM/PAIRED/CONNECTED/PLAYING/POS/DUR
@@ -392,7 +393,7 @@ static void hci_request(const char*verb,const u8*a){char b[64];b[0]=0;append_str
 #define IO_MUTE_NAV 0x00005320u
 #define IO_UNMUTE_NAV 0x00005321u
 struct SndFmt{u32 rate,channels,bits,frames,mode;};struct SndPair{u32 handle,pos;};
-/* AUDIOGUARD1: existing 64 KiB device ring, with an explicit 150 ms prefill
+/* Playback buffering: existing 64 KiB device ring, with an explicit 150 ms prefill
  * and byte-accurate validity tracking between successive hardware cursor reads.
  * The driver does not expose an underrun flag; clock elapsed since the last
  * cursor sample also guards against cursor wrap or freeze during starvation. */
@@ -513,12 +514,12 @@ struct sockaddr_hci_0{u16 family;u16 dev;} __attribute__((packed));
 struct sockaddr_un_0{u16 family;char path[108];} __attribute__((packed));
 struct hci_filter_0{u32 type_mask;u32 event_mask[2];u16 opcode;} __attribute__((packed));
 static int hci_pair_armed=0,hci_pair_ticks=0;static u8 hci_pin_peer[6];static int hci_pin_peer_valid=0;
-/* PAIRFIX7: use TomTom's stock blueserver pairing gate.  Raw HCI remains
+/* Use TomTom's stock blueserver pairing gate.  Raw HCI remains
  * diagnostic only; only stock hcid may answer PIN_CODE_REQUEST. */
 static int pair_policy_on=0,pair_policy_fallback=0;
 static char pair_pin[5]="0000";
 static int reconnect_wait_ticks=-1;
-/* AUTORECONNECT2 EARLYBOOT: boot-only, asynchronous, bounded and user-preemptible.
+/* Boot reconnect: boot-only, asynchronous, bounded and user-preemptible.
  * The bootstrap marks /tmp/clbtrdy only after the Renault HID quiet window,
  * HCI/SDP services, A2DP registration and the phone-command helper are ready.
  * Reconnect deliberately does NOT wait for clio040, /tmp/clbt, GPS or a GPS fix.
@@ -794,7 +795,7 @@ static void audio_profile_service(u32 now){
  append_str(b,sizeof(b)," DROPS=");append_uint(b,sizeof(b),snd_pcm_drops-drops);append_char(b,sizeof(b),'\n');bt_log_append(b);
  packets=media_packets;frames=media_frames;maintenance=audio_maintenance_runs;underruns=snd_underruns;drops=snd_pcm_drops;audio_packet_max_ms=0;
 }
-static void serve(void){long prio=s_audio_priority();peer_load();local_bdaddr_load();meta_write();status_set("BT WAIT PHONE");hcifd=hci_raw_open();if(hcifd<0)hci_log("HCI MONITOR OPEN FAIL",0,-1);if(saved_peer_valid)bond_restore_hcid(saved_peer);device_list_write();hci_log("AVRCP SDP+MULTI-DEVICE KEYVAULT+PIN0000 AUDIOGUARD1 AUTORECONNECT2-EARLYBOOT",0,-1);hci_log(prio<0?"AUDIO PRIORITY 0 REQUEST DENIED":"AUDIO PRIORITY 0 SET",0,-1);u32 tick=0;struct AudioPeriodic maintenance={0},status_poll={0},metadata_poll={0};for(;;){
+static void serve(void){long prio=s_audio_priority();bt_log_append("CLIOPLAY " CLIOPLAY_VERSION " BLUETOOTH AUDIO START\n");peer_load();local_bdaddr_load();meta_write();status_set("BT WAIT PHONE");hcifd=hci_raw_open();if(hcifd<0)hci_log("HCI MONITOR OPEN FAIL",0,-1);if(saved_peer_valid)bond_restore_hcid(saved_peer);device_list_write();hci_log("AVRCP SDP / MULTI-DEVICE BONDS / BUFFERED AUDIO / EARLY PHONE RECONNECT",0,-1);hci_log(prio<0?"AUDIO PRIORITY 0 REQUEST DENIED":"AUDIO PRIORITY 0 SET",0,-1);u32 tick=0;struct AudioPeriodic maintenance={0},status_poll={0},metadata_poll={0};for(;;){
     u32 now=alert_now_ms(),steps=audio_periodic(&maintenance,now,100u);
     if(steps){
     tick+=steps;audio_maintenance_runs++;

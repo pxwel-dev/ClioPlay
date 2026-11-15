@@ -1,5 +1,7 @@
 # ClioPlay Global
 
+The current release is recorded in [VERSION](VERSION).
+
 A standalone edition of the compact 480×272 ClioPlay interface for non-LIVE
 Carminat TomTom. It keeps the remote workflow, continuous antialiased roads/routes,
 Trip workspace, our Bluetooth receiver and physical AUX initialization. It targets

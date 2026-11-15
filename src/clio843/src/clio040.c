@@ -1,4 +1,4 @@
-/* ClioPlay Global 1.1.0-rc.1
+/* ClioPlay Global
  * Source-controlled framebuffer UI + offline CPM map renderer for Renault
  * Carminat TomTom (480x272 RGB565, ARMv4T Linux).
  *
@@ -14,6 +14,7 @@
  * flags byte; bit 0 marks weak/estimated speed limits. Device-side code uses
  * fixed-point integer maths only; no libc, malloc, SQLite, protobuf or libm.
  */
+#include "release_version.h"
 
 typedef unsigned char u8;
 typedef unsigned short u16;
@@ -371,7 +372,7 @@ struct GPS {int fix,sats; s32 lat,lon; int mph10,course; int hour,min,sec,day,mo
 static struct GPS gps;static u32 gps_fix_ms=0;
 #define DISPLAY_COURSE_UPDATE_MPH10 30 /* >=3.0 mph: GPS course is useful; below this freeze the last moving orientation. */
 
-/* DEV5.24: persist one tiny trusted last-fix record so a cold start can show
+/* persist one tiny trusted last-fix record so a cold start can show
  * useful map context while the receiver reacquires satellites.  This is never
  * exposed as live GPS: speed/road/car marker remain suppressed until gps.fix. */
 static int lastfix_valid=0,lastfix_live_seen=0;
@@ -575,7 +576,7 @@ static void poll_car(void){
  b[n]=0;car_read_temperature(b);
 }
 
-/* DEV5.34 Bluetooth media UI/daemon boundary.
+/* Bluetooth media UI/daemon boundary.
  *
  * The Renault head unit remains in its stable no-disc CD source internally,
  * but CLIOPLAY treats that source as BLUETOOTH everywhere. AUX stays wired AUX.
@@ -1133,8 +1134,8 @@ static void draw_tile_geometry(struct Tile*t,int viewz,int pass){
   }
 }
 
-/* REV13: keep the Freecam label renderer unchanged.  Car-locked view first
- * displays high-priority names allowed by REV12's sparse rules, then fills
+/* Freecam and car-locked road labels have separate layouts. Car-locked view first
+ * displays high-priority names allowed by sparse layout rules, then fills
  * unused slots with visible names previously excluded by distant filtering.
  * Both passes rank by source priority before screen-space vicinity.  Candidate
  * pool is bounded; no heap, new map format or extra tile reads. */
@@ -1219,7 +1220,7 @@ static void draw_tile_labels(struct Tile*t,int viewz,int plo,int phi){if(mapfmt<
  * metadata. CPM3 records are [speed_mph, text_len, text]; CPM4 records are
  * [speed_mph, flags, text_len, text]. Bit 0 means weak/estimated speed. */
 struct RoadCtx {int valid,speed,reverse_speed;u8 speed_flags,reverse_flags;char street[113];};static struct RoadCtx roadctx;
-/* DEV5.36.5: road-name fallback is longitudinal, not radial.  The normal
+/* road-name fallback is longitudinal, not radial.  The normal
  * nearest-road winner still owns speed/flags.  If that exact matched geometry
  * is unnamed, a bounded topology walk follows connected road geometry in both
  * directions and borrows the first confident name encountered.  The result is
@@ -1295,18 +1296,18 @@ struct CprNode {s32 lat,lon;u32 first_edge;u16 edge_count,flags;u32 phys,rank,co
 struct CprBase {u32 cost,geom_first,src_first,to_state;u16 geom_count,src_count;u8 cls,flags;u16 pad;};
 struct CprArc {u32 from,to,cost,left,right;u8 cls,flags;u16 pad;};
 struct CprPoint {s32 lat,lon;};
-/* DEV5.25 QAD1 / DEV5.26 QAD2: optional query-only adjacency sidecar.  Each upward reference
+/* QAD1 / QAD2: optional query-only adjacency sidecar.  Each upward reference
  * is materialised as (other state, cost, original CPR2 arc id).  The CH query
  * can therefore relax a node with one small sequential read instead of reading
  * a u32 ref and then chasing a scattered 24-byte CprArc.  route.cpr remains
  * authoritative for snapping, shortcut unpacking and geometry reconstruction. */
 struct QAdjHeader {char magic[4];u16 ver,entry_size;u32 nodes,ch_arcs,upf_count,upr_count,route_edges,route_bytes,fwd_off,rev_off;};
-/* DEV5.26 QAD2: node-blocked adjacency.  One u32 offset per route state is
+/* QAD2: node-blocked adjacency.  One u32 offset per route state is
  * loaded into the temporary route arena; each expanded state then needs one
  * sidecar read containing counts + both direction adjacency lists. QAD1 stays
  * accepted for backwards compatibility. */
 struct QAdj2Header {char magic[4];u16 ver,entry_size;u32 nodes,ch_arcs,upf_count,upr_count,route_edges,route_bytes,index_off,data_off,data_bytes,flags;};
-/* PERF4/QAD3: 64-node-ish group blocks shrink the resident directory from the
+/* QAD3: 64-node-ish group blocks shrink the resident directory from the
  * QAD2 per-node 27 MiB index to a sub-MiB group index.  Reconstruction metadata
  * lives in the same optional sidecar: every CH arc stores only the fields the
  * finaliser needs, and base arcs replace their unused right-child field with a
@@ -1314,26 +1315,26 @@ struct QAdj2Header {char magic[4];u16 ver,entry_size;u32 nodes,ch_arcs,upf_count
 struct QAdj3Header {char magic[4];u16 ver,entry_size;u32 nodes,ch_arcs,upf_count,upr_count,route_edges,route_bytes,group_shift,group_count,gindex_off,data_off,data_bytes,rmeta_off,rmeta_bytes,flags;};
 struct QAdjEntry {u32 other,cost,arc;};
 struct QRec {u32 from,cost,left,right_geom,to_flags;};
-/* PERF5/QAD4 keeps the QAD3 group-query layout, but uses sidecar-local CH arc
+/* QAD4 keeps the QAD3 group-query layout, but uses sidecar-local CH arc
  * IDs ordered for shortcut-tree locality.  Base records additionally carry
  * their physical geometry descriptor, eliminating CPR base reads while
  * reconstructing the winning CH path. */
 struct QRec4 {u32 from,cost,left,right_geom,to_flags,geom_first,geom_info;};
-/* PERF6/QAD5: query node blocks are physically written in CH-rank order.
+/* QAD5: query node blocks are physically written in CH-rank order.
  * A mapped node->block offset index is needed only for seed states; every
  * QAD5 adjacency entry carries the target block offset so discovered CH states
  * never perform another index lookup. Reconstruction records remain QAD4-
  * compatible sidecar-local IDs. */
 struct QAdj5Header {char magic[4];u16 ver,entry_size;u32 nodes,ch_arcs,upf_count,upr_count,route_edges,route_bytes,index_off,index_bytes,data_off,data_bytes,rmeta_off,rmeta_bytes,flags,reserved;};
-/* PERF7/QAD6 appends one compact arithmetic record per stored CPR geometry
+/* QAD6 appends one compact arithmetic record per stored CPR geometry
  * point.  Intermediate cumulative fractions are precomputed in both physical
  * directions and segment metres use the exact runtime integer formula. */
 struct QAdj6Header {struct QAdj5Header q;u32 gmeta_off,gmeta_bytes,geom_points,gmeta_entry_size;};
-/* DEV5.31 builder accidentally serialized QAD6 geometry fields before the inherited
- * QAD5 flags/reserved words.  DEV5.32 accepts that one released layout so existing
+/* An earlier builder serialized QAD6 geometry fields before the inherited
+ * QAD5 flags/reserved words. The runtime accepts that layout so existing
  * sidecars remain usable; corrected builders write QAdj6Header layout above. */
 struct QAdj6LegacyHeader {char magic[4];u16 ver,entry_size;u32 nodes,ch_arcs,upf_count,upr_count,route_edges,route_bytes,index_off,index_bytes,data_off,data_bytes,rmeta_off,rmeta_bytes,gmeta_off,gmeta_bytes,geom_points,flags,reserved0,reserved1;};
-/* PERF8/QAD7 fuses complete physical geometry with its arithmetic metadata into
+/* QAD7 fuses complete physical geometry with its arithmetic metadata into
  * one reconstruction-local packet stream.  The first 28 bytes of QRec7 remain
  * QRec4-compatible; packet_off is relative to packet_off in QAdj7Header. */
 struct QRec7 {u32 from,cost,left,right_geom,to_flags,geom_first,geom_info,packet_off;};
@@ -1354,10 +1355,10 @@ struct QAdj5Entry {u32 other,cost,arc,next_off;};
 static struct CprHeader rh;static struct QAdjHeader qh;static struct QAdj2Header qh2;static struct QAdj3Header qh3;static struct QAdj5Header qh5;static struct QAdj6Header qh6;static struct QAdj7Header qh7;static int routefd=-1,qadjfd=-1,routeok=0,qadjok=0,qadjmode=0;static int qadj6_legacy_header=0;
 static u8*qadj_map=0;static u32 qadj_map_bytes=0;static int qadj_map_ok=0;
 static u8*route_geom_map=0;static u32 route_geom_map_bytes=0,route_geom_map_delta=0,route_geom_map_fileoff=0;static int route_geom_map_ok=0;
-/* dev5.8: routing performs scattered reads from a ~GB-scale CPR2 file.
+/* Routing performs scattered reads from a ~GB-scale CPR2 file.
  * Larger contiguous caches trade only 256 KiB of static RAM for substantially
  * fewer SD-card seeks while CH is active. */
-/* DEV5.23 CACHELAB: the DEV5.22 profile showed the 8 KiB node window was
+/* Profiling showed the 8 KiB node window was
  * almost never reused (16 hits / 3114 misses), while one global 8 KiB arc
  * window thrashed badly during bidirectional CH (about 60% hits).  Keep the
  * proven 8 KiB windows for base/ref/geometry, read nodes exactly, and retain
@@ -1377,7 +1378,7 @@ static u32 cpr_bcache_first=0,cpr_bcache_count=0,cpr_rcache_first[4]={0,0,0,0},c
 static u32 cpr_gcache_first[CPR_GEOM_SLOTS]={0},cpr_gcache_count[CPR_GEOM_SLOTS]={0},cpr_gcache_stamp[CPR_GEOM_SLOTS]={0},cpr_gcache_tick=1;
 static u32 cpr_tcache_first[CPR_TILE_SLOTS]={0},cpr_tcache_count[CPR_TILE_SLOTS]={0},cpr_tcache_stamp[CPR_TILE_SLOTS]={0},cpr_tcache_tick=1;
 static u32 cpr_acache_first[CPR_ARC_SLOTS]={0},cpr_acache_count[CPR_ARC_SLOTS]={0},cpr_acache_stamp[CPR_ARC_SLOTS]={0},cpr_acache_tick=1;
-/* DEV5.21 profiling: debug-gated counters only. No per-read logging and no
+/* profiling: debug-gated counters only. No per-read logging and no
  * extra clock syscall in the CPR hot path. One route produces compact summary
  * lines in state.log, allowing cache/I/O tuning from measurements rather than
  * assumptions. */
@@ -1481,7 +1482,7 @@ static int route_read_upref(int dir,u32 id,u32*out){return route_read_ref(dir,id
 #define QREC_PAGE 1024u
 #define QREC_SLOTS 64u
 #define QREC_PER_PAGE (QREC_PAGE/(u32)sizeof(struct QRec))
-/* PERF5/QAD4: reconstruction is latency-bound, not bandwidth-bound.  Keep a
+/* QAD4: reconstruction is latency-bound, not bandwidth-bound.  Keep a
  * 256 KiB, 4 KiB-page LRU for locality-renumbered reconstruction records. */
 #define QREC4_PAGE 4096u
 #define QREC4_SLOTS 64u
@@ -1562,13 +1563,13 @@ static int route_base_point(const struct CprBase*a,u32 pos,struct CprPoint*out){
 #define ROUTE_SNAP_D2 22500u
 #define ROUTE_DEST_SNAP_D2 160000u
 #define ROUTE_DEST_CAND_MAX 12
-/* dev5.5+ exact edge snapping.  CPR2 v4 still stores compact topology, but a
+/* exact edge snapping.  CPR2 v4 still stores compact topology, but a
  * snap now retains the exact projected position inside a geometry segment.
  * frac_q16 is 0..65536 along geom_seg -> geom_seg+1 in logical arc order.
  * along_u/total_u are metric-proportional polyline units used for exact
  * partial-edge cost and for distributing ETA cost along compressed geometry. */
 struct RouteSnapCandidate {u32 node,arc,d2,score,extra,geom_seg,frac_q16,along_u,total_u;s32 snap_lat,snap_lon;};
-/* dev5.6: snapping is geometric first.  Road class must not pull a POI off
+/* snapping is geometric first.  Road class must not pull a POI off
  * the physically nearest residential/service access road onto a farther
  * major road.  Access legality is already encoded by which base arcs exist;
  * connectivity is checked separately before a CH query begins. */
@@ -1605,7 +1606,7 @@ static int route_snap_candidates(s32 lat,s32 lon,u32 maxd2,int tile_rad,int dest
     }
     if(!have)return 0;int at=-1;for(int i=0;i<count;i++)if(out[i].arc==nearest_arc&&out[i].d2==nearest_d){at=i;break;}if(at>0){struct RouteSnapCandidate c=out[at];for(int i=at;i>0;i--)out[i]=out[i-1];out[0]=c;}return count;
 }
-static int route_snap_node(s32 lat,s32 lon,struct RouteSnapCandidate*out){struct RouteSnapCandidate c[8];/* PERF5: the live car should normally lie on a road indexed by its current 256-unit Z6 tile. Avoid a 3x3 scan unless that exact tile cannot produce a legal nearby road. */int n=route_snap_candidates(lat,lon,ROUTE_SNAP_D2,0,0,c,8);if(n<1)n=route_snap_candidates(lat,lon,ROUTE_SNAP_D2,1,0,c,8);if(n<1)return 0;if(out)*out=c[0];return 1;}
+static int route_snap_node(s32 lat,s32 lon,struct RouteSnapCandidate*out){struct RouteSnapCandidate c[8];/* the live car should normally lie on a road indexed by its current 256-unit Z6 tile. Avoid a 3x3 scan unless that exact tile cannot produce a legal nearby road. */int n=route_snap_candidates(lat,lon,ROUTE_SNAP_D2,0,0,c,8);if(n<1)n=route_snap_candidates(lat,lon,ROUTE_SNAP_D2,1,0,c,8);if(n<1)return 0;if(out)*out=c[0];return 1;}
 
 #define ROUTE_PATH_MAX 16384
 #define ROUTE_INF 0xffffffffu
@@ -1623,7 +1624,7 @@ static long route_brk_base=0;
 #endif
 static s32 route_lat[ROUTE_PATH_MAX],route_lon[ROUTE_PATH_MAX];
 /* route_seg_arc[i] identifies the CPR2 base road used by the segment
- * route[i-1] -> route[i].  This lets dev5.9 distinguish a nearby parallel
+ * route[i-1] -> route[i].  This distinguishes a nearby parallel
  * road from the actual planned road instead of relying on proximity alone. */
 static u32 route_node[ROUTE_PATH_MAX],route_seg_cost[ROUTE_PATH_MAX],route_seg_arc[ROUTE_PATH_MAX],route_seg_phys[ROUTE_PATH_MAX],route_seg_m[ROUTE_PATH_MAX];
 static u32 route_emit_arc=ROUTE_NOARC,route_emit_phys=ROUTE_NOARC;
@@ -1640,7 +1641,7 @@ enum {R_IDLE=0,R_CALC=1,R_READY=2,R_NOFILE=3,R_NOROAD=4,R_UNREACHABLE=5,R_MEMORY
 #define ROUTE_ADHERE_TIE_D2 64u /* ~8-9 m when nearest snap is on-road: tolerate junction/GPS ambiguity only */
 static int route_status=R_IDLE;static u32 route_car_node=0,route_dest_comp=0,route_result_cost=0,route_expanded=0,route_best=ROUTE_INF,route_meet=ROUTE_INF;
 static s32 route_query_lat=0,route_query_lon=0,route_target_lat=0,route_target_lon=0;static int route_tick=0,route_offroute_checks=0,route_rerouting=0,route_arc_check_tick=0;static u32 ui_anim_tick=0;
-/* DEV5.17: compact next-manoeuvre guidance is derived entirely from the
+/* compact next-manoeuvre guidance is derived entirely from the
  * reconstructed route already held in RAM. Physical-polyline transitions mark
  * junction candidates; near-straight transitions are suppressed so CPR2 road
  * segmentation does not become visual noise. */
@@ -1653,7 +1654,7 @@ static void nav_maneuver_find(void);
 static void nav_maneuver_reset(void){nav_man_exit=0;nav_man_type=MAN_NONE;nav_man_idx=-1;nav_man_m=0;nav_man_scan_head=route_head;}
 static struct RouteSnapCandidate route_start_snap,route_dest_cand[ROUTE_DEST_CAND_MAX];static int route_dest_count=0,route_dest_idx=0;
 
-/* DEV5.22 local CH repair.
+/* local CH repair.
  *
  * A deviation does not immediately throw away a long route.  Future turn-aware
  * states on the existing route are treated as a virtual destination: each is
@@ -1683,7 +1684,7 @@ static struct RouteSnapCandidate route_start_snap,route_dest_cand[ROUTE_DEST_CAN
 #define ROUTE_REPAIR_MAX_PREFIX_DS 7200u    /* >12 min local detour => full CH */
 #define ROUTE_REPAIR_UTURN_PENALTY_DS 1800u /* soft 3 min immediate reversal cost */
 #define ROUTE_REPAIR_START_TIE_D2 256u      /* only plausible nearby directed arcs */
-/* DEV5.29 repair-splice guard.  Fast local repair is allowed to reuse the old
+/* repair-splice guard.  Fast local repair is allowed to reuse the old
  * route only when the newly reconstructed prefix lands on the exact saved
  * turn-aware state/coordinate.  Around that splice we can safely erase a
  * positive-cost cycle only if it returns to the identical routing state.  A
@@ -1915,11 +1916,10 @@ static void route_mark_query_start(void){route_query_lat=route_exact_from==ROUTE
 static int ch_seed_destination(const struct RouteSnapCandidate*dest,u32 comp){if(dest&&dest->arc==ROUTE_NOARC){struct CprNode n;if(!route_read_node(dest->node,&n)||n.comp!=comp)return 0;struct ChState*s=ch_state(dest->node,1);if(!s)return 0;s->db=0;s->pb=ROUTE_NOARC;return ch_heap_insert(1,s);}struct CprBase b;if(!dest||!route_read_base(dest->arc,&b)||!b.src_count)return 0;int seeded=0;for(u32 i=0;i<b.src_count;i++){u32 node;if(!route_read_srcref(b.src_first+i,&node))return 0;struct CprNode rn;if(!route_read_node(node,&rn))return 0;if(rn.comp!=comp)continue;struct ChState*s=ch_state(node,1);if(!s)return 0;if(dest->extra<s->db){s->db=dest->extra;s->pb=ROUTE_NOARC;if(!ch_heap_insert(1,s))return 0;}seeded=1;}return seeded;}
 static int route_dest_has_component(const struct RouteSnapCandidate*dest,u32 comp){if(dest&&dest->arc==ROUTE_NOARC){struct CprNode n;return route_read_node(dest->node,&n)&&n.comp==comp;}struct CprBase b;if(!dest||!route_read_base(dest->arc,&b))return 0;for(u32 i=0;i<b.src_count;i++){u32 node;struct CprNode n;if(!route_read_srcref(b.src_first+i,&node)||!route_read_node(node,&n))return 0;if(n.comp==comp)return 1;}return 0;}
 static int ch_begin(const struct RouteSnapCandidate*start,const struct RouteSnapCandidate*dest){if(route_prof_on&&!route_prof_query_ms){route_prof_query_ms=s_now_ms();route_prof_pre_io=route_prof_io_bytes();}ch_reset();struct ChState*a=ch_state(start->node,1);if(!a)return 0;a->df=start->extra;if(!ch_heap_insert(0,a)||!ch_seed_destination(dest,route_dest_comp))return 0;route_mark_query_start();ch_update_meet(a);return 1;}
-static int ch_retarget_start(const struct RouteSnapCandidate*start){if(!chst||!chbucket)return 0;chhf_n=0;route_best=route_meet=ROUTE_INF;route_n=0;route_head=0;route_result_cost=0;route_result_m=0;nav_maneuver_reset();route_expanded=0;route_tick=0;chheap_peak=chhb_n;/* dev5.10: a completed route leaves the cooperative finaliser in RB_DONE.
+static int ch_retarget_start(const struct RouteSnapCandidate*start){if(!chst||!chbucket)return 0;chhf_n=0;route_best=route_meet=ROUTE_INF;route_n=0;route_head=0;route_result_cost=0;route_result_m=0;nav_maneuver_reset();route_expanded=0;route_tick=0;chheap_peak=chhb_n;/* A completed route leaves the cooperative finaliser in RB_DONE.
      * A start-only CH retarget must reset every start/path-build field just as
-     * a fresh CH query would.  dev5.9 cleared route_n but left RB_DONE set,
-     * so the very next routing slice treated an empty old path as a failed
-     * finalisation and raised R_ERROR. */route_emit_arc=route_emit_phys=ROUTE_NOARC;route_build_phase=RB_IDLE;route_build_nf=route_build_nb=route_build_arc_idx=route_build_sp=0;route_build_copy=-1;route_build_after_base=RB_UNPACK;route_base_meta_n=route_base_meta_idx=route_prefetch_n=route_prefetch_idx=0;route_build_u=route_build_i=route_build_total=route_build_cum=route_build_prev_cost=0;route_build_steps=0;for(u32 i=0;i<chst_n;i++){chst[i].df=ROUTE_INF;chst[i].pf=ROUTE_NOARC;chst[i].posf=0;chst[i].sf=0;}struct ChState*a=ch_state(start->node,1);if(!a)return 0;a->df=start->extra;if(!ch_heap_insert(0,a))return 0;route_mark_query_start();ch_update_meet(a);return 1;}
+     * a fresh CH query would. Leaving RB_DONE set after clearing route_n
+     * makes the next routing slice finalise an empty path and raise R_ERROR. */route_emit_arc=route_emit_phys=ROUTE_NOARC;route_build_phase=RB_IDLE;route_build_nf=route_build_nb=route_build_arc_idx=route_build_sp=0;route_build_copy=-1;route_build_after_base=RB_UNPACK;route_base_meta_n=route_base_meta_idx=route_prefetch_n=route_prefetch_idx=0;route_build_u=route_build_i=route_build_total=route_build_cum=route_build_prev_cost=0;route_build_steps=0;for(u32 i=0;i<chst_n;i++){chst[i].df=ROUTE_INF;chst[i].pf=ROUTE_NOARC;chst[i].posf=0;chst[i].sf=0;}struct ChState*a=ch_state(start->node,1);if(!a)return 0;a->df=start->extra;if(!ch_heap_insert(0,a))return 0;route_mark_query_start();ch_update_meet(a);return 1;}
 static int ch_relax_entries(int dir,u32 du,struct QAdjEntry*qe,u32 cnt){
   for(u32 j=0;j<cnt;j++){
     u32 v=qe[j].other,aid=qe[j].arc;if(v>=rh.nodes||aid>=rh.ch_arcs)return-1;struct ChState*t=ch_state(v,1);if(!t)return-2;u32 nd=sat_add32(du,qe[j].cost);u32*dist=dir?&t->db:&t->df;
@@ -1997,7 +1997,7 @@ static int route_snap_car_component(u32 comp,struct RouteSnapCandidate*out){stru
 static u32 route_compute_m(void){u32 m=0;int first=route_head;if(first<0)first=0;for(int i=first+1;i<route_n;i++){u32 d=geo_seg_m(route_lat[i-1],route_lon[i-1],route_lat[i],route_lon[i]);if(0xffffffffu-m<d)return 0xffffffffu;m+=d;}return m;}
 static int route_path_index_for_car(u32 snapped){if(route_n-route_head<2)return-1;int cq=coslat_q15(car_lat());int end=route_n-1;if(end>route_head+ROUTE_PROGRESS_LOOKAHEAD)end=route_head+ROUTE_PROGRESS_LOOKAHEAD;for(int i=route_head;i<=end;i++)if(route_node[i]==snapped){s32 dx=lon_scale(route_lon[i]-car_lon(),cq),dy=route_lat[i]-car_lat();u32 d=square_distance(dx,dy);if(d<ROUTE_PROGRESS_D2)return i;}u32 best=ROUTE_PROGRESS_D2;int bi=-1;for(int i=route_head;i<end;i++){s32 ax=lon_scale(route_lon[i]-car_lon(),cq),ay=route_lat[i]-car_lat();s32 bx=lon_scale(route_lon[i+1]-car_lon(),cq),by=route_lat[i+1]-car_lat();u32 d=seg_dist2(ax,ay,bx,by);if(d<best){best=d;bi=i;}}return bi;}
 static void route_trim_prefix(int idx){if(idx>route_head&&idx<route_n){u32 spent=0,spentm=0;for(int i=route_head+1;i<=idx;i++){spent=sat_add32(spent,route_seg_cost[i]);spentm=sat_add32(spentm,route_seg_m[i]);}route_result_cost=route_result_cost>spent?route_result_cost-spent:0;route_result_m=route_result_m>spentm?route_result_m-spentm:0;route_head=idx;if(route_node[route_head]!=ROUTE_NOARC)route_car_node=route_node[route_head];if(nav_man_idx>=0){if(route_head>=nav_man_idx){nav_maneuver_reset();if(route_status==R_READY)nav_maneuver_find();}else nav_man_m=nav_man_m>spentm?nav_man_m-spentm:0;}else if(route_status==R_READY&&route_head-nav_man_scan_head>=ROUTE_MAN_RESCAN_POINTS)nav_maneuver_find();}}
-/* dev5.12 stores the physical-polyline key (geom_first) beside each route
+/* stores the physical-polyline key (geom_first) beside each route
  * segment.  Adherence checks are therefore RAM-only over the route window;
  * they no longer perform two CPR2 base-record reads for every segment. */
 static int route_path_index_for_snap(const struct RouteSnapCandidate*c){if(!c||route_n-route_head<2)return-1;struct CprBase cb;if(!route_read_base(c->arc,&cb))return-1;u32 phys=cb.geom_first;int cq=coslat_q15(c->snap_lat);int end=route_n-1;if(end>route_head+ROUTE_PROGRESS_LOOKAHEAD)end=route_head+ROUTE_PROGRESS_LOOKAHEAD;u32 best=ROUTE_ARC_PROGRESS_D2;int bi=-1;for(int i=route_head;i<end;i++){if(route_seg_phys[i+1]!=phys)continue;s32 ax=lon_scale(route_lon[i]-c->snap_lon,cq),ay=route_lat[i]-c->snap_lat;s32 bx=lon_scale(route_lon[i+1]-c->snap_lon,cq),by=route_lat[i+1]-c->snap_lat;u32 d=seg_dist2(ax,ay,bx,by);if(d<best){best=d;bi=i;}}return bi;}
@@ -2041,7 +2041,7 @@ static int route_query_dest_snaps(s32 lat,s32 lon){
  if(atlas_dest_snap_region!=atlas_route_region){atlas_dest_snap_region=atlas_route_region;atlas_dest_snap_count=route_snap_candidates(lat,lon,ROUTE_DEST_SNAP_D2,1,1,atlas_dest_snap,ROUTE_DEST_CAND_MAX);}
  for(int i=0;i<atlas_dest_snap_count;i++)route_dest_cand[i]=atlas_dest_snap[i];return atlas_dest_snap_count;
 }
-static int regional_route_start(s32 dest_lat,s32 dest_lon){route_repair_reset();route_prof_reset();route_arena_release();route_dest_count=route_dest_idx=0;route_dest_comp=0;route_offroute_checks=0;route_arc_check_tick=0;route_rerouting=0;route_target_lat=dest_lat;route_target_lon=dest_lon;if(!routeok){route_status=R_NOFILE;return 0;}if(!(route_exact_from!=ROUTE_NOARC?route_exact_snap(route_exact_from,&route_start_snap):route_query_start_snap(&route_start_snap))){route_status=R_NOROAD;return 0;}route_car_node=route_start_snap.node;/* PERF5: at Z6 a CPR tile spans 256 coordinate units, larger than the 150-unit destination snap radius. A 3x3 neighbourhood therefore covers every geometrically legal candidate; the old 5x5 sweep only added I/O. */route_dest_count=route_exact_to!=ROUTE_NOARC?route_exact_snap(route_exact_to,&route_dest_cand[0]):route_query_dest_snaps(dest_lat,dest_lon);if(route_dest_count<1){route_status=R_NOROAD;return 0;}if(route_exact_to==ROUTE_NOARC&&route_same_endpoint(&route_start_snap,&route_dest_cand[0])){struct RouteSnapCandidate stop;memzero(&stop,sizeof(stop));stop.arc=ROUTE_NOARC;stop.node=route_start_snap.node;stop.snap_lat=route_start_snap.snap_lat;stop.snap_lon=route_start_snap.snap_lon;route_dest_cand[0]=stop;route_dest_count=1;}if(!route_arena_prepare()){route_status=R_MEMORY;return 0;}if(!route_begin_candidate(0)&&!route_retry_destination()){route_status=R_UNREACHABLE;return 0;}return 1;}
+static int regional_route_start(s32 dest_lat,s32 dest_lon){route_repair_reset();route_prof_reset();route_arena_release();route_dest_count=route_dest_idx=0;route_dest_comp=0;route_offroute_checks=0;route_arc_check_tick=0;route_rerouting=0;route_target_lat=dest_lat;route_target_lon=dest_lon;if(!routeok){route_status=R_NOFILE;return 0;}if(!(route_exact_from!=ROUTE_NOARC?route_exact_snap(route_exact_from,&route_start_snap):route_query_start_snap(&route_start_snap))){route_status=R_NOROAD;return 0;}route_car_node=route_start_snap.node;/* at Z6 a CPR tile spans 256 coordinate units, larger than the 150-unit destination snap radius. A 3x3 neighbourhood therefore covers every geometrically legal candidate; the old 5x5 sweep only added I/O. */route_dest_count=route_exact_to!=ROUTE_NOARC?route_exact_snap(route_exact_to,&route_dest_cand[0]):route_query_dest_snaps(dest_lat,dest_lon);if(route_dest_count<1){route_status=R_NOROAD;return 0;}if(route_exact_to==ROUTE_NOARC&&route_same_endpoint(&route_start_snap,&route_dest_cand[0])){struct RouteSnapCandidate stop;memzero(&stop,sizeof(stop));stop.arc=ROUTE_NOARC;stop.node=route_start_snap.node;stop.snap_lat=route_start_snap.snap_lat;stop.snap_lon=route_start_snap.snap_lon;route_dest_cand[0]=stop;route_dest_count=1;}if(!route_arena_prepare()){route_status=R_MEMORY;return 0;}if(!route_begin_candidate(0)&&!route_retry_destination()){route_status=R_UNREACHABLE;return 0;}return 1;}
 static int route_start(s32 lat,s32 lon){if(atlas_ready)return atlas_request(lat,lon);route_exact_from=route_exact_to=ROUTE_NOARC;return regional_route_start(lat,lon);}
 static int route_full_reroute(const char*why){
   if(atlas_active)return atlas_request(atlas_dest_lat,atlas_dest_lon);
@@ -2204,7 +2204,7 @@ static int drive_label_score(int x,int y,int kind,int prio){
   return s;
 }
 static int drive_label_primary(const struct DriveLabel*d){
-  /* REV12's uncluttered far-field criteria are now first-pass preferences,
+  /* Uncluttered far-field criteria are first-pass preferences,
    * not irreversible rejections.  Remaining road names can fill vacancies. */
   return d->prio<=159 && (d->y>=124||d->prio<=31) &&
          (d->y>=151||d->prio<=79);
@@ -2264,7 +2264,7 @@ static void drive_label_render(void){
   }
   nltxt=0;
   for(int pass=0;pass<2&&road_count<DRIVE_ROAD_LABELS;pass++){
-    /* Pass 0: unobtrusive REV12 names, ordered by road priority/vicinity.
+    /* Pass 0: unobtrusive names, ordered by road priority/vicinity.
      * Pass 1: only if under six, admit distant/minor names into free space. */
     for(int k=0;k<ndrive_labels&&road_count<DRIVE_ROAD_LABELS;k++){
       struct DriveLabel*d=&drive_labels[order[k]];
@@ -2439,7 +2439,7 @@ static s32 kbd_place_lat=0,kbd_place_lon=0;static int kbd_fave_idx=-1;
 #define K_MENU 68
 #include "keyboard.h"
 
-/* 0.5.0 navigation tree. Dashboard is replaced by Trip. The Trip page is a
+/* Trip navigation workspace. The Trip page is a
  * split workspace: left = destination sources, right = ordered itinerary. CPR1
  * still calculates one active leg at a time. For multiple stops this means
  * CAR->STOP1 first; only after arrival/continue do we calculate STOP1->STOP2,
@@ -2526,7 +2526,7 @@ static void phone_destination_apply(void){if(coordinates_active&&screen!=SCR_COO
 static void trip_remove_stop(int idx){if(!trip.active||idx<trip.active_idx||idx<0||idx>=trip.count-1)return;int was_current=idx==trip.active_idx;for(int i=idx+1;i<trip.count;i++)trip.target[i-1]=trip.target[i];trip.count--;save_trip();if(was_current)trip_schedule_route();notice_success(ui_tr("Stop removed"));}
 static void trip_move_stop(int idx,int dir){if(!trip.active||idx<trip.active_idx||idx>=trip.count-1)return;int j=idx+dir;if(j<trip.active_idx||j>=trip.count-1)return;struct TripTarget t=trip.target[idx];trip.target[idx]=trip.target[j];trip.target[j]=t;save_trip();if(idx==trip.active_idx||j==trip.active_idx)trip_schedule_route();notice_success(ui_tr("Stop moved"));}
 static void trip_continue_after_stop(void){if(!trip.active||trip.active_idx+1>=trip.count)return;trip.active_idx++;trip.paused=0;arrival_ticks=0;save_trip();trip_schedule_route();}
-static void trip_service(void){if(trip_need_route&&gps.fix&&!trip.paused){if(trip_route_defer>0)trip_route_defer--;else trip_request_route();}if(atlas_active&&(atlas_phase!=AP_LEG||route_exact_to!=ROUTE_NOARC)){arrival_ticks=0;return;}if(!trip.active||trip.paused||!gps.fix)return;struct TripTarget*t=trip_current();if(!t)return;u32 d=geo_seg_m(car_lat(),car_lon(),t->lat,t->lon);/* dev5.6: the drivable route ends at the exact road-access snap, not at a fabricated straight connector to the POI centroid.  Count reaching that access point as arrival too. */if(route_status==R_READY&&!atlas_future_cost&&route_exact_to==ROUTE_NOARC&&route_dest_idx>=0&&route_dest_idx<route_dest_count){u32 sd=geo_seg_m(car_lat(),car_lon(),route_dest_cand[route_dest_idx].snap_lat,route_dest_cand[route_dest_idx].snap_lon);if(sd<d)d=sd;}if(d<=ARRIVAL_RADIUS_M&&gps.mph10<=100){if(arrival_ticks<ARRIVAL_TICKS)arrival_ticks++;}else arrival_ticks=0;if(arrival_ticks>=ARRIVAL_TICKS){arrival_ticks=0;trip.paused=1;route_cancel();save_trip();modal_choice=0;modal=trip_current_is_destination()?MOD_ARRIVED_DEST:MOD_ARRIVED_STOP;arrival_modal_deadline=s_now_ms()+ARRIVAL_MODAL_MS;}}
+static void trip_service(void){if(trip_need_route&&gps.fix&&!trip.paused){if(trip_route_defer>0)trip_route_defer--;else trip_request_route();}if(atlas_active&&(atlas_phase!=AP_LEG||route_exact_to!=ROUTE_NOARC)){arrival_ticks=0;return;}if(!trip.active||trip.paused||!gps.fix)return;struct TripTarget*t=trip_current();if(!t)return;u32 d=geo_seg_m(car_lat(),car_lon(),t->lat,t->lon);/* the drivable route ends at the exact road-access snap, not at a fabricated straight connector to the POI centroid.  Count reaching that access point as arrival too. */if(route_status==R_READY&&!atlas_future_cost&&route_exact_to==ROUTE_NOARC&&route_dest_idx>=0&&route_dest_idx<route_dest_count){u32 sd=geo_seg_m(car_lat(),car_lon(),route_dest_cand[route_dest_idx].snap_lat,route_dest_cand[route_dest_idx].snap_lon);if(sd<d)d=sd;}if(d<=ARRIVAL_RADIUS_M&&gps.mph10<=100){if(arrival_ticks<ARRIVAL_TICKS)arrival_ticks++;}else arrival_ticks=0;if(arrival_ticks>=ARRIVAL_TICKS){arrival_ticks=0;trip.paused=1;route_cancel();save_trip();modal_choice=0;modal=trip_current_is_destination()?MOD_ARRIVED_DEST:MOD_ARRIVED_STOP;arrival_modal_deadline=s_now_ms()+ARRIVAL_MODAL_MS;}}
 static void arrival_modal_service(void){if(modal!=MOD_ARRIVED_STOP&&modal!=MOD_ARRIVED_DEST){arrival_modal_deadline=0;return;}if(!arrival_modal_deadline)arrival_modal_deadline=s_now_ms()+ARRIVAL_MODAL_MS;if(time_before_u32(s_now_ms(),arrival_modal_deadline))return;arrival_modal_deadline=0;if(modal==MOD_ARRIVED_STOP){modal=MOD_NONE;trip_continue_after_stop();screen=SCR_MAP;recenter_map();}else{modal=MOD_NONE;clear_trip();screen=SCR_MAP;recenter_map();}}
 static int menu_focus=0;
 static void menurow(int y,const char*l,const char*sub,int f){ui_choice(18,y,444,60,f);label(34,y+9,3,l,ui_choice_text(f),408);label(34,y+33,0,sub,f?C_ACTIVE_TEXT:C_MUTED,408);}
@@ -2705,7 +2705,7 @@ static int input_lock=-1;
 static int known_remote_key(int code){return code==K_ESC||code==K_BACK||code==K_SR||code==K_ENTER||code==K_UP||code==K_LEFT||code==K_RIGHT||code==K_DOWN||code==K_MAP||code==K_MENU;}
 static void input_log2(const char*tag,int ev,int code){if(!pref.debug)return;char b[72];b[0]=0;appendstr(b,sizeof(b),tag);appendstr(b,sizeof(b)," event");append_int(b,sizeof(b),ev);if(code>=0){appendstr(b,sizeof(b)," code=");append_int(b,sizeof(b),code);}log_append(KEY_LOG,b);}
 static void scan_inputs(void){char p[]="/dev/input/event0";for(int i=0;i<INPUT_MAX;i++){if(infd[i]>=0)continue;p[16]=(char)('0'+i);long fd=s_open(p,O_RDONLY_|O_NONBLOCK_,0);if(fd>=0){infd[i]=(int)fd;input_log2("INPUT OPEN",i,-1);}}}
-static void open_inputs(void){for(int i=0;i<INPUT_MAX;i++)infd[i]=-1;input_lock=-1;if(pref.debug)log_append(KEY_LOG,"--- CLIOPLAY GLOBAL 1.1.0-rc.1 COMPACT MEDIA INPUT ---");scan_inputs();}
+static void open_inputs(void){for(int i=0;i<INPUT_MAX;i++)infd[i]=-1;input_lock=-1;if(pref.debug)log_append(KEY_LOG,"--- CLIOPLAY GLOBAL " CLIOPLAY_VERSION " MEDIA INPUT ---");scan_inputs();}
 static void keydiag(int code){if(!pref.debug)return;char b[48]="KEY code=";append_int(b,sizeof(b),code);log_append(KEY_LOG,b);}
 static void key_handle_state(int code){render_background_dirty=1;keydiag(code);
 /* Arrival/resume prompts cannot be silently escaped with MAP/BACK. */
@@ -2826,7 +2826,7 @@ static void run(void){
 #endif
 #endif
  load_prefs();debug_state_write();load_last_fix();seed_boot_theme();if(!pref.debug)remove_stale_logs();load_last_audio();nrecents=read_places(RECENT_PATH,recents,RECENT_MAX);nfaves=read_places(FAVES_PATH,faves,FAVE_MAX);load_trip();apply_brightness();load_map();load_timezones();load_regions();load_cameras();seed_boot_map_view();load_route_data();s_unlink(BT_CMD_PATH);bt_write_small(BT_ACTIVE_PATH,"0\n");bt_active_written=0;bt_name_cache_load();bt_poll_status();if(trip.active){modal=MOD_RESUME_TRIP;modal_choice=0;}open_inputs();
-  int wdfd=(int)s_open(WD_PATH,O_WRONLY_,0);debug_log(STATE_LOG,"CLIOPLAY GLOBAL 1.1.0-rc.1 COMPACT REV16 LOWCAM224 ROADTRACE1 BTNAMECACHE1 LOWCAM224 AUTOZOOM654 PERF8 NAV QAD7+UI6+MEDIA3+FREECAM-BIDIR-ANIM+PACKETS+MMAP+STALL+REPAIRSAFE TRIPFLOW GPSRESUME BTMEDIA CPR2-v5 ATLAS1 CLOCK1 CAMERA2 ROUTE RUNTIME");debug_log(STATE_LOG,qadjmode==7?(qadj_map_ok?"QAD7 PACKET+MMAP QUERY ENABLED":"QAD7 PAGED QUERY ENABLED"):(qadjmode==6?(qadj_map_ok?"QAD6 GEOMMETA+MMAP QUERY ENABLED":"QAD6 PAGED QUERY ENABLED"):(qadjmode==5?(qadj_map_ok?"QAD5 MMAP+STALL QUERY ENABLED":"QAD5 PAGED+STALL QUERY ENABLED"):(qadjmode==4?"QAD4 LOCAL-RECON QUERY ENABLED":(qadjmode==3?"QAD3 GROUP QUERY+RECON ENABLED":(qadjmode==2?"QAD2 NODE-BLOCK QUERY ENABLED (PAGED INDEX)":(qadjmode==1?"QAD1 FAST QUERY ENABLED":"QADJ FAST QUERY FALLBACK CPR2")))))));if(qadjmode==6&&qadj6_legacy_header)debug_log(STATE_LOG,"QAD6 DEV5.31 HEADER COMPAT ENABLED");{char mb[96];mb[0]=0;appendstr(mb,sizeof(mb),"MMAP QAD=");append_int(mb,sizeof(mb),qadj_map_ok);appendstr(mb,sizeof(mb)," GEOM=");append_int(mb,sizeof(mb),route_geom_map_ok);debug_log(STATE_LOG,mb);}u32 tick=0,next_model=s_now_ms(),next_input=next_model;render_runtime_reset(next_model);
+  int wdfd=(int)s_open(WD_PATH,O_WRONLY_,0);debug_log(STATE_LOG,"CLIOPLAY GLOBAL " CLIOPLAY_VERSION " START");debug_log(STATE_LOG,qadjmode==7?(qadj_map_ok?"QAD7 PACKET+MMAP QUERY ENABLED":"QAD7 PAGED QUERY ENABLED"):(qadjmode==6?(qadj_map_ok?"QAD6 GEOMMETA+MMAP QUERY ENABLED":"QAD6 PAGED QUERY ENABLED"):(qadjmode==5?(qadj_map_ok?"QAD5 MMAP+STALL QUERY ENABLED":"QAD5 PAGED+STALL QUERY ENABLED"):(qadjmode==4?"QAD4 LOCAL-RECON QUERY ENABLED":(qadjmode==3?"QAD3 GROUP QUERY+RECON ENABLED":(qadjmode==2?"QAD2 NODE-BLOCK QUERY ENABLED (PAGED INDEX)":(qadjmode==1?"QAD1 FAST QUERY ENABLED":"QADJ FAST QUERY FALLBACK CPR2")))))));if(qadjmode==6&&qadj6_legacy_header)debug_log(STATE_LOG,"QAD6 LEGACY HEADER COMPAT ENABLED");{char mb[96];mb[0]=0;appendstr(mb,sizeof(mb),"MMAP QAD=");append_int(mb,sizeof(mb),qadj_map_ok);appendstr(mb,sizeof(mb)," GEOM=");append_int(mb,sizeof(mb),route_geom_map_ok);debug_log(STATE_LOG,mb);}u32 tick=0,next_model=s_now_ms(),next_input=next_model;render_runtime_reset(next_model);
   for(;;){
     u32 now=s_now_ms();int model_due=frame_due(now,next_model);
     if(frame_due(now,next_input)){poll_keys();next_input=frame_after(next_input,now,33u);}

@@ -1,5 +1,6 @@
 #!/bin/sh
-# CLIOPLAY Bluetooth bootstrap - AUTORECONNECT2 EARLYBOOT + PAIRFIX26 DEBUGGATE + MULTI-DEVICE+KEYVAULT+AVRCP-SDP+PIN0000 NO-REMOTE-WAIT
+# ClioPlay Bluetooth bootstrap.
+CLIOPLAY_VERSION=2.0.0
 # Launch the Renault HID listener, then start phone setup immediately. The
 # remote can connect whenever a button wakes it. Phone pairing uses TomTom's
 # factory blueserver/hcid runtime pairing gate; hcid/hidd are never restarted for pairing.
@@ -39,7 +40,7 @@ log(){
   fi
 }
 
-log "BT START AUTORECONNECT2 EARLYBOOT PAIRFIX26 DEBUGGATE MULTI-DEVICE+KEYVAULT+AVRCP-SDP+PIN0000 NO-REMOTE-WAIT"
+log "CLIOPLAY $CLIOPLAY_VERSION BT START"
 
 if [ -r /proc/barcelona/export_hw_var ]; then
   . /proc/barcelona/export_hw_var
@@ -181,7 +182,7 @@ fi
           log "PHONE PAIR POLICY FALLBACK DISABLED"
           ;;
         CONNECT)
-          # PAIRFIX23: reconnect never enables pairing policy; clioa2dp restores the saved link key before opening the media profile.
+          # Reconnect never enables pairing policy; clioa2dp restores the saved link key before opening the media profile.
           hciconfig hci0 pscan >> "$OUT" 2>&1
           if [ -n "$ADDR" ]; then
             if hcitool con 2>/dev/null | grep -qi "$ADDR"; then
@@ -235,7 +236,7 @@ else
   log "BT BOOT BARRIER INCOMPLETE - AUTO RECONNECT SKIPPED"
 fi
 
-log "BT READY EARLYBOOT+NO-REMOTE-WAIT+A2DP+AVRCP-SDP+MULTIDEVICE+KEYVAULT+PAIRFIX23"
+log "CLIOPLAY $CLIOPLAY_VERSION BT READY"
 if [ "$DEBUG" = "1" ]; then
   "$SD/hidd" --show >> "$OUT" 2>&1
 fi

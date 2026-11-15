@@ -1,4 +1,4 @@
-# QAD7 / PERF8 unified reconstruction packets
+# QAD7 unified reconstruction packets
 
 QAD7 keeps the safe QAD5 query architecture (rank-ordered node blocks, direct successor offsets, mmap and validated stall-on-demand) and replaces QAD6's split reconstruction streams with self-contained geometry packets.
 

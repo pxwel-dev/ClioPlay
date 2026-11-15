@@ -1,5 +1,6 @@
 /* ClioPlay UI — maintained, theme-aware RGB565 boot screen.
  * Draw once and return immediately: no fake progress or added boot delay. */
+#include "release_version.h"
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef signed short s16;
