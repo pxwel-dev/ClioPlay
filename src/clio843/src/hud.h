@@ -518,7 +518,7 @@ static void hud_draw_speed(struct HudBox b,const struct HudCard*c){
  u16 edge=theme_resolved?rgb(119,143,171):rgb(126,148,172);
  if(c->flags)edge=theme_resolved?rgb(225,100,110):rgb(187,48,62);
  /* Reuse the frost sampler on the glass already behind the inset. */
- hud_glass_surface(limit,tint,edge,8u,0);
+ hud_glass_surface_rim(limit,tint,edge,8u,0,2);
 
  int text_w=limit.w-8,face=5;
  while(face>3&&width(c->detail,face)>text_w)face--;

@@ -17,7 +17,7 @@ static u16 reference_quantize(struct HudGlassColour c,int x,int y){
  unsigned t=reference_threshold(x,y),r=((c.rb>>16)+t)>>7,g=(c.g+t)>>7,b=((c.rb&65535u)+t)>>7;
  return (u16)((r<<11)|(g<<5)|b);
 }
-static void reference_glass(struct HudBox b,u16 tint,u16 edge,unsigned frost,int alert){
+static void reference_glass(struct HudBox b,u16 tint,u16 edge,unsigned frost,int alert,unsigned border){
  if(b.a<=0||b.w<4||b.h<4||b.w>W||b.h>(HUD_GLASS_ROWS-1)*HUD_GLASS_STEP)return;
  int cols=(b.w-1)/8+2,rows=(b.h-1)/8+2;unsigned rim_strength=10u+(5u*(unsigned)alert+128u)/256u;
  hud_glass_sample(b,tint,frost,rows,cols);int oldj=-1;
@@ -28,10 +28,12 @@ static void reference_glass(struct HudBox b,u16 tint,u16 edge,unsigned frost,int
   for(int x=0;x<b.w;x++){
    int sx=b.x+x;if(sx<0||sx>=W)continue;int dx=x<b.w-1-x?x:b.w-1-x;
    unsigned outer=hud_corner(dx,dy,10);if(!outer)continue;
-   unsigned inner=dx&&dy?hud_corner(dx-1,dy-1,9):0,rim=outer-inner;
+   unsigned inner=dx&&dy?hud_corner(dx-1,dy-1,9):0;
+   unsigned deep=dx>=2&&dy>=2?hud_corner(dx-2,dy-2,8):0;
    struct HudGlassColour c=hud_glass_mix(hud_glass_row_a[x],hud_glass_row_b[x],fy);
-   if(rim)c=hud_glass_mix(c,hud_glass_expand(edge),(rim*rim_strength+8u)>>4);
-   else if(alert&&(dx==1||dy==1))c=hud_glass_mix(c,hud_glass_expand(edge),(unsigned)(alert+16)/32u);
+   unsigned inner_ink=border==2?rim_strength:(15u*(unsigned)alert+128u)/256u;
+   unsigned edge_coverage=(outer-inner)*rim_strength+(inner-deep)*inner_ink;
+   c=hud_glass_mix(c,hud_glass_expand(edge),(edge_coverage+outer/2)/outer);
    unsigned q=(outer*(unsigned)b.a+128u)>>8;
    u16*p=&fb[sy*W+sx];if(q<16)c=hud_glass_mix(hud_glass_expand(*p),c,q);
    *p=reference_quantize(c,sx,sy);
@@ -232,8 +234,9 @@ static void glass_checks(void){
   const int xs[]={-15,0,8,W-w,W-w+13},ys[]={-7,0,8,H-h,H-h+9};
   struct HudBox b={xs[(i/5)%5],ys[(i/7)%5],w,h,i};
   u16 tint=(u16)random_word(),edge=(u16)random_word();unsigned frost=(unsigned)i%17;int alert=i*37%257;
-  memcpy(fb,backdrop,sizeof backdrop);reference_glass(b,tint,edge,frost,alert);memcpy(expected,fb,sizeof expected);
-  memcpy(fb,backdrop,sizeof backdrop);hud_glass_surface(b,tint,edge,frost,alert);
+  unsigned border=i%3==0?2:1;
+  memcpy(fb,backdrop,sizeof backdrop);reference_glass(b,tint,edge,frost,alert,border);memcpy(expected,fb,sizeof expected);
+  memcpy(fb,backdrop,sizeof backdrop);hud_glass_surface_rim(b,tint,edge,frost,alert,border);
   if(memcmp(expected,fb,sizeof expected)){fprintf(stderr,"Glass mismatch case%d: %d,%d %dx%d alpha%d alert%d\n",i,b.x,b.y,w,h,i,alert);assert(0);}
  }
 }

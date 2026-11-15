@@ -105,6 +105,16 @@ static inline u16 hud_mix16(u16 a,u16 b,unsigned q){
  return (u16)(rb|g);
 }
 /* Four-by-four subpixel coverage, precomputed for the glass corner/rim. */
+static const u8 hud_corner_8[8*8]={
+ 0,0,0,0,3,10,14,16,
+ 0,0,1,9,16,16,16,16,
+ 0,1,13,16,16,16,16,16,
+ 0,9,16,16,16,16,16,16,
+ 3,16,16,16,16,16,16,16,
+ 10,16,16,16,16,16,16,16,
+ 14,16,16,16,16,16,16,16,
+ 16,16,16,16,16,16,16,16
+};
 static const u8 hud_corner_9[9*9]={
  0,0,0,0,0,4,10,14,16,
  0,0,0,3,12,16,16,16,16,
@@ -130,7 +140,7 @@ static const u8 hud_corner_10[10*10]={
 };
 static unsigned hud_corner(int dx,int dy,int r){
  if(dx>=r||dy>=r)return 16;
- return r==10?hud_corner_10[dy*10+dx]:hud_corner_9[dy*9+dx];
+ return r==10?hud_corner_10[dy*10+dx]:r==9?hud_corner_9[dy*9+dx]:hud_corner_8[dy*8+dx];
 }
 /* Seven fractional bits per native channel retain colour detail through the
  * sampler, tint, reconstruction, rim and opacity. RGB565 is quantized only at
@@ -285,7 +295,7 @@ static void hud_glass_scan(struct HudGlassColour*row,int j,int w){
   row[x]=hud_glass_mix(hud_glass_grid[j][i],hud_glass_grid[j][i+1],q);
  }
 }
-static void hud_glass_surface(struct HudBox b,u16 tint,u16 edge,unsigned frost,int alert){
+static void hud_glass_surface_rim(struct HudBox b,u16 tint,u16 edge,unsigned frost,int alert,unsigned border){
  if(b.a<=0||b.w<4||b.h<4||b.w>W||b.h>(HUD_GLASS_ROWS-1)*HUD_GLASS_STEP)return;
  const int r=10;
  int cols=(b.w-1)/HUD_GLASS_STEP+2,rows=(b.h-1)/HUD_GLASS_STEP+2;
@@ -333,15 +343,23 @@ static void hud_glass_surface(struct HudBox b,u16 tint,u16 edge,unsigned frost,i
    int dx=xx<b.w-1-xx?xx:b.w-1-xx;
    unsigned outer=hud_corner(dx,dy,r);if(!outer)continue;
    unsigned inner=dx&&dy?hud_corner(dx-1,dy-1,r-1):0;
+   unsigned inner2=dx>=2&&dy>=2?hud_corner(dx-2,dy-2,r-2):0;
    struct HudGlassColour colour=hud_glass_mix(row_a[xx],row_b[xx],fy);
-   unsigned rim=outer-inner;
-   if(rim)colour=hud_glass_mix(colour,edge_colour,(rim*rim_strength+8u)>>4);
-   else if(alert&&(dx==1||dy==1))colour=hud_glass_mix(colour,edge_colour,(unsigned)(alert+16)/32u);
+   /* Concentric inset contours give the same physical width at sides and
+    * corners. Normalize the ink to outer coverage: opacity is applied below
+    * once, so partially covered corner pixels cannot lose the rim twice. */
+   unsigned second=border>=2?rim_strength:(15u*(unsigned)alert+128u)/256u;
+   unsigned weighted=(outer-inner)*rim_strength+(inner-inner2)*second;
+   unsigned ink=outer==16?(weighted+8u)>>4:(weighted+outer/2u)/outer;
+   if(ink)colour=hud_glass_mix(colour,edge_colour,ink);
    unsigned q=(outer*(unsigned)b.a+128u)>>8;
    u16*p=&fb[sy*W+sx];if(q<16)colour=hud_glass_mix(hud_glass_expand(*p),colour,q);
    *p=hud_glass_quantize_row(colour,bias_row,sx);
   }
  }
+}
+static void hud_glass_surface(struct HudBox b,u16 tint,u16 edge,unsigned frost,int alert){
+ hud_glass_surface_rim(b,tint,edge,frost,alert,1);
 }
 static void hud_glass(struct HudBox b,int alert){
  u16 tint=theme_resolved?rgb(13,21,33):rgb(247,251,255);

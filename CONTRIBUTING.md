@@ -35,3 +35,7 @@ Remove precise home locations, pairings and other personal data from reports.
 Do not contribute vendor firmware, CABs, generated maps, credentials or personal
 settings. Retain upstream notices. The separately maintained phone website is
 outside this repository's scope.
+
+Record user-visible changes in `src/docs/changelog.md` under the version being
+prepared, and keep the summary in `src/docs/repository-readme.md` aligned. Mark
+work in development until it is published; record only implemented changes.

@@ -1,6 +1,13 @@
 # ClioPlay Global
 
-The current release is recorded in [VERSION](VERSION).
+The current build version is recorded in [VERSION](VERSION).
+
+## Version 2.1.0 — In development
+
+The speeding-warning outline now has consistent corner/edge thickness. The
+speed-limit badge has a thicker outline with its inset clearance retained, and
+latitude/longitude entry omits the explanatory tip while retaining error messages.
+See [version history](docs/changelog.md) for implemented changes and release status.
 
 A standalone edition of the compact 480×272 ClioPlay interface for non-LIVE
 Carminat TomTom. It keeps the remote workflow, continuous antialiased roads/routes,

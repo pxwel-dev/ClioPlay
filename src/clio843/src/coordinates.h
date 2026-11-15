@@ -152,8 +152,6 @@ static void draw_coordinates(void){
  int axis=coordinates.step;const char*value=coordinates.value[axis];
  keyboard_surface(12,MENU_BODY_Y,456,44,0);
  compact_fit(24,50,430,3,value[0]?value:"0.00000",value[0]?C_WHITE:C_MUTED);
- char range[96];copystr(range,sizeof(range),axis==COORD_LAT?"1/3   -90° … +90°":"2/3   -180° … +180°");
- appendstr(range,sizeof(range),"   ·   ");appendstr(range,sizeof(range),ui_tr("Decimal degrees"));compact_fit(16,92,448,0,range,C_MUTED);
  if(coordinates.error)compact_fit(16,109,448,0,ui_tr(axis==COORD_LAT?"Enter a valid latitude":"Enter a valid longitude"),C_WARN);
  for(int i=0;i<12;i++){
   int x=12+(i%3)*90,y=129+(i/3)*29,f=coordinates.focus==i;char b[4]={0};

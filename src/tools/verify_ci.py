@@ -38,7 +38,7 @@ def main():
         run(sys.executable, '-m', 'unittest', 'discover', '-s', ROOT/'tests', '-p', name)
     with tempfile.TemporaryDirectory(prefix='clioplay-ci-') as temp:
         (Path(temp)/'clio843').mkdir()
-        for name in ('map-antialias', 'map-areas', 'map-layers', 'map-pois', 'vehicle-marker', 'vehicle-input', 'roundabout', 'ui-labels-alerts', 'hud-status', 'hud-metadata', 'bluetooth-sources', 'coordinates', 'hud-playback', 'hud-pages', 'hud-zoom', 'popups', 'frame-renderer', 'render-fast-paths', 'audio-chime', 'audio-decoder', 'audio-runtime', 'auto-theme', 'splash', 'boot-transition'):
+        for name in ('map-antialias', 'map-areas', 'map-layers', 'map-pois', 'vehicle-marker', 'vehicle-input', 'roundabout', 'ui-labels-alerts', 'glass-outline', 'hud-status', 'hud-metadata', 'bluetooth-sources', 'coordinates', 'hud-playback', 'hud-pages', 'hud-zoom', 'popups', 'frame-renderer', 'render-fast-paths', 'audio-chime', 'audio-decoder', 'audio-runtime', 'auto-theme', 'splash', 'boot-transition'):
             exe = Path(temp)/name
             run('cc', '-O1', '-g', '-fsanitize=undefined',
                 '-fno-sanitize-recover=all', '-DCLIO_HOST_ROOT="'+temp+'/"', ROOT/'tests'/f'{name}.c', '-lm', '-o', exe)

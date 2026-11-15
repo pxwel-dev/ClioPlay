@@ -5,6 +5,15 @@
 
 <p align="center"><a href="#install">Install</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
+## Version 2.1.0 — In development
+
+- A consistent rounded outline for the speeding warning, retaining its smooth red pulse.
+- A thicker speed-limit badge outline with space around it inside the speed pill.
+- Cleaner latitude/longitude entry with the explanatory tip line removed.
+
+See [version history](CHANGELOG.md) for implemented changes by version. This
+version is being prepared; publishing and release notes will follow separately.
+
 ## UI previews
 
 | Day boot and UI transition | Night boot and UI transition |

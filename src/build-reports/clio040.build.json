@@ -1,30 +1,30 @@
 {
   "machine": "ARM7TDMI / ARMv4T",
   "abi": "ELF32 EABI5 soft-float; Linux OABI syscalls",
-  "entry": "0x82d3c",
-  "bytes": 1015956,
-  "sha256": "4b2ad2d858473d3f5aa836033a57abb6fd57924df4b3265ef36275adc13e478c",
+  "entry": "0x82d44",
+  "bytes": 1015828,
+  "sha256": "26dcd3f0a119a599954b2fdd370c0d054149e6df556cabbfe4ba7aa945fbda6c",
   "sections": {
     ".text": {
-      "address": "0x82b48",
-      "bytes": 441744
+      "address": "0x82b50",
+      "bytes": 441572
     },
     ".rodata": {
       "address": "0x10108",
-      "bytes": 404030
+      "bytes": 404038
     },
     ".data": {
-      "address": "0xfe8d8",
+      "address": "0xfe838",
       "bytes": 1464
     },
     ".bss": {
-      "address": "0xfee90",
+      "address": "0xfedf0",
       "bytes": 11453472
     }
   },
-  "version": "2.0.0",
+  "version": "2.1.0",
   "source": "clio843/src/clio040.c",
-  "source_tree_sha256": "48755e5e3a12a23a879f2074268e10641dc3b7244df7573a21a466d9929ae0a7",
+  "source_tree_sha256": "b248518d5058d7470cc2897772e3d94a90efc6b5205ead9d50ca40e30578a9e3",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "e68482414282efe29ca954b24778c89e03a3d70197bc9b29effd830dec97f8f0",
@@ -39,7 +39,7 @@
     "clio843/src/clio040.c": "db5d8bb52288884c05dfe21df14ddbbb8c8a9939e2a0176ef8e7871cde3d4bc7",
     "clio843/src/clioa2dp.c": "7a1e8dc00e36d863c7aadcda3c1058e8a4012b2f7ce0b2029abdfd06fe8ce7ed",
     "clio843/src/cliospl.c": "523530da194e4a859de29b448926f347d70c6c6c243d08d9b048fb68e08e3d33",
-    "clio843/src/coordinates.h": "c6145b9aadfcc57017b9b89c0d4f15d23681354228cf6a1f82990e7e1c581e0d",
+    "clio843/src/coordinates.h": "f81cee7628626fb6c9ff77e89800e97e52de167600c81ab4d97bee449d476695",
     "clio843/src/cswd.c": "707aa0a1fdcd8048d2fa252a14ce32176fae347d512e11869f2905a69380530c",
     "clio843/src/font_atlas.h": "0989a1e455dd2a047dfea49d3e4d2a66a30b178960b80a2c31603ee80ffc4ffc",
     "clio843/src/frame_renderer.h": "601f26cf14c105cea2b42e1f0b9879e22defbd76f73d8000dd21bf9a489881e1",
@@ -49,8 +49,8 @@
     "clio843/src/global_regions.h": "1d8341489f0394ce7d1cef200e252129bc9eebcbe60b29dc2923dfd156a77969",
     "clio843/src/global_text.cc": "45b454fa97ec49eaaca230e4578da4361138ff2c5c410e0e552edd5629231858",
     "clio843/src/global_text.h": "49956b951783a12949ea41c4e2df829837eaa8ecfd644c68e6ca57c70a2208b6",
-    "clio843/src/hud.h": "05ede207536d9b3cb397f131de98b86d584b879c179817ce5c4e572f4f39321f",
-    "clio843/src/hud_glass.h": "89b46b14b3c70f8ecc0e71fe7798ad4867a58aab8715a6eef40f9b6d2edee946",
+    "clio843/src/hud.h": "522a122414f3da4a3634b0e81b2cc3593bdee214861b47db865027087fd3ba7a",
+    "clio843/src/hud_glass.h": "86f49f06c221dafedefc9b3ccccccdd3ae8a9f83b06388dfc8476495ca128cb1",
     "clio843/src/hud_playback.h": "a2757e57a552bf1e03a30b7b62b60bf2ade02cf62ddf565531d2eb753f86f881",
     "clio843/src/hud_status.h": "91f9d2cc57aeae72deebee57974292a8c3033631b4cd11b83d57fdececbaeaed",
     "clio843/src/hud_turn_masks.h": "ceb5cc2dfc83963855f1c04541c646ac49a88e6c2177c6584c673d9d97b3ad45",
@@ -65,7 +65,7 @@
     "clio843/src/nav_roundabout.h": "470390303a8f18184a020710012ea0353d0425c26a1381bbaa4064ca2d7f39be",
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
     "clio843/src/popups.h": "e63651756bd190224b6de6bf0d89df0d68c02071c1253c87e31dcf778240d492",
-    "clio843/src/release_version.h": "50c48abdb212e61eba651b53bf667efbd8e6882cbd863dc2327ed79512a2e481",
+    "clio843/src/release_version.h": "09c9ecd16620ff6c07ee523b2b5b3b10f3962a57a01da39ada737bf40b749af4",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
     "clio843/src/splash_icon.h": "1c0cb3bf3be97ce49cdf626bc0184b0736b49fee877a92f5bf2e5cb2d0ec17eb",
     "clio843/src/ui_raster.h": "50767eb3a56c5192daabb07944b255b34d4e77b1db48b14a30a6914871420284",
@@ -1034,7 +1034,7 @@
     "clio843/src/vendor/sheenbidi/Source/UBA/StatusStack.h": "348774283d029f4afa64b95ba9fe04240d754587b483a8bcc345e1d6e78c6261",
     "clio843/src/vstatd.c": "a359d214853cdd511fb79e905fafc52f5413b635bb3288b268d04c15724a666f",
     "tools/build_ui.py": "b5874193f7b1903d2da65043e329011c3df07a4b5fcfedd9e424814a905c5c05",
-    "VERSION": "c28fcca53637bc88e124af1725df13cb98c69dedefd62fb3cdbe1cdb6b760624",
+    "VERSION": "c89b87c262e9d5ffd20e73aac74a1772adcc9f5a21682cc33adcf5086e5fef5c",
     "tools/release_version.py": "61fe6a14178f6a7b6aeaeac4456c95c27df9ca746c4c777339ff1953d2b43e02",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
     "tools/build_translations.py": "f0970483186937bbbc3b86f4bab877a2a6fe244830e99ee9ac82c2f58858e6f0",

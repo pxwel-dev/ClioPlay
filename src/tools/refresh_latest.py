@@ -40,6 +40,7 @@ def inputs(published_reports):
  for name in ('LICENSE','THIRD_PARTY_NOTICES.md'):
   files[name]=ROOT/name
  files['SOURCE_STATUS.md']=ROOT/'docs/source-status.md'
+ files['CHANGELOG.md']=ROOT/'docs/changelog.md'
  files['Install.command']=ROOT/'tools/Publication-Install.command'
  files['install.py']=ROOT/'tools/publication_install.py'
  for key,p in list(files.items()):

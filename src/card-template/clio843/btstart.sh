@@ -1,6 +1,6 @@
 #!/bin/sh
 # ClioPlay Bluetooth bootstrap.
-CLIOPLAY_VERSION=2.0.0
+CLIOPLAY_VERSION=2.1.0
 # Launch the Renault HID listener, then start phone setup immediately. The
 # remote can connect whenever a button wakes it. Phone pairing uses TomTom's
 # factory blueserver/hcid runtime pairing gate; hcid/hidd are never restarted for pairing.
