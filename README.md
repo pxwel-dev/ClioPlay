@@ -7,6 +7,10 @@
 
 ## UI previews
 
+| Day boot and UI transition | Night boot and UI transition |
+| --- | --- |
+| ![Day boot screen cross-fades into the live UI](src/docs/demo/boot-day.gif) | ![Night boot screen cross-fades into the live UI](src/docs/demo/boot-night.gif) |
+
 | Driving and camera alerts | Trip, favourites and settings |
 | --- | --- |
 | ![Driving with a temporary road name and a camera warning](src/docs/demo/driving.gif) | ![Opening Trip, browsing favourites and switching themes](src/docs/demo/menus.gif) |

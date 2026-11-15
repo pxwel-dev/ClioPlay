@@ -27,7 +27,11 @@ def previews():
     road_frames = sorted({0,5300}|{at+step for at in (100,1100,4100) for step in TWEEN_STEPS})
     status_samples = sorted({at+step for at in (0,800,1600,2600,6500,7000) for step in TWEEN_STEPS} | {4400,4800,5400,6100,6200,6280,6360,6440,8600})
     metadata_samples = sorted({at+step for at in (0,900,1700,2900,4300,8500) for step in TWEEN_STEPS} | {700,2600,3900,7200,9200})
+    boot = [(f'boot-fade-{ms:04d}', 67) for ms in range(0, 501, 67)] + [('boot-fade-0536', 364), ('boot-fade-0900', 700)]
+    boot[0] = (boot[0][0], 750)
     return {
+        'boot-day.gif': timeline('day', boot),
+        'boot-night.gif': timeline('night', boot),
         'popups.gif': timeline('night', timed_scenes('preview-popups', POPUP_SAMPLES, 7200)),
         'metadata-updates.gif': timeline('night', timed_scenes('preview-metadata', metadata_samples, 9600)),
         'status-notifications.gif': timeline('night', timed_scenes('preview-status', status_samples, 9200)),
@@ -183,7 +187,7 @@ def main():
         selection.write_text(json.dumps(scenes))
         subprocess.run([sys.executable, str(ROOT / 'tools/render_gallery.py'),
                         '--maps', str(args.maps.resolve()), '--output', str(captures),
-                        '--scene-ids', str(selection), '--themes', 'night', '--frames-only'],
+                        '--scene-ids', str(selection), '--themes', 'day', 'night', '--frames-only'],
                        check=True)
         capture = json.loads((captures / 'manifest.json').read_text())
         reports = {}

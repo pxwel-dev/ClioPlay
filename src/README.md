@@ -41,6 +41,13 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
 
 ## Behaviour
 
+- **Boot:** the logo and wordmark sit on a soft, frosted day/night backdrop while
+  services and data load. Once
+  the first UI frame is ready, the splash cross-fades into the live display over
+  about half a second. Map/model/input services continue normally; pressing a
+  control reveals the UI immediately. The transition targets 15 FPS, or 5 FPS
+  during route calculation. It adds no readiness wait or artificial loading stage.
+
 - **Driving display:** the map fills the screen. The clock shows the outside
   temperature when a valid reading is available. Audio, volume, connection and
   navigation updates animate in as temporary notices. A new road name appears

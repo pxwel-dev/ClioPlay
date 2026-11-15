@@ -33,6 +33,9 @@ static void run_case(int mode,long utc,const char*saved,int night,int valid_fix)
  if(valid_fix){if(valid_fix<0)fix.check++;FILE*f=fopen(SPLASH_LASTGPS,"wb");assert(f&&fwrite(&fix,sizeof(fix),1,f)==1);fclose(f);}else unlink(SPLASH_LASTGPS);
  spl_theme=2;spl_bright=50;spl_test_utc=utc;
  assert(spl_run()==0);unsigned actual=check();spl_render(night);assert(actual==check());
+ FILE*image=fopen(BOOT_IMAGE_PATH,"rb");assert(image);struct BootImageHeader header;
+ assert(fread(&header,sizeof(header),1,image)==1&&header.magic==0x31425043u&&header.pixels==FB_PIX&&header.hash==boot_image_hash(fb));
+ fclose(image);assert(access(BOOT_IMAGE_TEMP,F_OK)<0);
  FILE*f=fopen(SPLASH_THEME,"rb");assert(f);char b[32];size_t n=fread(b,1,sizeof(b),f);fclose(f);assert(n==strlen(saved)&&!memcmp(b,saved,n));
  f=fopen(SPLASH_BL_VAL,"rb");assert(f);n=fread(b,1,sizeof(b),f);fclose(f);assert(n==3&&!memcmp(b,"128",3));
  f=fopen(SPLASH_FB,"rb");assert(f);assert(fseek(f,0,SEEK_END)==0&&ftell(f)==sizeof(fb));fclose(f);
@@ -58,6 +61,6 @@ int main(int argc,char**argv){
  run_case(8,1793966400L,"1",0,1);
  put(SPLASH_PREF,"version=6\ntheme=2\nbright=50\nhoff=1\nmoff=0\n");spl_load_prefs();
  assert(spl_day_start==CLIO_DAY_START&&spl_night_start==CLIO_NIGHT_START&&spl_offset==60);
- puts("Native splash passed: antialiased icon, custom AUTO schedule and saved UTC offset, GPS-independent startup, Day/Night overrides, brightness, exact framebuffer write and unchanged saved theme.");
+ puts("Native splash passed: soft Day/Night artwork, RAM handoff, antialiased icon, custom AUTO schedule and saved UTC offset, GPS-independent startup, Day/Night overrides, brightness, exact framebuffer write and unchanged saved theme.");
  return 0;
 }

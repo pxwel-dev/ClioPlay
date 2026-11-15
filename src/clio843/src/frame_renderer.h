@@ -29,7 +29,7 @@ static void render_copy(u16*to,const u16*from){
  if(count&1u)to[count-1]=from[count-1];
 }
 static int render_transition_active(u32 now){
- if(renderer.camera_pending||hud_menu_animating(now)||popup_animating(now))return 1;
+ if(boot_fade.image||renderer.camera_pending||hud_menu_animating(now)||popup_animating(now))return 1;
  if(screen==SCR_MAP){
   for(int id=HC_SPEED;id<HC_COUNT;id++){
    struct HudTween*t=&hud_tween[id];if(!t->seen||(!t->from.a&&!t->target.box.a))continue;
@@ -77,7 +77,7 @@ static void render_present(void){
  u32 now=hud_now_ms();render_prepare(now);renderer.present_at=now;
  hud_glass_frame_begin();hud_draw_all(now,screen==SCR_MAP);
  if(screen!=SCR_MAP)hud_draw_page_title();
- draw_modal();hud_glass_frame_end();fb_flush();
+ draw_modal();hud_glass_frame_end();boot_fade_apply(now);fb_flush();
  clip_x=ox;clip_y=oy;clip_right=orr;clip_bottom=ob;hud_ink_alpha=oa;
  renderer.pending=renderer.model_pending=0;render_stats.presents++;
  u32 elapsed=hud_now_ms()-begin;if(elapsed>render_stats.max_present_ms)render_stats.max_present_ms=elapsed;

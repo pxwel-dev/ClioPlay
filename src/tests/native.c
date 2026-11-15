@@ -7,6 +7,10 @@
 #include CLIO_SOURCE
 #undef main
 #include "fixtures/route.h"
+#ifndef CLIO_BOOT_ART
+#define CLIO_BOOT_ART "../clio843/src/boot_art.h"
+#endif
+#include CLIO_BOOT_ART
 #include <assert.h>
 #include <string.h>
 static const char*outdir;
@@ -19,6 +23,7 @@ static void settle(void){
 #endif
 }
 static void fixture(void){
+ boot_fade_cancel();
  pref_keyboard_language=-1;kbd_language=kbd_page=kbd_picker=kbd_column=0;kbd_clear_composition();
  gps.fix=track_valid=display_course_valid=1;gps.lat=track_lat=cp_route[0][0];gps.lon=track_lon=cp_route[0][1];gps.course=track_course=display_course=0;gps.mph10=240;gps.hour=21;gps.min=41;gps.day=19;gps.mon=10;gps.year=2026;
  pref.hoff=1;pref.autozoom=0;pref.debug=0;pref.bright=50;manual_zoom=freecam_zoom=4;

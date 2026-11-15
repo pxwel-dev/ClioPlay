@@ -1,30 +1,30 @@
 {
   "machine": "ARM7TDMI / ARMv4T",
   "abi": "ELF32 EABI5 soft-float; Linux OABI syscalls",
-  "entry": "0x33168",
-  "bytes": 83228,
-  "sha256": "36e66c7467d1ad22218953b1cc5eedb5bdee5d59feb58bc8f190e77555acad97",
+  "entry": "0x331a4",
+  "bytes": 84272,
+  "sha256": "be2dc75baec83ded9aed9842fbba51fbbdc40bce0ebe7c37675f3cb803438a77",
   "sections": {
     ".text": {
-      "address": "0x33168",
-      "bytes": 3844
+      "address": "0x331a4",
+      "bytes": 4768
     },
     ".rodata": {
       "address": "0x10104",
-      "bytes": 77924
+      "bytes": 77984
     },
     ".data": {
-      "address": "0x4406c",
+      "address": "0x44444",
       "bytes": 16
     },
     ".bss": {
-      "address": "0x4407c",
+      "address": "0x44454",
       "bytes": 261124
     }
   },
   "version": "2.0.0",
   "source": "clio843/src/cliospl.c",
-  "source_tree_sha256": "720b037e39d4b0a40e713f4fdc3a0568204c7375b8edfd32dc2e94e31f8c5df5",
+  "source_tree_sha256": "48755e5e3a12a23a879f2074268e10641dc3b7244df7573a21a466d9929ae0a7",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "e68482414282efe29ca954b24778c89e03a3d70197bc9b29effd830dec97f8f0",
@@ -32,14 +32,17 @@
     "clio843/src/audio_chime.h": "184c222e448db2707fc752bc38f7f6c735b6cb1f4d168d88ddc7da7cf20f4d75",
     "clio843/src/audio_playback.h": "25e0f01cd52eb89d447c5ecdf34f57bebeef36135c2912eaa3d49ec1ee7f13e1",
     "clio843/src/audio_schedule.h": "bf37e189f7a0f372567287380820a357878fc1aaf519f85309224cd0d5ae85a6",
+    "clio843/src/boot_art.h": "367249c4bf35acfa7ce5092dce4a906c566d5e9e818d1bbd3d65c35ba128dbeb",
+    "clio843/src/boot_handoff.h": "085fda60af400019c684dd5ea9d12e799442cfc9b5e54456caf8d2415f66e23b",
     "clio843/src/boot_theme.h": "fa46f1bda9c0f37306c90f34d497192953aa718b30fa688291bbc7a66ddab746",
-    "clio843/src/clio040.c": "5f87de52e5ac8e269707e078f9660ba73dc2bbcc0805ec1c70b16821a695243e",
+    "clio843/src/boot_transition.h": "8ea391927a52cf8eaa9f010a70b8f8e012b768346ca9cd297110e40e6a850007",
+    "clio843/src/clio040.c": "db5d8bb52288884c05dfe21df14ddbbb8c8a9939e2a0176ef8e7871cde3d4bc7",
     "clio843/src/clioa2dp.c": "7a1e8dc00e36d863c7aadcda3c1058e8a4012b2f7ce0b2029abdfd06fe8ce7ed",
-    "clio843/src/cliospl.c": "747ad7fbc07b41fa8fd505386c636af14fdc76827dc823110a5871e88f4802df",
+    "clio843/src/cliospl.c": "523530da194e4a859de29b448926f347d70c6c6c243d08d9b048fb68e08e3d33",
     "clio843/src/coordinates.h": "c6145b9aadfcc57017b9b89c0d4f15d23681354228cf6a1f82990e7e1c581e0d",
     "clio843/src/cswd.c": "707aa0a1fdcd8048d2fa252a14ce32176fae347d512e11869f2905a69380530c",
     "clio843/src/font_atlas.h": "0989a1e455dd2a047dfea49d3e4d2a66a30b178960b80a2c31603ee80ffc4ffc",
-    "clio843/src/frame_renderer.h": "519b9576be1d8d2bc45214041b0833f39ac78e974e1fdb960571624c7769ed4a",
+    "clio843/src/frame_renderer.h": "601f26cf14c105cea2b42e1f0b9879e22defbd76f73d8000dd21bf9a489881e1",
     "clio843/src/frame_schedule.h": "50bac892308f48eb49dbc30948b2531ca3b8d1ff71296820168f86a48a12751a",
     "clio843/src/global_cameras.h": "d07e8dabf65f3513a5ec88eb15e34bdcad628cdb291f08a518eb46a3ebed9cd9",
     "clio843/src/global_clock.h": "5fbcf43cb8aceb59e87d6f8118d121ce5798eec064c0ed5a7586a2eb25de8512",

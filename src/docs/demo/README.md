@@ -2,6 +2,7 @@
 
 | Preview | What it shows |
 | --- | --- |
+| [Day boot](boot-day.gif) / [Night boot](boot-night.gif) | Logo and wordmark on a soft theme-aware background, followed by the production half-second cross-fade into the live UI. The initial hold is illustrative, not a boot-time measurement. |
 | [Popups](popups.gif) | Route confirmation, destination-source choices, saved-phone actions and the keyboard language picker share glass entrance, exit, text and focus transitions. |
 | [Song and radio updates](metadata-updates.gif) | New song titles animate in, including during BT CTRL. Radio tuning updates even when the station name stays the same. |
 | [Status notifications](status-notifications.gif) | GPS acquisition and recovery, phone connection, volume and no-active-route messages share one animated pill. |
@@ -18,7 +19,9 @@
 | [Add a stop](add-stop.gif) | Trip adds a favourite as an intermediate stop and keeps the original destination. |
 
 Native UI frames are 480 × 272 from the production C renderer. The phone-destination loop combines those unchanged frames with a captured browser panel on a 936 × 510 canvas. Website sources and capture tooling remain private. On regeneration, pass --phone-capture to supply new browser screenshots, or the existing GIF browser panel is reused while native UI frames are refreshed.
-They show an example route around Newcastle upon Tyne. Car and phone inputs
+The boot previews use the production splash and cross-fade blend, with a cached
+map position and simulated GPS acquisition. Their initial hold is illustrative;
+loading time is not measured. Other previews show an example route around Newcastle upon Tyne. Car and phone inputs
 are controlled samples. The destination preview feeds a sample message into
 the ClioPlay daemon/UI handoff. Camera positions are illustrative. Motion is
 sampled at approximately 15 frames per second during short transitions, and

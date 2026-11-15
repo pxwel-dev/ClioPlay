@@ -222,9 +222,12 @@ contribution workflow are in [locales/README.md](locales/README.md).
 The [hardware guide](docs/scenic-iii-hardware.md#hardware-evidence-and-validation)
 lists console and temperature checks that still require a vehicle trial.
 
-`verify_splash.py` captures both boot themes from the production C framebuffer,
-checks theme/brightness behaviour and icon compositing under UBSan, and writes
-previews to `docs/next-release/splash-antialias/`. Generated captures are local diagnostics and are not part of the publication.
+`verify_splash.py --out /tmp/clioplay-boot-renders` captures both boot
+screens from the production RGB565 renderer and checks theme, brightness,
+anti-aliased icon compositing and the one-shot RAM-image handoff under UBSan.
+The output stays outside the publication. `tests/boot-transition.c` verifies the
+cross-fade endpoints, invalid/stale input, cancellation, memory cleanup and the
+normal 15 FPS / route-calculation 5 FPS compositor cadence.
 
 ## Scheduled Auto theme
 
@@ -249,6 +252,15 @@ legacy/corrupt preferences, persistence, controls and manual overrides.
 Both run under UBSan in `tools/verify_ci.py`.
 
 ## Boot measurements
+
+The splash draws once, with a procedural softened background and unenclosed,
+anti-aliased logo and wordmark. It publishes a checked RGB565 image in `/tmp` for the UI to
+consume once. The UI uses one temporary 255 KiB mapping, frees it after the
+500 ms cross-fade or input cancellation, and leaves normal services running.
+The fade starts at the first completed UI frame and shares the existing 15/5 Hz
+presentation cadence; it never sleeps or holds map drawing. A missing, stale or
+invalid image falls back to the normal UI. This RAM handoff is runtime state,
+not a persistent diagnostic file.
 
 The bootstrap runs AUX initialization first, draws the splash, then starts
 Bluetooth and Focus. UI loading overlaps Focus readiness; only the vehicle

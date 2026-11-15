@@ -1,4 +1,4 @@
-/* ClioPlay UI — maintained, theme-aware RGB565 boot screen.
+/* ClioPlay UI — frosted, theme-aware RGB565 boot screen.
  * Draw once and return immediately: no fake progress or added boot delay. */
 #include "release_version.h"
 typedef unsigned char u8;
@@ -85,7 +85,6 @@ static void fill(int x,int y,int w,int h,u16 c){if(x<0){w+=x;x=0;}if(y<0){h+=y;y
 #include "ui_raster.h"
 #include "boot_theme.h"
 #include "last_fix.h"
-#include "splash_icon.h"
 static int spl_theme=2,spl_bright=50,spl_offset=0,spl_day_start=CLIO_DAY_START,spl_night_start=CLIO_NIGHT_START;
 static int spl_int(const char*s){int sign=1,v=0;if(*s=='-'){sign=-1;s++;}for(int n=0;n<6&&*s>='0'&&*s<='9';n++,s++)v=v*10+*s-'0';return v*sign;}
 static int spl_eq(const char*a,const char*b){while(*a&&*a==*b){a++;b++;}return *a==*b;}
@@ -121,43 +120,10 @@ static void spl_brightness(void){
  int v=(spl_bright*max+50)/100,n=0;char rev[16];do{rev[n++]=(char)('0'+v%10);v/=10;}while(v);for(int i=0;i<n;i++)b[i]=rev[n-i-1];
  fd=s_open(SPLASH_BL_VAL,1,0);if(fd>=0){s_write(fd,b,n);s_close(fd);}
 }
-static void spl_icon(int ix,int iy){
- /* Composite canvas, blue tile and white mark once per pixel. The masks are
-  * sampled offline, so smooth edges add no large buffer or boot-time sampling.
-  * A single composite avoids a dark seam around the white arrow. */
- for(int y=0;y<SPL_ICON_SIZE;y++){
-  int d=SPL_ICON_SIZE-1;
-  u16 blue=rgb((74*(d-y)+d/2)/d,(177*(d-y)+96*y+d/2)/d,(255*(d-y)+235*y+d/2)/d);
-  for(int x=0;x<SPL_ICON_SIZE;x++){
-   int i=y*SPL_ICON_SIZE+x,a=spl_icon_outer[i],white=spl_icon_arrow[i];if(!a)continue;
-   u16 bg=fb[(iy+y)*W+ix+x];int tile=a-white;
-   int r=(((bg>>11)&31)*(64-a)+((blue>>11)&31)*tile+31*white+32)>>6;
-   int g=(((bg>>5)&63)*(64-a)+((blue>>5)&63)*tile+63*white+32)>>6;
-   int b=((bg&31)*(64-a)+(blue&31)*tile+31*white+32)>>6;
-   px(ix+x,iy+y,(u16)((r<<11)|(g<<5)|b));
-  }
- }
-}
-static void spl_render(int night){
- fill(0,0,W,H,ui_canvas(night));
- /* Centre the icon and visible title bounds as one group. Glyph top/side
-  * bearings are excluded from the group's padding, so font metrics cannot
-  * leave the mark floating above the screen centre. */
- const char*title="ClioPlay",*p=title;int pen=0,left=W,right=0,top=H,bottom=0;
- while(*p){int code=cp_code(&p);const struct CpGlyph*g=&cp_glyphs[6*98+cp_slot(code)];
-  if(g->w&&g->h){if(pen+g->left<left)left=pen+g->left;if(pen+g->left+g->w>right)right=pen+g->left+g->w;if(g->top<top)top=g->top;if(g->top+g->h>bottom)bottom=g->top+g->h;}
-  pen+=g->advance;
- }
- const int icon=SPL_ICON_SIZE,gap=20;int textw=right-left,texth=bottom-top;
- int groupw=textw>icon?textw:icon,grouph=icon+gap+texth;
- int groupx=(W-groupw)/2,groupy=(H-grouph)/2;
- int ix=groupx+(groupw-icon)/2,iy=groupy;
- /* All parts derive from the same group origin. */
- spl_icon(ix,iy);
- label(groupx+(groupw-textw)/2-left,groupy+icon+gap-top,6,title,night?rgb(249,250,255):rgb(23,29,38),0);
-}
+#include "boot_art.h"
+#include "boot_handoff.h"
 static int spl_present(void){long fd=s_open(SPLASH_FB,1,0);if(fd<0)return 0;unsigned done=0;while(done<sizeof(fb)){long n=s_write(fd,(const u8*)fb+done,sizeof(fb)-done);if(n<=0)break;done+=(unsigned)n;}s_close(fd);return done==sizeof(fb);}
-static int spl_run(void){spl_load_prefs();int night=clio_boot_night(spl_theme,spl_clock_utc(),spl_offset,spl_day_start,spl_night_start,spl_saved_theme());spl_brightness();spl_render(night);return spl_present()?0:1;}
+static int spl_run(void){spl_load_prefs();int night=clio_boot_night(spl_theme,spl_clock_utc(),spl_offset,spl_day_start,spl_night_start,spl_saved_theme());spl_brightness();s_unlink(BOOT_IMAGE_PATH);spl_render(night);if(!spl_present())return 1;boot_image_save(fb);return 0;}
 #ifndef HOST_TEST
 __attribute__((noreturn))void _start(void){s_exit(spl_run());}
 #else

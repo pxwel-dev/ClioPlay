@@ -7,6 +7,7 @@
     "clio843/src/global_clock.h": "5fbcf43cb8aceb59e87d6f8118d121ce5798eec064c0ed5a7586a2eb25de8512",
     "clio843/src/map_thin_coverage.h": "d4632a1dd789176be35ded06a21b84d272d69910532f31e05dc03fbfc092e5fb",
     "clio843/src/atlas_router.h": "ae13e0cb3de1c5c75a377abced3f4332cecd1ca0ff124e9d3074c555d9068eb5",
+    "clio843/src/boot_art.h": "367249c4bf35acfa7ce5092dce4a906c566d5e9e818d1bbd3d65c35ba128dbeb",
     "clio843/src/popups.h": "e63651756bd190224b6de6bf0d89df0d68c02071c1253c87e31dcf778240d492",
     "clio843/src/hud.h": "05ede207536d9b3cb397f131de98b86d584b879c179817ce5c4e572f4f39321f",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
@@ -21,11 +22,13 @@
     "clio843/src/atlas_catalog.h": "e68482414282efe29ca954b24778c89e03a3d70197bc9b29effd830dec97f8f0",
     "clio843/src/map_raster.h": "d5ab540a21b9e3495fd393960b9975731fb710131c378e17ab2d49e6404ea692",
     "clio843/src/global_regions.h": "1d8341489f0394ce7d1cef200e252129bc9eebcbe60b29dc2923dfd156a77969",
+    "clio843/src/boot_transition.h": "8ea391927a52cf8eaa9f010a70b8f8e012b768346ca9cd297110e40e6a850007",
     "clio843/src/release_version.h": "50c48abdb212e61eba651b53bf667efbd8e6882cbd863dc2327ed79512a2e481",
     "clio843/src/vehicle_icon.h": "dfcb48775858684a323506e4cb6f61eba56ce3d8c7507a5ef86b58d917f24b4a",
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
-    "clio843/src/cliospl.c": "747ad7fbc07b41fa8fd505386c636af14fdc76827dc823110a5871e88f4802df",
+    "clio843/src/cliospl.c": "523530da194e4a859de29b448926f347d70c6c6c243d08d9b048fb68e08e3d33",
     "clio843/src/global_text.cc": "45b454fa97ec49eaaca230e4578da4361138ff2c5c410e0e552edd5629231858",
+    "clio843/src/boot_handoff.h": "085fda60af400019c684dd5ea9d12e799442cfc9b5e54456caf8d2415f66e23b",
     "clio843/src/audio_playback.h": "25e0f01cd52eb89d447c5ecdf34f57bebeef36135c2912eaa3d49ec1ee7f13e1",
     "clio843/src/ui_raster.h": "50767eb3a56c5192daabb07944b255b34d4e77b1db48b14a30a6914871420284",
     "clio843/src/hud_playback.h": "a2757e57a552bf1e03a30b7b62b60bf2ade02cf62ddf565531d2eb753f86f881",
@@ -36,13 +39,13 @@
     "clio843/src/global_cameras.h": "d07e8dabf65f3513a5ec88eb15e34bdcad628cdb291f08a518eb46a3ebed9cd9",
     "clio843/src/urban_speed_defaults.h": "a719a3d065f16bc39727b01d7ed73f412beeb4d8703b5bde73a8c6ff1c35ac10",
     "clio843/src/cswd.c": "707aa0a1fdcd8048d2fa252a14ce32176fae347d512e11869f2905a69380530c",
-    "clio843/src/clio040.c": "5f87de52e5ac8e269707e078f9660ba73dc2bbcc0805ec1c70b16821a695243e",
+    "clio843/src/clio040.c": "db5d8bb52288884c05dfe21df14ddbbb8c8a9939e2a0176ef8e7871cde3d4bc7",
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/vstatd.c": "a359d214853cdd511fb79e905fafc52f5413b635bb3288b268d04c15724a666f",
     "clio843/src/audio_chime.h": "184c222e448db2707fc752bc38f7f6c735b6cb1f4d168d88ddc7da7cf20f4d75",
     "clio843/src/utf8.h": "e6e172fb98b7f4c9e958322d13296190fd003025562c05146bcc9a3d50af8b7c",
     "clio843/src/unicode_support.c": "43a20e8dde712fbdb5e087062ad68d3ae5aec704c1ab864dec9c57a99fd54b77",
-    "clio843/src/frame_renderer.h": "519b9576be1d8d2bc45214041b0833f39ac78e974e1fdb960571624c7769ed4a",
+    "clio843/src/frame_renderer.h": "601f26cf14c105cea2b42e1f0b9879e22defbd76f73d8000dd21bf9a489881e1",
     "clio843/src/boot_theme.h": "fa46f1bda9c0f37306c90f34d497192953aa718b30fa688291bbc7a66ddab746",
     "clio843/src/ui_translations.h": "081ce81ae51ef700e2598476cf9dc858d45d2877ea99508925752b71ee893144",
     "clio843/src/keyboard-data/layouts.h": "22a3c1a36371612cf10b9db2811812d6320eef8065df4cd7586d4088ea25a6de",
@@ -499,20 +502,158 @@
     "clio843/src/vendor/sheenbidi/Headers/SheenBidi/SheenBidi.h": "44a644a72edf2300838d32c3e32aa14a7cb66b584fb9da643b8311aa21991cbe"
   },
   "executables": {
-    "clio040": "0724ab088610f64189ba89c00203f677bc6c549d5ac73675a22f7887d40d9715",
-    "cliospl": "36e66c7467d1ad22218953b1cc5eedb5bdee5d59feb58bc8f190e77555acad97",
+    "clio040": "4b2ad2d858473d3f5aa836033a57abb6fd57924df4b3265ef36275adc13e478c",
+    "cliospl": "be2dc75baec83ded9aed9842fbba51fbbdc40bce0ebe7c37675f3cb803438a77",
     "clioa2dp": "65a5e67c23e0c7a931cb8804e170ce194c2ed71bddd2ef155533c8f223aa615d"
   },
   "generator_inputs": {
-    "tools/render_previews.py": "f3396bca8e80bd120efd38ef28260a71888082e5762b92f42e3ba922d14cd932",
-    "tools/render_gallery.py": "dd2106cea4bc696f4743a80dc97114eaeeb0cf58ff48437f4354804b581affca",
+    "tools/render_previews.py": "c923fe4e15a65f95544d6b8628321aab640086f442af86ad9bc1e2b4d2940e13",
+    "tools/render_gallery.py": "5055af2677b229bf7cfdba30d214dd14a7432785aeca3912ad7207cab7dc725f",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
-    "tests/native.c": "000eee1ae95d9f51dc7a49fc7de4507da256b5c082f407bb955af5961e3b6555",
-    "tests/splash.c": "a564a2e45e6ff0dfbe38ea30174398c35873aeda601fcd37cbb58095a96d7e51",
+    "tests/native.c": "dbb5b6e863f3e2eb2872c8e833e483fc7ca1c5f0d039568a9ce899fef73d3a96",
+    "tests/splash.c": "33de90a783e93f29be5752a714cd36d228da0adddc3f8499a0a95ecf334cdcda",
     "tests/fixtures/route.h": "8d4a20c13f4bc6d04e0815eb77917f5e5129285cb1138c8f2a2df1d27816e22f",
     "clio843/font.bin": "f45a6b3a6d6c539e0e83556a49049bb2ee4df7a04f17f9a43dfee3a3e8760ea1"
   },
   "previews": {
+    "boot-day.gif": {
+      "sha256": "c6ef8477b4384717cb70b2260f8bc6c79decba6abbc5d7243ee9b72fd1f6e63e",
+      "frames": 9,
+      "duration_ms": 2280,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
+      "source_frames": [
+        {
+          "frame": "day/boot-fade-0000.png",
+          "rgb565_sha256": "4359fd53a6a77ab7aa72c0acb63d7aaad10ba79fa54f555abebaad817b35eb28"
+        },
+        {
+          "frame": "day/boot-fade-0067.png",
+          "rgb565_sha256": "ce9638487c9fc268043eb8656e30b3bc01511070cc17ab6bc57b753759ef4ace"
+        },
+        {
+          "frame": "day/boot-fade-0134.png",
+          "rgb565_sha256": "f25c093e407a14051dc85b72dcad61e6082dc0ee73c9a313100000629e0a6b4a"
+        },
+        {
+          "frame": "day/boot-fade-0201.png",
+          "rgb565_sha256": "dd088ee03181429c06e9ab216cf3fb90547067df1b2c51369dcaf0453bc7e17f"
+        },
+        {
+          "frame": "day/boot-fade-0268.png",
+          "rgb565_sha256": "ac08e5e624b466d3d9606da758f4b5ebc99cbe6a8541ba7fb6ee5c9d1a8121cd"
+        },
+        {
+          "frame": "day/boot-fade-0335.png",
+          "rgb565_sha256": "ddbfee3ecd6797b9da2eb6354124cff3af5128b254dea3d09e55c59574fdae26"
+        },
+        {
+          "frame": "day/boot-fade-0402.png",
+          "rgb565_sha256": "0a3897f0cb27067d2b4d79b9ba4914d936a2c5665376d41e45c8c52a3a4a150c"
+        },
+        {
+          "frame": "day/boot-fade-0469.png",
+          "rgb565_sha256": "6028dbb9844710cea96937efc0d6074f5ce5b86cb8eba7c94ffd4d253378cf1f"
+        },
+        {
+          "frame": "day/boot-fade-0536.png",
+          "rgb565_sha256": "fb69bf2dc8a3a8bce2988a69ba326ec99755b577070b0047a7dbaafd2f7675de"
+        },
+        {
+          "frame": "day/boot-fade-0900.png",
+          "rgb565_sha256": "fb69bf2dc8a3a8bce2988a69ba326ec99755b577070b0047a7dbaafd2f7675de"
+        }
+      ]
+    },
+    "boot-night.gif": {
+      "sha256": "f6c7da14d24292ea6fb62ece3acc68c8b687cec9b784f1a6d3a79239d3f1c67b",
+      "frames": 9,
+      "duration_ms": 2280,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
+      "source_frames": [
+        {
+          "frame": "night/boot-fade-0000.png",
+          "rgb565_sha256": "a39863423b2d6d92b5a4ae8f6d632045669e6db622d1bd3e498648900876ba92"
+        },
+        {
+          "frame": "night/boot-fade-0067.png",
+          "rgb565_sha256": "75afce0aa04c16571db6816799aed3b3f8c1720f22728bc124724db08aeafed8"
+        },
+        {
+          "frame": "night/boot-fade-0134.png",
+          "rgb565_sha256": "25f28daf10efef6e7466e8b9d935b5d671fe9bd326ffcbd5dbeccb15554ddf75"
+        },
+        {
+          "frame": "night/boot-fade-0201.png",
+          "rgb565_sha256": "0b2a087b617b56d365961be6becf045a325465cf85f1efae84e453f7026bd773"
+        },
+        {
+          "frame": "night/boot-fade-0268.png",
+          "rgb565_sha256": "f83421bb3e109223b2d8645528dafa34be8312116829da9f5a69721f2d2731c0"
+        },
+        {
+          "frame": "night/boot-fade-0335.png",
+          "rgb565_sha256": "491d5e2b6bf215bcd0d2dcb8323ff534855bf9a89f2c09a952dda8db31e92f09"
+        },
+        {
+          "frame": "night/boot-fade-0402.png",
+          "rgb565_sha256": "80932cd4f2ee2712c8a0a0beed8a9d730740c3d24815f189bb66cb020185fff3"
+        },
+        {
+          "frame": "night/boot-fade-0469.png",
+          "rgb565_sha256": "622ae5ad2f1e8bd803ad79865e46dd2a42477c8f11e71142b62eac5ff39ec948"
+        },
+        {
+          "frame": "night/boot-fade-0536.png",
+          "rgb565_sha256": "22c4b6cdd94698a627444a1d04fdc8afc5062fe11a0496639b65e73b1e6e593d"
+        },
+        {
+          "frame": "night/boot-fade-0900.png",
+          "rgb565_sha256": "22c4b6cdd94698a627444a1d04fdc8afc5062fe11a0496639b65e73b1e6e593d"
+        }
+      ]
+    },
     "popups.gif": {
       "sha256": "0e1e1eb4e5ea8be0090d567b1cee161a26d99a845aa8091fcf133e98f780d17e",
       "frames": 57,

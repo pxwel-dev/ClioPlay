@@ -423,6 +423,8 @@ static void text_center_fit(int cx,int y,int maxw,const char*s,u16 c){
   text_center(cx,y,b,c,1);
 }
 
+#include "boot_transition.h"
+
 static int fb_flush(void){long fd=s_open(FB_PATH,O_WRONLY_|O_CREAT_,0666);if(fd<0)return 0;s_lseek((int)fd,0,SEEK_SET_);long n=s_write((int)fd,fb,sizeof(fb));s_close((int)fd);return n==(long)sizeof(fb);}
 
 enum { THEME_DAY=0, THEME_NIGHT=1, THEME_AUTO=2 };
@@ -2804,7 +2806,7 @@ static void settings_key(int code){
 static int modal_action_count(void){if(modal==MOD_RECENT)return trip.active?3:2;if(modal==MOD_FAVE)return trip.active?4:3;if(modal==MOD_TARGET){if(modal_index>=0&&modal_index<trip.count-1)return 3;return 2;}if(modal==MOD_SOURCE_PICK)return 4;return 0;}
 #include "popups.h"
 
-static void draw(void){freecam_orientation_anim_update(hud_now_ms());clock_service();region_service();camera_service();refresh_theme();if(screen==SCR_MAP){draw_map();}else if(screen==SCR_MENU)draw_menu();else if(screen==SCR_TRIP)draw_trip();else if(screen==SCR_BT)draw_bluetooth();else if(screen==SCR_KEY)draw_keyboard();else if(screen==SCR_COORDINATES)draw_coordinates();else draw_settings();if(screen!=SCR_MAP)header();draw_modal();fb_flush();}
+static void draw(void){freecam_orientation_anim_update(hud_now_ms());clock_service();region_service();camera_service();refresh_theme();if(screen==SCR_MAP){draw_map();}else if(screen==SCR_MENU)draw_menu();else if(screen==SCR_TRIP)draw_trip();else if(screen==SCR_BT)draw_bluetooth();else if(screen==SCR_KEY)draw_keyboard();else if(screen==SCR_COORDINATES)draw_coordinates();else draw_settings();if(screen!=SCR_MAP)header();draw_modal();boot_fade_apply(hud_now_ms());fb_flush();}
 
 struct input_event16 {s32 sec,usec;u16 type,code;s32 value;};
 #define EV_KEY 1
@@ -2923,6 +2925,7 @@ static int control_key(int code){
  return forward?K_DOWN:K_UP;
 }
 static void key_handle(int code){
+ boot_fade_cancel();
  if(code==K_CONSOLE_THEME){pref.theme=(pref.theme+1)%3;prefs_mark_dirty();refresh_theme();render_background_dirty=1;return;}
  if(code==K_CONSOLE_INFO){if(screen==SCR_MAP&&modal==MOD_NONE)hud_pulse(&hud_navigation,route_status==R_READY?HUD_JOURNEY:HUD_HEADING,route_status==R_READY?4200:2300);return;}
  if(code==K_CONSOLE_TRIP){if(modal!=MOD_NONE)return;coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;screen=SCR_TRIP;trip_pane=1;trip_right_focus=0;render_background_dirty=1;return;}
@@ -3147,6 +3150,7 @@ static int power_requested(void){char b[24];long fd=s_open(POWER_PATH,O_RDWR_,0)
 
 #ifndef HOST_TEST
 static void run(void){
+  boot_fade_load();
   csw_init();vehicle_init();
   memzero(&gps,sizeof(gps));gps.hour=-1;gps.min=0;memzero(&car,sizeof(car));memzero(&af,sizeof(af));memzero(&roadctx,sizeof(roadctx));
   load_font();
@@ -3189,7 +3193,7 @@ static void run(void){
       continue;
     }
     if(model_due&&route_status==R_READY)route_service_until(now);
-    if(power_requested()){debug_log(STATE_LOG,"POWER REQUEST");bt_write_small(BT_ACTIVE_PATH,"0\n");if(prefs_dirty)save_prefs();save_last_audio();if(gps.fix)remember_live_fix();save_last_fix();save_trip();render_background_dirty=1;render_runtime_step(hud_now_ms(),1);s_sync();s_nanosleep(0,400000000);vehicle_close();if(wdfd>=0)s_close(wdfd);for(int i=0;i<INPUT_MAX;i++)if(infd[i]>=0)s_close(infd[i]);if(gpsfd>=0)s_close(gpsfd);if(audiofd>=0)s_close(audiofd);if(mapfd>=0)s_close(mapfd);if(qadjfd>=0)s_close(qadjfd);if(routefd>=0)s_close(routefd);return;}
+    if(power_requested()){boot_fade_cancel();debug_log(STATE_LOG,"POWER REQUEST");bt_write_small(BT_ACTIVE_PATH,"0\n");if(prefs_dirty)save_prefs();save_last_audio();if(gps.fix)remember_live_fix();save_last_fix();save_trip();render_background_dirty=1;render_runtime_step(hud_now_ms(),1);s_sync();s_nanosleep(0,400000000);vehicle_close();if(wdfd>=0)s_close(wdfd);for(int i=0;i<INPUT_MAX;i++)if(infd[i]>=0)s_close(infd[i]);if(gpsfd>=0)s_close(gpsfd);if(audiofd>=0)s_close(audiofd);if(mapfd>=0)s_close(mapfd);if(qadjfd>=0)s_close(qadjfd);if(routefd>=0)s_close(routefd);return;}
     render_profile_service(s_now_ms());
     now=s_now_ms();if(!frame_due(now,wake)){u32 wait=wake-now;s_nanosleep((long)(wait/1000u),(long)(wait%1000u)*1000000L);}
   }

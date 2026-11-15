@@ -7,6 +7,10 @@
 
 ## UI previews
 
+| Day boot and UI transition | Night boot and UI transition |
+| --- | --- |
+| ![Day boot screen cross-fades into the live UI](src/docs/demo/boot-day.gif) | ![Night boot screen cross-fades into the live UI](src/docs/demo/boot-night.gif) |
+
 | Driving and camera alerts | Trip, favourites and settings |
 | --- | --- |
 | ![Driving with a temporary road name and a camera warning](src/docs/demo/driving.gif) | ![Opening Trip, browsing favourites and switching themes](src/docs/demo/menus.gif) |
@@ -62,18 +66,15 @@ The primary supported configuration is:
 - Non-live Carminat TomTom head unit
 - Bluetooth remote control, or a supported Scénic III / Mégane physical console
 
-Physical console input and alternate VehicleStatus temperature are detected
+Physical console input and alternate temperature source are detected
 from incoming runtime events alongside the Bluetooth remote and Focus readings.
 Both sources are available automatically. Existing
 Focus temperature readings take priority when valid. See the
 [console setup and controls](src/README.md#physical-console-and-temperature-sources).
-The hardware protocol was contributed from a tested Scénic III; the combined
-ClioPlay implementation is host-tested and still needs validation on that unit.
+The hardware protocol was contributed from a tested Scénic III.
 
 ClioPlay requires Bluetooth hardware inside the head unit (`hw_bluetooth=1`),
-including on console-equipped vehicles. A separate factory Bluetooth radio does
-not establish compatibility with ClioPlay's audio path; output, volume/mute and
-hands-free coexistence need vehicle-specific testing.
+including on console-equipped vehicles.
 
 ClioPlay handles the audio source as follows:
 

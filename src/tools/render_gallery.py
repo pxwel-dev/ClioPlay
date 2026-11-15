@@ -97,6 +97,9 @@ def motion(group, name, title, setup, events, samples):
 def catalog(sender_receipts=None):
     SCENES.clear()
     add('Overview', 'driving', 'Driving with a route')
+    for elapsed in (*range(0, 501, ANIMATION_SAMPLE_MS), 536, 900):
+        add('Overview', f'boot-fade-{elapsed:04d}', f'Boot to UI · {elapsed} ms',
+            f'boot_preview({elapsed});gallery_motion=1;')
     for name, setup, steps in (
         ('recents','screen=SCR_TRIP;trip_pane=0;trip_tab=0;nrecents=25;',24),
         ('favourites','screen=SCR_TRIP;trip_pane=0;trip_tab=1;nfaves=25;',24),
@@ -607,6 +610,14 @@ static void show_phone_connection(void){
  f=fopen(BT_DEVLIST_PATH,"w");assert(f);fputs("COUNT=1\nDEV=00:11:22:33:44:55|1|Example iPhone\n",f);fclose(f);
  bt_poll_status();assert(hud_connection.kind==HUD_CONNECTION);
 }
+static void boot_preview(unsigned elapsed){
+ spl_render(gallery_night);boot_image_save(fb);boot_fade_load();assert(boot_fade.image);
+ gps.fix=0;track_valid=1;trip.active=0;route_status=hud_observed_route=R_IDLE;
+ route_n=0;memzero(&roadctx,sizeof(roadctx));
+ car.tempok=0;car.source[0]=car.volume[0]=0;audio_source_live=0;
+ btui.connected=btui.playing=0;bt_control_mode=0;memzero(&af,sizeof(af));
+ hud_reset_animations();draw();hud_capture_ms+=elapsed;
+}
 static void gallery_reset(int night){
  hud_capture_clock=1;hud_capture_ms=s_now_ms();gallery_motion=0;
  bt_hud_link=0;bt_hud_peer[0]=0;bt_active_written=-1;coordinates_active=0;memzero(&coordinates,sizeof(coordinates));
@@ -702,7 +713,7 @@ static void gallery_step_frame(const char*suffix){char name[240];snprintf(name,s
 static void gallery_record_start(void){gallery_step=0;if(GALLERY_INPUTS){gallery_step_frame("before");gallery_record=1;}}
 static void key_handle(int code){gallery_production_key_handle(code);if(gallery_record){char suffix[24];snprintf(suffix,sizeof(suffix),"%03d",gallery_step);gallery_step_frame(suffix);printf("INPUT|%s|%s|%03d|%d\n",gallery_night?"night":"day",gallery_scene,gallery_step++,code);}}
 '''.replace('GALLERY_INPUTS',str(int(args.record_inputs)))
-        program='#define key_handle gallery_production_key_handle\n'+harness+HELPERS+wrappers+'''
+        program='#define CLIO_BOOT_ART '+json.dumps(str(ROOT/'clio843/src/boot_art.h'))+'\n#define key_handle gallery_production_key_handle\n'+harness+HELPERS+wrappers+'''
 int main(int argc,char**argv){assert(argc==2);outdir=argv[1];setbuf(stdout,0);fixture();assert(load_font());assert(cliou_load(CLIO_HOST_ROOT "clio843/maps/fonts.cpf"));assert(load_regions());assert(load_timezones());assert(load_map());assert(load_route_data());assert(route_start(5497370,-161331));u32 deadline=s_now_ms()+120000;while(route_status==R_CALC&&time_before_u32(s_now_ms(),deadline))route_service_until(s_now_ms()+12);assert(route_status==R_READY&&route_n>1);save_route();printf("Baseline real route: %d points, %u m, %u ds\\n",saved_n,saved_m,saved_cost);static const char*names[]={NAMES};
 for(int night=0;night<2;night++){THEME_FILTER gallery_night=night;for(unsigned i=0;i<sizeof(names)/sizeof(names[0]);i++){gallery_reset(night);gallery_scene=names[i];switch(i){CASES}if(gallery_motion)draw();else settle();char name[180];snprintf(name,sizeof(name),"%s/%s",night?"night":"day",names[i]);snapshot(name);printf("%s %s\\n",night?"night":"day",names[i]);}}return 0;}
 '''.replace('NAMES',names).replace('CASES',cases).replace('THEME_FILTER',('if(night==0)continue;' if args.themes==['night'] else 'if(night==1)continue;' if args.themes==['day'] else ''))
