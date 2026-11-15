@@ -1,9 +1,18 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
-<h1 align="center">ClioPlay 2.0.0</h1>
+<h1 align="center">ClioPlay 2.1.0</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
 
 <p align="center"><a href="#install">Install</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
+
+## Version 2.1.0 — In development
+
+- A consistent rounded outline for the speeding warning, retaining its smooth red pulse.
+- A thicker speed-limit badge outline with space around it inside the speed pill.
+- Cleaner latitude/longitude entry with the explanatory tip line removed.
+
+See [version history](CHANGELOG.md) for implemented changes by version. This
+version is being prepared; publishing and release notes will follow separately.
 
 ## UI previews
 
