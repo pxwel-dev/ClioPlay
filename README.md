@@ -7,10 +7,6 @@
 
 ## UI previews
 
-| Day boot and UI transition | Night boot and UI transition |
-| --- | --- |
-| ![Day boot screen cross-fades into the live UI](src/docs/demo/boot-day.gif) | ![Night boot screen cross-fades into the live UI](src/docs/demo/boot-night.gif) |
-
 | Driving and camera alerts | Trip, favourites and settings |
 | --- | --- |
 | ![Driving with a temporary road name and a camera warning](src/docs/demo/driving.gif) | ![Opening Trip, browsing favourites and switching themes](src/docs/demo/menus.gif) |
@@ -34,6 +30,10 @@
 | Manual coordinate route | Route to a point on the map |
 | --- | --- |
 | ![Enter latitude and longitude, name the destination, calculate the route and find it in Recents](src/docs/demo/coordinate-route.gif) | ![Enter Explore, pan the crosshair, press OK and confirm a route to the selected point](src/docs/demo/map-point-route.gif) |
+
+| Day boot and UI transition | Night boot and UI transition |
+| --- | --- |
+| ![Day boot screen cross-fades into the live UI](src/docs/demo/boot-day.gif) | ![Night boot screen cross-fades into the live UI](src/docs/demo/boot-night.gif) |
 
 <table align="center">
   <thead>
