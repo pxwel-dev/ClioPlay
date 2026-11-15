@@ -7,7 +7,7 @@
 
 ## Version 2.1.0 (in development)
 
-### Changes
+### Changes in this version so far
 
 - A consistent rounded outline for the speeding warning, retaining its smooth red pulse.
 - A thicker speed-limit badge outline with space around it inside the speed pill.
