@@ -75,7 +75,8 @@ def build_index(paths, database, bounds):
     bbox = (west/1e5, south/1e5, east/1e5, north/1e5)
     envelope = box(*bbox)
     stats = {'polygons': 0, 'records': 0, 'holes': 0, 'bounds_e5': bounds}
-    with sqlite3.connect(database) as db:
+    db = sqlite3.connect(database)
+    try:
         db.execute('pragma journal_mode=off'); db.execute('pragma synchronous=off')
         db.execute('create table areas(z int,tx int,ty int,layer int,style int,blob blob)')
         batch = []; last = time.monotonic()
@@ -93,8 +94,12 @@ def build_index(paths, database, bounds):
                 if time.monotonic()-last > 10:
                     log(f'  coastal polygons={stats["polygons"]:,} records={stats["records"]:,}')
                     last = time.monotonic()
-        if batch: db.executemany('insert into areas values(?,?,?,?,?,?)', batch)
+        if batch:
+            db.executemany('insert into areas values(?,?,?,?,?,?)', batch)
         db.execute('create index tilekey on areas(z,tx,ty,layer desc)')
+        db.commit()
+    finally:
+        db.close()
     return stats
 
 
@@ -107,8 +112,11 @@ def pack_ocean(base,database,output,work):
     index_path=work/'ocean.index.tmp';data_path=work/'ocean.data.tmp'
     stats={'tiles':h[5],'ocean_pages':0,'kept_area_records':0,'dropped_area_records':0,'max_tile_bytes':0}
     offset=base_data
-    with sqlite3.connect(database) as db,index_path.open('wb') as index,data_path.open('wb') as data:
-        rows=db.execute('select z,tx,ty,blob from areas order by z,tx,ty')
+    # Landlocked extracts (e.g. Hungary) have no coastal records: skip SQLite entirely.
+    db=sqlite3.connect(database) if database is not None else None
+    try:
+      with index_path.open('wb') as index,data_path.open('wb') as data:
+        rows=db.execute('select z,tx,ty,blob from areas order by z,tx,ty') if db else iter(())
         for (z,tx,ty),group in itertools.groupby(rows,key=lambda r:r[:3]):
             page=0;blobs=[];used=8
             def emit():
@@ -123,6 +131,8 @@ def pack_ocean(base,database,output,work):
                 if used+len(blob)>MAX_TILE_BYTES:emit();blobs=[];used=8
                 blobs.append(blob);used+=len(blob)
             if blobs:emit()
+    finally:
+        if db: db.close()
     stats['tiles']+=stats['ocean_pages'];data_off=HDR.size+stats['tiles']*IDX.size
     if data_off+offset>0x7fffffff:raise ValueError('map exceeds the runtime signed 2 GiB seek limit')
     temporary=output.with_suffix('.new')
@@ -168,7 +178,9 @@ def main():
         os.replace(temporary, database)
         manifest.write_text(json.dumps({'inputs':identity,'area_stats':stats},indent=2)+'\n')
     log('Packing shared sea and estuary tiles...')
-    merged = pack_ocean(base, database, out, work)
+    if not stats.get('records'):
+        log('No coastal water in map bounds (landlocked extract); adding an empty ocean layer.')
+    merged = pack_ocean(base, database if stats.get('records') else None, out, work)
     if fingerprint(base) != identity['base'] or fingerprint(archive) != identity['coastline']:
         raise RuntimeError('input changed during coastal build')
     if merged['dropped_area_records']:
