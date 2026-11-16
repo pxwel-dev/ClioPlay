@@ -40,15 +40,14 @@ See [version history](CHANGELOG.md) for implemented changes by version.
 | --- | --- |
 | ![Enter latitude and longitude, name the destination, calculate the route and find it in Recents](src/docs/demo/coordinate-route.gif) | ![Enter Explore, pan the crosshair, press OK and confirm a route to the selected point](src/docs/demo/map-point-route.gif) |
 
-| HUD Customisability | Bluetooth hidden if unavailable |
+| HUD Customisability | Song and radio updates |
 | --- | --- |
-| ![Change top and bottom bar pill positions in settings](src/docs/demo/v216-hud-settings.gif) | ![Able to use ClioPlay, even if hw_bluetooth=0](src/docs/demo/v216-bluetooth-hidden.gif) |
+| ![Change top and bottom bar pill positions in settings](src/docs/demo/v216-hud-settings.gif) | ![A new song appears, updates inside Bluetooth control, then radio tuning changes the frequency](src/docs/demo/metadata-updates.gif) |
 
 
 <table align="center">
   <thead>
     <tr>
-      <th>Song and radio updates</th>
       <th>
         Send a destination with
         <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>
@@ -57,13 +56,6 @@ See [version history](CHANGELOG.md) for implemented changes by version.
   </thead>
   <tbody>
     <tr>
-      <td align="center">
-        <img
-          src="src/docs/demo/metadata-updates.gif"
-          alt="A new song appears, updates inside Bluetooth control, then radio tuning changes the frequency"
-          width="480"
-        >
-      </td>
       <td align="center">
         <img
           src="src/docs/demo/phone-destination.gif"
