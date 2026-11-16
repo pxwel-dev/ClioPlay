@@ -12,10 +12,10 @@
 1) Simplify coordinate page. Only keypad. Soft right will cycle between lat/long and wrap back around to the other side, while soft left is delete. 
 2) Fix coordinates error message not fitting in window. Half of its text is clipped out of the bottom
 3) Vertically recentre the trip symbols (circle & squares) within the selection window
-4) Add further customisability in settings: 
-	a) Status pill on left / Time & temp pill on right (DEFAULT VALUE), Status pill on right / Time & temp pill on left
-	b) Speed pill in left / Direction pill on right (DEFAULT VALUE), Speed pill on right / Direction pill on left
-5) If hw_bluetooth = 0, hide all bluetooth-related functionality in the UI. 
+4) Add further customisability in settings:
+   - Status pill on left / Time & temp pill on right (DEFAULT VALUE), Status pill on right / Time & temp pill on left
+   - Speed pill in left / Direction pill on right (DEFAULT VALUE), Speed pill on right / Direction pill on left
+6) If hw_bluetooth = 0, hide all bluetooth-related functionality in the UI. 
 
 See [version history](CHANGELOG.md) for implemented changes by version.
 
