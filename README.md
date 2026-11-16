@@ -84,8 +84,7 @@ Focus temperature readings take priority when valid. See the
 [console setup and controls](src/README.md#physical-console-and-temperature-sources).
 The hardware protocol was contributed from a tested Scénic III.
 
-ClioPlay requires Bluetooth hardware inside the head unit (`hw_bluetooth=1`),
-including on console-equipped vehicles.
+ClioPlay automatically discovers Bluetooth hardware on the Carminat; for Bluetooth, the Carminat must have: (`hw_bluetooth=1`). If no Bluetooth hardware is discovered, ClioPlay hides all Bluetooth-related UI features (Bluetooth audio and sending destinations by phone via <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>). 
 
 ClioPlay handles the audio source as follows:
 
