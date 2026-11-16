@@ -35,3 +35,5 @@
 **/ttsystem
 **/PNDNavigator
 **/vehicledaemon
+src/Rebuild-ARM.command
+src/tools/prepare_minimal_release.py
