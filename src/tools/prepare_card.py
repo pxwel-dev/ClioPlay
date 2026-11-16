@@ -6,6 +6,7 @@ import argparse,hashlib,json,shutil,tempfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 from prepare_vendor import CAB_URL,CAB_SHA,extract,obtain_cab
+from runtime_integrity import verify_local_runtime
 BOOTSTRAP=('ttn','clio843/btstart.sh','clio843/focusd','clio843/hidd','clio843/prefs.ini')
 PROGRAMS=('clio843/clio040','clio843/cliospl','clio843/clioa2dp','clio843/font.bin')
 def sha(p):
@@ -18,16 +19,8 @@ def verify(p,h):
 def prepare(output,cab=None,cache=None):
  output=Path(output).resolve()
  if output.exists() and any(output.iterdir()):raise ValueError('Use an empty staging output folder')
- bootstrap=json.loads((ROOT/'bootstrap-SHA256.json').read_text())
- for name in BOOTSTRAP:verify(ROOT/'card-template'/name,bootstrap[name])
- for name in PROGRAMS:
-  p=ROOT/name
-  if name.endswith('font.bin'):continue
-  b=p.read_bytes()[:52]
-  if b[:7]!=b'\x7fELF\x01\x01\x01' or b[18:20]!=b'\x28\0':raise ValueError('Missing ARM runtime: '+name)
-  report=ROOT/'build'/(p.name+'.build.json')
-  if not report.exists():report=ROOT/'build-reports'/(p.name+'.build.json')
-  verify(p,json.loads(report.read_text())['sha256'])
+ # Check the release provenance locally, before downloading the vendor CAB.
+ verify_local_runtime(ROOT)
  cab=Path(cab) if cab else obtain_cab(cache)
  verify(cab,CAB_SHA)
  with tempfile.TemporaryDirectory(prefix='clioplay-card-') as t:
