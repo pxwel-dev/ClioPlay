@@ -10,8 +10,8 @@
 ### Changes in this version
 
 - Animated frosted-glass menus over the live map, with persistent time and status notices.
-- A redesigned Trip page with Itinerary, Recents and Favourites tabs, reviewed stop/destination choices, and more room for lists.
-- Compact Settings and Bluetooth pages, inline adjustment hints and a pinned **Pair new phone** action.
+- A redesigned Trip page with Itinerary, Recents and Favourites tabs.
+- Compact Settings and Bluetooth pages, with inline adjustment hints.
 - Adaptive keyboards for all 18 languages, with native characters, balanced rows, wrapping navigation and separate numbers/symbols.
 - A consistent rounded outline for the speeding warning, retaining its smooth red pulse.
 - A thicker speed-limit badge outline with space around it inside the speed pill.
