@@ -30,6 +30,34 @@ static void test_hardware(void){
  hardware_load_bluetooth();assert(hw_bluetooth_enabled);
  menu_open(P_HOME,0,hud_now_ms());assert(menu_count(P_HOME)==3);
 }
+static void test_clock_stays_outside(void){
+ /* Mirror the time/temperature pairing when switching top HUD sides. */
+ struct HudBox left=hud_box(8,8,118,27);
+ struct HudBox right=hud_box(HUD_CLOCK_X,8,118,27);
+ struct HudClockLayout a=hud_clock_content_layout(left);
+ struct HudClockLayout b=hud_clock_content_layout(right);
+ assert(a.time_x<a.divider_x&&a.divider_x<a.temp_x);
+ assert(b.temp_x<b.divider_x&&b.divider_x<b.time_x);
+ assert(a.time_x==W-b.time_x);
+ assert(a.temp_x==W-b.temp_x);
+ assert(a.divider_x==W-b.divider_x);
+ /* A lone time value remains anchored near the outer edge. */
+ assert(hud_clock_content_layout(hud_box(8,8,68,27)).time_x<45);
+ assert(hud_clock_content_layout(hud_box(W-76,8,68,27)).time_x>W-45);
+}
+static void test_speed_stays_outside(void){
+ /* Speed faces the outer edge; the speed-limit inset faces the map. */
+ struct HudBox left=hud_box(HUD_BOTTOM_MARGIN,HUD_BOTTOM_Y,HUD_SIDE_W,43);
+ struct HudBox right=hud_box(HUD_TURN_X,HUD_BOTTOM_Y,HUD_SIDE_W,43);
+ struct HudSpeedLayout a=hud_speed_content_layout(left);
+ struct HudSpeedLayout b=hud_speed_content_layout(right);
+ assert(a.speed_x<a.limit_x+24);
+ assert(b.limit_x+24<b.speed_x);
+ assert(a.speed_x==W-b.speed_x);
+ assert(a.limit_x==W-b.limit_x-48);
+ assert(a.limit_x+48<=left.x+left.w);
+ assert(b.limit_x>=right.x);
+}
 static void test_prefs_and_geometry(void){
  mkdir(CLIO_HOST_ROOT "clio843",0777);
  pref.top_swap=pref.bottom_swap=0;
@@ -63,6 +91,6 @@ static void test_prefs_and_geometry(void){
  assert(hud_tween[HC_SPEED].target.box.x==HUD_BOTTOM_MARGIN);
  assert(hud_tween[HC_TURN].target.box.x==HUD_TURN_X);
 }
-int main(void){test_hardware();test_prefs_and_geometry();
+int main(void){test_hardware();test_prefs_and_geometry();test_clock_stays_outside();test_speed_stays_outside();
  unlink(CLIO_HW_EXPORT_PATH);unlink(PREF_PATH);
  puts("2.1.6 HUD preferences, persistence, Bluetooth-hardware exclusion and swapped pill geometry passed.");}

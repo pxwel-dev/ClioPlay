@@ -9,7 +9,7 @@
     "clio843/src/atlas_router.h": "ae13e0cb3de1c5c75a377abced3f4332cecd1ca0ff124e9d3074c555d9068eb5",
     "clio843/src/boot_art.h": "367249c4bf35acfa7ce5092dce4a906c566d5e9e818d1bbd3d65c35ba128dbeb",
     "clio843/src/popups.h": "b0368f86a9daa163b1acf00f8cffa016e65597c5f6b0ce774245020dbfd1c53a",
-    "clio843/src/hud.h": "87dcb0137b1d9e1980dcd518c2252016de0c5efcc71773eb2efa7f4e8ccbd28a",
+    "clio843/src/hud.h": "12d701997e7b46957ad72c0a90ec2c2a01898ffcb4215a53ff86d24ae1974a76",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
     "clio843/src/audio_schedule.h": "bf37e189f7a0f372567287380820a357878fc1aaf519f85309224cd0d5ae85a6",
     "clio843/src/coordinates.h": "3d4fa9e91d60559949eb466deb76b32472a1693b18d0849d24609de825c09175",
@@ -505,7 +505,7 @@
     "clio843/src/vendor/sheenbidi/Headers/SheenBidi/SheenBidi.h": "44a644a72edf2300838d32c3e32aa14a7cb66b584fb9da643b8311aa21991cbe"
   },
   "executables": {
-    "clio040": "c664317679c4eff5a0604e870849f8b0e1ffeb6c497ffd3ee290701939fa46d5",
+    "clio040": "c0c378631690e9959b58ba58735afcc7221abe96216dcb619bc21196304daca0",
     "cliospl": "1f564469310c30e9a0fa7746fde21e0c84dc23f1ead619079d3f0e05f2d6f9ed",
     "clioa2dp": "5fbb9037ffb1796083ee8dd25eab26bfc4b695c2a3f44d080f72baa3b1a3e07d"
   },
@@ -985,7 +985,7 @@
       ]
     },
     "v216-hud-settings.gif": {
-      "sha256": "1aedaee2ac4bab581fa93d86eaa06d9b03be11a17c94a3332d03ddfde816db47",
+      "sha256": "d7aaf31ec8efd7467286bf034f2793f2c3f3edee92c7fa8698c1f22b79ef170e",
       "frames": 29,
       "duration_ms": 10000,
       "reserved_pointer_colours": [
@@ -1049,115 +1049,115 @@
         },
         {
           "frame": "night/preview-v216-hud-settings-1901.png",
-          "rgb565_sha256": "85116021380c13b5ea8423bc0e8edc8b6721dc9f4646ac536bcbf2331fd4eb26"
+          "rgb565_sha256": "516a08c88c9e5d42a4e5181619ed3f89ba2a50a53e4f3ba5e973c1d0880c56a6"
         },
         {
           "frame": "night/preview-v216-hud-settings-1968.png",
-          "rgb565_sha256": "63b18ec87becfe2cb71a030b8d7a78fe513581f0e758f5c113142e935ff1ef7a"
+          "rgb565_sha256": "f38e97731922cbb85f7dd972f9f1540b3bad8b8505c3ab592c92af95119685b9"
         },
         {
           "frame": "night/preview-v216-hud-settings-2035.png",
-          "rgb565_sha256": "d5fafe31a26a71f183fc003c1ae7249c2fe0ca65a4c5a3363666dced6a363165"
+          "rgb565_sha256": "6bd764b2fd4b4b67d8ab299ec08be275b9236f8531e8c32b8a2b7ae352ec792b"
         },
         {
           "frame": "night/preview-v216-hud-settings-3600.png",
-          "rgb565_sha256": "636d0fb4c58fc4da0e403b4b566c520b2421a77b766e55df02a0d33294c09a44"
+          "rgb565_sha256": "cd225a6165d7a5db61a9bdf1e8ac54cbc418bd6fb53bfa3f32ff1d58cbbe50ec"
         },
         {
           "frame": "night/preview-v216-hud-settings-3667.png",
-          "rgb565_sha256": "636d0fb4c58fc4da0e403b4b566c520b2421a77b766e55df02a0d33294c09a44"
+          "rgb565_sha256": "cd225a6165d7a5db61a9bdf1e8ac54cbc418bd6fb53bfa3f32ff1d58cbbe50ec"
         },
         {
           "frame": "night/preview-v216-hud-settings-3734.png",
-          "rgb565_sha256": "636d0fb4c58fc4da0e403b4b566c520b2421a77b766e55df02a0d33294c09a44"
+          "rgb565_sha256": "cd225a6165d7a5db61a9bdf1e8ac54cbc418bd6fb53bfa3f32ff1d58cbbe50ec"
         },
         {
           "frame": "night/preview-v216-hud-settings-3801.png",
-          "rgb565_sha256": "636d0fb4c58fc4da0e403b4b566c520b2421a77b766e55df02a0d33294c09a44"
+          "rgb565_sha256": "cd225a6165d7a5db61a9bdf1e8ac54cbc418bd6fb53bfa3f32ff1d58cbbe50ec"
         },
         {
           "frame": "night/preview-v216-hud-settings-3868.png",
-          "rgb565_sha256": "636d0fb4c58fc4da0e403b4b566c520b2421a77b766e55df02a0d33294c09a44"
+          "rgb565_sha256": "cd225a6165d7a5db61a9bdf1e8ac54cbc418bd6fb53bfa3f32ff1d58cbbe50ec"
         },
         {
           "frame": "night/preview-v216-hud-settings-3935.png",
-          "rgb565_sha256": "636d0fb4c58fc4da0e403b4b566c520b2421a77b766e55df02a0d33294c09a44"
+          "rgb565_sha256": "cd225a6165d7a5db61a9bdf1e8ac54cbc418bd6fb53bfa3f32ff1d58cbbe50ec"
         },
         {
           "frame": "night/preview-v216-hud-settings-4200.png",
-          "rgb565_sha256": "25e7a659609d882080381e411af2c75bf1f5d37ce95388aaef2f73e33ca21f7a"
+          "rgb565_sha256": "06dc9610ee87c4e2939bce0ff5f03d627796ab20da7373af4846a837a9618290"
         },
         {
           "frame": "night/preview-v216-hud-settings-4267.png",
-          "rgb565_sha256": "4024cc929338554776a17fd69f76ebaa6e4b6fdca14a0e47228d8f2189d6a7b3"
+          "rgb565_sha256": "8ecb8ed1dad3257c2138c9c9d470505b747117c982ef89759acd9cee7e90937f"
         },
         {
           "frame": "night/preview-v216-hud-settings-4334.png",
-          "rgb565_sha256": "9bbcede1e691275f8c88259317e16889c350bcf06ab9fc59a013c55de3f8e8e6"
+          "rgb565_sha256": "5484c2d65b5d3162d17dacb8ce8f03a2c399b9d13e5dcfc1feb3dd024e040d4b"
         },
         {
           "frame": "night/preview-v216-hud-settings-4401.png",
-          "rgb565_sha256": "92445427e4f4818d0d22b323acde4c63487c86e6a98accd57e48543bac891f41"
+          "rgb565_sha256": "a79b6df452af7c1115a4f12605fb5f6688ddecc32d6e7b15f5acb6e28616a121"
         },
         {
           "frame": "night/preview-v216-hud-settings-4468.png",
-          "rgb565_sha256": "f363db864a6c39be0e50a68bf978112493f8506ac8896faf36f50744c3136a0e"
+          "rgb565_sha256": "09fe492448a86ebb74d9f007bd0ddd9460407f304d1175aacc1b76055575a778"
         },
         {
           "frame": "night/preview-v216-hud-settings-4535.png",
-          "rgb565_sha256": "dee4ca9980220cd34f445a2f97b1bd9f0899425bb964b2212af6e144cb7c9bc7"
+          "rgb565_sha256": "fea6bf4eb992f5c7d6c55d3e028e924e919727eda143f2edaf61db6803c2b632"
         },
         {
           "frame": "night/preview-v216-hud-settings-6100.png",
-          "rgb565_sha256": "dee4ca9980220cd34f445a2f97b1bd9f0899425bb964b2212af6e144cb7c9bc7"
+          "rgb565_sha256": "fea6bf4eb992f5c7d6c55d3e028e924e919727eda143f2edaf61db6803c2b632"
         },
         {
           "frame": "night/preview-v216-hud-settings-6167.png",
-          "rgb565_sha256": "447a0ef6d3872edf1767f1022e3b561014c268fb129a7e43b6816ebe1559dd90"
+          "rgb565_sha256": "21cc944095a1dfe0b3e01f8de24d75e366ce3084fd7abc87538920ff1cad24ac"
         },
         {
           "frame": "night/preview-v216-hud-settings-6234.png",
-          "rgb565_sha256": "f9a8677ed07c6aadec4f3700fa96028c84ac279c770a9d1045b0d00d7f252d45"
+          "rgb565_sha256": "19a2925fabab4e71f16018465cf0b519f939b6759618be2f8db82fa8d6bf7e75"
         },
         {
           "frame": "night/preview-v216-hud-settings-6301.png",
-          "rgb565_sha256": "dd9d3e2e91dd16c5c8f103ac14a577c01edc2c27ad87595cd72d8ddbdc76e1f2"
+          "rgb565_sha256": "37ad994eee19b42d33c104c06e8efe1bdf77fb277725f2a47cc410c72a240489"
         },
         {
           "frame": "night/preview-v216-hud-settings-6368.png",
-          "rgb565_sha256": "ef2b3c1b1f4ff36eba9ba82f1233df18b057f82b20c6deee66e593b14b746b71"
+          "rgb565_sha256": "e73843afd036039cfce3e56cecd113dff2b1a9dbe6a1c5111bb73938dfe3944c"
         },
         {
           "frame": "night/preview-v216-hud-settings-6435.png",
-          "rgb565_sha256": "6c96e87e8d7d4349f240452a751d59b84e6c83acffc3bc4141233f164ac597fe"
+          "rgb565_sha256": "16fe61b9e2f66b6bbd5240d81fb44a6bb0a16543c974ef21ddc62afad6ceff24"
         },
         {
           "frame": "night/preview-v216-hud-settings-8200.png",
-          "rgb565_sha256": "6c96e87e8d7d4349f240452a751d59b84e6c83acffc3bc4141233f164ac597fe"
+          "rgb565_sha256": "16fe61b9e2f66b6bbd5240d81fb44a6bb0a16543c974ef21ddc62afad6ceff24"
         },
         {
           "frame": "night/preview-v216-hud-settings-8267.png",
-          "rgb565_sha256": "575e3054f51d73a27c2fcd5e68bcd7d4e48ae5693b2649b3e34233d7a6ada04a"
+          "rgb565_sha256": "59b3c2bc3e02c74bafa3ef78978246a0bbd7370fbf8eeacc2ed49ff41e635109"
         },
         {
           "frame": "night/preview-v216-hud-settings-8334.png",
-          "rgb565_sha256": "49186cedad4b1e2fd184d2a1fd4c39531f0a499cb325f32b3f4b4e6ce99606e1"
+          "rgb565_sha256": "74d176e18e670122fef9ea4577652d417c4b3d825efc1adf2f202dba373b7849"
         },
         {
           "frame": "night/preview-v216-hud-settings-8401.png",
-          "rgb565_sha256": "f9c970f7b72fee857206d625f054ef5cfcf7c328b6eb716f758b3b64df3ecba2"
+          "rgb565_sha256": "7e3bb4b8c79f0d0766a8b8fa0aa5a5368c40f60bfe3af7f492fa4a72182ea174"
         },
         {
           "frame": "night/preview-v216-hud-settings-8468.png",
-          "rgb565_sha256": "6fd6c3bb1faefae0d55726a46478238038f9835c4edbdaecff9adc60162d5f7d"
+          "rgb565_sha256": "eb7ba18e9fa6014bf82ef60fce18699e00128f5337bf48ad70045f9fcad0e9f2"
         },
         {
           "frame": "night/preview-v216-hud-settings-8535.png",
-          "rgb565_sha256": "dee4ca9980220cd34f445a2f97b1bd9f0899425bb964b2212af6e144cb7c9bc7"
+          "rgb565_sha256": "fea6bf4eb992f5c7d6c55d3e028e924e919727eda143f2edaf61db6803c2b632"
         },
         {
           "frame": "night/preview-v216-hud-settings-9900.png",
-          "rgb565_sha256": "dee4ca9980220cd34f445a2f97b1bd9f0899425bb964b2212af6e144cb7c9bc7"
+          "rgb565_sha256": "fea6bf4eb992f5c7d6c55d3e028e924e919727eda143f2edaf61db6803c2b632"
         }
       ]
     },
@@ -3819,7 +3819,7 @@
       ]
     },
     "phone-destination.gif": {
-      "sha256": "20496173b298d39ef805840e31c87b95ad3a4b09e6eb0ba556c004ddd16d5ccd",
+      "sha256": "fe9fb43c0ee5b8634e4dab25499717b1f255b032e2b2af09ebaf67a1a91ad2c4",
       "frames": 11,
       "duration_ms": 7200,
       "reserved_pointer_colours": [
@@ -3908,7 +3908,7 @@
           "transfer-056.jpg": "01cd1bf92bb29e65bba8e31beb96ba341b0e206a675d3970ef29cbae5f85a5fc"
         },
         "ready_sha256": "93bc757770a4188a9de3234f4f0d4a60d8c77855b80e625fb949db06a93ee37c",
-        "previous_gif_sha256": "986449c3f41e1137ae4a868ac323796fac0af5d60d016cd96659e84f8aca5030"
+        "previous_gif_sha256": "20496173b298d39ef805840e31c87b95ad3a4b09e6eb0ba556c004ddd16d5ccd"
       },
       "source_frames": [
         {

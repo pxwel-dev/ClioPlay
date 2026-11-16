@@ -519,11 +519,22 @@ static void hud_draw_camera(int x,int y,int w,const struct HudCard*c){
  compact_fit(title_x,y+6,title_w,0,c->title,c->ink);
  compact_fit(title_x+title_w+HUD_CAMERA_GAP,y+6,distance_w,0,c->badge,c->ink);
 }
+/* Keep actual speed on the outside and the speed-limit inset on the inside.
+ * Use the animated box position so the contents mirror on either side. */
+struct HudSpeedLayout {int speed_x,limit_x;};
+static struct HudSpeedLayout hud_speed_content_layout(struct HudBox b){
+ int left=b.x+b.w/2<W/2;
+ int inner_offset=(b.w-54)/2;
+ return (struct HudSpeedLayout){
+  left?b.x+inner_offset:b.x+b.w-inner_offset,
+  left?b.x+b.w-54:b.x+6
+ };
+}
 static void hud_draw_speed(struct HudBox b,const struct HudCard*c){
- struct HudBox limit={b.x+b.w-54,b.y+5,48,33,b.a};
- int speed_x=(b.x+limit.x)/2;
+ struct HudSpeedLayout layout=hud_speed_content_layout(b);
+ struct HudBox limit={layout.limit_x,b.y+5,48,33,b.a};
  int speed_face=width(c->title,6)<=68?6:5;
- compact_center(speed_x,b.y+(speed_face==6?3:7),68,speed_face,c->title,C_WHITE);
+ compact_center(layout.speed_x,b.y+(speed_face==6?3:7),68,speed_face,c->title,C_WHITE);
 
  u16 tint=theme_resolved?rgb(39,52,71):rgb(223,234,246);
  u16 edge=theme_resolved?rgb(119,143,171):rgb(126,148,172);
@@ -535,6 +546,18 @@ static void hud_draw_speed(struct HudBox b,const struct HudCard*c){
  while(face>3&&width(c->detail,face)>text_w)face--;
  int text_y=face==5?2:face==4?5:7;
  compact_center(limit.x+limit.w/2,limit.y+text_y,text_w,face,c->detail,C_WHITE);
+}
+/* Keep time against the outer screen edge and temperature towards the map,
+ * regardless of which side the top HUD clock pill occupies. Use the animated
+ * box position so its content follows the correct side during a swap. */
+struct HudClockLayout {int time_x,temp_x,divider_x;};
+static struct HudClockLayout hud_clock_content_layout(struct HudBox b){
+ int left=b.x+b.w/2<W/2;
+ return (struct HudClockLayout){
+  left?b.x+33:b.x+b.w-33,
+  left?b.x+b.w-25:b.x+b.w-93,
+  left?b.x+b.w-49:b.x+b.w-69
+ };
 }
 static void hud_draw_card(int id,u32 now){
  struct HudTween*t=&hud_tween[id];if(!t->seen)return;
@@ -551,17 +574,21 @@ static void hud_draw_card(int id,u32 now){
  int x=b.x,y=b.y+shift,w=b.w;
  switch(id){
  case HC_STATUS:hud_draw_status(b,c,now);break;
- case HC_CLOCK:
+ case HC_CLOCK:{
+  struct HudClockLayout layout=hud_clock_content_layout(b);
   if(!c->title[0]){
    compact_center(x+w/2,y+5,w-12,1,c->detail,C_WHITE);
    break;
   }
   if(c->detail[0]&&w>=99){
    hud_ink_alpha=hud_ink_alpha*hud_ease((u32)(w-99),19)/256;
-   compact_center(x+w-93,y+6,44,0,c->detail,C_MUTED);hud_rect_ink(x+w-69,y+7,1,12,C_BORDER);
+   compact_center(layout.temp_x,y+6,44,0,c->detail,C_MUTED);
+   hud_rect_ink(layout.divider_x,y+7,1,12,C_BORDER);
   }
   hud_ink_alpha=(16*b.a+128)>>8;
-  compact_center(x+w-33,b.y+4,58,3,t->target.title[0]?t->target.title:c->title,C_WHITE);break;
+  compact_center(layout.time_x,b.y+4,58,3,t->target.title[0]?t->target.title:c->title,C_WHITE);
+  break;
+ }
  case HC_SPEED:hud_draw_speed(b,c);break;
  case HC_ROAD:{
   struct HudTween*nt=&hud_tween[HC_ROAD_NAME];
