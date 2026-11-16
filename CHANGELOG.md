@@ -3,9 +3,15 @@
 This history records implemented changes. Entries marked **Unreleased** are prepared locally and have not been published.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
 
-## 2.1.0 — Unreleased
+## Version 2.1.5 - Latest development release
 
-### Changed
+### Changes in this version
+
+- Resized the trips pages to fit in-between the top and bottom pills. Only the keyboard expands to allow more room for entering destination names. 
+
+## 2.1.0 — Release
+
+###  Changes in this version
 
 - Replaced full-screen menus with animated frosted-glass panels on the map.
   Menu, Bluetooth and Settings retain the lower driving pills when space allows;

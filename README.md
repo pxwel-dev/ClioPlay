@@ -5,17 +5,11 @@
 
 <p align="center"><a href="#install">Install</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-## Version 2.1.0
+## Version 2.1.5 - Latest development release
 
 ### Changes in this version
 
-- Animated frosted-glass menus over the live map, with persistent time and status notices.
-- A redesigned Trip page with Itinerary, Recents and Favourites tabs.
-- Compact Settings and Bluetooth pages, with inline adjustment hints.
-- Adaptive keyboards for all 18 languages, with native characters, balanced rows, wrapping navigation and separate numbers/symbols.
-- A consistent rounded outline for the speeding warning, retaining its smooth red pulse.
-- A thicker speed-limit badge outline with space around it inside the speed pill.
-- Cleaner latitude/longitude entry with the explanatory tip line removed.
+- Resized the trips pages to fit in-between the top and bottom pills. Only the keyboard expands to allow more room for entering destination names. 
 
 See [version history](CHANGELOG.md) for implemented changes by version.
 

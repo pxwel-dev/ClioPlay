@@ -14,12 +14,15 @@ static int sheet_old_tab,menu_pair_waited,menu_pair_before;
 static char menu_pair_name[33];
 static int menu_screen(int p){return p==P_CLOSED?SCR_MAP:p==P_HOME?SCR_MENU:p==P_SETTINGS||(p==P_LANG&&!language_keyboard)?SCR_SET:p==P_PHONE||p==P_PHONE_ACTIONS||p==P_PAIR?SCR_BT:p==P_NAME||p==P_LANG?SCR_KEY:p==P_COORD||p==P_REVIEW?SCR_COORDINATES:SCR_TRIP;}
 static int bottom_from=256,bottom_to=256;
-static int compact_page(int p){return p==P_CLOSED||p==P_HOME||p==P_SETTINGS||p==P_PHONE||p==P_PHONE_ACTIONS||p==P_PAIR||(p==P_LANG&&!language_keyboard);}
+/* Only the actual typing grid can borrow the lower HUD area.  The language
+ * picker, including the picker opened from the keyboard, is an ordinary
+ * compact sheet and must leave both persistent HUD pill rows unobstructed. */
+static int compact_page(int p){return p!=P_NAME;}
 static int bottom_pose(u32 now){int q=frame_ease(now-bottom_at,320);return q==256?bottom_to:q?hud_lerp(bottom_from,bottom_to,q):bottom_from;}
 static struct HudBox sheet_from_box,sheet_to_box;
 
 static struct HudBox menu_box(int p){
- int top=44,bottom=264,w=280,h=154;
+ int top=44,bottom=compact_page(p)?HUD_BOTTOM_Y-8:H-8,w=280,h=154;
  /* Reserve actual global HUD bounds, including expanded pending content. */
  for(int i=HC_STATUS;i<=HC_CLOCK;i++){
   struct HudBox b=hud_tween[i].target.box;
@@ -41,12 +44,11 @@ static struct HudBox menu_box(int p){
  if(p==P_PHONE_ACTIONS){w=324;h=136;}
  if(p==P_PAIR||p==P_CONFIRM){w=316;h=128;}
  if(p==P_SOURCE){w=356;h=154;}
- /* Tall concurrent notices can leave less than a usable row. In that
-  * case the compact page borrows the lower HUD area until the notice ends. */
- if(bottom-top<100)bottom=H-8;
+ /* Keep a real margin above the driver HUD even when its cards are
+  * temporarily absent. Shorter pages scroll instead of covering the pills. */
+ if(bottom<top+76)top=bottom-76;
  if(h>bottom-top)h=bottom-top;
- if(h<100)h=100;
- int y=(H-h)/2;if(y<top)y=top;if(y+h>bottom)y=bottom-h;
+ int y=top+(bottom-top-h)/2;
  return (struct HudBox){(W-w)/2,y,w,h,p?256:0};
 }
 static struct HudBox menu_pose(u32 now){return popup_lerp_box(sheet_from_box,sheet_to_box,frame_ease(now-menu_at,320));}
@@ -64,7 +66,7 @@ static void menu_change(int next,int selected,u32 now){
 static void menu_push(int next,int selected,u32 now){if(sheet_depth>=12)return;sheet_stack_page[sheet_depth]=sheet_page;sheet_stack_focus[sheet_depth++]=sheet_focus;menu_change(next,selected,now);}
 static void menu_back(u32 now){if(sheet_depth){sheet_depth--;menu_change(sheet_stack_page[sheet_depth],sheet_stack_focus[sheet_depth],now);}else menu_change(P_CLOSED,0,now);}
 static int place_count(void){return places_tab?nfaves:nrecents;}
-static int places_visible(struct HudBox b){int n=(b.h-66)/22;return n<1?1:n;}
+static int places_visible(struct HudBox b){int n=(b.h-67)/22;return n<1?1:n;}
 static int menu_count(int p){
  return p==P_HOME?3:p==P_SOURCE?3:p==P_SETTINGS?SETTING_COUNT:p==P_TRIP?(trip.count?trip.count+2:1):p==P_PLACES?place_count():
  p==P_STOP?3:p==P_DEST?3:p==P_PLACE?(places_tab?4:3):p==P_PHONE?nbtdev+1:
@@ -100,7 +102,7 @@ static void menu_pair(u32 now){
 static void setting_adjust(int code,u32 now){
  (void)now;set_focus=sheet_focus;settings_key(code);
 }
-static int coord_centre_y(int f){int space=menu_box(P_COORD).h-83;return f<12?(f/3)*(space/4)+(space/4-3)/2:(f-12)*(space/3)+(space/3-4)/2;}
+static int coord_centre_y(int f){int space=menu_box(P_COORD).h-77;return f<12?(f/3)*(space/4)+(space/4-3)/2:(f-12)*(space/3)+(space/3-4)/2;}
 static void coord_move(int code){
  int f=coordinates.focus,col=f<12?f%3:3,dx=code==K_RIGHT?1:code==K_LEFT?-1:0,dy=code==K_DOWN?1:code==K_UP?-1:0;
  if(dx){if(coord_nav_y<0)coord_nav_y=coord_centre_y(f);int next=(col+dx+4)%4,best=-1,dist=999;
@@ -254,29 +256,32 @@ static void trip_header(struct HudBox b,int p,int opacity){
  hud_ink_alpha=opacity;title_draw(b,"Trip");
  int w=(b.w-40)/3,total=w*3+12,x=b.x+(b.w-total)/2,tab=p==P_TRIP?0:places_tab+1;
  const char*names[]={"Itinerary","Recents","Favourites"};
- for(int i=0;i<3;i++){int active=tab==i;menu_tile(x+i*(w+6),b.y+28,w,22,active,opacity);box_text(x+i*(w+6),b.y+28,w,22,0,ui_tr(names[i]),active?C_ACTIVE_TEXT:C_MUTED);}
+ for(int i=0;i<3;i++){int active=tab==i;menu_tile(x+i*(w+6),b.y+27,w,20,active,opacity);box_text(x+i*(w+6),b.y+27,w,20,0,ui_tr(names[i]),active?C_ACTIVE_TEXT:C_MUTED);}
 }
 
 static void trip_content(struct HudBox b,int selected,int opacity){
  trip_header(b,P_TRIP,opacity);char total[96]="";
  if(!trip.count){
-  hud_ink_alpha=opacity;compact_center(b.x+b.w/2,b.y+70,b.w-36,1,ui_tr("Where would you like to go?"),C_WHITE);
-  text_value(b.x+18,b.y+94,b.w-36,ui_tr("Browse Recents/Favourites, use ClioPlay Send"),opacity);
-  text_value(b.x+18,b.y+111,b.w-36,ui_tr("or enter coordinates"),opacity);
-  row_text(b,b.y+151,0,selected,"Coordinates","",opacity,1,32);
+  hud_ink_alpha=opacity;compact_center(b.x+b.w/2,b.y+62,b.w-36,1,ui_tr("Where would you like to go?"),C_WHITE);
+  text_value(b.x+18,b.y+81,b.w-36,ui_tr("Browse Recents/Favourites, use ClioPlay Send"),opacity);
+  text_value(b.x+18,b.y+98,b.w-36,ui_tr("or enter coordinates"),opacity);
+  row_text(b,b.y+b.h-32,0,selected,"Coordinates","",opacity,1,25);
   return;
  }
  appendstr(total,sizeof(total),ui_tr(trip.active_idx==trip.count-1?"Destination: ":"Next: "));append_miles(total,sizeof(total),route_path_m());appendstr(total,sizeof(total),"  ~");append_eta(total,sizeof(total),sat_add32(route_result_cost,atlas_future_cost));
  int remaining=(int)trip.count-1-(int)trip.active_idx;if(remaining>0){appendstr(total,sizeof(total),"  /  ");append_int(total,sizeof(total),remaining);appendstr(total,sizeof(total),ui_tr(" stops left"));}
- text_value(b.x+18,b.y+54,b.w-36,trip.active?total:ui_tr("Where would you like to go?"),opacity);
- int visible=(b.h-101)/21;if(visible<1)visible=1;if(visible>trip.count)visible=trip.count;
+ text_value(b.x+18,b.y+51,b.w-36,trip.active?total:ui_tr("Where would you like to go?"),opacity);
+ /* Reserve the tab header, route summary and footer action buttons. The
+  * destination list scrolls independently when these must share ~160 px. */
+ int list_space=b.h-99;
+ int visible=list_space/21;if(visible<1)visible=1;if(visible>trip.count)visible=trip.count;
  int first=selected>=visible?selected-visible+1:0;if(first+visible>trip.count)first=trip.count-visible;
- int start=b.y+76,step=(b.h-101)/visible;if(step>26)step=26;
+ int start=b.y+71,step=list_space/visible;if(step>26)step=26;
  for(int row=0;row<visible;row++){int i=first+row;
   int y=start+row*step,active=i==selected;int cy=y+7;
   if(active)menu_tile(b.x+9,y-2,b.w-18,step-1,1,opacity);
   hud_ink_alpha=opacity;
-  if(i+1<trip.count)round_rect(b.x+23,cy+4,1,step-6,0,C_BORDER,10);
+  if(i+1<trip.count&&step>=12)round_rect(b.x+23,cy+4,1,step-6,0,C_BORDER,10);
   round_rect(b.x+19,cy-4,9,9,i==trip.count-1?2:4,active?C_ACTIVE_TEXT:i==trip.active_idx?C_CYAN:C_MUTED,15);
   if(active&&i==trip.active_idx)round_rect(b.x+22,cy-1,3,3,i==trip.count-1?0:1,C_ACTIVE,15);
   char num[8]="";append_int(num,sizeof(num),i+1);
@@ -284,7 +289,7 @@ static void trip_content(struct HudBox b,int selected,int opacity){
   int text_cy=pair_text(b,y-2,step-1,1,trip.target[i].name,state,active?C_ACTIVE_TEXT:i<trip.active_idx?C_MUTED:C_WHITE,active?C_ACTIVE_TEXT:i==trip.active_idx?C_CYAN:C_MUTED);
   disclosure(b,text_cy,active?C_ACTIVE_TEXT:C_MUTED);
  }
- ui_scrollbar(b.x+b.w-6,b.y+74,visible*step,first,visible,trip.count);
+ ui_scrollbar(b.x+b.w-6,b.y+69,visible*step,first,visible,trip.count);
  const char*actions[]={"+ Add stop","Cancel route"};int w=(b.w-28)/2;
  for(int i=0;i<2;i++){int x=b.x+10+i*(w+8),s=selected==trip.count+i;menu_tile(x,b.y+b.h-25,w,21,s,opacity);
   hud_ink_alpha=opacity;box_text(x,b.y+b.h-25,w,21,0,ui_tr(actions[i]),i==0&&trip.count>=TRIP_MAX_TARGETS?C_BORDER:s?C_ACTIVE_TEXT:C_MUTED);}
@@ -293,10 +298,10 @@ static void places_content(struct HudBox b,int selected,int opacity){
  trip_header(b,P_PLACES,opacity);int visible=places_visible(b),count=place_count(),first=selected>=visible?selected-visible+1:0;
  if(first+visible>count)first=count>visible?count-visible:0;
  for(int row=0;row<visible&&first+row<count;row++){
-  int i=first+row;row_text(b,b.y+60+row*22,i,selected,places_tab?faves[i].name:recents[i].name,">",opacity,1,21);
+  int i=first+row;row_text(b,b.y+54+row*22,i,selected,places_tab?faves[i].name:recents[i].name,">",opacity,1,21);
  }
- if(!count)text_value(b.x+18,b.y+104,b.w-36,ui_tr(places_tab?"No favourites yet":"No recent places yet"),opacity);
- ui_scrollbar(b.x+b.w-6,b.y+58,visible*22,first,visible,count);
+ if(!count)text_value(b.x+18,b.y+75,b.w-36,ui_tr(places_tab?"No favourites yet":"No recent places yet"),opacity);
+ ui_scrollbar(b.x+b.w-6,b.y+53,visible*22,first,visible,count);
 }
 static const char*entry_tail(char*out,unsigned cap,const char*text,int available){
  const char*p=text;while(*p&&width(p,1)>available)p+=utf8_span(p);copystr(out,cap,p);return out;
@@ -336,27 +341,27 @@ static void coord_content(struct HudBox b,int opacity){
  hud_ink_alpha=opacity;title_draw(b,"Coordinates");
  int fw=(b.w-38)/2;
  for(int i=0;i<2;i++){
-  int x=b.x+14+i*(fw+10);menu_tile(x,b.y+31,fw,36,i==coordinates.step,opacity);hud_ink_alpha=opacity;
-  box_text(x+8,b.y+32,fw-16,14,0,ui_tr(i?"Longitude":"Latitude"),i==coordinates.step?C_ACTIVE_TEXT:C_MUTED);
-  box_text(x+8,b.y+47,fw-16,17,1,coordinates.value[i][0]?coordinates.value[i]:"0.00000",i==coordinates.step?C_ACTIVE_TEXT:C_WHITE);
+  int x=b.x+14+i*(fw+10);menu_tile(x,b.y+29,fw,34,i==coordinates.step,opacity);hud_ink_alpha=opacity;
+  box_text(x+8,b.y+30,fw-16,13,0,ui_tr(i?"Longitude":"Latitude"),i==coordinates.step?C_ACTIVE_TEXT:C_MUTED);
+  box_text(x+8,b.y+44,fw-16,17,1,coordinates.value[i][0]?coordinates.value[i]:"0.00000",i==coordinates.step?C_ACTIVE_TEXT:C_WHITE);
  }
- int start=b.y+75,step=(b.h-83)/4,cw=(b.w*3/5-20)/3;
+ int start=b.y+69,step=(b.h-77)/4,cw=(b.w*3/5-20)/3;
  for(int i=0;i<12;i++){
   int x=b.x+14+(i%3)*cw,y=start+(i/3)*step;menu_tile(x,y,cw-5,step-3,coordinates.focus==i,opacity);
   char t[8]={0};if(i==9)copystr(t,sizeof(t),"±");else{t[0]=i==10?'0':i==11?'.':'1'+i;}
   hud_ink_alpha=opacity;box_text(x,y,cw-5,step-3,1,t,coordinates.focus==i?C_ACTIVE_TEXT:C_WHITE);
  }
- const char*actions[]={"Next","Delete","Clear"};int x=b.x+b.w*3/5+4,w=b.x+b.w-14-x,ah=(b.h-83)/3;
+ const char*actions[]={"Next","Delete","Clear"};int x=b.x+b.w*3/5+4,w=b.x+b.w-14-x,ah=(b.h-77)/3;
  for(int i=0;i<3;i++){int y=start+i*ah;menu_tile(x,y,w,ah-4,coordinates.focus==12+i,opacity);hud_ink_alpha=opacity;box_text(x,y,w,ah-4,1,ui_tr(actions[i]),coordinates.focus==12+i?C_ACTIVE_TEXT:C_WHITE);}
  if(coordinates.error){hud_ink_alpha=opacity;box_text(b.x+12,b.y+b.h-10,b.w-24,9,0,ui_tr("Check the highlighted value"),C_WARN);}
 }
 static void review_content(struct HudBox b,int selected,int opacity){
  hud_ink_alpha=opacity;title_draw(b,"Review");
- const char*name=coordinates.name[0]?coordinates.name:ui_tr("Coordinates");box_text(b.x+15,b.y+33,b.w-30,20,1,name,C_CYAN);
- char pos[64]="";coordinate_format(pos,sizeof(pos),coordinates.lat);appendstr(pos,sizeof(pos),"   ");char lon[20];coordinate_format(lon,sizeof(lon),coordinates.lon);appendstr(pos,sizeof(pos),lon);text_value(b.x+15,b.y+56,b.w-30,pos,opacity);
+ const char*name=coordinates.name[0]?coordinates.name:ui_tr("Coordinates");box_text(b.x+15,b.y+29,b.w-30,18,1,name,C_CYAN);
+ char pos[64]="";coordinate_format(pos,sizeof(pos),coordinates.lat);appendstr(pos,sizeof(pos),"   ");char lon[20];coordinate_format(lon,sizeof(lon),coordinates.lon);appendstr(pos,sizeof(pos),lon);text_value(b.x+15,b.y+49,b.w-30,pos,opacity);
  const char*actions[]={coordinates.action==DEST_PICK_ADD_STOP?"Add stop":coordinates.action==DEST_PICK_CHANGE_DEST?"Change destination":"Route as new","Edit coordinates","Rename","Cancel"};
- int step=(b.h-82)/4;
- for(int i=0;i<4;i++)row_text(b,b.y+78+i*step,i,selected,ui_tr(actions[i]),"",opacity,0,step-1);
+ int step=(b.h-74)/4;
+ for(int i=0;i<4;i++)row_text(b,b.y+70+i*step,i,selected,ui_tr(actions[i]),"",opacity,0,step-1);
 }
 static void settings_content(struct HudBox b,int selected,int opacity,u32 now){
  (void)now;hud_ink_alpha=opacity;title_draw(b,"Settings");
@@ -464,7 +469,6 @@ static void menu_sync(u32 now){
 static void menu_prepare(u32 now){
  menu_sync(now);struct HudBox wanted=menu_box(sheet_page);
  int visible=compact_page(sheet_page)?256:0;
- if(sheet_page&&visible){const int ids[]={HC_SPEED,HC_ROAD,HC_TURN};for(int i=0;i<3;i++){struct HudBox b=hud_tween[ids[i]].target.box;if(b.a&&wanted.y+wanted.h+8>b.y)visible=0;}}
  if(visible!=bottom_to){bottom_from=bottom_pose(now);bottom_to=visible;bottom_at=now;}
  if(sheet_page&&(wanted.x!=sheet_to_box.x||wanted.y!=sheet_to_box.y||wanted.w!=sheet_to_box.w||wanted.h!=sheet_to_box.h)){
   sheet_from_box=menu_pose(now);sheet_to_box=wanted;menu_at=now;

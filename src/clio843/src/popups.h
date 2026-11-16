@@ -27,13 +27,13 @@ static void popup_option(struct PopupView*v,int x,int y,int w,const char*s,int c
 static void popup_build(struct PopupView*v,int key){
  memzero(v,sizeof(*v));v->key=key;v->selected=-1;
  if(key==POPUP_KEYBOARD){
-  v->box=hud_box(76,MENU_BODY_Y,328,222);
-  popup_text(v,88,52,304,1,kbd_language_labels[pref.language],C_WHITE,0);
-  int first=kbd_pick>=7?kbd_pick-6:0;if(first+7>UI_LANGUAGE_COUNT)first=UI_LANGUAGE_COUNT-7;
-  v->scroll_first=first;v->scroll_visible=7;v->scroll_total=UI_LANGUAGE_COUNT;
-  for(int row=0;row<7;row++){
+  v->box=hud_box(76,MENU_BODY_Y,328,164);
+  popup_text(v,88,MENU_BODY_Y+12,304,1,kbd_language_labels[pref.language],C_WHITE,0);
+  int first=kbd_pick>=5?kbd_pick-4:0;if(first+5>UI_LANGUAGE_COUNT)first=UI_LANGUAGE_COUNT-5;
+  v->scroll_first=first;v->scroll_visible=5;v->scroll_total=UI_LANGUAGE_COUNT;
+  for(int row=0;row<5;row++){
    int i=first+row;if(i==kbd_pick)v->selected=v->count;
-   popup_text(v,88,77+row*26,296,1,kbd_layouts[i].name,C_WHITE,1);
+   popup_text(v,88,MENU_BODY_Y+33+row*24,296,1,kbd_layouts[i].name,C_WHITE,1);
   }return;
  }
  if(key==POPUP_PHONE){
@@ -86,6 +86,34 @@ static void popup_build(struct PopupView*v,int key){
   }
  }
 }
+/* Every confirmation, source picker and keyboard-triggered popup remains
+ * above the bottom driving pills. Rebase the content with the card, rather
+ * than merely clipping or shrinking its glass background. */
+static void popup_fit_between_pills(struct PopupView*v){
+ int top=44,bottom=HUD_BOTTOM_Y-8;
+ for(int i=HC_STATUS;i<=HC_CLOCK;i++){
+  struct HudBox pill=hud_tween[i].target.box;
+  if(pill.a&&pill.y+pill.h+8>top)top=pill.y+pill.h+8;
+ }
+ const int bottom_ids[]={HC_SPEED,HC_ROAD,HC_TURN};
+ for(unsigned i=0;i<sizeof(bottom_ids)/sizeof(bottom_ids[0]);i++){
+  struct HudBox pill=hud_tween[bottom_ids[i]].target.box;
+  if(pill.a&&pill.y-8<bottom)bottom=pill.y-8;
+ }
+ if(bottom<top+76)top=bottom-76;
+ struct HudBox old=v->box;
+ if(!old.a)return;
+ int available=bottom-top,h=old.h<available?old.h:available;
+ int y=top+(available-h)/2;
+ if(y==old.y&&h==old.h)return;
+ for(int i=0;i<v->count;i++){
+  int rel=v->item[i].y-old.y;
+  /* Keep a margin for text and selection surfaces at each edge. */
+  v->item[i].y=y+8+(rel-8)*(h-16)/(old.h-16);
+ }
+ v->box.y=y;v->box.h=h;
+}
+
 static struct HudBox popup_lerp_box(struct HudBox a,struct HudBox b,int q){
  if(q==256)return b;if(!q)return a;
  return (struct HudBox){hud_lerp(a.x,b.x,q),hud_lerp(a.y,b.y,q),hud_lerp(a.w,b.w,q),hud_lerp(a.h,b.h,q),hud_lerp(a.a,b.a,q)};
@@ -112,7 +140,7 @@ static void popup_prepare(u32 now){
    popup.to.x+=12;popup.to.y+=8;popup.to.w-=24;popup.to.h-=16;popup.to.a=0;popup.at=now;popup.key=0;
   }return;
  }
- struct PopupView next;popup_build(&next,key);
+ struct PopupView next;popup_build(&next,key);popup_fit_between_pills(&next);
  struct HudBox here=popup_pose(now);
  int changed=popup.key!=next.key||!hud_box_eq(popup.to,next.box);
  if(changed){
@@ -162,7 +190,7 @@ static void draw_modal(void){
   hud_glass_surface(focus,C_ACTIVE,C_CYAN,theme_resolved?12u:16u,0);
  }
  hud_ink_alpha=(16*alpha+128)>>8;
- ui_scrollbar(v->box.x+316+dx,v->box.y+35+dy,178,v->scroll_first,v->scroll_visible,v->scroll_total);
+ if(v->scroll_total)ui_scrollbar(v->box.x+v->box.w-12+dx,v->box.y+31+dy,v->box.h-40,v->scroll_first,v->scroll_visible,v->scroll_total);
  for(int i=0;i<v->count;i++){
   const struct PopupItem*r=&v->item[i];
   u16 ink=r->ink;
