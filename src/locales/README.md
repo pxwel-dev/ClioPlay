@@ -43,29 +43,40 @@ one of the 18 layouts with Up/Down, then confirm. Left/Right jumps a page in tha
 chooser; Back cancels without losing the name. Choosing a keyboard never changes
 the interface language, country, units or camera policy. The choice is saved.
 
-Keyboard buttons and Latin, Greek and Cyrillic input use capitals, including
-the language's accents.
-Uncased scripts retain their normal forms. Existing received/saved names keep
-their original case. For larger alphabets, the < / > keys below the letters page
-through characters; the language button shows the current page. One wide Save button sits
-beside it. When naming a coordinate destination this is **Next**, which opens
-review instead of saving immediately; Back returns to longitude without losing
-the name. When naming a favourite, Back leaves without saving. Names are bounded to 40 Unicode code points and 160 UTF-8 bytes.
+Naming uses a map-based glass sheet. The title, toolbar and entry field sit above
+an adaptive grid. Latin keyboards use QWERTY, French AZERTY or German QWERTZ,
+followed by their native accented letters. Uppercase letters retain their
+language's accents; uncased scripts keep their normal forms. Received/saved names
+keep their original case. Latin/Greek/Cyrillic keys align on the base character,
+so accents do not push the letter bodies down.
 
-- Chinese uses per-character Pinyin candidates from Unicode 17 Unihan readings.
-  Type a syllable (V represents Ü), move Up from the first letter row to the
-  candidates and confirm a character. Candidate arrows show more choices.
-  This is single-character composition, without phrase prediction. The right
-  soft key commits the first candidate and inserts a space; pending syllables
-  must be confirmed before saving. The table covers BMP Han with Mandarin
-  readings; other Chinese characters can still arrive from the phone.
-- Japanese provides hiragana/katakana and voiced/small kana through character
-  pages; kana-to-kanji conversion is not included.
+The toolbar contains language, script/number mode, previous/next page, page count
+and **Save**. When naming coordinates, **Next** opens review instead of saving;
+Back returns to longitude while retaining the name. In favourite naming, Back
+leaves without saving. The arrows are dim on a single-page layout. Numbers and
+punctuation use a separate mode. Each language uses the available grid space;
+extra character pages have their own proportional navigation controls.
+
+Horizontal movement wraps the current row, including RTL rows. Vertical movement
+wraps through the grid and toolbar while preserving the preferred horizontal
+position. The console knob cycles through all selectable keys. Layout changes
+never alter interface language, units, camera policy or existing entered text.
+Names are bounded to 40 Unicode code points and 160 UTF-8 bytes.
+
+- Chinese starts with common Hanzi. Its mode button opens a syllable index
+  represented by a sample character from each reading; selecting one opens that
+  syllable's characters. Back returns to the index and then common characters.
+  The mode button also reaches numbers/symbols. The bundled Unicode 17 Unihan
+  Mandarin dictionary supplies the browser; phrase prediction is not included.
+- Japanese uses separate hiragana and katakana modes, then numbers/symbols.
+  Each script has base kana and voiced/small-kana pages. Kana-to-kanji conversion
+  is not included.
 - Korean composes modern Hangul from consonant/vowel keys, including compound
   vowels/finals and syllable-boundary splitting. Backspace decomposes the last
   syllable before removing it.
-- Arabic/Hebrew and Hindi use the existing native shaping engine; Hindi pages
-  include vowel signs and virama for conjuncts.
+- Arabic/Hebrew and Hindi use the native shaping engine; Hindi pages include
+  vowel signs and virama for conjuncts. Isolated combining marks use a dotted
+  circle on the keycap only; entry inserts the actual character.
 
 Layouts are in `keyboards.json`. Normal builds regenerate their header locally
 and use the bundled Pinyin header, without downloads or additional SD-card data.

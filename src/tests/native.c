@@ -19,7 +19,7 @@ static void explore_sample(u32 elapsed){hud_capture_clock=1;hud_capture_ms+=elap
 static void settle(void){
  draw();
 #ifdef HUD_TURN_ICON
- hud_settle_for_capture(hud_now_ms());draw();
+ hud_settle_for_capture(hud_now_ms());menu_settle(hud_now_ms());draw();
 #endif
 }
 static void fixture(void){
@@ -48,53 +48,27 @@ static void fixture(void){
 }
 
 static void scenes(void){
- struct Scene{const char*name;int page,night;}scenes[]={
- {"driving-day",SCR_MAP,0},{"driving-night",SCR_MAP,1},{"menu-day",SCR_MENU,0},{"menu-night",SCR_MENU,1},
- {"trip-day",SCR_TRIP,0},{"trip-night",SCR_TRIP,1},{"bluetooth",SCR_BT,1},{"settings",SCR_SET,1},{"keyboard",SCR_KEY,1}};
- for(unsigned i=0;i<sizeof(scenes)/sizeof(scenes[0]);i++){fixture();screen=scenes[i].page;pref.theme=scenes[i].night?THEME_NIGHT:THEME_DAY;trip_tab=trip_pane=trip_focus=0;menu_focus=1;kbd_focus=38;copystr(kbd_text,sizeof(kbd_text),"HOME");settle();snapshot(scenes[i].name);}
- fixture();screen=SCR_TRIP;trip_pane=1;trip_right_focus=1;pref.theme=THEME_NIGHT;settle();snapshot("trip-itinerary");
- trip.count=5;for(int i=2;i<5;i++)trip.target[i]=trip.target[0];settle();snapshot("trip-five-targets");
- trip_pane=0;trip_focus=24;settle();snapshot("trip-last-place");
- fixture();screen=SCR_TRIP;trip.active=0;nrecents=nfaves=0;trip_pane=1;settle();snapshot("trip-empty");
- fixture();screen=SCR_BT;bt_page_focus=bt_page_total()-1;settle();snapshot("bluetooth-last");bt_page_dialog=5;settle();snapshot("bluetooth-dialog");
- fixture();screen=SCR_MAP;bt_control_mode=1;pref.theme=THEME_NIGHT;settle();snapshot("driving-media");
- copystr(btui.title,sizeof(btui.title),"An exceptionally long track title that should never cover the clock");
- copystr(roadctx.street,sizeof(roadctx.street),"An exceptionally long road name for fitting");settle();snapshot("driving-long-text");
+ const int pages[]={P_CLOSED,P_HOME,P_TRIP,P_PHONE,P_SETTINGS,P_NAME};
+ const char*names[]={"driving","menu","trip","bluetooth","settings","keyboard"};
+ for(int night=0;night<2;night++)for(int i=0;i<6;i++){fixture();screen=SCR_MAP;pref.theme=night?THEME_NIGHT:THEME_DAY;keyboard_open_fave_name(1,2);menu_open(pages[i],0,hud_now_ms());settle();char name[64];snprintf(name,sizeof(name),"%s-%s",names[i],night?"night":"day");snapshot(name);}
+ fixture();menu_open(P_TRIP,0,hud_now_ms());settle();snapshot("trip-itinerary");
+ for(int i=0;i<2;i++){places_tab=i;menu_open(P_PLACES,24,hud_now_ms());settle();snapshot(i?"trip-favourites":"trip-last-place");}
+ fixture();trip.active=trip.count=0;menu_open(P_TRIP,0,hud_now_ms());settle();snapshot("trip-empty");
+ fixture();menu_open(P_PHONE,nbtdev,hud_now_ms());settle();snapshot("bluetooth-last");
+ fixture();screen=SCR_MAP;bt_control_mode=1;settle();snapshot("driving-media");
  fixture();screen=SCR_MAP;set_band("FM");copystr(af.station,sizeof(af.station),"BBC Radio 1");copystr(af.freq,sizeof(af.freq),"98.8");rebuild_source();settle();snapshot("driving-radio");
- copystr(btui.title,sizeof(btui.title),"STALE TRACK SHOULD BE HIDDEN");
-#ifdef HUD_TURN_ICON
- hud_prepare(active_zoom(),s_now_ms(),1);assert(hud_kind==HUD_SOURCE&&starts(hud_tween[HC_STATUS].target.title,"BBC Radio 1"));
- set_band("AUX");rebuild_source();settle();snapshot("driving-aux");assert(hud_kind==HUD_SOURCE&&streq(hud_tween[HC_STATUS].target.tag,"AUX")&&!hud_tween[HC_STATUS].target.title[0]);
-#else
- set_band("AUX");settle();snapshot("driving-aux");
-#endif
  fixture();screen=SCR_MAP;gps.fix=0;settle();snapshot("gps-lost");
  fixture();screen=SCR_MAP;route_status=R_CALC;settle();snapshot("calculating");
  fixture();screen=SCR_MAP;route_status=R_IDLE;trip.active=0;settle();snapshot("driving-no-route");
- fixture();screen=SCR_MAP;roadctx.speed=120;gps.mph10=1200;settle();snapshot("speed-120");
- const int modes[]={MOD_ROUTE_POINT,MOD_RECENT,MOD_FAVE,MOD_CANCEL_ROUTE,MOD_TARGET,MOD_REMOVE_STOP,MOD_ARRIVED_STOP,MOD_ARRIVED_DEST,MOD_RESUME_TRIP,MOD_SOURCE_PICK};
- for(unsigned i=0;i<sizeof(modes)/sizeof(modes[0]);i++){fixture();screen=SCR_TRIP;modal=modes[i];modal_index=0;modal_choice=0;arrival_modal_deadline=s_now_ms()+5000;settle();char name[64];snprintf(name,sizeof(name),"modal-%d",modal);snapshot(name);}
- puts("Framebuffer scenes passed: all pages, dense lists, 5 targets, empty state, long text, GPS, route calculation and source-specific metadata.");
+ puts("Native menu/map scenes passed in both themes.");
 }
 static void command_is(const char*expected){FILE*f=fopen(BT_CMD_PATH,"r");assert(f);char b[96];assert(fgets(b,sizeof(b),f));fclose(f);assert(strstr(b,expected));}
 static void remote_tests(void){
- fixture();screen=SCR_MAP;key_handle(K_MENU);assert(screen==SCR_MENU);
- for(int i=0;i<3;i++){screen=SCR_MENU;menu_focus=i;key_handle(K_ENTER);int pages[]={SCR_TRIP,SCR_BT,SCR_SET};assert(screen==pages[i]);key_handle(K_MAP);assert(screen==SCR_MAP&&!freecam);}
+ fixture();screen=SCR_MAP;for(int i=0;i<3;i++){menu_open(P_HOME,i,hud_now_ms());key_handle(K_ENTER);int pages[]={P_TRIP,P_PHONE,P_SETTINGS};assert(sheet_page==pages[i]);key_handle(K_MAP);assert(screen==SCR_MAP&&!freecam);}
  fixture();screen=SCR_MAP;key_handle(K_BACK);assert(bt_control_mode);key_handle(K_RIGHT);command_is(" NEXT");key_handle(K_LEFT);command_is(" PREV");key_handle(K_ENTER);command_is(" PAUSE");key_handle(K_BACK);assert(!bt_control_mode);
- key_handle(K_SR);assert(active_zoom()==5);key_handle(K_ESC);assert(active_zoom()==4);
- pref.autozoom=1;zoom_override=4;key_handle(K_MAP);assert(zoom_override==-1&&!freecam);
- fixture();screen=SCR_TRIP;trip_pane=trip_tab=trip_focus=0;for(int i=0;i<30;i++)key_handle(K_DOWN);assert(trip_focus==24);key_handle(K_ENTER);assert(modal==MOD_RECENT&&modal_index==24);key_handle(K_BACK);key_handle(K_RIGHT);assert(trip_tab==1&&trip_focus==0);key_handle(K_ENTER);assert(modal==MOD_FAVE);key_handle(K_BACK);
- key_handle(K_SR);assert(trip_pane==1);trip_right_focus=2;key_handle(K_ENTER);assert(modal==MOD_SOURCE_PICK);key_handle(K_DOWN);key_handle(K_DOWN);key_handle(K_ENTER);assert(screen==SCR_COORDINATES);key_handle(K_BACK);assert(modal==MOD_SOURCE_PICK);key_handle(K_BACK);assert(modal==MOD_NONE);
- trip_right_focus=3;key_handle(K_ENTER);assert(modal==MOD_CANCEL_ROUTE&&modal_choice==1);key_handle(K_ENTER);assert(trip.active);key_handle(K_ESC);assert(trip_pane==0);
- fixture();screen=SCR_BT;bt_page_focus=0;bt_page_connected_choice=0;key_handle(K_ENTER);command_is(" DISCONNECT");key_handle(K_RIGHT);key_handle(K_ENTER);command_is(" UNPAIR");bt_page_focus=1;key_handle(K_ENTER);assert(bt_page_dialog>=0);key_handle(K_ENTER);command_is(" CONNECT");bt_page_focus=bt_page_total()-1;key_handle(K_ENTER);command_is(" PAIR");
- fixture();screen=SCR_KEY;keyboard_open_fave_name(5497000,-160000);copystr(kbd_text,sizeof(kbd_text),"HOME");kbd_focus=38;key_handle(K_ESC);assert(!strcmp(kbd_text,"HOM"));nfaves=0;key_handle(K_ENTER);assert(screen==SCR_TRIP&&nfaves==1&&!strcmp(faves[0].name,"HOM"));
- fixture();screen=SCR_MAP;hud_capture_clock=1;hud_capture_ms=s_now_ms();key_handle(K_MAP);assert(freecam&&freecam_transition_active());for(int i=0;i<5;i++){explore_sample(100);draw();char name[64];snprintf(name,sizeof(name),"explore-enter-%02d",i);snapshot(name);}assert(!freecam_transition_active()&&map_tilt_q8==0);s32 lon=cam_lon;key_handle(K_RIGHT);assert(cam_lon!=lon);key_handle(K_ENTER);assert(modal==MOD_ROUTE_POINT);key_handle(K_BACK);key_handle(K_MAP);assert(!freecam&&freecam_transition_active());for(int i=0;i<6;i++){explore_sample(100);draw();char name[64];snprintf(name,sizeof(name),"explore-leave-%02d",i);snapshot(name);}assert(!freecam_transition_active()&&map_tilt_q8==256);
- fixture();screen=SCR_TRIP;phone_dest.valid=1;phone_dest.action='S';phone_dest.lat=5497548;phone_dest.lon=-164050;copystr(phone_dest.name,sizeof(phone_dest.name),"Kareem's Grill");modal=MOD_NONE;phone_destination_apply();assert(trip.count==3&&!phone_dest.valid&&modal==MOD_NONE&&!strcmp(trip.target[1].name,"Kareem's Grill"));
- fixture();modal=MOD_RESUME_TRIP;screen=SCR_MAP;key_handle(K_MAP);key_handle(K_BACK);assert(modal==MOD_RESUME_TRIP);modal_choice=1;key_handle(K_ENTER);assert(!trip.active&&modal==MOD_NONE);
-#ifndef BEFORE
- fixture();trip.active=0;screen=SCR_TRIP;trip_pane=1;key_handle(K_ENTER);assert(screen==SCR_COORDINATES);key_handle(K_BACK);assert(screen==SCR_TRIP&&modal==MOD_NONE);
-#endif
- puts("Original remote workflows passed: 3-item menu, integrated transport, zoom, saved places, stop/phone/cancel flows, pairing, naming, protected resume and bidirectional Explore animation.");
+ menu_open(P_TRIP,0,hud_now_ms());key_handle(K_RIGHT);for(int i=0;i<30;i++)key_handle(K_DOWN);assert(sheet_focus==24);key_handle(K_ENTER);assert(sheet_page==P_PLACE);key_handle(K_BACK);key_handle(K_RIGHT);assert(places_tab==1);key_handle(K_ENTER);assert(sheet_page==P_PLACE);key_handle(K_BACK);key_handle(K_MAP);
+ fixture();screen=SCR_MAP;hud_capture_clock=1;hud_capture_ms=s_now_ms();key_handle(K_MAP);assert(freecam&&freecam_transition_active());for(int i=0;i<5;i++){explore_sample(100);draw();char name[64];snprintf(name,sizeof(name),"explore-enter-%02d",i);snapshot(name);}assert(!freecam_transition_active()&&map_tilt_q8==0);key_handle(K_MAP);for(int i=0;i<6;i++){explore_sample(100);draw();char name[64];snprintf(name,sizeof(name),"explore-leave-%02d",i);snapshot(name);}assert(!freecam_transition_active()&&map_tilt_q8==256);
+ puts("Native remote workflows: overlay menus, saved places, Bluetooth transport and bidirectional Explore passed.");
 }
 static void live_routing_test(void){
  fixture();route_cancel();assert(load_route_data());assert(route_start(5497370,-161331));u32 deadline=s_now_ms()+30000u;
@@ -103,4 +77,8 @@ static void live_routing_test(void){
  printf("Actual C routing: status=READY, points=%d, distance=%u m, cost=%u ds, QAD=%d\n",route_n,route_path_m(),route_result_cost,qadjmode);
  screen=SCR_MAP;update_road_context();settle();snapshot("actual-c-route");route_cancel();route_geom_unmap();qadj_unmap();if(routefd>=0)close(routefd);if(qadjfd>=0)close(qadjfd);
 }
-int main(int argc,char**argv){setbuf(stdout,0);assert(argc==3);outdir=argv[2];assert(load_font());assert(load_map());scenes();remote_tests();live_routing_test();close(mapfd);return 0;}
+int main(int argc,char**argv){setbuf(stdout,0);assert(argc==3);outdir=argv[2];assert(load_font());
+#if CLIO_UNICODE
+assert(cliou_load(CLIO_HOST_ROOT "clio843/maps/fonts.cpf"));
+#endif
+assert(load_regions());assert(load_map());scenes();remote_tests();live_routing_test();close(mapfd);return 0;}

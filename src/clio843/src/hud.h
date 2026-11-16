@@ -613,7 +613,7 @@ static void header(void){
 
 #ifdef HOST_TEST
 static void hud_reset_animations(void){
- popup_reset();
+ menu_reset(hud_now_ms());popup_reset();
  memzero(hud_tween,sizeof(hud_tween));hud_last_road[0]=0;hud_road_at=0;hud_road_live=0;
  hud_status_reset();hud_playback_reset();
  hud_speed_over=hud_speed_from=0;hud_speed_at=0;hud_status_map=hud_status_page=-1;hud_status_frame_at=0;

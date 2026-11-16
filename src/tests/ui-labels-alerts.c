@@ -200,12 +200,12 @@ static void test_menu_states(void){
  pref.bright=50;
  for(int i=0;i<8;i++){
   char b[96],before[96];copystr(before,sizeof(before),setting_value(i,b));
-  set_focus=i;hud_capture_ms+=3000;key_handle(K_RIGHT);
+  menu_open(P_SETTINGS,i,hud_now_ms());set_focus=i;hud_capture_ms+=3000;key_handle(K_RIGHT);
   assert(!streq(before,setting_value(i,b)));
   hud_prepare(0,hud_capture_ms,0);assert(hud_kind==HUD_NONE);
  }
- pref.language=0;set_focus=5;key_handle(K_ENTER);assert(pref.clock_auto);
- set_focus=7;key_handle(K_ENTER);assert(pref.language==1);
+ pref.language=0;menu_open(P_SETTINGS,5,hud_now_ms());set_focus=5;key_handle(K_ENTER);assert(pref.clock_auto);
+ menu_open(P_SETTINGS,7,hud_now_ms());key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_ENTER);assert(pref.language==1);
  pref.language=0;
  screen=SCR_TRIP;
  set_destination("Station",12,34);assert(streq(notice_text,"Route started"));

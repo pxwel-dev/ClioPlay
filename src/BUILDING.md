@@ -165,8 +165,10 @@ framebuffers and host executables stay temporary. See [preview notes](docs/demo/
 
 `verify_keyboard.py` checks all 18 independent language layouts, capital input,
 accented/native names, connected remote focus paths, saved choices, soft-key
-editing, character bounds, Pinyin candidates and all 11,172 modern Hangul
-syllables. Its 78 Day/Night framebuffer captures and test settings stay temporary.
+editing, character bounds, the Hanzi browser and all 11,172 modern Hangul
+syllables. It draws every character page/mode in both themes, verifies wrapping
+navigation and compares cached text bounds with actual drawn glyphs. Test state
+and any captures stay temporary.
 `verify_atlas_viewport.py` reproduces device boot ordering against a real UK
 atlas covering Newcastle: maps open before GPS, then saved/live fixes and Explore
 move beyond the first child pack. It checks every installed core and shared edge,

@@ -11,8 +11,8 @@ static struct {
 } popup;
 static int popup_requested_key(void){
  if(modal!=MOD_NONE)return modal;
- if(screen==SCR_KEY&&kbd_picker)return POPUP_KEYBOARD;
- if(screen==SCR_BT&&bt_page_dialog>=0&&bt_page_dialog<nbtdev)return POPUP_PHONE;
+
+
  return 0;
 }
 static void popup_text(struct PopupView*v,int x,int y,int w,int face,const char*s,u16 ink,int button){

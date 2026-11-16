@@ -2548,6 +2548,8 @@ static s32 kbd_place_lat=0,kbd_place_lon=0;static int kbd_fave_idx=-1;
 #define K_CONSOLE_INFO 4096
 #define K_CONSOLE_TRIP 4097
 #define K_CONSOLE_THEME 4098
+static int menu_blocks_phone(void);
+static void menu_reset(u32 now);
 #include "keyboard.h"
 
 /* Trip navigation workspace. The Trip page is a
@@ -2631,7 +2633,7 @@ static void set_destination(const char*name,s32 lat,s32 lon){memzero(&trip,sizeo
 static void clear_trip(void){memzero(&trip,sizeof(trip));save_trip();arrival_ticks=0;trip_need_route=trip_route_defer=0;route_cancel();}
 static int trip_add_stop(const char*name,s32 lat,s32 lon){if(!trip.active||trip.count<1||trip.count>=TRIP_MAX_TARGETS)return 0;int ins=trip.count-1;for(int i=trip.count;i>ins;i--)trip.target[i]=trip.target[i-1];trip.target[ins].lat=lat;trip.target[ins].lon=lon;copystr(trip.target[ins].name,sizeof(trip.target[ins].name),name&&name[0]?name:"MAP POINT");trip.count++;if(ins==trip.active_idx)trip_schedule_route();save_trip();notice_success(ui_tr("Stop added"));return 1;}
 static void trip_change_destination(const char*name,s32 lat,s32 lon){if(!trip.active||!trip.count){set_destination(name,lat,lon);return;}int i=trip.count-1;int changed=trip.target[i].lat!=lat||trip.target[i].lon!=lon||!streq(trip.target[i].name,name);trip.target[i].lat=lat;trip.target[i].lon=lon;copystr(trip.target[i].name,sizeof(trip.target[i].name),name&&name[0]?name:"MAP POINT");add_recent(trip.target[i].name,lat,lon);save_trip();if(i==trip.active_idx)trip_schedule_route();if(changed)notice_success(ui_tr("Destination changed"));}
-static void phone_destination_apply(void){if(coordinates_active&&screen!=SCR_COORDINATES&&!(screen==SCR_KEY&&kbd_action==KBD_NAME_COORDINATES))coordinates_active=0;if(!phone_dest.valid||coordinates_active)return;int action=phone_dest.action=='S'?DEST_PICK_ADD_STOP:DEST_PICK_NONE;if(modal!=MOD_NONE)return;if(action==DEST_PICK_ADD_STOP){if(!trip.active||!trip.count)notice_fail(ui_tr("No active route"));else if(trip.count>=TRIP_MAX_TARGETS)notice_fail(ui_tr("Trip full - stop not added"));else if(trip_add_stop(phone_dest.name,phone_dest.lat,phone_dest.lon)){add_recent(phone_dest.name,phone_dest.lat,phone_dest.lon);}else notice_fail(ui_tr("Stop not added"));}
+static void phone_destination_apply(void){if(menu_blocks_phone())return;if(coordinates_active&&screen!=SCR_COORDINATES&&!(screen==SCR_KEY&&kbd_action==KBD_NAME_COORDINATES))coordinates_active=0;if(!phone_dest.valid||coordinates_active)return;int action=phone_dest.action=='S'?DEST_PICK_ADD_STOP:DEST_PICK_NONE;if(modal!=MOD_NONE)return;if(action==DEST_PICK_ADD_STOP){if(!trip.active||!trip.count)notice_fail(ui_tr("No active route"));else if(trip.count>=TRIP_MAX_TARGETS)notice_fail(ui_tr("Trip full - stop not added"));else if(trip_add_stop(phone_dest.name,phone_dest.lat,phone_dest.lon)){add_recent(phone_dest.name,phone_dest.lat,phone_dest.lon);}else notice_fail(ui_tr("Stop not added"));}
   else{set_destination(phone_dest.name,phone_dest.lat,phone_dest.lon);screen=SCR_MAP;recenter_map();}
   phone_destination_clear();}
 static void trip_remove_stop(int idx){if(!trip.active||idx<trip.active_idx||idx<0||idx>=trip.count-1)return;int was_current=idx==trip.active_idx;for(int i=idx+1;i<trip.count;i++)trip.target[i-1]=trip.target[i];trip.count--;save_trip();if(was_current)trip_schedule_route();notice_success(ui_tr("Stop removed"));}
@@ -2805,8 +2807,15 @@ static void settings_key(int code){
 
 static int modal_action_count(void){if(modal==MOD_RECENT)return trip.active?3:2;if(modal==MOD_FAVE)return trip.active?4:3;if(modal==MOD_TARGET){if(modal_index>=0&&modal_index<trip.count-1)return 3;return 2;}if(modal==MOD_SOURCE_PICK)return 4;return 0;}
 #include "popups.h"
+#include "menu_keyboard.h"
+#include "menu_layout.h"
+#include "menu_sheet.h"
 
-static void draw(void){freecam_orientation_anim_update(hud_now_ms());clock_service();region_service();camera_service();refresh_theme();if(screen==SCR_MAP){draw_map();}else if(screen==SCR_MENU)draw_menu();else if(screen==SCR_TRIP)draw_trip();else if(screen==SCR_BT)draw_bluetooth();else if(screen==SCR_KEY)draw_keyboard();else if(screen==SCR_COORDINATES)draw_coordinates();else draw_settings();if(screen!=SCR_MAP)header();draw_modal();boot_fade_apply(hud_now_ms());fb_flush();}
+static void draw(void){
+ u32 now=hud_now_ms();freecam_orientation_anim_update(now);clock_service();region_service();camera_service();refresh_theme();
+ hud_prepare(active_zoom(),now,1);hud_driver_prepare(now);menu_prepare(now);draw_map_background();
+ hud_glass_frame_begin();menu_draw(hud_now_ms());draw_modal();hud_glass_frame_end();boot_fade_apply(hud_now_ms());fb_flush();
+}
 
 struct input_event16 {s32 sec,usec;u16 type,code;s32 value;};
 #define EV_KEY 1
@@ -2928,7 +2937,11 @@ static void key_handle(int code){
  boot_fade_cancel();
  if(code==K_CONSOLE_THEME){pref.theme=(pref.theme+1)%3;prefs_mark_dirty();refresh_theme();render_background_dirty=1;return;}
  if(code==K_CONSOLE_INFO){if(screen==SCR_MAP&&modal==MOD_NONE)hud_pulse(&hud_navigation,route_status==R_READY?HUD_JOURNEY:HUD_HEADING,route_status==R_READY?4200:2300);return;}
- if(code==K_CONSOLE_TRIP){if(modal!=MOD_NONE)return;coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;screen=SCR_TRIP;trip_pane=1;trip_right_focus=0;render_background_dirty=1;return;}
+ if(code==K_CONSOLE_TRIP){if(modal!=MOD_NONE)return;coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;menu_open(P_TRIP,trip.active_idx,hud_now_ms());return;}
+ menu_sync(hud_now_ms());
+ if(modal==MOD_NONE&&(code==K_MENU||screen!=SCR_MAP)){
+  keydiag(code);if(code==K_MENU&&screen==SCR_MAP)menu_open(P_HOME,0,hud_now_ms());else menu_dispatch(code,hud_now_ms());return;
+ }
  code=control_key(code);if(!code)return;
  int dirty=render_background_dirty,old_screen=screen,old_popup=popup_requested_key();
  key_handle_state(code);

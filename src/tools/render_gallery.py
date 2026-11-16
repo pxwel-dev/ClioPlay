@@ -57,14 +57,14 @@ POPUP_EVENTS = (
     (0, 'key_handle(K_ENTER);assert(modal==MOD_ROUTE_POINT);'),
     (600, 'key_handle(K_RIGHT);'),
     (1000, 'key_handle(K_BACK);'),
-    (1500, 'screen=SCR_TRIP;trip_pane=1;trip_right_focus=2;key_handle(K_ENTER);assert(modal==MOD_SOURCE_PICK);'),
+    (1500, 'menu_open(P_TRIP,trip.count,hud_now_ms());key_handle(K_ENTER);assert(sheet_page==P_SOURCE);'),
     (2100, 'key_handle(K_DOWN);key_handle(K_DOWN);'),
     (2500, 'key_handle(K_BACK);'),
-    (3200, 'key_handle(K_BACK);'),
-    (3700, 'screen=SCR_BT;bt_page_focus=1;key_handle(K_ENTER);assert(bt_page_dialog>=0);'),
-    (4300, 'key_handle(K_RIGHT);'),
+    (3200, 'key_handle(K_MENU);'),
+    (3700, 'key_handle(K_DOWN);key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_ENTER);assert(sheet_page==P_PHONE_ACTIONS);'),
+    (4300, 'key_handle(K_DOWN);'),
     (4700, 'key_handle(K_BACK);'),
-    (5200, 'screen=SCR_KEY;keyboard_open_fave_rename(0);kbd_focus=36;key_handle(K_ENTER);assert(kbd_picker);'),
+    (5200, 'keyboard_open_fave_rename(0);menu_open(P_NAME,0,hud_now_ms());pk_reset();pk_prepare();pk_focus=PK_LANGUAGE;key_handle(K_ENTER);assert(kbd_picker);'),
     (5800, 'key_handle(K_DOWN);key_handle(K_DOWN);'),
     (6300, 'key_handle(K_BACK);'),
 )
@@ -535,7 +535,57 @@ def catalog(sender_receipts=None):
         add('ClioPlay Send integration',f'sender-{name}-result','Receive '+name+' from ClioPlay Send',
             setup+f'incoming_sender({payload},{receipt["seq"]},\'{receipt["action"]}\',{receipt["lat"]},{receipt["lon"]});',
             check='assert(modal==MOD_NONE);',note='Actual browser MediaSession packet decoded by the production daemon parser and received through production poll_phone_destination()/phone_destination_apply(); radio transport simulated.')
+    modern_menus()
     return SCENES
+
+
+
+def modern_menus():
+    # Retain native map/routing/audio coverage; replace legacy full-screen
+    # menu cases with current sheets and real production-controller actions.
+    retired = {'Menu','Settings','Every keyboard character','Saved-place actions',
+               'Additional controls','Destinations','Choose destination','Languages',
+               'Phone connection','Favourite keyboard','Showcase controls',
+               'Itinerary actions','Scrollbars','Dialog controls'}
+    SCENES[:] = [s for s in SCENES if s['group'] not in retired]
+    for scene in SCENES:
+        if scene['id']=='coordinate-route-source':
+            scene.update(setup='clear_trip();gps.mph10=0;menu_open(P_TRIP,0,hud_now_ms());',check='assert(!trip.active&&sheet_page==P_TRIP);')
+        if scene['id']=='coordinate-route-recents':
+            scene['setup']='coordinate_route_start();preview_finish_route();key_handle(K_MENU);key_handle(K_ENTER);key_handle(K_RIGHT);'
+        if scene['id']=='phone-preview-trip':scene['setup']+='menu_open(P_TRIP,trip.active_idx,hud_now_ms());'
+    for page,name,title in [('P_HOME','menu','Menu'),('P_TRIP','itinerary','Active itinerary'),('P_PHONE','phone','Saved phones'),('P_SETTINGS','settings','Settings')]:
+        SCENES[:] = [s for s in SCENES if s['id']!=name]
+        add('Menu sheets',name,title,f'menu_open({page},0,hud_now_ms());')
+    for tab,name in [(0,'recents'),(1,'favourites')]:
+        add('Menu sheets',name+'-tab',name.title(),f'menu_open(P_TRIP,0,hud_now_ms());'+('key_handle(K_RIGHT);'*(tab+1)))
+        for bottom in (False,True):
+            add('Scrollbars','scrollbar-'+name+('-bottom' if bottom else '-top'),name+' list extent',
+                f'nrecents=nfaves=25;places_tab={tab};menu_open(P_PLACES,{24 if bottom else 0},hud_now_ms());')
+    add('Menu sheets','showcase-keyboard-char','Adaptive naming keyboard','keyboard_open_fave_rename(0);menu_open(P_NAME,0,hud_now_ms());pk_reset();pk_prepare();pk_focus=4;', 'key_handle(K_ENTER);')
+    for name,row,part in [('schedule-edit-day',8,0),('schedule-edit-minute',9,1)]:
+        add('Menu sheets',name,'Custom theme schedule',f'menu_open(P_SETTINGS,{row},hud_now_ms());theme_time_part={part};')
+    add('Menu sheets','showcase-theme-day','Choose Day theme','menu_open(P_SETTINGS,1,hud_now_ms());pref.theme=THEME_NIGHT;refresh_theme();','key_handle(K_LEFT);')
+    for lang in range(18):
+        add('Menu sheets','keyboard-'+str(lang),'Native naming layout',f'pref_keyboard_language={lang};keyboard_open_fave_rename(0);menu_open(P_NAME,0,hud_now_ms());pk_reset();pk_prepare();')
+    events=((0,'key_handle(K_MENU);'),(700,'key_handle(K_ENTER);'),(1500,'key_handle(K_RIGHT);'),
+            (2300,'key_handle(K_SR);'),(3100,'key_handle(K_BACK);'),
+            (3800,'key_handle(K_DOWN);key_handle(K_ENTER);'),(4600,'key_handle(K_DOWN);key_handle(K_ENTER);'),
+            (5400,'key_handle(K_BACK);'),(6200,'key_handle(K_MENU);'),
+            (7000,'key_handle(K_DOWN);key_handle(K_DOWN);key_handle(K_ENTER);'),
+            (7800,'key_handle(K_DOWN);'),(8600,'key_handle(K_RIGHT);'),(9400,'key_handle(K_MAP);'))
+    samples=sorted({at+step for at,_ in events for step in TWEEN_STEPS}|{9800})
+    motion('Menu sheets','preview-menu-tour','On-map Menu, three Trip tabs, Bluetooth actions and Settings',
+           'settle();set_volume(16);draw();hud_capture_ms+=400u;draw();',events,samples)
+    add('Menu sheets','empty-receive','Empty itinerary receives phone destinations automatically','trip.active=trip.count=0;menu_open(P_TRIP,0,hud_now_ms());')
+    add_stop='key_handle(K_MENU);key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_DOWN);'
+    source=add_stop+'key_handle(K_ENTER);key_handle(K_DOWN);'
+    favourite=source+'key_handle(K_ENTER);key_handle(K_DOWN);'
+    add('Menu sheets','preview-add-stop','Choose Add stop',add_stop,check='assert(sheet_page==P_TRIP&&sheet_focus==trip.count);')
+    add('Menu sheets','preview-add-source','Choose Favourites',source,check='assert(sheet_page==P_SOURCE&&sheet_focus==1);')
+    add('Menu sheets','preview-pick-favourite','Choose Work',favourite,check='assert(sheet_page==P_PLACES&&places_picker&&places_tab==1&&sheet_focus==1);')
+    add('Menu sheets','preview-stop-review','Review Work as a stop',favourite+'key_handle(K_ENTER);',check='assert(sheet_page==P_REVIEW&&trip.count==2);')
+    add('Menu sheets','preview-stop-added','Work added to itinerary',favourite+'key_handle(K_ENTER);key_handle(K_ENTER);',check='assert(trip.count==3&&streq(trip.target[1].name,"Work")&&streq(trip.target[2].name,"Home"));')
 
 
 HELPERS = r'''
@@ -551,13 +601,13 @@ static void explore(void){enter_freecam();explore_sample(500);}
 static void name_keyboard(void){screen=SCR_KEY;keyboard_open_fave_name(5497370,-161331);}
 static void coordinate_digits(const char*s){while(*s){char c=*s++;coordinates.focus=c=='-'?9:c=='.'?11:c=='0'?10:c-'1';key_handle(K_ENTER);}}
 static void coordinate_preview(const char*stage){
- clear_trip();screen=SCR_TRIP;trip_pane=1;trip_right_focus=0;key_handle(K_ENTER);
+ clear_trip();menu_open(P_TRIP,0,hud_now_ms());key_handle(K_ENTER);
  assert(screen==SCR_COORDINATES&&coordinates_active);if(streq(stage,"entry"))return;
  coordinate_digits("54.97548");coordinates.focus=12;if(streq(stage,"latitude"))return;
  key_handle(K_SR);coordinate_digits("-1.64050");coordinates.focus=12;if(streq(stage,"longitude"))return;
- key_handle(K_SR);const char*name="QUAYSIDE";while(*name)keyboard_type(*name++);kbd_focus=38;if(streq(stage,"name"))return;
+ key_handle(K_SR);const char*name="QUAYSIDE";while(*name)keyboard_type(*name++);pk_focus=PK_SAVE;if(streq(stage,"name"))return;
  key_handle(K_ENTER);assert(coordinates.step==COORD_REVIEW&&!trip.active);if(streq(stage,"review"))return;
- key_handle(K_ENTER);screen=SCR_TRIP;trip_pane=0;trip_tab=trip_focus=0;
+ key_handle(K_ENTER);menu_open(P_TRIP,0,hud_now_ms());key_handle(K_RIGHT);
  assert(trip.active&&streq(recents[0].name,"QUAYSIDE"));
 }
 static void preview_finish_route(void){

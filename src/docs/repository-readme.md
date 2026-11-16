@@ -5,24 +5,25 @@
 
 <p align="center"><a href="#install">Install</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-## Version 2.1.0 — In development
+## Version 2.1.0
 
+### Changes in this version
+
+- Animated frosted-glass menus over the live map, with persistent time and status notices.
+- A redesigned Trip page with Itinerary, Recents and Favourites tabs, reviewed stop/destination choices, and more room for lists.
+- Compact Settings and Bluetooth pages, inline adjustment hints and a pinned **Pair new phone** action.
+- Adaptive keyboards for all 18 languages, with native characters, balanced rows, wrapping navigation and separate numbers/symbols.
 - A consistent rounded outline for the speeding warning, retaining its smooth red pulse.
 - A thicker speed-limit badge outline with space around it inside the speed pill.
 - Cleaner latitude/longitude entry with the explanatory tip line removed.
 
-See [version history](CHANGELOG.md) for implemented changes by version. This
-version is being prepared; publishing and release notes will follow separately.
+See [version history](CHANGELOG.md) for implemented changes by version.
 
 ## UI previews
 
-| Day boot and UI transition | Night boot and UI transition |
+| Driving and camera alerts | Map-based menus and Trip tabs |
 | --- | --- |
-| ![Day boot screen cross-fades into the live UI](src/docs/demo/boot-day.gif) | ![Night boot screen cross-fades into the live UI](src/docs/demo/boot-night.gif) |
-
-| Driving and camera alerts | Trip, favourites and settings |
-| --- | --- |
-| ![Driving with a temporary road name and a camera warning](src/docs/demo/driving.gif) | ![Opening Trip, browsing favourites and switching themes](src/docs/demo/menus.gif) |
+| ![Driving with a temporary road name and a camera warning](src/docs/demo/driving.gif) | ![Animated on-map menus, Itinerary, Recents, Favourites, Bluetooth actions and Settings](src/docs/demo/menus.gif) |
 
 | Bluetooth playback and volume | Animated frosted-glass confirmations, choices and popups |
 | --- | --- |
@@ -43,6 +44,10 @@ version is being prepared; publishing and release notes will follow separately.
 | Manual coordinate route | Route to a point on the map |
 | --- | --- |
 | ![Enter latitude and longitude, name the destination, calculate the route and find it in Recents](src/docs/demo/coordinate-route.gif) | ![Enter Explore, pan the crosshair, press OK and confirm a route to the selected point](src/docs/demo/map-point-route.gif) |
+
+| Day boot and UI transition | Night boot and UI transition |
+| --- | --- |
+| ![Day boot screen cross-fades into the live UI](src/docs/demo/boot-day.gif) | ![Night boot screen cross-fades into the live UI](src/docs/demo/boot-night.gif) |
 
 <table align="center">
   <thead>
@@ -146,8 +151,8 @@ upper-right console buttons act as the remote's soft keys.
 | **Centre / OK** | **Press the knob** | On the driving map, show ETA and remaining distance, or heading without a route. In map browsing, select the crosshair point. In **BT CTRL**, play/pause. In menus, select or confirm. |
 | **Up / Down** | **Joystick up / down** | Enter map browsing and pan, or move through menu rows. |
 | **Left / Right** | **Joystick left / right** | Enter map browsing and pan, change tabs/options/settings, or select dialog choices. In **BT CTRL**, previous/next track. |
-| **Left soft key** | **Upper-left button** | Zoom out, focus destinations in Trip, or delete a character in coordinate/name entry. |
-| **Right soft key** | **Upper-right button** | Zoom in, focus the itinerary in Trip, advance a coordinate field, or insert a space in a name. |
+| **Left soft key** | **Upper-left button** | Zoom out; previous Trip tab; delete a character in coordinate/name entry. |
+| **Right soft key** | **Upper-right button** | Zoom in; next Trip tab; pair a phone from Bluetooth; advance a coordinate field; insert a space in a name. |
 
 Turning the console knob also zooms the map, skips tracks in **BT CTRL**, scrolls
 lists and moves through keyboard/keypad buttons or dialog choices. In Settings,
@@ -166,6 +171,15 @@ while temporary Manual zoom is active.
 
 See the [full remote and console controls guide](src/README.md#remote-and-console-controls) for actions in
 each screen, including settings, pairing and the favourite keyboard.
+
+Menus now open as animated glass panels over the map. Menu, Bluetooth and
+Settings retain the bottom driving pills when there is room; Trip and its entry
+pages use a taller panel. Time and active status notices remain in place. Trip
+always opens on **Itinerary**; **Left / Right** or the soft keys cycle through
+**Itinerary → Recents → Favourites**, and **Up / Down** or the console knob scrolls
+the current list. Press **OK** to open an item, **BACK** to return one level,
+or **MAP** to return directly to driving. **Pair new phone** stays at the top of
+Bluetooth and is also available with its right soft key.
 
 ## Status and development
 

@@ -39,12 +39,8 @@ def previews():
             (f'hud-road-then-camera-{start:04d}', end - start)
             for start, end in zip(road_frames, road_frames[1:])
         ]),
-        'menus.gif': timeline('night', [
-            *timed_scenes('preview-menu-entry', MENU_ENTRY_SAMPLES, 1900), ('favourites-tab', 1050),
-            ('showcase-keyboard-char', 850), ('phone', 700), ('settings', 700),
-            ('schedule-edit-day', 800), ('schedule-edit-minute', 800), ('showcase-theme-day', 650),
-            *timed_scenes('preview-menu-return', MENU_RETURN_SAMPLES, 1300),
-        ]),
+        'menus.gif': timeline('night', timed_scenes('preview-menu-tour', sorted(
+            {at+step for at in (0,700,1500,2300,3100,3800,4600,5400,6200,7000,7800,8600,9400) for step in TWEEN_STEPS}|{9800}), 9900)),
         'bluetooth.gif': timeline('night', timed_scenes('hud-bluetooth', BLUETOOTH_SAMPLES, 4750)),
         'phone-destination.gif': timeline('night', [
             ('empty-receive',1000),('empty-receive',500),
@@ -72,7 +68,7 @@ def previews():
         'coordinates.gif': timeline('night', [(f'preview-coordinates-{stage}', ms) for stage, ms in [('entry',700),('latitude',1000),('longitude',1000),('name',1000),('review',1600),('saved',1500)]]),
         'add-stop.gif': timeline('night', [
             ('preview-add-stop', 1100), ('preview-add-source', 1200),
-            ('preview-pick-favourite', 1250), ('preview-stop-added', 1700),
+            ('preview-pick-favourite', 1250), ('preview-stop-review', 1100), ('preview-stop-added', 1700),
         ]),
     }
 

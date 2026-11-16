@@ -683,6 +683,98 @@
     "Clear": [
       "Effacer",
       "Borrar todo"
+    ],
+    "Bluetooth unavailable": [
+      "Bluetooth indisponible",
+      "Bluetooth no disponible"
+    ],
+    "Stop": [
+      "Étape",
+      "Parada"
+    ],
+    "Destination": [
+      "Destination",
+      "Destino"
+    ],
+    "Saved place": [
+      "Lieu enregistré",
+      "Lugar guardado"
+    ],
+    "Cancel route?": [
+      "Annuler le trajet ?",
+      "¿Cancelar ruta?"
+    ],
+    "Device": [
+      "Appareil",
+      "Dispositivo"
+    ],
+    "Pair new phone": [
+      "Associer un téléphone",
+      "Vincular teléfono"
+    ],
+    "Choose source": [
+      "Choisir une source",
+      "Elegir origen"
+    ],
+    "Bluetooth": [
+      "Bluetooth",
+      "Bluetooth"
+    ],
+    "Itinerary": [
+      "Itinéraire",
+      "Itinerario"
+    ],
+    "Where would you like to go?": [
+      "Où souhaitez-vous aller ?",
+      "¿Adónde quieres ir?"
+    ],
+    "Browse Recents/Favourites, use ClioPlay Send": [
+      "Récents/Favoris, ClioPlay Send",
+      "Recientes/Favoritos, ClioPlay Send"
+    ],
+    "or enter coordinates": [
+      "ou saisir des coordonnées",
+      "o introduce coordenadas"
+    ],
+    "Destination: ": [
+      "Destination : ",
+      "Destino: "
+    ],
+    "Next: ": [
+      "Prochaine étape : ",
+      "Siguiente: "
+    ],
+    " stops left": [
+      " étapes restantes",
+      " paradas restantes"
+    ],
+    "No recent places yet": [
+      "Aucun lieu récent",
+      "Sin lugares recientes"
+    ],
+    "Check the highlighted value": [
+      "Vérifier la valeur sélectionnée",
+      "Revisa el valor seleccionado"
+    ],
+    "No saved phones": [
+      "Aucun téléphone enregistré",
+      "Sin teléfonos guardados"
+    ],
+    "Move earlier": [
+      "Avancer",
+      "Mover antes"
+    ],
+    "Move later": [
+      "Reculer",
+      "Mover después"
+    ],
+    "Save favourite": [
+      "Enregistrer un favori",
+      "Guardar favorito"
+    ],
+    "Connect": [
+      "Connecter",
+      "Conectar"
     ]
   },
   "language_names": {

@@ -46,7 +46,7 @@ int main(void){
   screen=(t%40<20)?SCR_MENU:SCR_TRIP;render_background_dirty=1;
   at(t,t%100==0);
  }
- assert(render_stats.presents==5&&render_stats.maps==0);
+ assert(render_stats.presents==5&&render_stats.maps==5);
  assert(render_runtime_deadline(14000)==14000);
  /* Explore and an active volume/route pill also share the same five frames. */
  setup(R_CALC,15000);gps.fix=1;set_band("FM");car.volume[0]=0;set_volume(16);

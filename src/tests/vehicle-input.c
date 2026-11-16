@@ -48,12 +48,12 @@ static void console_protocol(void){
  puts("Console protocol: buttons with garbage tails, release/hold edges, neutral suppression, detents, framing, queue bounds and atomic same-size config reload passed.");
 }
 static void console_ui(void){
- modal=MOD_NONE;screen=SCR_MENU;menu_focus=0;key_handle(K_ROTCW);assert(menu_focus==1);key_handle(K_ROTCCW);assert(menu_focus==0);
+ modal=MOD_NONE;menu_open(P_HOME,0,hud_now_ms());key_handle(K_ROTCW);assert(menu_focus==1);key_handle(K_ROTCCW);assert(menu_focus==0);
  modal=MOD_ROUTE_POINT;modal_choice=0;key_handle(K_ROTCW);assert(modal_choice==1);key_handle(K_ROTCCW);assert(modal_choice==0);
- modal=MOD_NONE;screen=SCR_KEY;pref.language=0;keyboard_begin();kbd_focus=5;key_handle(K_ROTCW);assert(kbd_focus==6);kbd_focus=36;key_handle(K_ROTCW);assert(kbd_focus==38);
- kbd_picker=1;kbd_pick=0;key_handle(K_ROTCW);assert(kbd_pick==1);kbd_picker=0;
+ modal=MOD_NONE;pref.language=0;keyboard_open_fave_name(1,2);menu_open(P_NAME,0,hud_now_ms());pk_reset();pk_prepare();pk_focus=5;key_handle(K_ROTCW);assert(pk_focus==6);pk_focus=PK_LANGUAGE;key_handle(K_ROTCW);assert(pk_focus==PK_MODE);
+ pk_focus=PK_LANGUAGE;key_handle(K_ENTER);key_handle(K_ROTCW);assert(kbd_pick==1);key_handle(K_BACK);
  screen=SCR_COORDINATES;coordinates.step=COORD_LAT;coordinates.focus=2;key_handle(K_ROTCW);assert(coordinates.focus==3);
- key_handle(K_CONSOLE_TRIP);assert(screen==SCR_TRIP&&trip_pane==1);
+ key_handle(K_CONSOLE_TRIP);assert(sheet_page==P_TRIP);
  int old=pref.theme;key_handle(K_CONSOLE_THEME);assert(pref.theme==(old+1)%3);
  screen=SCR_MAP;freecam=0;route_status=R_READY;key_handle(K_CONSOLE_INFO);assert(hud_navigation.kind==HUD_JOURNEY);
  modal=MOD_RESUME_TRIP;key_handle(K_CONSOLE_TRIP);assert(modal==MOD_RESUME_TRIP&&screen==SCR_MAP);modal=MOD_NONE;
@@ -61,16 +61,16 @@ static void console_ui(void){
  int fds[2];assert(pipe(fds)==0);fcntl(fds[0],F_SETFL,O_NONBLOCK);
  for(int i=0;i<INPUT_MAX;i++)infd[i]=-1;infd[0]=fds[0];input_lock=-1;
  int wheel[2];assert(pipe(wheel)==0);fcntl(wheel[0],F_SETFL,O_NONBLOCK);infd[1]=wheel[0];
- struct input_event16 rotary={0,0,EV_KEY,K_ROTCW,1};screen=SCR_MENU;menu_focus=0;
+ struct input_event16 rotary={0,0,EV_KEY,K_ROTCW,1};menu_open(P_HOME,0,hud_now_ms());
  assert(write(wheel[1],&rotary,sizeof(rotary))==sizeof(rotary));poll_keys();assert(menu_focus==1&&input_lock==-1);
- menu_focus=0;
+ sheet_focus=menu_focus=0;
  struct input_event16 e={0,0,EV_KEY,K_MENU,1};assert(write(fds[1],&e,sizeof(e))==sizeof(e));poll_keys();assert(screen==SCR_MENU&&input_lock==0);
  reset_console();csw_init();assert(csw.fd>=0&&!csw_live());
  /* An idle automatically opened FIFO must not steal evdev knob input. */
  assert(write(wheel[1],&rotary,sizeof(rotary))==sizeof(rotary));poll_csw();poll_keys();assert(menu_focus==1&&!csw_live());
  /* The first real FIFO record and matching evdev event in the same slice
   * produce one action, while the Bluetooth remote keeps its input lock. */
- menu_focus=0;int writer=open(CSW_FIFO_PATH,O_WRONLY|O_NONBLOCK);assert(writer>=0);
+ sheet_focus=menu_focus=0;int writer=open(CSW_FIFO_PATH,O_WRONLY|O_NONBLOCK);assert(writer>=0);
  u8 b[28];record(b,0,5,2,0,1);assert(write(writer,b,sizeof(b))==sizeof(b));s_close(writer);
  assert(write(wheel[1],&rotary,sizeof(rotary))==sizeof(rotary));poll_csw();poll_keys();assert(menu_focus==1&&input_lock==0&&csw_live());
  e.code=K_UP;assert(write(fds[1],&e,sizeof(e))==sizeof(e));poll_keys();assert(menu_focus==0&&input_lock==0);

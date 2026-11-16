@@ -15,19 +15,19 @@ static void baseline(void){
  phone_dest.valid=0;pref.language=0;pref_keyboard_language=-1;kbd_picker=0;kbd_action=KBD_NAME_FAVE;
  hud_capture_clock=1;hud_capture_ms=10000;route_status=hud_observed_route=R_IDLE;
  hud_navigation.kind=hud_source.kind=hud_audio.kind=hud_connection.kind=hud_bt_feedback.kind=HUD_NONE;
- hud_reset_animations();s_unlink(RECENT_PATH);s_unlink(FAVES_PATH);s_unlink(TRIP_PATH);
+ hud_reset_animations();menu_open(P_TRIP,0,hud_now_ms());s_unlink(RECENT_PATH);s_unlink(FAVES_PATH);s_unlink(TRIP_PATH);
 }
 static void digits(const char*s){
  while(*s){char c=*s++;assert(screen==SCR_COORDINATES&&coordinates.step!=COORD_REVIEW);
   coordinates.focus=c=='-'?9:c=='.'?11:c=='0'?10:c-'1';key_handle(K_ENTER);
  }
 }
-static void name(const char*s){assert(screen==SCR_KEY&&kbd_action==KBD_NAME_COORDINATES);while(*s){int cp=utf8_code(&s);keyboard_type(cp);}kbd_focus=38;key_handle(K_ENTER);assert(screen==SCR_COORDINATES&&coordinates.step==COORD_REVIEW);}
+static void name(const char*s){assert(screen==SCR_KEY&&kbd_action==KBD_NAME_COORDINATES);while(*s){int cp=utf8_code(&s);keyboard_type(cp);}pk_focus=PK_SAVE;key_handle(K_ENTER);assert(screen==SCR_COORDINATES&&coordinates.step==COORD_REVIEW);}
 static void location(const char*lat,const char*lon,const char*title){digits(lat);key_handle(K_SR);assert(coordinates.step==COORD_LON);digits(lon);key_handle(K_SR);assert(screen==SCR_KEY);name(title);}
 static void source(int action){
- screen=SCR_TRIP;modal=MOD_SOURCE_PICK;dest_pick_action=action;modal_choice=0;
- for(int i=0;i<2;i++)key_handle(K_DOWN);key_handle(K_ENTER);
- assert(coordinates_active&&coordinates.action==action&&screen==SCR_COORDINATES);
+ menu_open(P_TRIP,0,hud_now_ms());open_sources(action,hud_now_ms());
+ key_handle(K_DOWN);key_handle(K_DOWN);key_handle(K_ENTER);
+ assert(coordinates_active&&coordinates.action==action&&sheet_page==P_COORD);
 }
 static void parser(void){
  const struct{const char*s;int limit,valid;s32 value;} rows[]={
@@ -47,19 +47,19 @@ static void parser(void){
  for(s32 v=-18000000;v<=18000000;v+=9973){char b[20];s32 back;coordinate_format(b,sizeof(b),v);assert(coordinate_parse(b,180,&back)&&back==v);}
 }
 static void entry_and_cancel(void){
- baseline();key_handle(K_DOWN);key_handle(K_ENTER);assert(screen==SCR_COORDINATES&&coordinates_active);
+ baseline();key_handle(K_ENTER);assert(screen==SCR_COORDINATES&&coordinates_active);
  key_handle(K_SR);assert(coordinates.error&&coordinates.step==COORD_LAT&&!nrecents);
  digits("90.000001");key_handle(K_SR);assert(coordinates.error&&screen==SCR_COORDINATES);
  coordinates.focus=14;key_handle(K_ENTER);assert(!coordinates.value[0][0]&&!coordinates.error);
  digits("54.97548");key_handle(K_SR);digits("-1.64050");key_handle(K_SR);name("  東京 QUAY  ");
  assert(streq(coordinates.name,"東京 QUAY")&&!nrecents&&!trip.active);
- coordinates.review_focus=1;key_handle(K_ENTER);assert(coordinates.step==COORD_LAT);
+ sheet_focus=1;key_handle(K_ENTER);assert(coordinates.step==COORD_LAT);
  assert(streq(coordinates.value[0],"54.97548")&&streq(coordinates.value[1],"-1.64050"));
  key_handle(K_SR);key_handle(K_SR);assert(streq(kbd_text,"東京 QUAY"));
  key_handle(K_BACK);assert(coordinates.step==COORD_LON&&screen==SCR_COORDINATES);
  key_handle(K_BACK);assert(coordinates.step==COORD_LAT);key_handle(K_BACK);
  assert(screen==SCR_TRIP&&!coordinates_active&&!trip.active&&!nrecents);
- source(DEST_PICK_ADD_STOP);key_handle(K_BACK);assert(modal==MOD_SOURCE_PICK&&modal_choice==2&&!coordinates_active);
+ source(DEST_PICK_ADD_STOP);key_handle(K_BACK);assert(sheet_page==P_SOURCE&&sheet_focus==2&&!coordinates_active);
  key_handle(K_BACK);coordinates_open(DEST_PICK_NONE);digits("-");key_handle(K_ENTER); /* +/- selected: remove sign */
  assert(!coordinates.value[0][0]);coordinates.focus=11;key_handle(K_ENTER);assert(streq(coordinates.value[0],"0."));
  key_handle(K_ENTER);assert(streq(coordinates.value[0],"0."));key_handle(K_ESC);assert(streq(coordinates.value[0],"0"));
@@ -73,21 +73,21 @@ static void soft_keys(void){
  key_handle(K_SR);assert(screen==SCR_KEY&&streq(hud_page_title(),"Rename"));
  keyboard_type('A');key_handle(K_SR);assert(screen==SCR_KEY&&streq(kbd_text,"A "));
  keyboard_type('B');key_handle(K_ESC);assert(streq(kbd_text,"A "));
- kbd_focus=38;key_handle(K_ENTER);assert(screen==SCR_COORDINATES&&coordinates.step==COORD_REVIEW&&streq(hud_page_title(),"Review"));
+ pk_focus=PK_SAVE;key_handle(K_ENTER);assert(screen==SCR_COORDINATES&&coordinates.step==COORD_REVIEW&&streq(hud_page_title(),"Review"));
 }
 static void keypad_navigation(void){
  baseline();coordinates_open(DEST_PICK_NONE);assert(coordinates.focus==0);
  key_handle(K_RIGHT);key_handle(K_RIGHT);key_handle(K_RIGHT);assert(coordinates.focus==12);
  key_handle(K_DOWN);assert(coordinates.focus==13);key_handle(K_DOWN);assert(coordinates.focus==14);
- key_handle(K_LEFT);assert(coordinates.focus==8);key_handle(K_DOWN);assert(coordinates.focus==11);
- key_handle(K_LEFT);assert(coordinates.focus==10);key_handle(K_LEFT);assert(coordinates.focus==9);
- for(int i=0;i<3;i++)key_handle(K_UP);assert(coordinates.focus==0);
+ key_handle(K_LEFT);assert(coordinates.focus==11);key_handle(K_DOWN);assert(coordinates.focus==2);
+ key_handle(K_LEFT);assert(coordinates.focus==1);key_handle(K_LEFT);assert(coordinates.focus==0);
+ for(int i=0;i<4;i++)key_handle(K_UP);assert(coordinates.focus==0);
  coordinates_open(DEST_PICK_NONE);phone_dest.valid=1;phone_dest.action='N';
  phone_dest.lat=5497000;phone_dest.lon=-164000;copystr(phone_dest.name,sizeof(phone_dest.name),"PHONE");
  screen=SCR_MAP;phone_destination_apply();assert(!coordinates_active&&trip.active&&!phone_dest.valid);
 }
 static void save_and_reuse(void){
- baseline();key_handle(K_DOWN);key_handle(K_ENTER);location("54.97548","-1.64050","QUAYSIDE");
+ baseline();key_handle(K_ENTER);location("54.97548","-1.64050","QUAYSIDE");
  phone_dest.valid=1;phone_dest.action='N';phone_dest.lat=100;phone_dest.lon=100;copystr(phone_dest.name,sizeof(phone_dest.name),"Incoming phone point");
  phone_destination_apply();assert(!trip.active&&phone_dest.valid&&!nrecents);
  key_handle(K_ENTER);assert(screen==SCR_MAP&&!coordinates_active&&trip.active&&trip.count==1&&!phone_dest.valid);
@@ -97,15 +97,15 @@ static void save_and_reuse(void){
  add_fave(&recents[0]);assert(nfaves==1&&faves[0].lon==-164050&&streq(faves[0].name,"QUAYSIDE"));
  memzero(&trip,sizeof(trip));load_trip();assert(trip.active&&trip.count==1&&streq(trip.target[0].name,"QUAYSIDE"));
  /* Choose the real itinerary Add stop action, then Coordinates. */
- screen=SCR_TRIP;trip_pane=1;trip_right_focus=0;key_handle(K_DOWN);key_handle(K_ENTER);
- assert(modal==MOD_SOURCE_PICK&&dest_pick_action==DEST_PICK_ADD_STOP);
+ menu_open(P_TRIP,0,hud_now_ms());key_handle(K_DOWN);key_handle(K_ENTER);
+ assert(sheet_page==P_SOURCE&&source_action==DEST_PICK_ADD_STOP);
  for(int i=0;i<2;i++)key_handle(K_DOWN);key_handle(K_ENTER);location("54.98000","-1.64000","");
  assert(nrecents==1&&trip.count==1);key_handle(K_ENTER);
- assert(screen==SCR_TRIP&&trip_pane==1&&trip.count==2&&trip.target[0].lat==5498000);
+ assert(sheet_page==P_TRIP&&trip.count==2&&trip.target[0].lat==5498000);
  assert(streq(trip.target[0].name,"54.98000, -1.64000")&&streq(trip.target[1].name,"QUAYSIDE")&&nrecents==2);
  /* Replace only the final destination through its real action menu. */
- trip_right_focus=1;key_handle(K_ENTER);assert(modal==MOD_TARGET);key_handle(K_ENTER);
- assert(modal==MOD_SOURCE_PICK&&dest_pick_action==DEST_PICK_CHANGE_DEST);
+ sheet_focus=1;key_handle(K_ENTER);assert(sheet_page==P_DEST);key_handle(K_ENTER);
+ assert(sheet_page==P_SOURCE&&source_action==DEST_PICK_CHANGE_DEST);
  for(int i=0;i<2;i++)key_handle(K_DOWN);key_handle(K_ENTER);location("54.99000","-1.65000","GOSFORTH");key_handle(K_ENTER);
  assert(trip.count==2&&trip.target[0].lat==5498000&&trip.target[1].lat==5499000&&streq(trip.target[1].name,"GOSFORTH")&&nrecents==3);
  source(DEST_PICK_CHANGE_DEST);location("54.99000","-1.65000","RENAMED");key_handle(K_ENTER);
@@ -117,27 +117,23 @@ static void failures_and_layout(void){
  int before=nrecents;trip.count=TRIP_MAX_TARGETS;key_handle(K_ENTER);
  assert(coordinates_active&&coordinates.step==COORD_REVIEW&&nrecents==before&&trip.count==TRIP_MAX_TARGETS);
  trip.count=0;trip.active=0;key_handle(K_ENTER);assert(coordinates_active&&nrecents==before);
- coordinates.review_focus=3;key_handle(K_ENTER);assert(screen==SCR_TRIP&&!coordinates_active&&nrecents==before);
+ sheet_focus=3;key_handle(K_ENTER);assert(screen==SCR_TRIP&&!coordinates_active&&nrecents==before);
  source(DEST_PICK_CHANGE_DEST);location("0","0","");key_handle(K_ENTER);assert(coordinates_active&&nrecents==before);
- /* Shared top-row notifications remain within their existing menu bounds. */
+ /* Sheets stay below persistent HUD, in either theme and every locale. */
  load_font();for(int night=0;night<2;night++)for(int language=0;language<UI_LANGUAGE_COUNT;language++){
   pref.language=language;apply_palette(night);car.tempok=1;car.temp=18;gps.hour=12;gps.min=35;
   for(int step=0;step<=COORD_REVIEW;step++){
-   coordinates.step=step;screen=SCR_COORDINATES;hud_menu_title.text=0;hud_prepare(5,hud_capture_ms,0);
-   struct HudBox clock=hud_tween[HC_CLOCK].target.box;
-   assert(HUD_MENU_TITLE_X+hud_menu_title.w<clock.x);
-   draw_coordinates();
+   coordinates.step=step;menu_open(step==COORD_REVIEW?P_REVIEW:P_COORD,0,hud_now_ms());
+   hud_prepare(5,hud_capture_ms,1);menu_prepare(hud_capture_ms);menu_settle(hud_capture_ms);
+   assert(sheet_to_box.y>=hud_tween[HC_CLOCK].target.box.y+hud_tween[HC_CLOCK].target.box.h);
+   menu_contents(sheet_page,sheet_focus,sheet_to_box,16,hud_now_ms());
   }
  }
 }
 static void render_dispatch(void){
- baseline();coordinates_open(DEST_PICK_NONE);u16 expected[FB_PIX];
- for(int step=0;step<=COORD_REVIEW;step++){
-  coordinates.step=step;render_fb=&display_fb;draw_coordinates();memcpy(expected,fb,sizeof(expected));
-  render_runtime_reset(hud_capture_ms);render_background();
-  assert(renderer.page==SCR_COORDINATES&&!memcmp(*render_front,expected,sizeof(expected)));
- }
- render_fb=&display_fb;
+ baseline();coordinates_open(DEST_PICK_NONE);render_runtime_reset(hud_capture_ms);
+ render_runtime_step(hud_capture_ms,1);assert(renderer.page==SCR_COORDINATES&&render_stats.maps==1);
+ assert(sheet_page==P_COORD&&sheet_to_box.a==256);render_fb=&display_fb;
 }
 int main(void){parser();entry_and_cancel();soft_keys();keypad_navigation();save_and_reuse();failures_and_layout();render_dispatch();
  s_unlink(RECENT_PATH);s_unlink(FAVES_PATH);s_unlink(TRIP_PATH);

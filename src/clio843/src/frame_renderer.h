@@ -29,8 +29,8 @@ static void render_copy(u16*to,const u16*from){
  if(count&1u)to[count-1]=from[count-1];
 }
 static int render_transition_active(u32 now){
- if(boot_fade.image||renderer.camera_pending||hud_menu_animating(now)||popup_animating(now))return 1;
- if(screen==SCR_MAP){
+ if(boot_fade.image||renderer.camera_pending||hud_menu_animating(now)||popup_animating(now)||menu_animating(now))return 1;
+ if(screen==SCR_MAP||bottom_pose(now)>0){
   for(int id=HC_SPEED;id<HC_COUNT;id++){
    struct HudTween*t=&hud_tween[id];if(!t->seen||(!t->from.a&&!t->target.box.a))continue;
    if(now-t->position_at<320u||hud_status_frame_at-t->position_at<320u||
@@ -46,8 +46,8 @@ static int render_animation_active(u32 now){
   (hud_playback.playing||now-hud_playback.at<320u));
 }
 static void render_prepare(u32 now){
- hud_prepare(active_zoom(),now,screen==SCR_MAP);
- if(screen==SCR_MAP)hud_driver_prepare(now);
+ hud_prepare(active_zoom(),now,1);hud_driver_prepare(now);menu_prepare(now);
+ if(menu_pending)renderer.model_pending=1;
 }
 static u32 render_ui_period(u32 now){return frame_ui_period(route_status==R_CALC,render_transition_active(now));}
 static void render_sync_ui(u32 now){
@@ -62,7 +62,7 @@ static void render_advance_ui(u32 now){
  render_sync_ui(now);
  /* Rejoin the map clock after a transition, without delaying a finished map
   * behind an unrelated 100 ms phase. Keep the transition interval at the boundary. */
- if(renderer.ui_period==FRAME_MAP_MS&&screen==SCR_MAP){
+ if(renderer.ui_period==FRAME_MAP_MS){
   renderer.ui.next=frame_after(renderer.map_at,now,FRAME_MAP_MS);
   if((s32)(renderer.ui.next-(renderer.present_at+FRAME_UI_MS))<0)renderer.ui.next=renderer.present_at+FRAME_UI_MS;
  }else frame_advance_ui(&renderer.ui,now,route_status==R_CALC,render_transition_active(now));
@@ -75,11 +75,10 @@ static void render_present(void){
  render_copy(fb,*render_front);
  /* Read the presentation clock after restoring the backdrop. */
  u32 now=hud_now_ms();render_prepare(now);renderer.present_at=now;
- hud_glass_frame_begin();hud_draw_all(now,screen==SCR_MAP);
- if(screen!=SCR_MAP)hud_draw_page_title();
+ hud_glass_frame_begin();menu_draw(now);
  draw_modal();hud_glass_frame_end();boot_fade_apply(now);fb_flush();
  clip_x=ox;clip_y=oy;clip_right=orr;clip_bottom=ob;hud_ink_alpha=oa;
- renderer.pending=renderer.model_pending=0;render_stats.presents++;
+ renderer.pending=renderer.model_pending=menu_pending=0;render_stats.presents++;
  u32 elapsed=hud_now_ms()-begin;if(elapsed>render_stats.max_present_ms)render_stats.max_present_ms=elapsed;
  if(frame_due(now,renderer.ui.next)&&now-renderer.ui.next>8u){
   u32 late=now-renderer.ui.next;render_stats.late++;if(late>render_stats.max_late)render_stats.max_late=late;
@@ -98,9 +97,7 @@ static void render_checkpoint(void){
 }
 static void render_background(void){
  u32 begin=hud_now_ms();renderer.building=1;render_fb=render_work;
- if(screen==SCR_MAP)draw_map_background();
- else if(screen==SCR_MENU)draw_menu();else if(screen==SCR_TRIP)draw_trip();
- else if(screen==SCR_BT)draw_bluetooth();else if(screen==SCR_KEY)draw_keyboard();else if(screen==SCR_COORDINATES)draw_coordinates();else draw_settings();
+ draw_map_background();
  renderer.building=0;render_fb=&display_fb;
  u16(*swap)[FB_PIX]=render_front;render_front=render_work;render_work=swap;
  hud_glass_background_changed();
@@ -122,11 +119,11 @@ static void render_runtime_step(u32 now,int model_changed){
   renderer.ui.next=now;
  }
  int was_rotation=freecam_transition_active();freecam_orientation_anim_update(now);
- if(screen==SCR_MAP&&(was_rotation||freecam_transition_active()))renderer.camera_pending=1;
+ if(was_rotation||freecam_transition_active())renderer.camera_pending=1;
  renderer.model_pending|=model_changed;
  u32 period=route_status==R_CALC?FRAME_CALC_MAP_MS:FRAME_MAP_MS;
  if(period!=renderer.map_period){renderer.map_period=period;renderer.map_at=now;}
- int map_due=screen==SCR_MAP&&frame_due(now,renderer.map_at);
+ int map_due=frame_due(now,renderer.map_at);
  int route_finished=renderer.last_route==R_CALC&&route_status!=R_CALC;
  renderer.last_route=route_status;
  /* No dirty page, new input, camera or animation can bypass the 5 Hz cap.
@@ -137,14 +134,15 @@ static void render_runtime_step(u32 now,int model_changed){
   * next presentation to about 15 Hz; routine values do not keep that promotion alive. */
  if(model_changed||render_background_dirty||!renderer.valid||renderer.page!=screen||renderer.theme!=theme_resolved)render_prepare(now);
  render_sync_ui(now);
- int invalid=!renderer.valid||renderer.page!=screen||renderer.theme!=theme_resolved;
+ if(renderer.valid&&renderer.theme==theme_resolved)renderer.page=screen;
+ int invalid=!renderer.valid||renderer.theme!=theme_resolved;
  int camera_due=renderer.camera_pending&&frame_due(now,renderer.ui.next);
  /* Normal map updates continue on their clock, even during Explore. Extra
   * camera presentation passes reuse the map tile cache and never gate model
   * updates, routing, or HUD transitions on animation completion. */
  /* Rotation already redraws live map data on the presentation clock. Do not
   * insert a second full map render between those frames on the 100 ms clock. */
- int camera_active=screen==SCR_MAP&&(renderer.camera_pending||freecam_transition_active());
+ int camera_active=renderer.camera_pending||freecam_transition_active();
  int background_due=(render_background_dirty||map_due||camera_due)&&
   (!camera_active||frame_due(now,renderer.ui.next));
  if(invalid||background_due||route_finished){
@@ -160,7 +158,7 @@ static void render_runtime_step(u32 now,int model_changed){
 }
 static u32 render_runtime_deadline(u32 now){
  if(route_status==R_CALC)return renderer.ui.next;
- u32 next=screen==SCR_MAP&&!renderer.camera_pending&&!freecam_transition_active()?renderer.map_at:now+FRAME_MODEL_MS;
+ u32 next=!renderer.camera_pending&&!freecam_transition_active()?renderer.map_at:now+FRAME_MODEL_MS;
  if(renderer.pending||renderer.model_pending||render_animation_active(now))next=frame_earlier(next,renderer.ui.next);
  return next;
 }

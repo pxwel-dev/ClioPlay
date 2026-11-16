@@ -2,7 +2,13 @@
 
 The current build version is recorded in [VERSION](VERSION).
 
-## Version 2.1.0 — In development
+## Version 2.1.0
+
+Menus now use animated glass sheets over the live map, with persistent clock and
+status notices. Trip has Itinerary/Recents/Favourites tabs, reviewed destination
+and stop selection, and taller entry pages. Bluetooth pins pairing above saved
+phones, Settings uses centred adjustment controls, and all 18 naming keyboards
+use adaptive native-character layouts with wrapping navigation.
 
 The speeding-warning outline now has consistent corner/edge thickness. The
 speed-limit badge has a thicker outline with its inset clearance retained, and
@@ -213,9 +219,9 @@ coordinate-entry and dialog instructions:
 Turning the knob is an additional convenience: it zooms the map, selects tracks
 in BT CTRL, scrolls lists and traverses keyboard/keypad buttons and dialog choices.
 In Settings, turn it to select a row; joystick Left/Right changes the value and
-knob press performs OK. In Trip, the upper soft buttons select destinations or
-the itinerary, joystick Left/Right changes Recents/Favourites, and turning the
-knob scrolls the selected list. No long-press binding is required.
+knob press performs OK. In Trip, either the upper soft buttons or joystick
+Left/Right cycle Itinerary, Recents and Favourites. Turning the knob scrolls
+the current list. No long-press binding is required.
 
 The [console action table](#physical-console-and-temperature-sources) also covers
 INFO, REPEAT, LIGHT and DEST shortcuts. Optional custom mappings can change these
@@ -254,22 +260,24 @@ calculation uses the existing five-frame-per-second cap. Declining keeps Explore
 - **Menu:** use **Up / Down** to choose Trip, Bluetooth or Settings. Press **OK**
   to open it or **BACK** to return to driving. From a page, **MENU** or **BACK**
   returns to Menu. **MAP** goes directly to the driving map.
-- **Trip:** use the **left soft key** to focus destinations and the **right soft
-  key** to focus the itinerary. In destinations, **Left / Right** switches
-  between Recents and Favourites, and **Up / Down** moves through places.
-  **OK** opens the place's actions or selects it for the current Add stop or
-  Change destination task. In the itinerary, **Up / Down** moves through the
-  route, and **OK** opens the selected stop or destination's actions, the
-  Add stop choices, or the cancel confirmation. With an empty itinerary, choose
-  **Coordinates**, then press **OK**. Phone destinations and stops arrive
-  automatically without a head-unit receive option. **BACK** or either
-  soft key cancels an in-progress destination selection and returns to the itinerary.
-- **Bluetooth:** use **Up / Down** to move between the connected phone, saved
-  phones and **Pair new phone**. On the connected phone, **Left / Right** selects
-  Disconnect or Forget, and **OK** runs it. **OK** on a saved phone opens its
-  Connect or Forget options. Choose with **Left / Right** and confirm with **OK**.
-  **BACK** or the **left soft key** closes those options. **OK** on **Pair new
-  phone** starts pairing.
+- **Trip:** always opens **Itinerary** first. **Left / Right** or the left/right
+  soft keys cycle **Itinerary → Recents → Favourites**, remembering each tab's
+  selection. **Up / Down** or knob rotation scrolls. **OK** opens stop, destination
+  or saved-place actions. The itinerary includes **Add stop** and **Cancel route**;
+  an empty itinerary offers **Coordinates**. Add stop and Change destination let
+  you choose Recents, Favourites or Coordinates, then review before confirmation.
+  **BACK** returns one level without applying a draft. Phone destinations arrive
+  automatically, with no receive option to open.
+- **Bluetooth:** **Pair new phone** stays above the saved-phone list; the **right
+  soft key** starts pairing from anywhere in that list. **Up / Down** or the knob
+  selects a device, **OK** opens its Connect/Disconnect and Forget actions, and
+  **Up / Down** selects the action. **OK** confirms; **BACK** returns to the list.
+
+All these pages are animated frosted-glass sheets over the live map. Menu,
+Settings and Bluetooth retain the lower driving pills when there is enough room;
+Trip, coordinates and naming use a taller sheet. An unusually tall status notice
+can temporarily hide the lower pills to make room for a compact page. The top
+clock and status pill keep their position and notice timers across page changes.
 
 ### Settings
 
@@ -284,7 +292,7 @@ Use **Up / Down** to highlight a row. The available actions depend on the settin
 | Camera alerts | Cycle Off, Visual and Phone audio. | |
 | Clock | Set a manual UTC offset in 15-minute steps. | Toggle automatic and manual time. |
 | Debug log | Toggle on or off. | |
-| Language | Cycle backwards or forwards. | Select the next language. |
+| Language | Cycle backwards or forwards. | Open the language chooser. |
 | Day starts / Night starts | Adjust the highlighted hour or minute. | Switch between editing hours and minutes. |
 
 The release version is shown at the bottom of Settings.
@@ -294,14 +302,17 @@ The release version is shown at the bottom of Settings.
 - In **Rename**, the **direction pad** moves between characters and actions.
   **OK** types the highlighted character or activates the highlighted action,
   including character pages, the language chooser and Save (or Next when naming
-  a coordinate destination). The **left soft key**
-  deletes, the **right soft key** inserts a space, and **BACK** returns to Trip
-  without saving. In the language chooser, **Up / Down** moves one language,
+  a coordinate destination). Horizontal navigation wraps each row; vertical
+  navigation wraps through the character grid and toolbar. Numbers and punctuation
+  have their own mode. The **left soft key**
+  deletes, the **right soft key** inserts a space, and **BACK** returns to the
+  previous page without saving (or to longitude with the coordinate name retained). In the language chooser, **Up / Down** moves one language,
   **Left / Right** jumps six, **OK** selects, and **BACK** or the **left soft key**
   closes the chooser. See [language-specific input](locales/README.md#favourite-keyboard).
 - In option dialogs, **Up / Left** selects the previous option and **Down / Right**
   selects the next one. In Yes/No dialogs, use **Left / Right**. **OK** confirms,
-  and **BACK** dismisses ordinary dialogs. At the saved-trip resume prompt, choose
+  and **BACK** dismisses ordinary dialogs. Menu action lists use **Up / Down**;
+  their Yes/No confirmations still use **Left / Right**. At the saved-trip resume prompt, choose
   an option and confirm with **OK**. At arrival, **OK** continues from a stop or
   finishes the trip. The arrival countdown can also complete that step.
 
@@ -411,8 +422,8 @@ or a page change. A settled popup returns to the normal presentation cadence.
 
 Scrollable Recents, Favourites, saved-phone, Settings and keyboard-language lists
 show a proportional scrollbar only when more rows exist than fit onscreen.
-The thumb tracks the actual list size and visible window, including the
-pairing action in the phone list. Popup scrollbars use translucent antialiased strokes over the glass
+The thumb tracks the actual scrollable list size and visible window. The
+phone-pairing action is pinned separately above the device list. Popup scrollbars use translucent antialiased strokes over the glass
 and share its entrance, exit and content fades.
 
 Explore rotation and tilt follow a 500 ms elapsed-time transition rather than a
@@ -459,7 +470,7 @@ navigation and menus. Console input uses the independent reader described in the
 
 ### Decimal-degree destinations
 
-**Trip → right soft key → Coordinates** opens latitude, longitude, optional name,
+**Trip → Itinerary → Coordinates** opens latitude, longitude, optional name,
 and review. **Add stop** and **Change destination** expose the same Coordinates
 source. Arrow keys move around the numeric keypad; OK presses a key. **±** toggles
 the sign, **.** adds the decimal separator, **Delete** removes the last character,
@@ -467,7 +478,7 @@ and **Clear** clears the current field. The left soft key deletes; the right sof
 key advances a numeric field. On the name keyboard, the right soft key inserts a
 space, and **Next** opens review. The existing keyboard-language selector works
 for destination names. BACK keeps entered values while going back; MAP/MENU leave
-without saving. Review offers the route/stop action, Edit coordinates, Edit name
+without saving. Review offers the route/stop action, Edit coordinates, Rename
 and Cancel. No saved places or itinerary targets change until confirmation.
 
 Latitude accepts −90…90, longitude −180…180; minus means south/west. Decimal

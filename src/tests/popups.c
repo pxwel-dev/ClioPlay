@@ -75,25 +75,13 @@ int main(void){
   gradient();draw_modal();
   assert(clip_x==0&&clip_y==0&&clip_right==W&&clip_bottom==H&&hud_ink_alpha==16);
  }
- setup(30000);screen=SCR_BT;bt_page_dialog=0;popup_prepare(30000);popup_settle_for_capture(30000);
- bt_page_dialog=-1;nbtdev=0;popup_prepare(30001);
- assert(!strcmp(popup.card.item[0].text,"Saved phone"));hud_capture_ms=30161;gradient();draw_modal(); /* no dangling device pointer */
  setup(30500);apply_palette(0);modal=MOD_ROUTE_POINT;popup_prepare(30500);popup_settle_for_capture(30500);
  gradient();draw_modal();assert(fb[140*W+149]==C_ACTIVE); /* same light-theme menu blue */
- setup(31000);screen=SCR_KEY;kbd_picker=1;kbd_pick=8;popup_prepare(31000);popup_settle_for_capture(31000);
- assert(popup.card.box.h==222&&popup.card.count==8&&popup.card.selected>=1);gradient();draw_modal();
- assert(popup_requested_key()==POPUP_KEYBOARD);
- kbd_pick++;popup_prepare(31001);assert(popup.content_at==31001); /* list scroll crossfade */
-
  /* Popup-only controls preserve the clean map; legal actions remain immediate. */
  setup(40000);freecam=1;render_background_dirty=0;key_handle(K_ENTER);
  assert(modal==MOD_ROUTE_POINT&&!render_background_dirty);
  key_handle(K_RIGHT);assert(modal_choice==1&&!render_background_dirty);
  key_handle(K_BACK);assert(modal==MOD_NONE&&!render_background_dirty);
- screen=SCR_KEY;kbd_picker=1;kbd_pick=2;render_background_dirty=0;
- key_handle(K_DOWN);assert(kbd_pick==3&&!render_background_dirty);
- key_handle(K_ENTER);assert(!kbd_picker&&render_background_dirty);
-
  /* Popup frame requests use the pill clock without waiting for a map frame. */
  setup(50000);at(50000,1);at(50500,1);renderer.map_at=60000;render_background_dirty=0;
  modal=MOD_ROUTE_POINT;at(50501,0);u32 presents=render_stats.presents,maps=render_stats.maps;
@@ -107,7 +95,7 @@ int main(void){
  for(u32 t=52000;t<52500;t++)at(t,t==52000);
  modal=MOD_NONE;u32 menu_maps=render_stats.maps;
  for(u32 t=52500;t<53000;t++)at(t,0);
- assert(!popup_animating(53000)&&popup_pose(53000).a==0&&popup.presented_at>=52820&&render_stats.maps==menu_maps);
+ assert(!popup_animating(53000)&&popup_pose(53000).a==0&&popup.presented_at>=52820&&render_stats.maps==menu_maps+5);
  /* Route calculation caps popup, HUD and map together at five presentations. */
  setup(60000);route_status=R_CALC;modal=MOD_SOURCE_PICK;dest_pick_action=DEST_PICK_ADD_STOP;
  for(u32 t=60000;t<61000;t++)at(t,t%100==0);

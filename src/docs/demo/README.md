@@ -7,7 +7,7 @@
 | [Song and radio updates](metadata-updates.gif) | New song titles animate in, including during BT CTRL. Radio tuning updates even when the station name stays the same. |
 | [Status notifications](status-notifications.gif) | GPS acquisition and recovery, phone connection, volume and no-active-route messages share one animated pill. |
 | [Driving](driving.gif) | A new road name appears. A camera alert joins the same pill and remains after the name fades. |
-| [Menus](menus.gif) | An active volume pill animates into Menu, persists when opening Trip, then fades out on its original timer. Favourites, glass keyboard, Bluetooth, Settings, custom Auto times and return to driving follow. |
+| [Menus](menus.gif) | A glass panel opens over the map while the clock and current volume notice persist. Itinerary, Recents and Favourites, saved-phone actions, compact Settings and return to driving use the production controller. |
 | [Bluetooth](bluetooth.gif) | The volume notice expands to show controls and a thin track progress bar. A reported seek eases forward, and pause highlights when pressed. |
 | [Phone destination](phone-destination.gif) | The real ClioPlay Send website beside the native head-unit UI: send, route progress and the received destination. No receive option is required; Bluetooth transport is simulated. |
 | [Speeding warning](speed-warning.gif) | The speed pill pulses red above a confirmed 30 mph limit and eases back when the car slows down. |
@@ -16,7 +16,7 @@
 | [Coordinate route](coordinate-route.gif) | Choose Coordinates, enter latitude/longitude and a name, review, calculate a real route, return to driving and find the destination in Recents. |
 | [Map-point route](map-point-route.gif) | Enter Explore with MAP, pan to a point, press OK, confirm and calculate a real route back in the driving view. |
 | [Coordinates](coordinates.gif) | Enter decimal latitude/longitude, name and review a destination, then confirm it into the route and Recents. |
-| [Add a stop](add-stop.gif) | Trip adds a favourite as an intermediate stop and keeps the original destination. |
+| [Add a stop](add-stop.gif) | Trip chooses a favourite, reviews it, then inserts it before the original destination. |
 
 Native UI frames are 480 × 272 from the production C renderer. The phone-destination loop combines those unchanged frames with a captured browser panel on a 936 × 510 canvas. Website sources and capture tooling remain private. On regeneration, pass --phone-capture to supply new browser screenshots, or the existing GIF browser panel is reused while native UI frames are refreshed.
 The boot previews use the production splash and cross-fade blend, with a cached

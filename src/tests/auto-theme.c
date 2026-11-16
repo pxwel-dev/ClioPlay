@@ -62,7 +62,7 @@ int main(void){
  assert(pref.day_start==420&&pref.night_start==1080);
 
  pref.theme=THEME_AUTO;pref.hoff=pref.moff=0;gps.hour=6;gps.min=30;
- screen=SCR_SET;set_focus=8;theme_time_part=0;
+ menu_open(P_SETTINGS,8,hud_now_ms());set_focus=8;theme_time_part=0;
  key_handle(K_LEFT);assert(pref.day_start==360&&!auto_is_night());
  key_handle(K_ENTER);key_handle(K_RIGHT);assert(theme_time_part==1&&pref.day_start==361);
  key_handle(K_DOWN);assert(set_focus==9&&theme_time_part==0);
@@ -76,10 +76,10 @@ int main(void){
  const int keys[]={K_LEFT,K_RIGHT,K_ENTER,K_UP,K_DOWN};
  for(int row=0;row<SETTING_COUNT;row++)for(int part=0;part<2;part++)
   for(unsigned k=0;k<sizeof(keys)/sizeof(keys[0]);k++){
-   screen=SCR_SET;modal=MOD_NONE;pref=saved;set_focus=row;theme_time_part=part;
+   modal=MOD_NONE;pref=saved;menu_open(P_SETTINGS,row,hud_now_ms());set_focus=row;theme_time_part=part;
    (key_handle)(keys[k]); // Parentheses select the real remote function.
    struct Prefs expected=pref;int focus=set_focus,edit=theme_time_part;
-   pref=saved;set_focus=row;theme_time_part=part;
+   pref=saved;menu_open(P_SETTINGS,row,hud_now_ms());set_focus=row;theme_time_part=part;
    key_handle(keys[k]);
    assert(memcmp(&pref,&expected,sizeof(pref))==0&&set_focus==focus&&theme_time_part==edit);
   }
@@ -87,7 +87,7 @@ int main(void){
  puts("Console Settings parity: every row, both edit parts and all navigation/value/OK actions match remote input.");
 #endif
  // Draw both scrolled schedule rows through the normal page entry point.
- draw_settings();
+ menu_contents(P_SETTINGS,sheet_focus,menu_box(P_SETTINGS),16,hud_now_ms());
  puts("AUTO schedule: every minute, midnight wrap, exact custom boundaries, local offsets, GPS-free boot/time-only input, legacy/corrupt preferences, persistence, schedule controls and manual overrides passed.");
  return 0;
 }

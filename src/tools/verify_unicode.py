@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Execute the actual native text engine and UI under UBSan; save framebuffer data."""
 from pathlib import Path
-import json,shutil,subprocess,tempfile
+import argparse,json,shutil,subprocess,tempfile
 from text_engine import build
 ROOT=Path(__file__).resolve().parents[1]
 def main():
- lib=build('host-pool');out=ROOT/'docs/native-text';out.mkdir(parents=True,exist_ok=True)
+ parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path);args=parser.parse_args();lib=build('host-pool');out=args.output or Path(tempfile.mkdtemp(prefix='clioplay-unicode-captures-'));out.mkdir(parents=True,exist_ok=True)
  with tempfile.TemporaryDirectory(prefix='clioplay-unicode-') as td:
   td=Path(td);(td/'clio843').mkdir();shutil.copyfile(ROOT/'clio843/font.bin',td/'clio843/font.bin');obj=td/'test.o';exe=td/'test'
   flags=['-O1','-g','-fsanitize=undefined','-fno-sanitize-recover=all']
