@@ -1,26 +1,4 @@
-# ClioPlay Global
-
-The current build version is recorded in [VERSION](VERSION).
-
-## Version 2.1.0
-
-Menus now use animated glass sheets over the live map, with persistent clock and
-status notices. Trip has Itinerary/Recents/Favourites tabs, reviewed destination
-and stop selection, and taller entry pages. Bluetooth pins pairing above saved
-phones, Settings uses centred adjustment controls, and all 18 naming keyboards
-use adaptive native-character layouts with wrapping navigation.
-
-The speeding-warning outline now has consistent corner/edge thickness. The
-speed-limit badge has a thicker outline with its inset clearance retained, and
-latitude/longitude entry omits the explanatory tip while retaining error messages.
-See [version history](docs/changelog.md) for implemented changes and release status.
-
-A standalone edition of the compact 480×272 ClioPlay interface for non-LIVE
-Carminat TomTom. It keeps the remote workflow, continuous antialiased roads/routes,
-Trip workspace, Bluetooth receiver, physical console input and AUX initialization.
-The head unit must have Bluetooth hardware (`hw_bluetooth=1`). Playback on factory
-Bluetooth radios and hands-free coexistence require vehicle-specific validation;
-unreadable radio telemetry does not disable ClioPlay’s Bluetooth controls.
+# ClioPlay version 2.1.6
 
 ## Set up a card
 
@@ -294,6 +272,7 @@ Use **Up / Down** to highlight a row. The available actions depend on the settin
 | Debug log | Toggle on or off. | |
 | Language | Cycle backwards or forwards. | Open the language chooser. |
 | Day starts / Night starts | Adjust the highlighted hour or minute. | Switch between editing hours and minutes. |
+| Switch top pills to the left/right | Switch bottom pills to the left/right | |
 
 The release version is shown at the bottom of Settings.
 

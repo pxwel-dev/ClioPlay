@@ -1,3 +1,4 @@
+
 /* Run existing remote workflows through the production 28-byte console decoder.
  * The control association is independent of csw_defaults: losing or changing a
  * default binding must fail the same behavioral assertions as a broken key. */
@@ -11,12 +12,14 @@ static void console_test_key(int code){
  case K_UP:direction=1;break;case K_DOWN:direction=2;break;
  case K_RIGHT:direction=3;break;case K_LEFT:direction=4;break;
  case K_ENTER:pressed=1;break;
+ case K_ROTCW:rotation=2;break;
+ case K_ROTCCW:rotation=1;break;
  default:assert(!"Remote action has no console test control");return;
  }
  u8 b[28]={0};b[0]=(u8)source;b[4]=(u8)direction;b[8]=(u8)rotation;
- b[16]=(u8)pressed;b[20]=1;now+=500;
+ b[16]=(u8)pressed;b[20]=1;b[24]=(u8)(rotation==3?0:1);now+=500;
  csw_feed(b,sizeof(b),now);
  int action=csw_next();assert(action==code);assert(!csw_next());key_handle(action);
- if(!source){b[4]=5;b[16]=0;csw_feed(b,sizeof(b),now+1);assert(!csw_next());}
+ if(!source){b[4]=5;b[8]=3;b[16]=0;b[24]=0;csw_feed(b,sizeof(b),now+1);assert(!csw_next());}
 }
 #define key_handle(code) console_test_key(code)

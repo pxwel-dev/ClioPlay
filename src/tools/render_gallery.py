@@ -70,6 +70,55 @@ POPUP_EVENTS = (
 )
 POPUP_SAMPLES = sorted({at+step for at, _ in POPUP_EVENTS for step in TWEEN_STEPS} | {6900})
 
+# The compact-sheet demos have corresponding map-free captures from the same
+# production C renderer. With real map assets these scenes retain the map.
+TRIPS_LAYOUT_EVENTS = (
+    (0, 'menu_open(P_TRIP,0,hud_now_ms());'),
+    (1200, 'key_handle(K_RIGHT);assert(sheet_page==P_PLACES&&places_tab==0);'),
+    (2400, 'key_handle(K_RIGHT);assert(sheet_page==P_PLACES&&places_tab==1);'),
+    (3600, 'key_handle(K_ENTER);assert(sheet_page==P_PLACE);'),
+    (4700, 'key_handle(K_BACK);assert(sheet_page==P_PLACES);'),
+    (5400, 'key_handle(K_LEFT);assert(places_tab==0);'),
+    (6200, 'key_handle(K_LEFT);assert(sheet_page==P_TRIP);'),
+    (7000, 'key_handle(K_DOWN);'),
+    (7800, 'key_handle(K_ENTER);assert(sheet_page==P_DEST);'),
+    (8600, 'key_handle(K_BACK);assert(sheet_page==P_TRIP);'),
+    (9400, 'key_handle(K_DOWN);'),
+    (9800, 'key_handle(K_ENTER);assert(sheet_page==P_SOURCE);'),
+    (10600, 'key_handle(K_DOWN);'),
+    (11000, 'key_handle(K_ENTER);assert(sheet_page==P_PLACES&&places_picker);'),
+    (11600, 'key_handle(K_ENTER);assert(sheet_page==P_REVIEW);'),
+)
+TRIPS_LAYOUT_SAMPLES = sorted({at+step for at,_ in TRIPS_LAYOUT_EVENTS for step in TWEEN_STEPS} | {12800})
+TRIPS_EMPTY_EVENTS = (
+    (0, 'clear_trip();menu_open(P_TRIP,0,hud_now_ms());'),
+    (1800, 'key_handle(K_ENTER);assert(sheet_page==P_COORD);'),
+    (4200, 'key_handle(K_BACK);assert(sheet_page==P_TRIP);'),
+)
+TRIPS_EMPTY_SAMPLES = sorted({at+step for at,_ in TRIPS_EMPTY_EVENTS for step in TWEEN_STEPS}|{5900})
+POPUPS_LAYOUT_EVENTS = (
+    (0, 'menu_open(P_TRIP,0,hud_now_ms());'),
+    (900, 'confirm_kind=0;menu_change(P_CONFIRM,0,hud_now_ms());'),
+    (2350, 'menu_close(hud_now_ms());modal=MOD_CANCEL_ROUTE;'),
+    (4000, 'modal=MOD_SOURCE_PICK;dest_pick_action=DEST_PICK_ADD_STOP;'),
+    (5400, 'modal=MOD_ROUTE_POINT;pending_point_stop=0;'),
+    (6650, 'modal=MOD_NONE;keyboard_open_fave_name(5497370,-161331);menu_open(P_NAME,0,hud_now_ms());'),
+    (7800, 'pk_focus=PK_LANGUAGE;key_handle(K_ENTER);assert(sheet_page==P_LANG&&kbd_picker);'),
+    (9300, 'key_handle(K_BACK);assert(sheet_page==P_NAME);'),
+)
+POPUPS_LAYOUT_SAMPLES = sorted({at+step for at,_ in POPUPS_LAYOUT_EVENTS for step in TWEEN_STEPS}|{10500})
+
+
+# ClioPlay 2.1.6 compact-screen and HUD customization animations.
+V216_COORDINATES_EVENTS = ((0, 'clear_trip();menu_open(P_TRIP,0,hud_now_ms());'), (800, 'key_handle(K_ENTER);assert(sheet_page==P_COORD);'), (1400, 'coordinates.focus=4;key_handle(K_ENTER);'), (1650, 'coordinates.focus=3;key_handle(K_ENTER);'), (1900, 'coordinates.focus=11;key_handle(K_ENTER);'), (2150, 'coordinates.focus=8;key_handle(K_ENTER);'), (2400, 'coordinates.focus=6;key_handle(K_ENTER);'), (3000, 'key_handle(K_SR);assert(coordinates.step==COORD_LON);'), (3600, 'coordinates.focus=9;key_handle(K_ENTER);'), (3800, 'coordinates.focus=0;key_handle(K_ENTER);'), (4000, 'coordinates.focus=11;key_handle(K_ENTER);'), (4200, 'coordinates.focus=5;key_handle(K_ENTER);'), (4600, 'key_handle(K_ESC);assert(streq(coordinates.value[1],"-1."));'), (5100, 'key_handle(K_BACK);assert(coordinates.error&&coordinates.step==COORD_LON);'), (6500, 'coordinates.focus=5;key_handle(K_ENTER);'), (7100, 'key_handle(K_SR);assert(coordinates.step==COORD_LAT);'), (7900, 'key_handle(K_BACK);assert(sheet_page==P_NAME);'), (9600, 'pk_focus=PK_SAVE;key_handle(K_ENTER);assert(sheet_page==P_REVIEW);'))
+V216_COORDINATES_SAMPLES = sorted({at+step for at,_ in V216_COORDINATES_EVENTS for step in TWEEN_STEPS} | {11100})
+V216_HUD_SETTINGS_EVENTS = ((0, 'menu_open(P_SETTINGS,10,hud_now_ms());'), (1700, 'key_handle(K_RIGHT);assert(pref.top_swap);'), (3600, 'key_handle(K_DOWN);assert(sheet_focus==11);'), (4200, 'key_handle(K_RIGHT);assert(pref.bottom_swap);'), (6100, 'key_handle(K_MAP);assert(sheet_page==P_CLOSED);'), (8200, 'menu_open(P_SETTINGS,11,hud_now_ms());'))
+V216_HUD_SETTINGS_SAMPLES = sorted({at+step for at,_ in V216_HUD_SETTINGS_EVENTS for step in TWEEN_STEPS} | {9900})
+V216_BLUETOOTH_HIDDEN_EVENTS = ((0, 'menu_open(P_HOME,0,hud_now_ms());'), (2200, 'hw_bluetooth_enabled=0;menu_change(P_HOME,0,hud_now_ms());assert(menu_count(P_HOME)==2);'), (4400, 'key_handle(K_DOWN);key_handle(K_ENTER);assert(sheet_page==P_SETTINGS);'), (6600, 'key_handle(K_MENU);assert(sheet_page==P_HOME);'), (7500, 'hw_bluetooth_enabled=1;menu_change(P_HOME,1,hud_now_ms());'), (8500, 'key_handle(K_ENTER);assert(sheet_page==P_PHONE);'))
+V216_BLUETOOTH_HIDDEN_SAMPLES = sorted({at+step for at,_ in V216_BLUETOOTH_HIDDEN_EVENTS for step in TWEEN_STEPS} | {9500})
+V216_ITINERARY_EVENTS = ((0, 'assert(trip_add_stop("Museum",5498000,-164000));assert(trip_add_stop("Gallery",5498500,-165000));assert(trip_add_stop("Cafe",5498700,-166000));menu_open(P_TRIP,0,hud_now_ms());'), (1500, 'key_handle(K_DOWN);'), (2200, 'key_handle(K_DOWN);'), (2900, 'key_handle(K_DOWN);'), (3600, 'key_handle(K_DOWN);assert(sheet_focus==trip.count-1);'), (4500, 'key_handle(K_UP);'), (5300, 'key_handle(K_UP);'), (6100, 'key_handle(K_UP);'))
+V216_ITINERARY_SAMPLES = sorted({at+step for at,_ in V216_ITINERARY_EVENTS for step in TWEEN_STEPS} | {7400})
+
 
 
 def add(group, name, title, setup='', action='', check='', note=''):
@@ -301,7 +350,7 @@ def catalog(sender_receipts=None):
     motion('Offline routing','map-point-ready','Calculated map-point route',
            map_start+'preview_finish_route();',((0,''),),ROUTE_READY_SAMPLES)
     add('Coordinates','coordinates-invalid-latitude','Invalid latitude remains editable',
-        'coordinate_preview("entry");coordinate_digits("90.00001");key_handle(K_SR);',check='assert(coordinates.error&&!trip.active);')
+        'coordinate_preview("entry");coordinate_digits("90.00001");key_handle(K_BACK);',check='assert(coordinates.error&&coordinates.step==COORD_LAT&&!trip.active);')
     add('Coordinates','coordinates-review-long-name','Long Unicode destination in review',
         'coordinate_preview("review");copystr(coordinates.name,sizeof(coordinates.name),"東京駅 丸の内中央口 · Newcastle Central Station");')
     add('Coordinates','coordinates-latitude-german','Translated numeric entry with valid clock and status',
@@ -577,6 +626,20 @@ def modern_menus():
     samples=sorted({at+step for at,_ in events for step in TWEEN_STEPS}|{9800})
     motion('Menu sheets','preview-menu-tour','On-map Menu, three Trip tabs, Bluetooth actions and Settings',
            'settle();set_volume(16);draw();hud_capture_ms+=400u;draw();',events,samples)
+    motion('Compact Trips', 'preview-trips-layout', 'Itinerary, Recents, Favourites, destination and review',
+           'settle();', TRIPS_LAYOUT_EVENTS, TRIPS_LAYOUT_SAMPLES)
+    motion('Compact Trips', 'preview-trips-empty', 'Empty trip and coordinate input',
+           'settle();', TRIPS_EMPTY_EVENTS, TRIPS_EMPTY_SAMPLES)
+    motion('Compact Trips', 'preview-popups-layout', 'Confirmations and expanded typing keyboard with compact picker',
+           'settle();', POPUPS_LAYOUT_EVENTS, POPUPS_LAYOUT_SAMPLES)
+    motion('Version 2.1.6', 'preview-v216-coordinates', 'Soft keys cycle axis/delete, Back validates, then name and review',
+           'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_COORDINATES_EVENTS, V216_COORDINATES_SAMPLES)
+    motion('Version 2.1.6', 'preview-v216-hud-settings', 'Top and bottom HUD card side preferences',
+           'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_HUD_SETTINGS_EVENTS, V216_HUD_SETTINGS_SAMPLES)
+    motion('Version 2.1.6', 'preview-v216-bluetooth-hidden', 'Simulated Bluetooth hardware flag hides UI entries',
+           'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_BLUETOOTH_HIDDEN_EVENTS, V216_BLUETOOTH_HIDDEN_SAMPLES)
+    motion('Version 2.1.6', 'preview-v216-itinerary', 'Scroll and centre trip icons with five destinations',
+           'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_ITINERARY_EVENTS, V216_ITINERARY_SAMPLES)
     add('Menu sheets','empty-receive','Empty itinerary receives phone destinations automatically','trip.active=trip.count=0;menu_open(P_TRIP,0,hud_now_ms());')
     add_stop='key_handle(K_MENU);key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_DOWN);'
     source=add_stop+'key_handle(K_ENTER);key_handle(K_DOWN);'
@@ -602,11 +665,21 @@ static void name_keyboard(void){screen=SCR_KEY;keyboard_open_fave_name(5497370,-
 static void coordinate_digits(const char*s){while(*s){char c=*s++;coordinates.focus=c=='-'?9:c=='.'?11:c=='0'?10:c-'1';key_handle(K_ENTER);}}
 static void coordinate_preview(const char*stage){
  clear_trip();menu_open(P_TRIP,0,hud_now_ms());key_handle(K_ENTER);
- assert(screen==SCR_COORDINATES&&coordinates_active);if(streq(stage,"entry"))return;
- coordinate_digits("54.97548");coordinates.focus=12;if(streq(stage,"latitude"))return;
- key_handle(K_SR);coordinate_digits("-1.64050");coordinates.focus=12;if(streq(stage,"longitude"))return;
- key_handle(K_SR);const char*name="QUAYSIDE";while(*name)keyboard_type(*name++);pk_focus=PK_SAVE;if(streq(stage,"name"))return;
- key_handle(K_ENTER);assert(coordinates.step==COORD_REVIEW&&!trip.active);if(streq(stage,"review"))return;
+ assert(screen==SCR_COORDINATES&&coordinates_active&&sheet_page==P_COORD);
+ if(streq(stage,"entry"))return;
+ coordinate_digits("54.97548");
+ coordinates.focus=0;if(streq(stage,"latitude"))return;
+ key_handle(K_SR);assert(coordinates.step==COORD_LON);
+ coordinate_digits("-1.64050");
+ coordinates.focus=0;if(streq(stage,"longitude"))return;
+ /* Since 2.1.6, soft-right switches axes; Back validates both coordinates. */
+ key_handle(K_BACK);assert(screen==SCR_KEY&&sheet_page==P_NAME);
+ const char*name="QUAYSIDE";
+ while(*name)keyboard_type((unsigned char)*name++);
+ pk_focus=PK_SAVE;if(streq(stage,"name"))return;
+ key_handle(K_ENTER);
+ assert(sheet_page==P_REVIEW&&coordinates.step==COORD_REVIEW&&!trip.active);
+ if(streq(stage,"review"))return;
  key_handle(K_ENTER);menu_open(P_TRIP,0,hud_now_ms());key_handle(K_RIGHT);
  assert(trip.active&&streq(recents[0].name,"QUAYSIDE"));
 }

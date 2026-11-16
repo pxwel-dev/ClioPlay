@@ -1,15 +1,21 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
-<h1 align="center">ClioPlay 2.1.0</h1>
+<h1 align="center">ClioPlay 2.1.6</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
 
 <p align="center"><a href="#install">Install</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-## Version 2.1.5 - Latest development release
+## Version 2.1.6 - Latest development release
 
 ### Changes in this version
 
-- Resized the trips pages to fit in-between the top and bottom pills. Only the keyboard expands to allow more room for entering destination names. 
+1) Simplify coordinate page. Only keypad. Soft right will cycle between lat/long and wrap back around to the other side, while soft left is delete. 
+2) Fix coordinates error message not fitting in window. Half of its text is clipped out of the bottom
+3) Vertically recentre the trip symbols (circle & squares) within the selection window
+4) Add further customisability in settings: 
+	a) Status pill on left / Time & temp pill on right (DEFAULT VALUE), Status pill on right / Time & temp pill on left
+	b) Speed pill in left / Direction pill on right (DEFAULT VALUE), Speed pill on right / Direction pill on left
+5) If hw_bluetooth = 0, hide all bluetooth-related functionality in the UI. 
 
 See [version history](CHANGELOG.md) for implemented changes by version.
 
@@ -34,6 +40,10 @@ See [version history](CHANGELOG.md) for implemented changes by version.
 | Manual coordinate route | Route to a point on the map |
 | --- | --- |
 | ![Enter latitude and longitude, name the destination, calculate the route and find it in Recents](src/docs/demo/coordinate-route.gif) | ![Enter Explore, pan the crosshair, press OK and confirm a route to the selected point](src/docs/demo/map-point-route.gif) |
+
+| HUD Customisability | Bluetooth hidden if unavailable |
+| --- | --- |
+| ![Change top and bottom bar pill positions in settings](src/docs/demo/v216-hud-settings.gif) | ![Able to use ClioPlay, even if hw_bluetooth=0](src/docs/demo/v216-bluetooth-hidden.gif) |
 
 
 <table align="center">

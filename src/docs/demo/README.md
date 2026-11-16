@@ -17,6 +17,8 @@
 | [Map-point route](map-point-route.gif) | Enter Explore with MAP, pan to a point, press OK, confirm and calculate a real route back in the driving view. |
 | [Coordinates](coordinates.gif) | Enter decimal latitude/longitude, name and review a destination, then confirm it into the route and Recents. |
 | [Add a stop](add-stop.gif) | Trip chooses a favourite, reviews it, then inserts it before the original destination. |
+| [Bluetooth hidden](v216-bluetooth-hidden.gif) | Able to use ClioPlay, even if hw_bluetooth=0 |
+| [Hud Customisability](v216-hud-settings.gif) | Change top and bottom bar pill positions in settings |
 
 Native UI frames are 480 × 272 from the production C renderer. The phone-destination loop combines those unchanged frames with a captured browser panel on a 936 × 510 canvas. Website sources and capture tooling remain private. On regeneration, pass --phone-capture to supply new browser screenshots, or the existing GIF browser panel is reused while native UI frames are refreshed.
 The boot previews use the production splash and cross-fade blend, with a cached

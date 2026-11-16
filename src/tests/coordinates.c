@@ -12,7 +12,7 @@ static void baseline(void){
  coordinates_active=0;memzero(&coordinates,sizeof(coordinates));memzero(&trip,sizeof(trip));
  nrecents=nfaves=0;trip_need_route=trip_route_defer=0;gps.fix=0;screen=SCR_TRIP;
  trip_pane=1;trip_right_focus=0;modal=MOD_NONE;trip_pick_mode=dest_pick_action=DEST_PICK_NONE;
- phone_dest.valid=0;pref.language=0;pref_keyboard_language=-1;kbd_picker=0;kbd_action=KBD_NAME_FAVE;
+ phone_dest.valid=0;hw_bluetooth_enabled=1;pref.language=0;pref_keyboard_language=-1;kbd_picker=0;kbd_action=KBD_NAME_FAVE;
  hud_capture_clock=1;hud_capture_ms=10000;route_status=hud_observed_route=R_IDLE;
  hud_navigation.kind=hud_source.kind=hud_audio.kind=hud_connection.kind=hud_bt_feedback.kind=HUD_NONE;
  hud_reset_animations();menu_open(P_TRIP,0,hud_now_ms());s_unlink(RECENT_PATH);s_unlink(FAVES_PATH);s_unlink(TRIP_PATH);
@@ -23,7 +23,8 @@ static void digits(const char*s){
  }
 }
 static void name(const char*s){assert(screen==SCR_KEY&&kbd_action==KBD_NAME_COORDINATES);while(*s){int cp=utf8_code(&s);keyboard_type(cp);}pk_focus=PK_SAVE;key_handle(K_ENTER);assert(screen==SCR_COORDINATES&&coordinates.step==COORD_REVIEW);}
-static void location(const char*lat,const char*lon,const char*title){digits(lat);key_handle(K_SR);assert(coordinates.step==COORD_LON);digits(lon);key_handle(K_SR);assert(screen==SCR_KEY);name(title);}
+static void location(const char*lat,const char*lon,const char*title){digits(lat);key_handle(K_SR);assert(coordinates.step==COORD_LON);digits(lon);key_handle(K_SR);assert(coordinates.step==COORD_LAT);key_handle(K_BACK);
+ assert(screen==SCR_KEY);name(title);}
 static void source(int action){
  menu_open(P_TRIP,0,hud_now_ms());open_sources(action,hud_now_ms());
  key_handle(K_DOWN);key_handle(K_DOWN);key_handle(K_ENTER);
@@ -48,19 +49,22 @@ static void parser(void){
 }
 static void entry_and_cancel(void){
  baseline();key_handle(K_ENTER);assert(screen==SCR_COORDINATES&&coordinates_active);
- key_handle(K_SR);assert(coordinates.error&&coordinates.step==COORD_LAT&&!nrecents);
- digits("90.000001");key_handle(K_SR);assert(coordinates.error&&screen==SCR_COORDINATES);
- coordinates.focus=14;key_handle(K_ENTER);assert(!coordinates.value[0][0]&&!coordinates.error);
- digits("54.97548");key_handle(K_SR);digits("-1.64050");key_handle(K_SR);name("  東京 QUAY  ");
+ key_handle(K_SR);assert(!coordinates.error&&coordinates.step==COORD_LON&&!nrecents);
+ key_handle(K_SR);assert(coordinates.step==COORD_LAT);
+ digits("90.000001");key_handle(K_BACK);assert(coordinates.error&&coordinates.step==COORD_LAT);
+ while(coordinates.value[0][0])key_handle(K_ESC);
+ assert(!coordinates.value[0][0]&&!coordinates.error);
+ digits("54.97548");key_handle(K_SR);digits("-1.64050");key_handle(K_BACK);
+ assert(screen==SCR_KEY);name("  東京 QUAY  ");
  assert(streq(coordinates.name,"東京 QUAY")&&!nrecents&&!trip.active);
  sheet_focus=1;key_handle(K_ENTER);assert(coordinates.step==COORD_LAT);
  assert(streq(coordinates.value[0],"54.97548")&&streq(coordinates.value[1],"-1.64050"));
- key_handle(K_SR);key_handle(K_SR);assert(streq(kbd_text,"東京 QUAY"));
+ key_handle(K_SR);assert(coordinates.step==COORD_LON);
+ key_handle(K_BACK);assert(streq(kbd_text,"東京 QUAY"));
  key_handle(K_BACK);assert(coordinates.step==COORD_LON&&screen==SCR_COORDINATES);
- key_handle(K_BACK);assert(coordinates.step==COORD_LAT);key_handle(K_BACK);
- assert(screen==SCR_TRIP&&!coordinates_active&&!trip.active&&!nrecents);
+ key_handle(K_MENU);assert(screen==SCR_MENU&&!coordinates_active);
  source(DEST_PICK_ADD_STOP);key_handle(K_BACK);assert(sheet_page==P_SOURCE&&sheet_focus==2&&!coordinates_active);
- key_handle(K_BACK);coordinates_open(DEST_PICK_NONE);digits("-");key_handle(K_ENTER); /* +/- selected: remove sign */
+ key_handle(K_BACK);coordinates_open(DEST_PICK_NONE);digits("-");key_handle(K_ENTER); /* +/- toggles sign */
  assert(!coordinates.value[0][0]);coordinates.focus=11;key_handle(K_ENTER);assert(streq(coordinates.value[0],"0."));
  key_handle(K_ENTER);assert(streq(coordinates.value[0],"0."));key_handle(K_ESC);assert(streq(coordinates.value[0],"0"));
  key_handle(K_MENU);assert(!coordinates_active&&screen==SCR_MENU&&!nrecents);
@@ -70,18 +74,21 @@ static void soft_keys(void){
  baseline();coordinates_open(DEST_PICK_NONE);digits("54.97548");key_handle(K_SR);
  assert(screen==SCR_COORDINATES&&coordinates.step==COORD_LON);
  digits("-1.64050");key_handle(K_ESC);assert(streq(coordinates.value[1],"-1.6405"));
- key_handle(K_SR);assert(screen==SCR_KEY&&streq(hud_page_title(),"Rename"));
+ key_handle(K_SR);assert(screen==SCR_COORDINATES&&coordinates.step==COORD_LAT);
+ key_handle(K_SR);assert(coordinates.step==COORD_LON);key_handle(K_BACK);
+ assert(screen==SCR_KEY&&streq(hud_page_title(),"Rename"));
  keyboard_type('A');key_handle(K_SR);assert(screen==SCR_KEY&&streq(kbd_text,"A "));
  keyboard_type('B');key_handle(K_ESC);assert(streq(kbd_text,"A "));
  pk_focus=PK_SAVE;key_handle(K_ENTER);assert(screen==SCR_COORDINATES&&coordinates.step==COORD_REVIEW&&streq(hud_page_title(),"Review"));
 }
 static void keypad_navigation(void){
  baseline();coordinates_open(DEST_PICK_NONE);assert(coordinates.focus==0);
- key_handle(K_RIGHT);key_handle(K_RIGHT);key_handle(K_RIGHT);assert(coordinates.focus==12);
- key_handle(K_DOWN);assert(coordinates.focus==13);key_handle(K_DOWN);assert(coordinates.focus==14);
- key_handle(K_LEFT);assert(coordinates.focus==11);key_handle(K_DOWN);assert(coordinates.focus==2);
- key_handle(K_LEFT);assert(coordinates.focus==1);key_handle(K_LEFT);assert(coordinates.focus==0);
- for(int i=0;i<4;i++)key_handle(K_UP);assert(coordinates.focus==0);
+ key_handle(K_RIGHT);key_handle(K_RIGHT);key_handle(K_RIGHT);assert(coordinates.focus==0);
+ key_handle(K_LEFT);assert(coordinates.focus==2);key_handle(K_DOWN);assert(coordinates.focus==5);
+ key_handle(K_DOWN);assert(coordinates.focus==8);key_handle(K_DOWN);assert(coordinates.focus==11);
+ key_handle(K_DOWN);assert(coordinates.focus==2);key_handle(K_UP);assert(coordinates.focus==11);
+ coordinates.focus=0;key_handle(K_ROTCW);assert(coordinates.focus==1);
+ key_handle(K_ROTCCW);assert(coordinates.focus==0);key_handle(K_ROTCCW);assert(coordinates.focus==11);
  coordinates_open(DEST_PICK_NONE);phone_dest.valid=1;phone_dest.action='N';
  phone_dest.lat=5497000;phone_dest.lon=-164000;copystr(phone_dest.name,sizeof(phone_dest.name),"PHONE");
  screen=SCR_MAP;phone_destination_apply();assert(!coordinates_active&&trip.active&&!phone_dest.valid);

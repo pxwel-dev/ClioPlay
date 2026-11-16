@@ -73,11 +73,14 @@ static struct HudBox hud_status_pose(u32 now){
  struct HudBox b=hud_pose(&hud_tween[HC_STATUS],now);
  if(hud_status_map==0&&b.a){
   // Follow the clock's live edge while retaining the notice's size and fade tween.
-  int left=HUD_MENU_TITLE_X+hud_menu_title.w+HUD_MENU_GAP;
-  struct HudBox clock=hud_pose(&hud_tween[HC_CLOCK],now);
-  int right=(clock.a?clock.x:HUD_CLOCK_X+50)-HUD_MENU_GAP;
-  if(b.w>right-left)b.w=right-left;
-  b.x=left+(right-left-b.w)/2;
+  if(pref.top_swap)b.x=W-8-b.w;
+  else{
+   int left=HUD_MENU_TITLE_X+hud_menu_title.w+HUD_MENU_GAP;
+   struct HudBox clock=hud_pose(&hud_tween[HC_CLOCK],now);
+   int right=(clock.a?clock.x:HUD_CLOCK_X+50)-HUD_MENU_GAP;
+   if(b.w>right-left)b.w=right-left;
+   b.x=left+(right-left-b.w)/2;
+  }
  }
  return b;
 }
@@ -167,7 +170,9 @@ static void hud_clock_prepare(u32 now){
  }
  if(c.title[0]||c.detail[0]){
   int x=c.title[0]&&c.detail[0]?HUD_CLOCK_X:HUD_CLOCK_X+50;
-  c.box=hud_box(x,8,W-x-8,27);
+  int w=W-x-8;
+  if(pref.top_swap)x=8;
+  c.box=hud_box(x,8,w,27);
  }
  hud_set_card(HC_CLOCK,c,now);
 }
@@ -202,8 +207,8 @@ static void hud_prepare(int z,u32 now,int map){
  if(!hud_pulse_live(&hud_source,now)||
     (hud_source.kind==HUD_TRACK&&(!btui.connected||!bt_source_selected()||!reading_present(btui.title))))hud_source.kind=HUD_NONE;
  if(!hud_pulse_live(&hud_navigation,now))hud_navigation.kind=HUD_NONE;
- if(!btui.connected||!hud_pulse_live(&hud_connection,now))hud_connection.kind=HUD_NONE;
- if(!hud_pulse_live(&hud_bt_feedback,now))hud_bt_feedback.kind=HUD_NONE;
+ if(!hw_bluetooth_enabled||!btui.connected||!hud_pulse_live(&hud_connection,now))hud_connection.kind=HUD_NONE;
+ if(!hw_bluetooth_enabled||!hud_pulse_live(&hud_bt_feedback,now))hud_bt_feedback.kind=HUD_NONE;
  if(route_status!=hud_observed_route){
   hud_observed_route=route_status;
   if(route_status==R_READY)hud_pulse_at(&hud_navigation,HUD_JOURNEY,now,4200);
@@ -273,14 +278,20 @@ static void hud_prepare(int z,u32 now,int map){
   if(w<detail_w)w=detail_w;if(w<minw)w=minw;
   if(w<connection_w)w=connection_w;if(w<feedback_w)w=feedback_w;
   int x=8;
-  if(map){if(w>HUD_CLOCK_X-16)w=HUD_CLOCK_X-16;}
+  if(pref.top_swap){
+   int clock_right=hud_tween[HC_CLOCK].target.box.a?
+     hud_tween[HC_CLOCK].target.box.x+hud_tween[HC_CLOCK].target.box.w:8;
+   int left=map?clock_right+8:clock_right+HUD_MENU_GAP+hud_menu_title.w+HUD_MENU_GAP;
+   int available=W-8-left;
+   if(w>available)w=available;
+   if(w<28)w=28;
+   x=W-8-w;
+  }else if(map){if(w>HUD_CLOCK_X-16)w=HUD_CLOCK_X-16;}
   else{
    int left=HUD_MENU_TITLE_X+hud_menu_title.w+HUD_MENU_GAP;
    struct HudBox clock=hud_tween[HC_CLOCK].target.box;
    int right=(clock.a?clock.x:HUD_CLOCK_X+50)-HUD_MENU_GAP;
    if(w>right-left)w=right-left;
-   // hud_status_pose centres against the live header. A different page title
-   // must not retarget the entrance merely because its horizontal anchor moves.
   }
   c.box=hud_box(x,y,w,h);
  }
@@ -332,13 +343,13 @@ static void hud_driver_prepare(u32 now){
  int over=show_speed&&hud_is_overspeed();
  if(over!=hud_speed_over){hud_speed_from=hud_speed_red(now);hud_speed_over=over;hud_speed_at=now;}
  if(show_speed){
-  speed.box=hud_box(HUD_BOTTOM_MARGIN,HUD_BOTTOM_Y,HUD_SIDE_W,43);
+  speed.box=hud_box(pref.bottom_swap?HUD_TURN_X:HUD_BOTTOM_MARGIN,HUD_BOTTOM_Y,HUD_SIDE_W,43);
   append_int(speed.title,sizeof(speed.title),display_speed());
   append_road_limit(speed.detail,sizeof(speed.detail),&roadctx);
   speed.flags=hud_confirmed_limit();
  }
  if(trip.active&&!trip.paused&&gps.fix&&!freecam&&route_status==R_READY&&nav_man_type!=MAN_NONE&&nav_man_idx>=0){
-  turn.box=hud_box(HUD_TURN_X,HUD_BOTTOM_Y,HUD_SIDE_W,43);turn.kind=nav_man_type;
+  turn.box=hud_box(pref.bottom_swap?HUD_BOTTOM_MARGIN:HUD_TURN_X,HUD_BOTTOM_Y,HUD_SIDE_W,43);turn.kind=nav_man_type;
   turn.flags=region_flags&4;turn.value=nav_man_exit;
   append_nav_distance(turn.title,sizeof(turn.title),nav_man_m);
   copystr(turn.detail,sizeof(turn.detail),nav_man_text());
@@ -602,10 +613,15 @@ static int hud_menu_animating(u32 now){
 }
 static void hud_draw_page_title(void){
  int face=hud_menu_title.face,w=hud_menu_title.w;
+ int x=HUD_MENU_TITLE_X;
+ if(pref.top_swap){
+  struct HudBox clock=hud_tween[HC_CLOCK].target.box;
+  x=clock.x+clock.w+HUD_MENU_GAP;
+ }
  if(hud_menu_title.second[0]){
-  compact_fit(HUD_MENU_TITLE_X,4,w,face,hud_menu_title.first,C_WHITE);
-  compact_fit(HUD_MENU_TITLE_X,20,w,face,hud_menu_title.second,C_WHITE);
- }else compact_fit(HUD_MENU_TITLE_X,11,w,face,hud_menu_title.first,C_WHITE);
+  compact_fit(x,4,w,face,hud_menu_title.first,C_WHITE);
+  compact_fit(x,20,w,face,hud_menu_title.second,C_WHITE);
+ }else compact_fit(x,11,w,face,hud_menu_title.first,C_WHITE);
 }
 static void header(void){
  u32 now=hud_now_ms();hud_prepare(active_zoom(),now,0);hud_draw_all(now,0);hud_draw_page_title();

@@ -18,7 +18,7 @@ static void reset(void){
 static void choose(int row){while(sheet_focus<row)key_handle(K_DOWN);while(sheet_focus>row)key_handle(K_UP);key_handle(K_ENTER);}
 static void tabs(void){
  reset();for(int i=0;i<15;i++){char name[40];snprintf(name,sizeof(name),"Place %d",i);add_recent(name,100+i*100,200+i*100);add_fave_place(name,100+i*100,200+i*100);}
- assert(places_visible((struct HudBox){0,0,456,220,256})==7);
+ assert(places_visible((struct HudBox){0,0,456,220,256})==6);
  key_handle(K_SR);assert(sheet_page==P_PLACES&&!places_tab&&sheet_focus==0);
  for(int i=0;i<10;i++)key_handle(K_DOWN);assert(sheet_focus==10);
  key_handle(K_RIGHT);assert(places_tab==1&&sheet_focus==0);key_handle(K_DOWN);
@@ -74,4 +74,4 @@ static void bounds(void){
   menu_settle(hud_now_ms());menu_draw(hud_now_ms());assert(clip_x==0&&clip_y==0&&clip_right==W&&clip_bottom==H&&hud_ink_alpha==16);
  }
 }
-int main(void){tabs();saved_places();itinerary();bluetooth();bounds();puts("Menu sheets: three tabs/remembered selections, 7-row places, naming/real coordinates, reviewed stops, persisted targets, reorder/remove/cancel, pinned pairing, address-stable phone actions, theme/HUD bounds passed.");}
+int main(void){tabs();saved_places();itinerary();bluetooth();bounds();puts("Menu sheets: three tabs/remembered selections, compact scrolling places, naming/real coordinates, reviewed stops, persisted targets, reorder/remove/cancel, pinned pairing, address-stable phone actions, theme/HUD bounds passed.");}

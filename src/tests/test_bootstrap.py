@@ -14,7 +14,7 @@ def executable(path, body):
 
 
 class BootstrapTest(unittest.TestCase):
-    def startup(self, focus_ready):
+    def startup(self, focus_ready, focus_startup_delay=0):
         with tempfile.TemporaryDirectory(prefix='clioplay-boot-test-') as folder:
             work = Path(folder)
             card = work/'clio843'
@@ -27,9 +27,12 @@ class BootstrapTest(unittest.TestCase):
             section = section.replace('/tmp/cfready', str(work/'ready'))
             section = section.replace('/bin/vehicledaemon', str(work/'vehicle'))
             executable(work/'killall', 'exit 0\n')
-            executable(work/'sleep', 'exec /bin/sleep 0.02\n')
+            # Each sleep in ttn represents one second on the head unit.
+            # Allow enough host time for subprocess scheduling.
+            executable(work/'sleep', 'exec /bin/sleep 0.1\n')
             if focus_ready:
-                executable(card/'focusd', '''
+                executable(card/'focusd', f'''
+/bin/sleep {focus_startup_delay}
 while [ ! -e "$TEST_WORK/ui" ]; do /bin/sleep 0.005; done
 echo FOCUS_READY >> "$TEST_WORK/events"
 : > "$TEST_WORK/ready"
@@ -58,6 +61,14 @@ exit 1
         self.assertLess(events.index('UI'), events.index('FOCUS_READY'))
         self.assertLess(events.index('FOCUS_READY'), events.index('VEHICLE'))
         self.assertNotIn('FOCUS READY TIMEOUT', events)
+
+
+    def test_slightly_delayed_focus_readiness_does_not_timeout(self):
+        # Model slower macOS process startup without changing ttn.
+        events = self.startup(True, focus_startup_delay=0.2)
+        self.assertLess(events.index('UI'), events.index('FOCUS_READY'))
+        self.assertNotIn('FOCUS READY TIMEOUT', events)
+        self.assertLess(events.index('FOCUS_READY'), events.index('VEHICLE'))
 
     def test_failed_focus_keeps_bounded_fallback_without_holding_ui(self):
         events = self.startup(False)

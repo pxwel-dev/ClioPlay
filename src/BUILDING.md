@@ -1,4 +1,4 @@
-# Building ClioPlay Global
+# Building ClioPlay
 
 For Windows installation of the included programs, use [WINDOWS.md](../WINDOWS.md)
 and the root `Install.cmd` launcher. ARM compilation and the commands below

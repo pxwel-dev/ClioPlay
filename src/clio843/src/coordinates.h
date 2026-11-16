@@ -59,12 +59,22 @@ static void coordinates_leave(int sources){
  coordinates_active=0;screen=SCR_TRIP;
  if(sources&&coordinates.action!=DEST_PICK_NONE){dest_pick_action=coordinates.action;modal=MOD_SOURCE_PICK;modal_choice=2;}
 }
+/* Soft-right always cycles between the two coordinate fields; it never
+ * silently submits the destination. Back confirms once both values are set. */
 static void coordinates_next(void){
- s32 value;int axis=coordinates.step;
- if(!coordinate_parse(coordinates.value[axis],axis==COORD_LAT?90:180,&value)){coordinates.error=1;return;}
+ coordinates.step=coordinates.step==COORD_LAT?COORD_LON:COORD_LAT;
  coordinates.error=0;
- if(axis==COORD_LAT){coordinates.lat=value;coordinates.step=COORD_LON;coordinates.focus=0;}
- else{coordinates.lon=value;coordinates_open_name();}
+}
+static int coordinates_finish(void){
+ s32 lat,lon;
+ if(!coordinate_parse(coordinates.value[COORD_LAT],90,&lat)){
+  coordinates.step=COORD_LAT;coordinates.error=1;return 0;
+ }
+ if(!coordinate_parse(coordinates.value[COORD_LON],180,&lon)){
+  coordinates.step=COORD_LON;coordinates.error=1;return 0;
+ }
+ coordinates.lat=lat;coordinates.lon=lon;coordinates.error=0;
+ coordinates_open_name();return 1;
 }
 static void coordinates_delete(void){
  char*b=coordinates.value[coordinates.step];unsigned n=slen(b);if(n)b[n-1]=0;coordinates.error=0;
@@ -109,10 +119,9 @@ static void coordinates_submit(void){
 }
 static void coordinates_handle(int code){
  if(code==K_BACK){
-  coordinates.error=0;
   if(coordinates.step==COORD_REVIEW)coordinates_open_name();
-  else if(coordinates.step==COORD_LON){coordinates.step=COORD_LAT;coordinates.focus=0;}
-  else coordinates_leave(1);
+  else if(!coordinates.value[0][0]&&!coordinates.value[1][0])coordinates_leave(1);
+  else coordinates_finish();
   return;
  }
  if(coordinates.step==COORD_REVIEW){
@@ -125,17 +134,14 @@ static void coordinates_handle(int code){
   }
   return;
  }
- if(code==K_ESC){coordinates_delete();return;}if(code==K_SR){coordinates_next();return;}
- int focus=coordinates.focus,row=focus<12?focus/3:focus-12,col=focus<12?focus%3:3;
- if(code==K_LEFT&&col>0)coordinates.focus=col==3?row*3+2:focus-1;
- else if(code==K_RIGHT){if(col<2)coordinates.focus++;else if(col==2)coordinates.focus=12+(row<3?row:2);}
- else if(code==K_UP&&row>0)coordinates.focus=focus<12?focus-3:focus-1;
- else if(code==K_DOWN&&row<(col==3?2:3))coordinates.focus=focus<12?focus+3:focus+1;
- else if(code==K_ENTER){
-  if(focus<12)coordinates_type(focus);
-  else if(focus==12)coordinates_next();else if(focus==13)coordinates_delete();
-  else{coordinates.value[coordinates.step][0]=0;coordinates.error=0;}
- }
+ if(code==K_ESC){coordinates_delete();return;}
+ if(code==K_SR){coordinates_next();return;}
+ int focus=coordinates.focus%12,row=focus/3,col=focus%3;
+ if(code==K_LEFT)coordinates.focus=row*3+(col+2)%3;
+ else if(code==K_RIGHT)coordinates.focus=row*3+(col+1)%3;
+ else if(code==K_UP)coordinates.focus=((row+3)%4)*3+col;
+ else if(code==K_DOWN)coordinates.focus=((row+1)%4)*3+col;
+ else if(code==K_ENTER)coordinates_type(focus);
 }
 static void draw_coordinates(void){
  fill(0,0,W,H,C_BG);
@@ -152,12 +158,10 @@ static void draw_coordinates(void){
  int axis=coordinates.step;const char*value=coordinates.value[axis];
  keyboard_surface(12,MENU_BODY_Y,456,44,0);
  compact_fit(24,50,430,3,value[0]?value:"0.00000",value[0]?C_WHITE:C_MUTED);
- if(coordinates.error)compact_fit(16,109,448,0,ui_tr(axis==COORD_LAT?"Enter a valid latitude":"Enter a valid longitude"),C_WARN);
+ if(coordinates.error)compact_fit(24,112,432,0,ui_tr(axis==COORD_LAT?"Enter a valid latitude":"Enter a valid longitude"),C_WARN);
  for(int i=0;i<12;i++){
-  int x=12+(i%3)*90,y=129+(i/3)*29,f=coordinates.focus==i;char b[4]={0};
+  int x=42+(i%3)*132,y=131+(i/3)*29,f=coordinates.focus==i;char b[4]={0};
   if(i==9)copystr(b,sizeof(b),"±");else{b[0]=i==10?'0':i==11?'.':(char)('1'+i);b[1]=0;}
-  keyboard_surface(x,y,84,25,f);compact_center(x+42,y+3,72,1,b,ui_choice_text(f));
+  keyboard_surface(x,y,124,25,f);compact_center(x+62,y+3,112,1,b,ui_choice_text(f));
  }
- const char*actions[]={ui_tr("Next"),ui_tr("Delete"),ui_tr("Clear")};
- for(int i=0;i<3;i++){int y=129+i*38,f=coordinates.focus==12+i;keyboard_surface(296,y,172,31,f);compact_center(382,y+7,156,1,actions[i],ui_choice_text(f));}
 }

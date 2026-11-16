@@ -76,7 +76,7 @@ int main(void){
   assert(clip_x==0&&clip_y==0&&clip_right==W&&clip_bottom==H&&hud_ink_alpha==16);
  }
  setup(30500);apply_palette(0);modal=MOD_ROUTE_POINT;popup_prepare(30500);popup_settle_for_capture(30500);
- gradient();draw_modal();assert(fb[140*W+149]==C_ACTIVE); /* same light-theme menu blue */
+ gradient();draw_modal();{struct HudBox f=popup_focus(30500);int x=popup.card.box.x+f.x+5,y=popup.card.box.y+f.y+5;assert(fb[y*W+x]==C_ACTIVE);} /* same light-theme menu blue, position-independent */
  /* Popup-only controls preserve the clean map; legal actions remain immediate. */
  setup(40000);freecam=1;render_background_dirty=0;key_handle(K_ENTER);
  assert(modal==MOD_ROUTE_POINT&&!render_background_dirty);

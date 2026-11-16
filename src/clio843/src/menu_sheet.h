@@ -68,7 +68,7 @@ static void menu_back(u32 now){if(sheet_depth){sheet_depth--;menu_change(sheet_s
 static int place_count(void){return places_tab?nfaves:nrecents;}
 static int places_visible(struct HudBox b){int n=(b.h-67)/22;return n<1?1:n;}
 static int menu_count(int p){
- return p==P_HOME?3:p==P_SOURCE?3:p==P_SETTINGS?SETTING_COUNT:p==P_TRIP?(trip.count?trip.count+2:1):p==P_PLACES?place_count():
+ return p==P_HOME?(hw_bluetooth_enabled?3:2):p==P_SOURCE?3:p==P_SETTINGS?SETTING_COUNT:p==P_TRIP?(trip.count?trip.count+2:1):p==P_PLACES?place_count():
  p==P_STOP?3:p==P_DEST?3:p==P_PLACE?(places_tab?4:3):p==P_PHONE?nbtdev+1:
  p==P_PHONE_ACTIONS?2:p==P_REVIEW?4:p==P_CONFIRM?2:0;
 }
@@ -102,18 +102,21 @@ static void menu_pair(u32 now){
 static void setting_adjust(int code,u32 now){
  (void)now;set_focus=sheet_focus;settings_key(code);
 }
-static int coord_centre_y(int f){int space=menu_box(P_COORD).h-77;return f<12?(f/3)*(space/4)+(space/4-3)/2:(f-12)*(space/3)+(space/3-4)/2;}
+/* The coordinate page is a twelve-key keypad. Both directional and rotary
+ * navigation wrap cleanly, with no off-grid action column. */
 static void coord_move(int code){
- int f=coordinates.focus,col=f<12?f%3:3,dx=code==K_RIGHT?1:code==K_LEFT?-1:0,dy=code==K_DOWN?1:code==K_UP?-1:0;
- if(dx){if(coord_nav_y<0)coord_nav_y=coord_centre_y(f);int next=(col+dx+4)%4,best=-1,dist=999;
-  for(int i=0;i<15;i++)if((i<12?i%3:3)==next){int d=coord_centre_y(i)-coord_nav_y;if(d<0)d=-d;if(d<dist){dist=d;best=i;}}coordinates.focus=best;
- }else if(dy){coord_nav_y=-1;int count=col==3?3:4,row=f<12?f/3:f-12;row=(row+dy+count)%count;coordinates.focus=col==3?12+row:row*3+col;}
+ int f=coordinates.focus%12,row=f/3,col=f%3;
+ if(code==K_LEFT)col=(col+2)%3;
+ if(code==K_RIGHT)col=(col+1)%3;
+ if(code==K_UP)row=(row+3)%4;
+ if(code==K_DOWN)row=(row+1)%4;
+ coordinates.focus=row*3+col;
 }
 static void menu_key(int code,u32 now){
  if(code==K_ROTCW||code==K_ROTCCW){
   int d=code==K_ROTCW?1:-1;
   if(sheet_page==P_NAME){pk_prepare();pk_rotate(d);return;}
-  if(sheet_page==P_COORD){coordinates.focus=(coordinates.focus+d+15)%15;coord_nav_y=-1;return;}
+  if(sheet_page==P_COORD){coordinates.focus=(coordinates.focus+d+12)%12;coord_nav_y=-1;return;}
   code=d>0?K_DOWN:K_UP;
  }
  if(code==K_MAP){menu_close(now);recenter_map();return;}
@@ -149,7 +152,9 @@ static void menu_key(int code,u32 now){
  if(sheet_page==P_COORD){
   if(code==K_LEFT||code==K_RIGHT||code==K_UP||code==K_DOWN){coord_move(code);return;}
   coord_nav_y=-1;
-  if(code==K_BACK){if(coordinates.step==COORD_LON){coordinates.step=COORD_LAT;coordinates.focus=0;}else{coordinates_active=0;menu_back(now);}return;}
+  if(code==K_BACK&& !coordinates.value[0][0]&&!coordinates.value[1][0]){
+   coordinates_active=0;menu_back(now);return;
+  }
   screen=SCR_COORDINATES;coordinates_handle(code);
   if(screen==SCR_KEY){keyboard_origin=KBD_NAME_COORDINATES;pk_reset();pk_prepare();menu_change(P_NAME,0,now);}
   screen=menu_screen(sheet_page);return;
@@ -168,7 +173,7 @@ static void menu_key(int code,u32 now){
  if(code==K_UP&&sheet_focus){if(sheet_page==P_SETTINGS)theme_time_part=0;selected_focus(sheet_focus-1,now);return;}
  if(code==K_DOWN&&sheet_focus+1<menu_count(sheet_page)){if(sheet_page==P_SETTINGS)theme_time_part=0;selected_focus(sheet_focus+1,now);return;}
  if(code!=K_ENTER)return;
- if(sheet_page==P_HOME){menu_push(sheet_focus==0?P_TRIP:sheet_focus==1?P_PHONE:P_SETTINGS,0,now);return;}
+ if(sheet_page==P_HOME){menu_push(sheet_focus==0?P_TRIP:hw_bluetooth_enabled&&sheet_focus==1?P_PHONE:P_SETTINGS,0,now);return;}
  if(sheet_page==P_SETTINGS){
   if(sheet_focus==7){language_keyboard=0;menu_push(P_LANG,pref.language,now);}
   else setting_adjust(K_ENTER,now);return;
@@ -263,7 +268,7 @@ static void trip_content(struct HudBox b,int selected,int opacity){
  trip_header(b,P_TRIP,opacity);char total[96]="";
  if(!trip.count){
   hud_ink_alpha=opacity;compact_center(b.x+b.w/2,b.y+62,b.w-36,1,ui_tr("Where would you like to go?"),C_WHITE);
-  text_value(b.x+18,b.y+81,b.w-36,ui_tr("Browse Recents/Favourites, use ClioPlay Send"),opacity);
+  text_value(b.x+18,b.y+81,b.w-36,hw_bluetooth_enabled?ui_tr("Browse Recents/Favourites, use ClioPlay Send"):ui_tr("Browse Recents/Favourites"),opacity);
   text_value(b.x+18,b.y+98,b.w-36,ui_tr("or enter coordinates"),opacity);
   row_text(b,b.y+b.h-32,0,selected,"Coordinates","",opacity,1,25);
   return;
@@ -278,7 +283,9 @@ static void trip_content(struct HudBox b,int selected,int opacity){
  int first=selected>=visible?selected-visible+1:0;if(first+visible>trip.count)first=trip.count-visible;
  int start=b.y+71,step=list_space/visible;if(step>26)step=26;
  for(int row=0;row<visible;row++){int i=first+row;
-  int y=start+row*step,active=i==selected;int cy=y+7;
+  int y=start+row*step,active=i==selected;
+  /* Centre each route marker in the selection highlight itself. */
+  int cy=y-2+(step-1)/2;
   if(active)menu_tile(b.x+9,y-2,b.w-18,step-1,1,opacity);
   hud_ink_alpha=opacity;
   if(i+1<trip.count&&step>=12)round_rect(b.x+23,cy+4,1,step-6,0,C_BORDER,10);
@@ -341,19 +348,26 @@ static void coord_content(struct HudBox b,int opacity){
  hud_ink_alpha=opacity;title_draw(b,"Coordinates");
  int fw=(b.w-38)/2;
  for(int i=0;i<2;i++){
-  int x=b.x+14+i*(fw+10);menu_tile(x,b.y+29,fw,34,i==coordinates.step,opacity);hud_ink_alpha=opacity;
-  box_text(x+8,b.y+30,fw-16,13,0,ui_tr(i?"Longitude":"Latitude"),i==coordinates.step?C_ACTIVE_TEXT:C_MUTED);
-  box_text(x+8,b.y+44,fw-16,17,1,coordinates.value[i][0]?coordinates.value[i]:"0.00000",i==coordinates.step?C_ACTIVE_TEXT:C_WHITE);
+  int x=b.x+14+i*(fw+10);menu_tile(x,b.y+27,fw,32,i==coordinates.step,opacity);hud_ink_alpha=opacity;
+  box_text(x+8,b.y+27,fw-16,12,0,ui_tr(i?"Longitude":"Latitude"),i==coordinates.step?C_ACTIVE_TEXT:C_MUTED);
+  box_text(x+8,b.y+39,fw-16,17,1,coordinates.value[i][0]?coordinates.value[i]:"0.00000",i==coordinates.step?C_ACTIVE_TEXT:C_WHITE);
  }
- int start=b.y+69,step=(b.h-77)/4,cw=(b.w*3/5-20)/3;
+ /* Reserve a dedicated warning row ABOVE the keypad; in a compact sheet
+  * putting the message at b.y+b.h used to clip it below the glass. */
+ if(coordinates.error){
+  hud_ink_alpha=opacity;
+  box_text(b.x+14,b.y+61,b.w-28,13,0,
+   ui_tr(coordinates.step==COORD_LAT?"Enter a valid latitude":"Enter a valid longitude"),C_WARN);
+ }
+ int start=b.y+76,step=(b.h-83)/4,cw=(b.w-28)/3;
+ if(step<14)step=14;
  for(int i=0;i<12;i++){
-  int x=b.x+14+(i%3)*cw,y=start+(i/3)*step;menu_tile(x,y,cw-5,step-3,coordinates.focus==i,opacity);
+  int x=b.x+14+(i%3)*cw,y=start+(i/3)*step;
+  menu_tile(x,y,cw-5,step-3,coordinates.focus==i,opacity);
   char t[8]={0};if(i==9)copystr(t,sizeof(t),"±");else{t[0]=i==10?'0':i==11?'.':'1'+i;}
-  hud_ink_alpha=opacity;box_text(x,y,cw-5,step-3,1,t,coordinates.focus==i?C_ACTIVE_TEXT:C_WHITE);
+  hud_ink_alpha=opacity;
+  box_text(x,y,cw-5,step-3,1,t,coordinates.focus==i?C_ACTIVE_TEXT:C_WHITE);
  }
- const char*actions[]={"Next","Delete","Clear"};int x=b.x+b.w*3/5+4,w=b.x+b.w-14-x,ah=(b.h-77)/3;
- for(int i=0;i<3;i++){int y=start+i*ah;menu_tile(x,y,w,ah-4,coordinates.focus==12+i,opacity);hud_ink_alpha=opacity;box_text(x,y,w,ah-4,1,ui_tr(actions[i]),coordinates.focus==12+i?C_ACTIVE_TEXT:C_WHITE);}
- if(coordinates.error){hud_ink_alpha=opacity;box_text(b.x+12,b.y+b.h-10,b.w-24,9,0,ui_tr("Check the highlighted value"),C_WARN);}
 }
 static void review_content(struct HudBox b,int selected,int opacity){
  hud_ink_alpha=opacity;title_draw(b,"Review");
@@ -372,7 +386,7 @@ static void settings_content(struct HudBox b,int selected,int opacity,u32 now){
   struct RowPair p=pair_layout(b,1,ui_tr(setting_names[i]),v,1);
   pair_draw(&p,y,27,1,active?C_ACTIVE_TEXT:C_WHITE,active?C_ACTIVE_TEXT:C_MUTED,i!=0||pref.bright>10,i!=0||pref.bright<100);
   /* Hours/minutes retain a focused-part underline; brightness has no slider. */
-  if(active&&i>=8){char part[3]={v[theme_time_part?3:0],v[theme_time_part?4:1],0};int x=p.vx+(theme_time_part?width("00:",1):0);
+  if(active&&(i==8||i==9)){char part[3]={v[theme_time_part?3:0],v[theme_time_part?4:1],0};int x=p.vx+(theme_time_part?width("00:",1):0);
    round_rect(x,pair_origin(&p,y,27)+16,width(part,1),1,0,C_ACTIVE_TEXT,15);}
  }
  ui_scrollbar(b.x+b.w-6,b.y+31,visible*29,first,visible,SETTING_COUNT);
@@ -409,7 +423,9 @@ static void menu_contents(int p,int selected,struct HudBox b,int opacity,u32 now
  title_draw(b,menu_title(p));
  const char*options[6]={0};int count=0;
  if(p==P_SOURCE){options[0]="Recents";options[1]="Favourites";options[2]="Coordinates";count=3;}
- if(p==P_HOME){options[0]="Trip";options[1]="Bluetooth";options[2]="Settings";count=3;}
+ if(p==P_HOME){options[0]="Trip";options[1]=hw_bluetooth_enabled?"Bluetooth":"Settings";
+  if(hw_bluetooth_enabled)options[2]="Settings";
+  count=hw_bluetooth_enabled?3:2;}
  if(p==P_STOP){options[0]="Move earlier";options[1]="Move later";options[2]="Remove stop";count=3;}
  if(p==P_DEST){options[0]="Change destination";options[1]=trip.count&&fave_contains(trip.target[trip.count-1].lat,trip.target[trip.count-1].lon)>=0?"Remove favourite":"Save favourite";options[2]="Cancel route";count=3;}
  if(p==P_PLACE){options[0]="Route as new";options[1]="Add as stop";options[2]=places_tab?"Rename":"Save favourite";options[3]="Remove favourite";count=places_tab?4:3;}
@@ -440,12 +456,16 @@ static void menu_reset(u32 now){
  menu_interaction_at=menu_presented_at=now-320u;menu_pending=0;memzero(trip_tab_focus,sizeof(trip_tab_focus));pk_reset();
 }
 static void menu_open(int p,int selected,u32 now){
+ if(!hw_bluetooth_enabled&&(p==P_PHONE||p==P_PHONE_ACTIONS||p==P_PAIR))p=P_HOME;
  coordinates_active=0;bt_control_mode=0;sheet_depth=0;
  if(p==P_NAME){keyboard_origin=kbd_action;pk_reset();pk_prepare();}
  if(p!=P_HOME){sheet_stack_page[0]=P_HOME;sheet_stack_focus[0]=0;sheet_depth=1;}
  menu_change(p,selected,now);menu_pending=1;
 }
 static void menu_sync(u32 now){
+ if(!hw_bluetooth_enabled&&(sheet_page==P_PHONE||sheet_page==P_PHONE_ACTIONS||sheet_page==P_PAIR||screen==SCR_BT)){
+  sheet_depth=0;menu_change(P_HOME,0,now);return;
+ }
  if(screen==SCR_MAP){if(sheet_page)menu_close(now);return;}
  if(sheet_page&&menu_screen(sheet_page)==screen){
   if(sheet_page==P_PHONE_ACTIONS){int i=menu_phone_index();if(i<0){menu_back(now);return;}phone_index=i;}

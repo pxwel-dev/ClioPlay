@@ -428,9 +428,34 @@ static void text_center_fit(int cx,int y,int maxw,const char*s,u16 c){
 static int fb_flush(void){long fd=s_open(FB_PATH,O_WRONLY_|O_CREAT_,0666);if(fd<0)return 0;s_lseek((int)fd,0,SEEK_SET_);long n=s_write((int)fd,fb,sizeof(fb));s_close((int)fd);return n==(long)sizeof(fb);}
 
 enum { THEME_DAY=0, THEME_NIGHT=1, THEME_AUTO=2 };
-struct Prefs {int bright,hoff,moff,autozoom,debug,theme,units,cameras,clock_auto,language,day_start,night_start;};
+struct Prefs {int bright,hoff,moff,autozoom,debug,theme,units,cameras,clock_auto,language,day_start,night_start,top_swap,bottom_swap;};
 static struct Prefs pref={50,0,0,1,0,THEME_AUTO,0,1,1,0,CLIO_DAY_START,CLIO_NIGHT_START};
 static int pref_keyboard_language=-1;
+/* The TomTom hardware export is authoritative when present; unknown hardware
+ * keeps Bluetooth visible for backwards compatibility. */
+static int hw_bluetooth_enabled=1;
+#ifdef HOST_TEST
+#define CLIO_HW_EXPORT_PATH CLIO_HOST_ROOT "proc/barcelona/export_hw_var"
+#else
+#define CLIO_HW_EXPORT_PATH "/proc/barcelona/export_hw_var"
+#endif
+static void hardware_load_bluetooth(void){
+ char data[4096];long fd=s_open(CLIO_HW_EXPORT_PATH,O_RDONLY_,0);
+ if(fd<0)return;long n=s_read((int)fd,data,sizeof(data)-1);s_close((int)fd);
+ if(n<=0)return;data[n]=0;
+ for(char*line=data;*line;){
+  char*end=line;while(*end&&*end!='\r'&&*end!='\n')end++;
+  char sep=*end;*end=0;char*p=line;
+  while(*p==' '||*p=='\t')p++;
+  if(starts(p,"export ")){p+=7;while(*p==' '||*p=='\t')p++;}
+  if(starts(p,"hw_bluetooth=")){
+   p+=13;while(*p==' '||*p=='\t'||*p=='\"'||*p=='\'')p++;
+   if(*p=='0')hw_bluetooth_enabled=0;
+   else if(*p=='1')hw_bluetooth_enabled=1;
+  }
+  if(!sep)break;line=end+1;while(*line=='\r'||*line=='\n')line++;
+ }
+}
 #include "ui_translations.h"
 /* The source badge is BT in every language. Page titles and status messages
  * retain their translated phone wording outside English. */
@@ -439,11 +464,16 @@ static const char*bt_source_label(void){return "BT";}
 static const char*bt_unavailable_label(void){return pref.language==0?"Bluetooth unavailable":ui_tr("Phone connection unavailable");}
 static int manual_zoom=5;
 static int prefs_dirty=0,prefs_delay=0;
-static void parse_pref_line(char*ln){char*eq=ln;while(*eq&&*eq!='=')eq++;if(!*eq)return;*eq++=0;if(streq(ln,"daystart")){pref.day_start=clio_theme_time(eq,CLIO_DAY_START);return;}if(streq(ln,"nightstart")){pref.night_start=clio_theme_time(eq,CLIO_NIGHT_START);return;}int v=atoi0(eq);if(streq(ln,"bright"))pref.bright=v;else if(streq(ln,"hoff"))pref.hoff=v;else if(streq(ln,"moff"))pref.moff=v;else if(streq(ln,"autozoom"))pref.autozoom=v?1:0;else if(streq(ln,"debug"))pref.debug=v?1:0;else if(streq(ln,"theme"))pref.theme=v;else if(streq(ln,"units"))pref.units=v;else if(streq(ln,"cameras"))pref.cameras=v>=0&&v<=2?v:1;else if(streq(ln,"clockauto"))pref.clock_auto=v?1:0;else if(streq(ln,"language"))pref.language=v>=0&&v<UI_LANGUAGE_COUNT?v:0;else if(streq(ln,"manualzoom"))manual_zoom=v;else if(streq(ln,"keyboardlanguage"))pref_keyboard_language=v>=0&&v<UI_LANGUAGE_COUNT?v:-1;}
+static void parse_pref_line(char*ln){char*eq=ln;while(*eq&&*eq!='=')eq++;if(!*eq)return;*eq++=0;if(streq(ln,"daystart")){pref.day_start=clio_theme_time(eq,CLIO_DAY_START);return;}if(streq(ln,"nightstart")){pref.night_start=clio_theme_time(eq,CLIO_NIGHT_START);return;}int v=atoi0(eq);if(streq(ln,"bright"))pref.bright=v;else if(streq(ln,"hoff"))pref.hoff=v;else if(streq(ln,"moff"))pref.moff=v;else if(streq(ln,"autozoom"))pref.autozoom=v?1:0;else if(streq(ln,"debug"))pref.debug=v?1:0;else if(streq(ln,"theme"))pref.theme=v;else if(streq(ln,"units"))pref.units=v;else if(streq(ln,"cameras"))pref.cameras=v>=0&&v<=2?v:1;else if(streq(ln,"clockauto"))pref.clock_auto=v?1:0;else if(streq(ln,"language"))pref.language=v>=0&&v<UI_LANGUAGE_COUNT?v:0;else if(streq(ln,"manualzoom"))manual_zoom=v;else if(streq(ln,"keyboardlanguage"))pref_keyboard_language=v>=0&&v<UI_LANGUAGE_COUNT?v:-1;
+ else if(streq(ln,"hudtopswap"))pref.top_swap=v?1:0;
+ else if(streq(ln,"hudbottomswap"))pref.bottom_swap=v?1:0;}
 static void load_prefs(void){pref.day_start=CLIO_DAY_START;pref.night_start=CLIO_NIGHT_START;char b[512],ln[96];unsigned u=0;long fd=s_open(PREF_PATH,O_RDONLY_,0);if(fd>=0){long n=s_read((int)fd,b,sizeof(b));s_close((int)fd);if(n>0){for(long i=0;i<n;i++){char c=b[i];if(c=='\r'||c=='\n'){if(u){ln[u]=0;parse_pref_line(ln);u=0;}}else if(u+1<sizeof(ln))ln[u++]=c;}if(u){ln[u]=0;parse_pref_line(ln);}}}if(pref.bright<10)pref.bright=10;if(pref.bright>100)pref.bright=100;if(pref.theme<THEME_DAY||pref.theme>THEME_AUTO)pref.theme=THEME_AUTO;if(pref.units<0||pref.units>2)pref.units=0;if(pref.hoff*60+pref.moff< -720||pref.hoff*60+pref.moff>840)pref.hoff=pref.moff=0;if(manual_zoom<0)manual_zoom=0;if(manual_zoom>6)manual_zoom=6;if(!clio_theme_schedule_valid(pref.day_start,pref.night_start)){pref.day_start=CLIO_DAY_START;pref.night_start=CLIO_NIGHT_START;}}
 /* Shared with the splash; the definition follows the wall-clock helpers. */
 static void seed_boot_theme(void);
-static void save_prefs(void){char b[384];b[0]=0;appendstr(b,sizeof(b),"version=7\nbright=");append_int(b,sizeof(b),pref.bright);appendstr(b,sizeof(b),"\nhoff=");append_int(b,sizeof(b),pref.hoff);appendstr(b,sizeof(b),"\nmoff=");append_int(b,sizeof(b),pref.moff);appendstr(b,sizeof(b),"\nautozoom=");append_int(b,sizeof(b),pref.autozoom);appendstr(b,sizeof(b),"\ndebug=");append_int(b,sizeof(b),pref.debug);appendstr(b,sizeof(b),"\ntheme=");append_int(b,sizeof(b),pref.theme);appendstr(b,sizeof(b),"\nunits=");append_int(b,sizeof(b),pref.units);appendstr(b,sizeof(b),"\ncameras=");append_int(b,sizeof(b),pref.cameras);appendstr(b,sizeof(b),"\nclockauto=");append_int(b,sizeof(b),pref.clock_auto);appendstr(b,sizeof(b),"\nlanguage=");append_int(b,sizeof(b),pref.language);appendstr(b,sizeof(b),"\ndaystart=");append_int(b,sizeof(b),pref.day_start);appendstr(b,sizeof(b),"\nnightstart=");append_int(b,sizeof(b),pref.night_start);appendstr(b,sizeof(b),"\nmanualzoom=");append_int(b,sizeof(b),manual_zoom);appendstr(b,sizeof(b),"\nkeyboardlanguage=");append_int(b,sizeof(b),pref_keyboard_language);appendstr(b,sizeof(b),"\n");long fd=s_open(PREF_TMP_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd>=0){s_write((int)fd,b,slen(b));s_close((int)fd);s_sync();if(s_rename(PREF_TMP_PATH,PREF_PATH)<0){fd=s_open(PREF_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd>=0){s_write((int)fd,b,slen(b));s_close((int)fd);}}s_sync();}prefs_dirty=0;prefs_delay=0;}
+static void save_prefs(void){char b[384];b[0]=0;appendstr(b,sizeof(b),"version=8\nbright=");append_int(b,sizeof(b),pref.bright);appendstr(b,sizeof(b),"\nhoff=");append_int(b,sizeof(b),pref.hoff);appendstr(b,sizeof(b),"\nmoff=");append_int(b,sizeof(b),pref.moff);appendstr(b,sizeof(b),"\nautozoom=");append_int(b,sizeof(b),pref.autozoom);appendstr(b,sizeof(b),"\ndebug=");append_int(b,sizeof(b),pref.debug);appendstr(b,sizeof(b),"\ntheme=");append_int(b,sizeof(b),pref.theme);appendstr(b,sizeof(b),"\nunits=");append_int(b,sizeof(b),pref.units);appendstr(b,sizeof(b),"\ncameras=");append_int(b,sizeof(b),pref.cameras);appendstr(b,sizeof(b),"\nclockauto=");append_int(b,sizeof(b),pref.clock_auto);appendstr(b,sizeof(b),"\nlanguage=");append_int(b,sizeof(b),pref.language);appendstr(b,sizeof(b),"\ndaystart=");append_int(b,sizeof(b),pref.day_start);appendstr(b,sizeof(b),"\nnightstart=");append_int(b,sizeof(b),pref.night_start);appendstr(b,sizeof(b),"\nmanualzoom=");append_int(b,sizeof(b),manual_zoom);appendstr(b,sizeof(b),"\nkeyboardlanguage=");append_int(b,sizeof(b),pref_keyboard_language);
+ appendstr(b,sizeof(b),"\nhudtopswap=");append_int(b,sizeof(b),pref.top_swap);
+ appendstr(b,sizeof(b),"\nhudbottomswap=");append_int(b,sizeof(b),pref.bottom_swap);
+ appendstr(b,sizeof(b),"\n");long fd=s_open(PREF_TMP_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd>=0){s_write((int)fd,b,slen(b));s_close((int)fd);s_sync();if(s_rename(PREF_TMP_PATH,PREF_PATH)<0){fd=s_open(PREF_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd>=0){s_write((int)fd,b,slen(b));s_close((int)fd);}}s_sync();}prefs_dirty=0;prefs_delay=0;}
 static void prefs_mark_dirty(void){prefs_dirty=1;prefs_delay=10;}
 static void prefs_service(void){if(!prefs_dirty)return;if(prefs_delay>0){prefs_delay--;return;}save_prefs();}
 
@@ -724,9 +754,9 @@ static int bt_playback_request=-1;
 static u32 bt_playback_requested_at;
 
 static int bt_source_selected(void){
- return !audio_source_detected()||streq(af.band,"CD");
+ return hw_bluetooth_enabled&&(!audio_source_detected()||streq(af.band,"CD"));
 }
-static int bt_controls_available(void){return btui.connected&&bt_source_selected();}
+static int bt_controls_available(void){return hw_bluetooth_enabled&&btui.connected&&bt_source_selected();}
 static int bt_write_small(const char*path,const char*s){
  long fd=s_open(path,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);
  if(fd<0)return 0;
@@ -2619,7 +2649,7 @@ static void notice_set(const char*s,int is_error){
 }
 static void notice_success(const char*s){notice_set(s,0);}
 static void notice_fail(const char*s){notice_set(s,1);}
-static void poll_phone_destination(void){char b[384];long fd=s_open(BT_NAV_PATH,O_RDONLY_,0);if(fd<0)return;long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n<=0)return;b[n]=0;int have_seq=0,have_action=0,have_lat=0,have_lon=0;int seqi=0;s32 lat=0,lon=0;char action=0,name[161];copystr(name,sizeof(name),"PHONE DESTINATION");char*ln=b;for(long i=0;i<=n;i++){if(b[i]=='\r'||b[i]=='\n'||b[i]==0){char save=b[i];b[i]=0;if(starts(ln,"SEQ=")){seqi=atoi0(ln+4);have_seq=seqi>=0&&seqi<=65535;}else if(starts(ln,"ACTION=")){action=ln[7];have_action=(action=='N'||action=='S')&&ln[8]==0;}else if(starts(ln,"LAT=")){lat=(s32)atoi0(ln+4);have_lat=lat>=-9000000&&lat<=9000000;}else if(starts(ln,"LON=")){lon=(s32)atoi0(ln+4);have_lon=lon>=-18000000&&lon<=18000000;}else if(starts(ln,"NAME=")){copystr_limit(name,sizeof(name),ln+5,40);}if(!save)break;ln=b+i+1;}}
+static void poll_phone_destination(void){if(!hw_bluetooth_enabled)return;char b[384];long fd=s_open(BT_NAV_PATH,O_RDONLY_,0);if(fd<0)return;long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n<=0)return;b[n]=0;int have_seq=0,have_action=0,have_lat=0,have_lon=0;int seqi=0;s32 lat=0,lon=0;char action=0,name[161];copystr(name,sizeof(name),"PHONE DESTINATION");char*ln=b;for(long i=0;i<=n;i++){if(b[i]=='\r'||b[i]=='\n'||b[i]==0){char save=b[i];b[i]=0;if(starts(ln,"SEQ=")){seqi=atoi0(ln+4);have_seq=seqi>=0&&seqi<=65535;}else if(starts(ln,"ACTION=")){action=ln[7];have_action=(action=='N'||action=='S')&&ln[8]==0;}else if(starts(ln,"LAT=")){lat=(s32)atoi0(ln+4);have_lat=lat>=-9000000&&lat<=9000000;}else if(starts(ln,"LON=")){lon=(s32)atoi0(ln+4);have_lon=lon>=-18000000&&lon<=18000000;}else if(starts(ln,"NAME=")){copystr_limit(name,sizeof(name),ln+5,40);}if(!save)break;ln=b+i+1;}}
   if(!have_seq||!have_action||!have_lat||!have_lon)return;u16 seq=(u16)seqi;if(phone_seq_seen_valid&&phone_seq_seen==seq)return;phone_seq_seen=seq;phone_seq_seen_valid=1;phone_dest.valid=1;phone_dest.seq=seq;phone_dest.action=action;phone_dest.lat=lat;phone_dest.lon=lon;copystr(phone_dest.name,sizeof(phone_dest.name),name[0]?name:"PHONE DESTINATION");}
 static void phone_destination_clear(void){phone_dest.valid=0;}
 
@@ -2716,9 +2746,9 @@ static void draw_bluetooth(void){
 static int set_focus=0;
 static void settingrow(int y,const char*l,const char*v,int f){int vw=width(v,1);if(vw<76)vw=76;if(vw>180)vw=180;int vx=446-vw;ui_choice(18,y-5,444,24,f);compact_fit(30,y-2,vx-42,1,l,ui_choice_text(f));compact_fit(vx,y-2,vw,1,v,f?C_ACTIVE_TEXT:C_MUTED);}
 static const char* theme_value(void){if(pref.theme==THEME_DAY)return"DAY";if(pref.theme==THEME_NIGHT)return"NIGHT";return"AUTO";}
-enum {SETTING_COUNT=10,SETTING_VISIBLE_ROWS=8,SETTING_ROW_STEP=26};
+enum {SETTING_COUNT=12,SETTING_VISIBLE_ROWS=8,SETTING_ROW_STEP=26};
 static int theme_time_part;
-static const char* setting_names[]={"Brightness","Theme","Units","Auto zoom","Camera alerts","Clock","Debug log","Language","Day starts","Night starts"};
+static const char* setting_names[]={"Brightness","Theme","Units","Auto zoom","Camera alerts","Clock","Debug log","Language","Day starts","Night starts","Top pill order","Bottom pill order"};
 static const char* units_value(void){return pref.units==1?ui_tr("Metric"):pref.units==2?ui_tr("Imperial"):ui_tr("Auto");}
 static const char* setting_value(int row,char b[96]){
  switch(row){
@@ -2727,7 +2757,7 @@ static const char* setting_value(int row,char b[96]){
  case 1:return pref.theme==THEME_DAY?ui_tr("Day"):pref.theme==THEME_NIGHT?ui_tr("Night"):ui_tr("Auto");
  case 2:return units_value();
  case 3:return ui_tr(pref.autozoom?"On":"Off");
- case 4:return pref.cameras==2?ui_tr("Phone audio"):pref.cameras?ui_tr("Visual"):ui_tr("Off");
+ case 4:return hw_bluetooth_enabled&&pref.cameras==2?ui_tr("Phone audio"):pref.cameras?ui_tr("Visual"):ui_tr("Off");
  case 5:{
   copystr(b,96,pref.clock_auto?ui_tr("Auto"):"UTC");appendstr(b,96," ");
   if(ui_language_rtl())appendstr(b,96,"\xe2\x81\xa6");
@@ -2737,6 +2767,8 @@ static const char* setting_value(int row,char b[96]){
   append_int(b,96,mins%60);if(ui_language_rtl())appendstr(b,96,"\xe2\x81\xa9");return b;
  }
  case 6:return ui_tr(pref.debug?"On":"Off");
+ case 10:return pref.top_swap?"Clock left":"Status left";
+ case 11:return pref.bottom_swap?"Direction left":"Speed left";
  case 8:case 9:{
   int minute=row==8?pref.day_start:pref.night_start;
   b[0]='0'+minute/60/10;b[1]='0'+minute/60%10;b[2]=':';
@@ -2753,7 +2785,7 @@ static void draw_settings(void){
   int i=first+row,y=MENU_BODY_Y+5+row*SETTING_ROW_STEP;
   char b[96];const char*value=setting_value(i,b);
   settingrow(y,ui_tr(setting_names[i]),value,set_focus==i);
-  if(i==set_focus&&i>=8){
+  if(i==set_focus&&(i==8||i==9)){
    char prefix[4]={b[0],b[1],':',0},part[3]={b[theme_time_part?3:0],b[theme_time_part?4:1],0};
    int x=446-76+(theme_time_part?width(prefix,1):0);
    round_rect(x,y+16,width(part,1),1,0,C_ACTIVE_TEXT,15);
@@ -2765,7 +2797,7 @@ static void draw_settings(void){
 static void settings_key(int code){
  if(code==K_UP){if(set_focus>0)set_focus--;theme_time_part=0;return;}
  if(code==K_DOWN){if(set_focus<SETTING_COUNT-1)set_focus++;theme_time_part=0;return;}
- if(code==K_ENTER&&set_focus>=8){theme_time_part=!theme_time_part;return;}
+ if(code==K_ENTER&&(set_focus==8||set_focus==9)){theme_time_part=!theme_time_part;return;}
  if(code==K_ENTER&&set_focus==5){
   pref.clock_auto=!pref.clock_auto;clock_next_ms=0;clock_service();
  }else if(code==K_ENTER&&set_focus==7)pref.language=(pref.language+1)%UI_LANGUAGE_COUNT;
@@ -2785,13 +2817,15 @@ static void settings_key(int code){
    if(pref.autozoom){manual_zoom=active_zoom();pref.autozoom=0;}
    else{pref.autozoom=1;auto_zoom_level=-1;}
    zoom_override=-1;break;
-  case 4:pref.cameras=(pref.cameras+d+3)%3;break;
+  case 4:pref.cameras=(pref.cameras+d+(hw_bluetooth_enabled?3:2))%(hw_bluetooth_enabled?3:2);break;
   case 5:{
    pref.clock_auto=0;int m=pref.hoff*60+pref.moff+d*15;
    if(m< -720)m=840;if(m>840)m=-720;pref.hoff=m/60;pref.moff=m%60;break;
   }
   case 6:pref.debug=!pref.debug;debug_state_write();if(!pref.debug)remove_stale_logs();break;
   case 7:pref.language=(pref.language+d+UI_LANGUAGE_COUNT)%UI_LANGUAGE_COUNT;break;
+  case 10:pref.top_swap=!pref.top_swap;break;
+  case 11:pref.bottom_swap=!pref.bottom_swap;break;
   case 8:case 9:{
    int*value=set_focus==8?&pref.day_start:&pref.night_start;
    int other=set_focus==8?pref.night_start:pref.day_start;
@@ -3174,7 +3208,7 @@ static void run(void){
  cliou_load("./clio843/maps/fonts.cpf");
 #endif
 #endif
- load_prefs();debug_state_write();load_last_fix();seed_boot_theme();if(!pref.debug)remove_stale_logs();load_last_audio();nrecents=read_places(RECENT_PATH,recents,RECENT_MAX);nfaves=read_places(FAVES_PATH,faves,FAVE_MAX);load_trip();apply_brightness();load_map();load_timezones();load_regions();load_cameras();seed_boot_map_view();load_route_data();s_unlink(BT_CMD_PATH);bt_write_small(BT_ACTIVE_PATH,"0\n");bt_active_written=0;bt_name_cache_load();bt_poll_status();if(trip.active){modal=MOD_RESUME_TRIP;modal_choice=0;}open_inputs();
+ hardware_load_bluetooth();load_prefs();debug_state_write();load_last_fix();seed_boot_theme();if(!pref.debug)remove_stale_logs();load_last_audio();nrecents=read_places(RECENT_PATH,recents,RECENT_MAX);nfaves=read_places(FAVES_PATH,faves,FAVE_MAX);load_trip();apply_brightness();load_map();load_timezones();load_regions();load_cameras();seed_boot_map_view();load_route_data();s_unlink(BT_CMD_PATH);bt_write_small(BT_ACTIVE_PATH,"0\n");bt_active_written=0;bt_name_cache_load();bt_poll_status();if(trip.active){modal=MOD_RESUME_TRIP;modal_choice=0;}open_inputs();
  control_log("CONSOLE READER",0,csw.fd);
  if(vehicle.enabled)for(int i=0;i<9;i++)control_log("VEHICLE STATUS LISTENER",vehicle_ports[i],vehicle.listen[i]);
   int wdfd=(int)s_open(WD_PATH,O_WRONLY_,0);debug_log(STATE_LOG,"CLIOPLAY GLOBAL " CLIOPLAY_VERSION " START");debug_log(STATE_LOG,qadjmode==7?(qadj_map_ok?"QAD7 PACKET+MMAP QUERY ENABLED":"QAD7 PAGED QUERY ENABLED"):(qadjmode==6?(qadj_map_ok?"QAD6 GEOMMETA+MMAP QUERY ENABLED":"QAD6 PAGED QUERY ENABLED"):(qadjmode==5?(qadj_map_ok?"QAD5 MMAP+STALL QUERY ENABLED":"QAD5 PAGED+STALL QUERY ENABLED"):(qadjmode==4?"QAD4 LOCAL-RECON QUERY ENABLED":(qadjmode==3?"QAD3 GROUP QUERY+RECON ENABLED":(qadjmode==2?"QAD2 NODE-BLOCK QUERY ENABLED (PAGED INDEX)":(qadjmode==1?"QAD1 FAST QUERY ENABLED":"QADJ FAST QUERY FALLBACK CPR2")))))));if(qadjmode==6&&qadj6_legacy_header)debug_log(STATE_LOG,"QAD6 LEGACY HEADER COMPAT ENABLED");{char mb[96];mb[0]=0;appendstr(mb,sizeof(mb),"MMAP QAD=");append_int(mb,sizeof(mb),qadj_map_ok);appendstr(mb,sizeof(mb)," GEOM=");append_int(mb,sizeof(mb),route_geom_map_ok);debug_log(STATE_LOG,mb);}u32 tick=0,next_model=s_now_ms(),next_input=next_model;render_runtime_reset(next_model);
@@ -3213,7 +3247,7 @@ static void run(void){
 }
 __attribute__((noreturn))void _start(void){run();s_exit(0);}
 #else
-int main(void){memzero(&gps,sizeof(gps));gps.fix=1;gps.sats=8;gps.lat=5498200;gps.lon=-165638;gps.mph10=380;gps.course=70;gps.hour=13;gps.min=8;gps.day=15;gps.mon=9;gps.year=2026;copystr(car.source,sizeof(car.source),"FM BBC R1");copystr(car.volume,sizeof(car.volume),"VOL 12");car.temp=18;car.tempok=1;load_font();load_prefs();load_last_fix();
+int main(void){memzero(&gps,sizeof(gps));gps.fix=1;gps.sats=8;gps.lat=5498200;gps.lon=-165638;gps.mph10=380;gps.course=70;gps.hour=13;gps.min=8;gps.day=15;gps.mon=9;gps.year=2026;copystr(car.source,sizeof(car.source),"FM BBC R1");copystr(car.volume,sizeof(car.volume),"VOL 12");car.temp=18;car.tempok=1;load_font();hardware_load_bluetooth();load_prefs();load_last_fix();
 #ifdef PREVIEW_FORCE_DAY
  pref.theme=THEME_DAY;apply_palette(0);
 #elif defined(PREVIEW_FORCE_NIGHT)
