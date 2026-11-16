@@ -178,7 +178,7 @@ def main():
         os.replace(temporary, database)
         manifest.write_text(json.dumps({'inputs':identity,'area_stats':stats},indent=2)+'\n')
     log('Packing shared sea and estuary tiles...')
-    if not stats.get('records'):
+    if stats['records'] == 0:
         log('No coastal water in map bounds (landlocked extract); adding an empty ocean layer.')
     merged = pack_ocean(base, database if stats.get('records') else None, out, work)
     if fingerprint(base) != identity['base'] or fingerprint(archive) != identity['coastline']:
