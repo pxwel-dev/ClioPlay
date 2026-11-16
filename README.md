@@ -21,13 +21,13 @@ See [version history](CHANGELOG.md) for implemented changes by version.
 
 ## UI previews
 
-| Driving and camera alerts | Map-based menus and Trip tabs |
+| Driving and camera alerts | Dynamically-resizing, animated frosted-glass menu |
 | --- | --- |
 | ![Driving with a temporary road name and a camera warning](src/docs/demo/driving.gif) | ![Animated on-map menus, Itinerary, Recents, Favourites, Bluetooth actions and Settings](src/docs/demo/menus.gif) |
 
-| Bluetooth playback and volume | Animated frosted-glass confirmations, choices and popups |
+| Bluetooth playback and volume | Shared status notifications |
 | --- | --- |
-| ![Temporary volume notice, Bluetooth playback controls and track progress](src/docs/demo/bluetooth.gif) | ![Route confirmation, destination choices, Bluetooth actions and keyboard language picker animate smoothly](src/docs/demo/popups.gif) |
+| ![Temporary volume notice, Bluetooth playback controls and track progress](src/docs/demo/bluetooth.gif) | ![GPS acquisition and recovery, phone connection, volume and no-active-route notices share one animated pill](src/docs/demo/status-notifications.gif) |
 
 | Speeding warning | Browse and zoom the map |
 | --- | --- |
@@ -37,21 +37,15 @@ See [version history](CHANGELOG.md) for implemented changes by version.
 | --- | --- |
 | ![Third-exit roundabout guidance and journey overview on pressing OK](src/docs/demo/roundabout-eta.gif) | ![Adding a saved favourite to the itinerary before the destination](src/docs/demo/add-stop.gif) |
 
-| Shared status notifications | Song and radio updates |
-| --- | --- |
-| ![GPS acquisition and recovery, phone connection, volume and no-active-route notices share one animated pill](src/docs/demo/status-notifications.gif) | ![A new song appears, updates inside Bluetooth control, then radio tuning changes the frequency](src/docs/demo/metadata-updates.gif) |
-
 | Manual coordinate route | Route to a point on the map |
 | --- | --- |
 | ![Enter latitude and longitude, name the destination, calculate the route and find it in Recents](src/docs/demo/coordinate-route.gif) | ![Enter Explore, pan the crosshair, press OK and confirm a route to the selected point](src/docs/demo/map-point-route.gif) |
 
-| Day boot and UI transition | Night boot and UI transition |
-| --- | --- |
-| ![Day boot screen cross-fades into the live UI](src/docs/demo/boot-day.gif) | ![Night boot screen cross-fades into the live UI](src/docs/demo/boot-night.gif) |
 
 <table align="center">
   <thead>
     <tr>
+      <th>Song and radio updates</th>
       <th>
         Send a destination with
         <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>
@@ -62,6 +56,13 @@ See [version history](CHANGELOG.md) for implemented changes by version.
     <tr>
       <td align="center">
         <img
+          src="src/docs/demo/metadata-updates.gif"
+          alt="A new song appears, updates inside Bluetooth control, then radio tuning changes the frequency"
+          width="480"
+        >
+      </td>
+      <td align="center">
+        <img
           src="src/docs/demo/phone-destination.gif"
           alt="ClioPlay Send and the head unit receiving a destination side by side"
           width="480"
@@ -70,6 +71,7 @@ See [version history](CHANGELOG.md) for implemented changes by version.
     </tr>
   </tbody>
 </table>
+
 
 
 ## Compatibility
