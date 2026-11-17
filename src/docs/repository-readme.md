@@ -2,20 +2,23 @@
 
 <h1 align="center">ClioPlay 2.1.6</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
+<p align="center">
+  Created and maintained by <a href="https://github.com/pxwel-dev">Pawel (pxwel-dev)</a>.
+</p>
 
-<p align="center"><a href="#install">Install</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
+
+<p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases/tag/Release">Download latest release</a> · <a href="#install">Install instructions</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
 ## Version 2.1.6 - Latest development release
 
 ### Changes in this version
 
 1) Simplify coordinate page. Only keypad. Soft right will cycle between lat/long and wrap back around to the other side, while soft left is delete. 
-2) Fix coordinates error message not fitting in window. Half of its text is clipped out of the bottom
-3) Vertically recentre the trip symbols (circle & squares) within the selection window
-4) Add further customisability in settings: 
-	a) Status pill on left / Time & temp pill on right (DEFAULT VALUE), Status pill on right / Time & temp pill on left
-	b) Speed pill in left / Direction pill on right (DEFAULT VALUE), Speed pill on right / Direction pill on left
-5) If hw_bluetooth = 0, hide all bluetooth-related functionality in the UI. 
+2) Vertically recentre the trip symbols (circle & squares) within the selection window
+3) Add further customisability in settings:
+   - Status pill on left / Time & temp pill on right (DEFAULT VALUE), Status pill on right / Time & temp pill on left
+   - Speed pill in left / Direction pill on right (DEFAULT VALUE), Speed pill on right / Direction pill on left
+4) If hw_bluetooth = 0, hide all bluetooth-related functionality in the UI. 
 
 See [version history](CHANGELOG.md) for implemented changes by version.
 
@@ -41,15 +44,14 @@ See [version history](CHANGELOG.md) for implemented changes by version.
 | --- | --- |
 | ![Enter latitude and longitude, name the destination, calculate the route and find it in Recents](src/docs/demo/coordinate-route.gif) | ![Enter Explore, pan the crosshair, press OK and confirm a route to the selected point](src/docs/demo/map-point-route.gif) |
 
-| HUD Customisability | Bluetooth hidden if unavailable |
+| HUD Customisability | Song and radio updates |
 | --- | --- |
-| ![Change top and bottom bar pill positions in settings](src/docs/demo/v216-hud-settings.gif) | ![Able to use ClioPlay, even if hw_bluetooth=0](src/docs/demo/v216-bluetooth-hidden.gif) |
+| ![Change top and bottom bar pill positions in settings](src/docs/demo/v216-hud-settings.gif) | ![A new song appears, updates inside Bluetooth control, then radio tuning changes the frequency](src/docs/demo/metadata-updates.gif) |
 
 
 <table align="center">
   <thead>
     <tr>
-      <th>Song and radio updates</th>
       <th>
         Send a destination with
         <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>
@@ -58,13 +60,6 @@ See [version history](CHANGELOG.md) for implemented changes by version.
   </thead>
   <tbody>
     <tr>
-      <td align="center">
-        <img
-          src="src/docs/demo/metadata-updates.gif"
-          alt="A new song appears, updates inside Bluetooth control, then radio tuning changes the frequency"
-          width="480"
-        >
-      </td>
       <td align="center">
         <img
           src="src/docs/demo/phone-destination.gif"
@@ -82,7 +77,7 @@ See [version history](CHANGELOG.md) for implemented changes by version.
 
 The primary supported configuration is:
 
-- Non-Bluetooth radio with a CD player
+- Non-Bluetooth radio with a CD player (other radio units may work, but likely with no audio source / volume information available)
 - Non-live Carminat TomTom head unit
 - Bluetooth remote control, or a supported Scénic III / Mégane physical console
 
@@ -93,8 +88,7 @@ Focus temperature readings take priority when valid. See the
 [console setup and controls](src/README.md#physical-console-and-temperature-sources).
 The hardware protocol was contributed from a tested Scénic III.
 
-ClioPlay requires Bluetooth hardware inside the head unit (`hw_bluetooth=1`),
-including on console-equipped vehicles.
+ClioPlay automatically discovers Bluetooth hardware on the Carminat; for Bluetooth, the Carminat must have: (`hw_bluetooth=1`). If no Bluetooth hardware is discovered, ClioPlay hides all Bluetooth-related UI features (Bluetooth audio and sending destinations by phone via <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>). 
 
 ClioPlay handles the audio source as follows:
 
@@ -199,5 +193,27 @@ For development, see [contributing](CONTRIBUTING.md) and [building](src/BUILDING
 Firmware, map extracts, generated navigation, personal settings and build caches
 are excluded from Git. The [UI previews](src/docs/demo/README.md) use the
 production renderer with controlled host inputs; it does not establish vehicle performance.
+
+## Authorship and credits
+
+ClioPlay was created and is maintained by [Pawel (pxwel-dev)](https://github.com/pxwel-dev), originally developed to modernise the factory-fitted Carminat TomTom navigation system in his 2010 Renault Clio.
+
+Original ClioPlay development includes:
+
+- Native application and animated graphical interface.
+- Offline OpenStreetMap rendering, routing and navigation engine.
+- Custom map format and navigation data generation pipeline.
+- Bluetooth A2DP audio receiver and media playback integration.
+- AVRCP-based destination transfer and the companion [ClioPlay Send](https://github.com/pxwel-dev/ClioPlay-Send) web application.
+- Factory radio and vehicle data integration.
+- SD card installation, configuration and release tooling.
+
+### Contributions and acknowledgements
+
+- [bobczan/Renatka](https://github.com/bobczan/Renatka) — physical Renault console protocol, button mappings and alternative vehicle temperature interface, subsequently integrated into ClioPlay's native application.
+- [OpenStreetMap](https://www.openstreetmap.org/copyright) and its contributors — geographic and navigation data.
+- [Geofabrik](https://www.geofabrik.de/) — distribution of regional OpenStreetMap extracts.
+
+Third-party software and dependencies retain their respective licences and attribution notices, as documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 <sub>Release files refreshed 16 November 2026 (Europe/London).</sub>
