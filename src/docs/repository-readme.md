@@ -215,5 +215,3 @@ Original ClioPlay development includes:
 - [Geofabrik](https://www.geofabrik.de/) — distribution of regional OpenStreetMap extracts.
 
 Third-party software and dependencies retain their respective licences and attribution notices, as documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-
-<sub>Release files refreshed 16 November 2026 (Europe/London).</sub>
