@@ -204,7 +204,7 @@ Original ClioPlay development includes:
 - Offline OpenStreetMap rendering, routing and navigation engine.
 - Custom map format and navigation data generation pipeline.
 - Bluetooth A2DP audio receiver and media playback integration.
-- AVRCP-based destination transfer and the companion [ClioPlay Send](https://pxwel-dev.github.io/ClioPlay-Send/) web application. web application.
+- AVRCP-based destination transfer and the companion [ClioPlay Send](https://github.com/pxwel-dev/ClioPlay-Send) web application.
 - Factory radio and vehicle data integration.
 - SD card installation, configuration and release tooling.
 
