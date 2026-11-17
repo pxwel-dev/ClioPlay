@@ -74,7 +74,7 @@ See [version history](CHANGELOG.md) for implemented changes by version.
 
 The primary supported configuration is:
 
-- Non-Bluetooth radio with a CD player
+- Non-Bluetooth radio with a CD player (other radio units may work, but likely with no audio source / volume information available)
 - Non-live Carminat TomTom head unit
 - Bluetooth remote control, or a supported Scénic III / Mégane physical console
 
