@@ -59,7 +59,8 @@ def verify_text_and_links(folder, paths):
             if re.search(pattern, raw):
                 raise ValueError(name+' pattern in publication: '+str(path.relative_to(folder)))
     docs = ('README.md', 'CONTRIBUTING.md', 'src/README.md',
-            'src/BUILDING.md', 'src/docs/changelog.md', 'src/docs/demo/README.md', 'WINDOWS.md')
+            'src/BUILDING.md', 'src/docs/changelog.md', 'src/docs/release-workflow.md',
+            'src/docs/demo/README.md', 'WINDOWS.md')
     if (folder/'SECURITY.md').is_file():docs += ('SECURITY.md',)
     for name in docs:
         path = folder/name

@@ -7,6 +7,10 @@ use Linux/WSL or macOS.
 Run commands from this directory. The runtime and builder are independent
 of sibling ClioPlay folders.
 
+For the complete maintainer release sequence, including version bumps, ARM
+rebuilds, GIFs, publication checks and Git, see the
+[release workflow](docs/release-workflow.md).
+
 ## ARM programs
 
 Requires Python **3.12+**, Clang with the ARM backend, LLD ELF linker and an archive
