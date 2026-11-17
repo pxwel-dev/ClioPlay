@@ -9,7 +9,7 @@
 
 <p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases/tag/Release">Download latest release</a> · <a href="#install">Install instructions</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-## Version 2.1.8 — Development update
+## Version 2.1.8 — Release
 
 ### Changes in this version
 
