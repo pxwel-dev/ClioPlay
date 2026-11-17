@@ -2,6 +2,9 @@
 
 <h1 align="center">ClioPlay 2.1.6</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
+<p align="center">
+  Created and maintained by <a href="https://github.com/pxwel-dev">Pawel (pxwel-dev)</a>.
+</p>
 
 
 <p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases/tag/Release">Download latest release</a> · <a href="#install">Install instructions</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
@@ -190,5 +193,27 @@ For development, see [contributing](CONTRIBUTING.md) and [building](src/BUILDING
 Firmware, map extracts, generated navigation, personal settings and build caches
 are excluded from Git. The [UI previews](src/docs/demo/README.md) use the
 production renderer with controlled host inputs; it does not establish vehicle performance.
+
+## Authorship and credits
+
+ClioPlay was created and is maintained by [Pawel (pxwel-dev)](https://github.com/pxwel-dev), originally developed to modernise the factory-fitted Carminat TomTom navigation system in his 2010 Renault Clio.
+
+Original ClioPlay development includes:
+
+- Native application and animated graphical interface.
+- Offline OpenStreetMap rendering, routing and navigation engine.
+- Custom map format and navigation data generation pipeline.
+- Bluetooth A2DP audio receiver and media playback integration.
+- AVRCP-based destination transfer and the companion [ClioPlay Send](https://github.com/pxwel-dev/ClioPlay-Send) web application.
+- Factory radio and vehicle data integration.
+- SD card installation, configuration and release tooling.
+
+### Contributions and acknowledgements
+
+- [bobczan/Renatka](https://github.com/bobczan/Renatka) — physical Renault console protocol, button mappings and alternative vehicle temperature interface, subsequently integrated into ClioPlay's native application.
+- [OpenStreetMap](https://www.openstreetmap.org/copyright) and its contributors — geographic and navigation data.
+- [Geofabrik](https://www.geofabrik.de/) — distribution of regional OpenStreetMap extracts.
+
+Third-party software and dependencies retain their respective licences and attribution notices, as documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 <sub>Release files refreshed 16 November 2026 (Europe/London).</sub>
