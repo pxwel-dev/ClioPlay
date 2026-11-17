@@ -35,3 +35,4 @@
 **/ttsystem
 **/PNDNavigator
 **/vehicledaemon
+src/tools/prepare_minimal_release.py
