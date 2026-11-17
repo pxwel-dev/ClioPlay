@@ -36,7 +36,7 @@ def previews():
         'v216-coordinates.gif': timeline('night', timed_scenes('preview-v216-coordinates', V216_COORDINATES_SAMPLES, 11200)),
         'v216-hud-settings.gif': timeline('night', timed_scenes('preview-v216-hud-settings', V216_HUD_SETTINGS_SAMPLES, 10000)),
         'v216-bluetooth-hidden.gif': timeline('night', timed_scenes('preview-v216-bluetooth-hidden', V216_BLUETOOTH_HIDDEN_SAMPLES, 9600)),
-        'v216-itinerary.gif': timeline('night', timed_scenes('preview-v216-itinerary', V216_ITINERARY_SAMPLES, 7500)),
+        'v216-itinerary.gif': timeline('night', timed_scenes('preview-v216-itinerary', V216_ITINERARY_SAMPLES, 9900)),
         'trips-layout.gif': timeline('night', timed_scenes('preview-trips-layout', TRIPS_LAYOUT_SAMPLES, 13200)),
         'trips-empty-layout.gif': timeline('night', timed_scenes('preview-trips-empty', TRIPS_EMPTY_SAMPLES, 6200)),
         'popups-layout.gif': timeline('night', timed_scenes('preview-popups-layout', POPUPS_LAYOUT_SAMPLES, 10800)),

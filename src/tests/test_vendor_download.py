@@ -1,4 +1,4 @@
-"""Official-CAB acquisition, integrity failures and running-installer compatibility."""
+"""Official-CAB acquisition, integrity failures and failure handling."""
 import hashlib
 import io
 from pathlib import Path
@@ -56,14 +56,6 @@ class VendorDownloadTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'Check your internet connection'):
                 vendor.obtain_cab(self.cache)
             prompt.assert_not_called()
-
-    def test_existing_installer_entry_point_uses_automatic_acquisition(self):
-        with patch.object(vendor, 'obtain_cab', return_value=self.cab) as obtain, \
-             patch('builtins.input') as prompt:
-            self.assertEqual(vendor.prompt_cab(), self.cab)
-            obtain.assert_called_once_with()
-            prompt.assert_not_called()
-
 
 if __name__ == '__main__':
     unittest.main()

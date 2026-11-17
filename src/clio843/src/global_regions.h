@@ -19,7 +19,7 @@ static int region_polygon(u32 off,u32 nr,s32 lat,s32 lon){
  inside^=ring;
  }return inside;
 }
-static void region_resolve(s32 lat,s32 lon){region_flags=0;region_iso[0]=region_iso[1]=0;if(regionfd<0){/* Old released maps were UK-only. Preserve their Auto display; cameras fail closed. */if(mapok&&mapfmt<=4&&mh.minlat>=4800000&&mh.maxlat<=6200000&&mh.minlon>=-1000000&&mh.maxlon<=300000){region_flags=5;region_iso[0]='G';region_iso[1]='B';}return;}
+static void region_resolve(s32 lat,s32 lon){region_flags=0;region_iso[0]=region_iso[1]=0;if(regionfd<0)return;
  for(u32 i=0;i<region_count;i++){u8 b[32];s_lseek(regionfd,(long)(16+i*32),SEEK_SET_);if(s_read(regionfd,b,32)!=32)return;s32 a=(s32)rd32u(b+4),l=(s32)rd32u(b+8),c=(s32)rd32u(b+12),d=(s32)rd32u(b+16);if(lat<a||lon<l||lat>c||lon>d)continue;if(region_polygon(rd32u(b+20),rd32u(b+24),lat,lon)){region_iso[0]=(char)b[0];region_iso[1]=(char)b[1];region_flags=b[2];return;}}
 }
 static void region_service(void){u32 now=s_now_ms();if(region_next_ms&&(s32)(now-region_next_ms)<0)return;region_next_ms=now+1000;if(!gps.fix)return;if(gps.lat==region_last_lat&&gps.lon==region_last_lon)return;region_last_lat=gps.lat;region_last_lon=gps.lon;region_resolve(gps.lat,gps.lon);}

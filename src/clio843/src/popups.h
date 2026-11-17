@@ -45,44 +45,50 @@ static void popup_build(struct PopupView*v,int key){
   popup_text(v,252,157,132,0,ui_tr("Forget"),C_WHITE,1);return;
  }
  if(key==MOD_ARRIVED_STOP||key==MOD_ARRIVED_DEST){
-  v->box=hud_box(74,100,332,74);
-  popup_text(v,80,116,320,1,ui_tr(key==MOD_ARRIVED_STOP?"Arrived at stop":"Destination reached"),C_WHITE,0);
+  v->box=hud_box(100,101,280,70);
+  popup_text(v,112,112,256,1,ui_tr(key==MOD_ARRIVED_STOP?"Arrived at stop":"Destination reached"),C_WHITE,0);
   char hint[64];copystr(hint,sizeof(hint),ui_tr(key==MOD_ARRIVED_STOP?"Continue in ":"Finish in "));
   u32 now=s_now_ms(),left=arrival_modal_deadline&&time_before_u32(now,arrival_modal_deadline)?arrival_modal_deadline-now:0;
   append_int(hint,sizeof(hint),(int)((left+999u)/1000u));appendstr(hint,sizeof(hint),"s");
-  popup_text(v,85,145,310,0,hint,C_CYAN,0);return;
+  popup_text(v,112,138,256,0,hint,C_CYAN,0);return;
  }
  if(key==MOD_SOURCE_PICK){
-  v->key+=dest_pick_action*256;v->box=hud_box(62,58,356,163);
-  popup_text(v,80,70,320,1,ui_tr(dest_pick_action==DEST_PICK_CHANGE_DEST?"Change destination":"Add stop"),C_WHITE,0);
+  v->key+=dest_pick_action*256;v->box=hud_box(80,64,320,144);
+  popup_text(v,92,74,296,1,ui_tr(dest_pick_action==DEST_PICK_CHANGE_DEST?"Change destination":"Add stop"),C_WHITE,0);
   const char*options[]={"Recents","Favourites","Coordinates","Cancel"};
-  for(int i=0;i<4;i++)popup_option(v,100,98+i*29,280,ui_tr(options[i]),i);return;
+  for(int i=0;i<4;i++)popup_option(v,94,98+i*25,292,ui_tr(options[i]),i);return;
  }
- int y=key==MOD_FAVE&&trip.active?54:78,h=key==MOD_FAVE&&trip.active?174:126;
- v->box=hud_box(62,y,356,h);
+ /* The card's height follows its actual content, not the largest action
+  * list. Keep the 22px focus targets and a compact title/button gap. */
+ int yes_no=key==MOD_ROUTE_POINT||key==MOD_CANCEL_ROUTE||key==MOD_REMOVE_STOP||key==MOD_RESUME_TRIP;
+ int rows=key==MOD_RECENT?(trip.active?3:2):key==MOD_FAVE?(trip.active?4:3):key==MOD_TARGET&&modal_index>=0&&modal_index<trip.count?(modal_index<trip.count-1?3:2):0;
+ int w=yes_no?280:320,h=yes_no?72:36+rows*25+7;
+ int x=(W-w)/2,y=(H-h)/2;
+ v->box=hud_box(x,y,w,h);
  const char*title=key==MOD_ROUTE_POINT?(pending_point_stop?"Add point as stop?":"Route to point?"):
   key==MOD_CANCEL_ROUTE?"Cancel current route?":key==MOD_REMOVE_STOP?"Remove stop?":key==MOD_RESUME_TRIP?"Resume saved trip?":
   key==MOD_RECENT?"Recent trip":key==MOD_FAVE?"Favourite":"Manage target";
- popup_text(v,80,y+13,320,1,ui_tr(title),C_WHITE,0);
- if(key==MOD_ROUTE_POINT||key==MOD_CANCEL_ROUTE||key==MOD_REMOVE_STOP||key==MOD_RESUME_TRIP){
-  popup_option(v,135,130,90,ui_tr("Yes"),0);popup_option(v,255,130,90,ui_tr("No"),1);return;
+ popup_text(v,x+12,y+10,w-24,1,ui_tr(title),C_WHITE,0);
+ if(yes_no){
+  int bw=(w-40)/2;popup_option(v,x+14,y+38,bw,ui_tr("Yes"),0);popup_option(v,x+26+bw,y+38,bw,ui_tr("No"),1);return;
  }
+ int bx=x+14,bw=w-28,top=y+34,step=25;
  if(key==MOD_RECENT||key==MOD_FAVE){
-  int row=0,top=key==MOD_RECENT?112:trip.active?84:116,step=key==MOD_RECENT?27:24;
-  if(trip.active){popup_option(v,100,top,280,ui_tr("Add as stop"),row++);}
-  popup_option(v,100,top+row*step,280,ui_tr("Route as new"),row);row++;
-  if(key==MOD_RECENT)popup_option(v,100,top+row*step,280,ui_tr("Add to favourites"),row);
+  int row=0;
+  if(trip.active){popup_option(v,bx,top+row*step,bw,ui_tr("Add as stop"),row);row++;}
+  popup_option(v,bx,top+row*step,bw,ui_tr("Route as new"),row);row++;
+  if(key==MOD_RECENT)popup_option(v,bx,top+row*step,bw,ui_tr("Add to favourites"),row);
   else{
-   popup_option(v,100,top+row*step,280,ui_tr("Rename favourite"),row);row++;
-   popup_option(v,100,top+row*step,280,ui_tr("Remove favourite"),row);
+   popup_option(v,bx,top+row*step,bw,ui_tr("Rename favourite"),row);row++;
+   popup_option(v,bx,top+row*step,bw,ui_tr("Remove favourite"),row);
   }return;
  }
  if(key==MOD_TARGET&&modal_index>=0&&modal_index<trip.count){
   if(modal_index<trip.count-1){
-   popup_option(v,100,112,280,ui_tr("Remove stop"),0);popup_option(v,100,139,280,ui_tr("Move up"),1);popup_option(v,100,166,280,ui_tr("Move down"),2);
+   popup_option(v,bx,top,bw,ui_tr("Remove stop"),0);popup_option(v,bx,top+step,bw,ui_tr("Move up"),1);popup_option(v,bx,top+2*step,bw,ui_tr("Move down"),2);
   }else{
-   popup_option(v,100,125,280,ui_tr("Change destination"),0);
-   popup_option(v,100,154,280,ui_tr(fave_contains(trip.target[modal_index].lat,trip.target[modal_index].lon)>=0?"Remove favourite":"Add to favourites"),1);
+   popup_option(v,bx,top,bw,ui_tr("Change destination"),0);
+   popup_option(v,bx,top+step,bw,ui_tr(fave_contains(trip.target[modal_index].lat,trip.target[modal_index].lon)>=0?"Remove favourite":"Add to favourites"),1);
   }
  }
 }

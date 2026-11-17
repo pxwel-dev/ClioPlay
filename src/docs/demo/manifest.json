@@ -8,7 +8,7 @@
     "clio843/src/map_thin_coverage.h": "d4632a1dd789176be35ded06a21b84d272d69910532f31e05dc03fbfc092e5fb",
     "clio843/src/atlas_router.h": "ae13e0cb3de1c5c75a377abced3f4332cecd1ca0ff124e9d3074c555d9068eb5",
     "clio843/src/boot_art.h": "367249c4bf35acfa7ce5092dce4a906c566d5e9e818d1bbd3d65c35ba128dbeb",
-    "clio843/src/popups.h": "b0368f86a9daa163b1acf00f8cffa016e65597c5f6b0ce774245020dbfd1c53a",
+    "clio843/src/popups.h": "5b07ca6fdb099d346763c1e06a1055d01452a22bfa882a9f879c022f48c40b8f",
     "clio843/src/hud.h": "12d701997e7b46957ad72c0a90ec2c2a01898ffcb4215a53ff86d24ae1974a76",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
     "clio843/src/audio_schedule.h": "bf37e189f7a0f372567287380820a357878fc1aaf519f85309224cd0d5ae85a6",
@@ -22,10 +22,10 @@
     "clio843/src/atlas_catalog.h": "e68482414282efe29ca954b24778c89e03a3d70197bc9b29effd830dec97f8f0",
     "clio843/src/menu_keyboard.h": "c2bbd1281013adcf7e0620b4f360133b837ac2596fe9b5ea81f1e0cac423b5a0",
     "clio843/src/map_raster.h": "d5ab540a21b9e3495fd393960b9975731fb710131c378e17ab2d49e6404ea692",
-    "clio843/src/global_regions.h": "1d8341489f0394ce7d1cef200e252129bc9eebcbe60b29dc2923dfd156a77969",
+    "clio843/src/global_regions.h": "00772a81c56fefdcf466ce0594c05a9d62983861a6f81be872fb7e474956d647",
     "clio843/src/boot_transition.h": "8ea391927a52cf8eaa9f010a70b8f8e012b768346ca9cd297110e40e6a850007",
-    "clio843/src/menu_sheet.h": "b416860405e851278186eac8ed01841089d21a89b4700a920c3ebe47aa36951e",
-    "clio843/src/release_version.h": "1d09efca3656aa0e853a97223018ffb18c263338b8bac864ef61b598e2a90c0d",
+    "clio843/src/menu_sheet.h": "a804bb6c81872412fda84d759ddce010efbd9797ae023ed189ae1d43884da9f4",
+    "clio843/src/release_version.h": "81ca6298cd0afb2a1d10d7daa9e3c04a71825e5e576eef20ce97d70bfc6aef40",
     "clio843/src/vehicle_icon.h": "dfcb48775858684a323506e4cb6f61eba56ce3d8c7507a5ef86b58d917f24b4a",
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
     "clio843/src/cliospl.c": "523530da194e4a859de29b448926f347d70c6c6c243d08d9b048fb68e08e3d33",
@@ -42,7 +42,7 @@
     "clio843/src/global_cameras.h": "d07e8dabf65f3513a5ec88eb15e34bdcad628cdb291f08a518eb46a3ebed9cd9",
     "clio843/src/urban_speed_defaults.h": "a719a3d065f16bc39727b01d7ed73f412beeb4d8703b5bde73a8c6ff1c35ac10",
     "clio843/src/cswd.c": "707aa0a1fdcd8048d2fa252a14ce32176fae347d512e11869f2905a69380530c",
-    "clio843/src/clio040.c": "9786bfa4c65fea88e70376aca1c51b392049b607ddd0f9f4502e391c62096a3e",
+    "clio843/src/clio040.c": "7261d241856b7c3eb9b6689a8837513e94f3e2ff9dc67d7e42917b9ea8ab7344",
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/vstatd.c": "a359d214853cdd511fb79e905fafc52f5413b635bb3288b268d04c15724a666f",
     "clio843/src/audio_chime.h": "184c222e448db2707fc752bc38f7f6c735b6cb1f4d168d88ddc7da7cf20f4d75",
@@ -505,16 +505,16 @@
     "clio843/src/vendor/sheenbidi/Headers/SheenBidi/SheenBidi.h": "44a644a72edf2300838d32c3e32aa14a7cb66b584fb9da643b8311aa21991cbe"
   },
   "executables": {
-    "clio040": "3e7094e5e4330ebc04b3e01280ad8fff6873b1872ed30cb0e745f6d00d17ef3f",
-    "cliospl": "8e53dfc4764cc8f0547bfffca1e48dcca15e4ae99b763e190b9bc5d8815106d9",
-    "clioa2dp": "bb8a0fa9848c2ea179252f20fddb4a302f1a6cb0b6ee21c62b7b690aec64508c"
+    "clio040": "a5f28b2812bafbe9790b9760e6f793b99e66f56bddb44d0d187f34f313326996",
+    "cliospl": "d93af91ce819b2f26ab8adc67bb55bfa84da41bf7dd0f117b5ced613d7a0ae42",
+    "clioa2dp": "c7df0868c4a5f9cc6fc6d220b19d466de6470d28a3aa458da6d0c89a7f60b143"
   },
   "generator_inputs": {
-    "tools/render_previews.py": "e8be0e02f1f4d319ecc665254c6e3d892a997a9ba98190c7c0f83063d4fba2a6",
-    "tools/render_gallery.py": "0aaea3172cb4f6490756f0aa7fd92e5433481bab9c601eb6d6efc4db7a7e3a89",
+    "tools/render_previews.py": "39439dce1d12e6872d7e91c6879e585bde386db935a4a98e2731dea13be5d3fa",
+    "tools/render_gallery.py": "c552114c95c9f686fb4a26ac2319562576269cdbe0d7a19e042e9a383fd38fde",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
     "tests/native.c": "93313565ef22c6011c349018513065ae28f9fc22273ba0c28f2635c6dba7b75a",
-    "tests/splash.c": "33de90a783e93f29be5752a714cd36d228da0adddc3f8499a0a95ecf334cdcda",
+    "tests/splash.c": "3d9b3fa740dd139a0d7776c1ec33c789af5c7ecc739a6355b982195490540c72",
     "tests/fixtures/route.h": "8d4a20c13f4bc6d04e0815eb77917f5e5129285cb1138c8f2a2df1d27816e22f",
     "clio843/font.bin": "f45a6b3a6d6c539e0e83556a49049bb2ee4df7a04f17f9a43dfee3a3e8760ea1"
   },
@@ -985,7 +985,7 @@
       ]
     },
     "v216-hud-settings.gif": {
-      "sha256": "dcb8953141f84fa7bbc26c726db5a3e09775f77723c7c4a0c6497907c18a320c",
+      "sha256": "161faa5f68877d9a7168dc7a11ab3cf7a927a3238a9d8120657cb5a596b52279",
       "frames": 29,
       "duration_ms": 10000,
       "reserved_pointer_colours": [
@@ -1021,103 +1021,103 @@
         },
         {
           "frame": "night/preview-v216-hud-settings-0134.png",
-          "rgb565_sha256": "7b79d6e24a429776b695b94c6c9d54d41fe15b8fa3143f8e705725617b3fc943"
+          "rgb565_sha256": "936eaee38ed9de9d4baf584d265ae2e502c9d492bbf910bfaf6f19e6f87c018a"
         },
         {
           "frame": "night/preview-v216-hud-settings-0201.png",
-          "rgb565_sha256": "6956c3a0482703bd9bdb628831a63d82cd9039069819bf96df6a1bf11aebede9"
+          "rgb565_sha256": "058cd1ca61c7f21ddeab5766c3b992e275d0c5432028358142be434dae41f19b"
         },
         {
           "frame": "night/preview-v216-hud-settings-0268.png",
-          "rgb565_sha256": "18408d16373f4e6b4e9fdd3d41445086513a758883fdf03b569c5e13988e74a8"
+          "rgb565_sha256": "4e1ffc50cb8730a251530e761d6a4b23f2c2363eac04a19fc8bec0ea36ffd751"
         },
         {
           "frame": "night/preview-v216-hud-settings-0335.png",
-          "rgb565_sha256": "d22790adfafe1ababc3049ff8e363f7e979f6fcc064783eb4540bfcc66ed905f"
+          "rgb565_sha256": "7539b8b97bcf812183cecec5cbf733b083c86205c3cbf8c6a5012a8149f5dddb"
         },
         {
           "frame": "night/preview-v216-hud-settings-1700.png",
-          "rgb565_sha256": "6f379e356de1cbdaefe0fd21b0f1d502db2a03d5aef7c3f6bb18eb16f4043c85"
+          "rgb565_sha256": "955d42d130eb7bb59bfa44dc2dd009a7e9c4cf5913f83563220e85aa6e79b5a4"
         },
         {
           "frame": "night/preview-v216-hud-settings-1767.png",
-          "rgb565_sha256": "d86b667ee19f4b94f0f740a3cb0b53a4c556ca459cbf77bbdda929471ae353c2"
+          "rgb565_sha256": "c728e80bf880d1f20f028134255f0aa43244c3d819904eedae2beb573214dd48"
         },
         {
           "frame": "night/preview-v216-hud-settings-1834.png",
-          "rgb565_sha256": "81c580e5621e2c9879000c780c737efec9b299bd7fea6e7c01e78d6d99b10be7"
+          "rgb565_sha256": "c2a816e8da1ed60370903ede508d1e04adb427726204e593259736cb65b284dc"
         },
         {
           "frame": "night/preview-v216-hud-settings-1901.png",
-          "rgb565_sha256": "91fff38971f4c0659385318b541fa33c5b2a846165abedecff96610df1ee4dd6"
+          "rgb565_sha256": "3d596a28ff5093050c8fe73107f51edfe7510ec2847d7add66fa1aeb42111d8e"
         },
         {
           "frame": "night/preview-v216-hud-settings-1968.png",
-          "rgb565_sha256": "bbb9c0c0155a3c2baa1fa2e52c812a8d5c288862b6f53792a370d42fbe2d72ac"
+          "rgb565_sha256": "ccb4827748e26a510d939f677460f12f2f4fe114d61a175420d1243ea6ca6f37"
         },
         {
           "frame": "night/preview-v216-hud-settings-2035.png",
-          "rgb565_sha256": "f5e9a6573c357f24bba0ac138b8e6d5e36b69effc55ecf6fccc9bda12dd12477"
+          "rgb565_sha256": "94dee2c59ded0ba867c026f573b0091afcc7ac2273c3865a637a1316892e56ec"
         },
         {
           "frame": "night/preview-v216-hud-settings-3600.png",
-          "rgb565_sha256": "8c81c26eb1e6f2b7c7357dd3f4b1f04c1ceb9d9116bcc73e66251ee0ebca2c2f"
+          "rgb565_sha256": "315ceb8fadf9ef2bd399153cb7dcff110373b382929891344f9c6d8dcba5ecf9"
         },
         {
           "frame": "night/preview-v216-hud-settings-3667.png",
-          "rgb565_sha256": "8c81c26eb1e6f2b7c7357dd3f4b1f04c1ceb9d9116bcc73e66251ee0ebca2c2f"
+          "rgb565_sha256": "315ceb8fadf9ef2bd399153cb7dcff110373b382929891344f9c6d8dcba5ecf9"
         },
         {
           "frame": "night/preview-v216-hud-settings-3734.png",
-          "rgb565_sha256": "8c81c26eb1e6f2b7c7357dd3f4b1f04c1ceb9d9116bcc73e66251ee0ebca2c2f"
+          "rgb565_sha256": "315ceb8fadf9ef2bd399153cb7dcff110373b382929891344f9c6d8dcba5ecf9"
         },
         {
           "frame": "night/preview-v216-hud-settings-3801.png",
-          "rgb565_sha256": "8c81c26eb1e6f2b7c7357dd3f4b1f04c1ceb9d9116bcc73e66251ee0ebca2c2f"
+          "rgb565_sha256": "315ceb8fadf9ef2bd399153cb7dcff110373b382929891344f9c6d8dcba5ecf9"
         },
         {
           "frame": "night/preview-v216-hud-settings-3868.png",
-          "rgb565_sha256": "8c81c26eb1e6f2b7c7357dd3f4b1f04c1ceb9d9116bcc73e66251ee0ebca2c2f"
+          "rgb565_sha256": "315ceb8fadf9ef2bd399153cb7dcff110373b382929891344f9c6d8dcba5ecf9"
         },
         {
           "frame": "night/preview-v216-hud-settings-3935.png",
-          "rgb565_sha256": "8c81c26eb1e6f2b7c7357dd3f4b1f04c1ceb9d9116bcc73e66251ee0ebca2c2f"
+          "rgb565_sha256": "315ceb8fadf9ef2bd399153cb7dcff110373b382929891344f9c6d8dcba5ecf9"
         },
         {
           "frame": "night/preview-v216-hud-settings-4200.png",
-          "rgb565_sha256": "2a8ce7109e5273e2b16969f503cf17efc041b76cde21e6c07c4e561d9ba77543"
+          "rgb565_sha256": "b9ab1da649b5e015a884fe1a64d7bce43a306a6d2eb6225e6fc2bf71ba895ec0"
         },
         {
           "frame": "night/preview-v216-hud-settings-4267.png",
-          "rgb565_sha256": "23a4a3c2fd424f1366717ccdc879f53dccb12c3f53bdaadc93ddc3c02944c7cc"
+          "rgb565_sha256": "5de9a995a56cbc78a80acfc8039edabbc8a12a4d3b1a78832b3a014d1770bd9a"
         },
         {
           "frame": "night/preview-v216-hud-settings-4334.png",
-          "rgb565_sha256": "a51ada4bbbca43853de3f5e3425fb476a57dc85c3c7bb40ade52750dbd6ad834"
+          "rgb565_sha256": "20e83391ffa14df5b8e07d6292c2d11cd670af645b7a05bb55afaa6aa1694da9"
         },
         {
           "frame": "night/preview-v216-hud-settings-4401.png",
-          "rgb565_sha256": "44b32b89cfe69e83b68dce234a511a1a5f93232f0d92158094b59bd3ce9ecfd0"
+          "rgb565_sha256": "54879b106f8cf50d10aff632566ef6f344532c844c4621ef23990fbca47d8a8a"
         },
         {
           "frame": "night/preview-v216-hud-settings-4468.png",
-          "rgb565_sha256": "e98ddab40b54e35c51f00735da27b9f7be6a4229803db992bd58b50b5aa5f12d"
+          "rgb565_sha256": "44bc6f707db6f2df0a0e820766c94d5ecc5dc4238dc2cc9d603f48b9b3ccdca3"
         },
         {
           "frame": "night/preview-v216-hud-settings-4535.png",
-          "rgb565_sha256": "1b4ba13ebfe71558a32eeba66cc649ba118b1ca766a8bb1efe0f4c288e6938a7"
+          "rgb565_sha256": "464134df4f2504ee2a54e875b33fe3cd0c4fae4d7be1d5f8293c811de6ec36e3"
         },
         {
           "frame": "night/preview-v216-hud-settings-6100.png",
-          "rgb565_sha256": "1b4ba13ebfe71558a32eeba66cc649ba118b1ca766a8bb1efe0f4c288e6938a7"
+          "rgb565_sha256": "464134df4f2504ee2a54e875b33fe3cd0c4fae4d7be1d5f8293c811de6ec36e3"
         },
         {
           "frame": "night/preview-v216-hud-settings-6167.png",
-          "rgb565_sha256": "f418fdf8c8af16de545d51e9b5d2f35e4a0e0e742452886ca27baaf38d756f6d"
+          "rgb565_sha256": "41d9875443b17cec3298bbc8252ab65bed777e3a5cd70794093b0cdbaaea8197"
         },
         {
           "frame": "night/preview-v216-hud-settings-6234.png",
-          "rgb565_sha256": "6835f2d4c13919a71019be9dae3f15bff382b9ddd32414823a6626a7a0201ac5"
+          "rgb565_sha256": "0a8424ea7174c3d0622b2c9461eda83f9deefefc5cd15d262448fd66211bc481"
         },
         {
           "frame": "night/preview-v216-hud-settings-6301.png",
@@ -1141,28 +1141,28 @@
         },
         {
           "frame": "night/preview-v216-hud-settings-8334.png",
-          "rgb565_sha256": "e1a226afde6cae2b43634b6a51d7a04fc8beed55065a30e0bfbc06c271b78de7"
+          "rgb565_sha256": "5eb0e637fd76a5f49e8667f4bd642cd5823bb9c89faafd9de507bc286272369b"
         },
         {
           "frame": "night/preview-v216-hud-settings-8401.png",
-          "rgb565_sha256": "fde6ae094e2e5c60c044ce4944dd2857d979d27f81cb23ac512c6ee20b073761"
+          "rgb565_sha256": "8ed425f5e7156599a40682fedda22573a9db038cf9615888476b8006ece4fa4e"
         },
         {
           "frame": "night/preview-v216-hud-settings-8468.png",
-          "rgb565_sha256": "fec3646ff87043f3af0beedf7a17dd321f0faec7128b38557a1c8c529380593d"
+          "rgb565_sha256": "a8831e9b361cd0d4ef88b0b343fd4da7a7c97030ca97cfee7a87d2adeafd138d"
         },
         {
           "frame": "night/preview-v216-hud-settings-8535.png",
-          "rgb565_sha256": "1b4ba13ebfe71558a32eeba66cc649ba118b1ca766a8bb1efe0f4c288e6938a7"
+          "rgb565_sha256": "464134df4f2504ee2a54e875b33fe3cd0c4fae4d7be1d5f8293c811de6ec36e3"
         },
         {
           "frame": "night/preview-v216-hud-settings-9900.png",
-          "rgb565_sha256": "1b4ba13ebfe71558a32eeba66cc649ba118b1ca766a8bb1efe0f4c288e6938a7"
+          "rgb565_sha256": "464134df4f2504ee2a54e875b33fe3cd0c4fae4d7be1d5f8293c811de6ec36e3"
         }
       ]
     },
     "v216-bluetooth-hidden.gif": {
-      "sha256": "6a35518052a4c4d23e406a46e569da7da12ae43654acd974d612d0c0f60d3f6b",
+      "sha256": "b6d80ac5df2b844c70ab4fa886ad05056fd2de1c4723b5a319ebf46e6131dcf4",
       "frames": 32,
       "duration_ms": 9600,
       "reserved_pointer_colours": [
@@ -1242,35 +1242,35 @@
         },
         {
           "frame": "night/preview-v216-bluetooth-hidden-4467.png",
-          "rgb565_sha256": "36607f6b59c281c247f77a5838e58553b97acd39f275506fc0c520d20a909a14"
+          "rgb565_sha256": "1b00286c5aab002a6522cef94d7a40b2c3e2db8c92b82620402a47f29fff3836"
         },
         {
           "frame": "night/preview-v216-bluetooth-hidden-4534.png",
-          "rgb565_sha256": "2dc60ee134212a1ab1e6264d7c7dbda020b7e999b937a4d1d7fb95c66a972078"
+          "rgb565_sha256": "b6ab55c237aca75b24497aeb024067510abfe126dd2b995fcb7cbf255cab1aac"
         },
         {
           "frame": "night/preview-v216-bluetooth-hidden-4601.png",
-          "rgb565_sha256": "604b9aa54d81168ebb54e21c26757bdc4c1d94d16a8906c5edd824395518faad"
+          "rgb565_sha256": "5f147dd1944a5a39488de1265d26c55477fd9ac401ff257f36f6f03c7cb8e7cf"
         },
         {
           "frame": "night/preview-v216-bluetooth-hidden-4668.png",
-          "rgb565_sha256": "abd61dfd055900ff2072e66b89cabf7824f0ccbfac9101b1b5c90c8242fc4303"
+          "rgb565_sha256": "372630a88cefde01ff0e5f46c7228eb169ebd0ccb091ccc22b8333e05dfaeeb6"
         },
         {
           "frame": "night/preview-v216-bluetooth-hidden-4735.png",
-          "rgb565_sha256": "a59a45a5ba336848d73120f9f721355fcc9dfcf90bc6c849b723d089bcd942ee"
+          "rgb565_sha256": "f23d7c03e2a5b76bcf0efe88071d49e7c76103a9932783e2beb0adb7ea7c6af6"
         },
         {
           "frame": "night/preview-v216-bluetooth-hidden-6600.png",
-          "rgb565_sha256": "a59a45a5ba336848d73120f9f721355fcc9dfcf90bc6c849b723d089bcd942ee"
+          "rgb565_sha256": "f23d7c03e2a5b76bcf0efe88071d49e7c76103a9932783e2beb0adb7ea7c6af6"
         },
         {
           "frame": "night/preview-v216-bluetooth-hidden-6667.png",
-          "rgb565_sha256": "2b846a10c976b0f58c1193ce8da10ce6cd92f8b01b85b8a8a60e9fe6bdd4ad9b"
+          "rgb565_sha256": "9002a3ef307cdd0880e903ae0a1ca47b395487624b7a2130043434684a46386d"
         },
         {
           "frame": "night/preview-v216-bluetooth-hidden-6734.png",
-          "rgb565_sha256": "7cdb5cd937c3aae0169ee2d4f82a787e4754b955861e0a7fed42be4a696823b4"
+          "rgb565_sha256": "65b18ce8c1b2e5eb55a0c3696e51f0bbf5b4642691589e047e0240c3325f0b76"
         },
         {
           "frame": "night/preview-v216-bluetooth-hidden-6801.png",
@@ -1339,9 +1339,9 @@
       ]
     },
     "v216-itinerary.gif": {
-      "sha256": "7f5cd1008b8cb25a67bb6750bc9bffb8f753f1ccb9093d98dd449aac50e71b90",
-      "frames": 18,
-      "duration_ms": 7500,
+      "sha256": "e696dcb8f3963d1214bc627fc130eda860e3e80a343ea1de570819a48583a678",
+      "frames": 30,
+      "duration_ms": 9900,
       "reserved_pointer_colours": [
         [
           239,
@@ -1375,196 +1375,364 @@
         },
         {
           "frame": "night/preview-v216-itinerary-0134.png",
-          "rgb565_sha256": "f6d256a25d96f9e8597a03c0bdbe7abd42e0d173021095ca08a5b5f777916f22"
+          "rgb565_sha256": "69562ed074e156fb849b0c904df2cacd1a78452ffcaffbed7ff8d81decf4f235"
         },
         {
           "frame": "night/preview-v216-itinerary-0201.png",
-          "rgb565_sha256": "3b30fd28c1f3eba5dc838aee92e15521f53cc1ed5dafabfeb88f6312d9419690"
+          "rgb565_sha256": "8c72656fd5f9b668c9c9a4bfd73ee88ea70671c2ec12d612e02f56527edcd8e1"
         },
         {
           "frame": "night/preview-v216-itinerary-0268.png",
-          "rgb565_sha256": "a6c9e9b252a075ff2627d81d21c867e2dda18ef2b0cc32b480993fb463038319"
+          "rgb565_sha256": "5b29c86411f3ec5aa15fb648b76ab67dc2e26495b7bfff3d2e87ad097cb85065"
         },
         {
           "frame": "night/preview-v216-itinerary-0335.png",
-          "rgb565_sha256": "b745ab7de7a748f8b6415ebcb3e9d43b4fbe26705d0ab3610f85d85da633b39e"
+          "rgb565_sha256": "d07f34ed0ac6fad4116706657712b99d8b611d93a2112f2e21cb6a1892abf33d"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-1000.png",
+          "rgb565_sha256": "49be29b73a3b2f362ac4bfa81e24c05bf898648efd14854eae9f7132c188ef68"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-1067.png",
+          "rgb565_sha256": "49be29b73a3b2f362ac4bfa81e24c05bf898648efd14854eae9f7132c188ef68"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-1134.png",
+          "rgb565_sha256": "49be29b73a3b2f362ac4bfa81e24c05bf898648efd14854eae9f7132c188ef68"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-1201.png",
+          "rgb565_sha256": "49be29b73a3b2f362ac4bfa81e24c05bf898648efd14854eae9f7132c188ef68"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-1268.png",
+          "rgb565_sha256": "49be29b73a3b2f362ac4bfa81e24c05bf898648efd14854eae9f7132c188ef68"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-1335.png",
+          "rgb565_sha256": "49be29b73a3b2f362ac4bfa81e24c05bf898648efd14854eae9f7132c188ef68"
         },
         {
           "frame": "night/preview-v216-itinerary-1500.png",
-          "rgb565_sha256": "c0ea18eae311ab1c1f3e73ae925a8e5e210a19981abc88c38795ed0f1b8d21c1"
+          "rgb565_sha256": "19c8ddf08d6b52462dc5354b9be13b455152c69b2d2cb3719c5a0386530b6c06"
         },
         {
           "frame": "night/preview-v216-itinerary-1567.png",
-          "rgb565_sha256": "c0ea18eae311ab1c1f3e73ae925a8e5e210a19981abc88c38795ed0f1b8d21c1"
+          "rgb565_sha256": "19c8ddf08d6b52462dc5354b9be13b455152c69b2d2cb3719c5a0386530b6c06"
         },
         {
           "frame": "night/preview-v216-itinerary-1634.png",
-          "rgb565_sha256": "c0ea18eae311ab1c1f3e73ae925a8e5e210a19981abc88c38795ed0f1b8d21c1"
+          "rgb565_sha256": "19c8ddf08d6b52462dc5354b9be13b455152c69b2d2cb3719c5a0386530b6c06"
         },
         {
           "frame": "night/preview-v216-itinerary-1701.png",
-          "rgb565_sha256": "c0ea18eae311ab1c1f3e73ae925a8e5e210a19981abc88c38795ed0f1b8d21c1"
+          "rgb565_sha256": "19c8ddf08d6b52462dc5354b9be13b455152c69b2d2cb3719c5a0386530b6c06"
         },
         {
           "frame": "night/preview-v216-itinerary-1768.png",
-          "rgb565_sha256": "c0ea18eae311ab1c1f3e73ae925a8e5e210a19981abc88c38795ed0f1b8d21c1"
+          "rgb565_sha256": "19c8ddf08d6b52462dc5354b9be13b455152c69b2d2cb3719c5a0386530b6c06"
         },
         {
           "frame": "night/preview-v216-itinerary-1835.png",
-          "rgb565_sha256": "c0ea18eae311ab1c1f3e73ae925a8e5e210a19981abc88c38795ed0f1b8d21c1"
+          "rgb565_sha256": "19c8ddf08d6b52462dc5354b9be13b455152c69b2d2cb3719c5a0386530b6c06"
         },
         {
-          "frame": "night/preview-v216-itinerary-2200.png",
-          "rgb565_sha256": "cf3781def9695d7dd383e9690d8e5db3aea1dc2b75b536d604789d366b4269c6"
+          "frame": "night/preview-v216-itinerary-2000.png",
+          "rgb565_sha256": "ff461e0f7d62756b420d01ba0f7ff0b3b9acf9aba09c69fa0b08f5c52cf2de45"
         },
         {
-          "frame": "night/preview-v216-itinerary-2267.png",
-          "rgb565_sha256": "cf3781def9695d7dd383e9690d8e5db3aea1dc2b75b536d604789d366b4269c6"
+          "frame": "night/preview-v216-itinerary-2067.png",
+          "rgb565_sha256": "ff461e0f7d62756b420d01ba0f7ff0b3b9acf9aba09c69fa0b08f5c52cf2de45"
         },
         {
-          "frame": "night/preview-v216-itinerary-2334.png",
-          "rgb565_sha256": "cf3781def9695d7dd383e9690d8e5db3aea1dc2b75b536d604789d366b4269c6"
+          "frame": "night/preview-v216-itinerary-2134.png",
+          "rgb565_sha256": "ff461e0f7d62756b420d01ba0f7ff0b3b9acf9aba09c69fa0b08f5c52cf2de45"
         },
         {
-          "frame": "night/preview-v216-itinerary-2401.png",
-          "rgb565_sha256": "cf3781def9695d7dd383e9690d8e5db3aea1dc2b75b536d604789d366b4269c6"
+          "frame": "night/preview-v216-itinerary-2201.png",
+          "rgb565_sha256": "ff461e0f7d62756b420d01ba0f7ff0b3b9acf9aba09c69fa0b08f5c52cf2de45"
         },
         {
-          "frame": "night/preview-v216-itinerary-2468.png",
-          "rgb565_sha256": "cf3781def9695d7dd383e9690d8e5db3aea1dc2b75b536d604789d366b4269c6"
+          "frame": "night/preview-v216-itinerary-2268.png",
+          "rgb565_sha256": "ff461e0f7d62756b420d01ba0f7ff0b3b9acf9aba09c69fa0b08f5c52cf2de45"
         },
         {
-          "frame": "night/preview-v216-itinerary-2535.png",
-          "rgb565_sha256": "cf3781def9695d7dd383e9690d8e5db3aea1dc2b75b536d604789d366b4269c6"
+          "frame": "night/preview-v216-itinerary-2335.png",
+          "rgb565_sha256": "ff461e0f7d62756b420d01ba0f7ff0b3b9acf9aba09c69fa0b08f5c52cf2de45"
         },
         {
-          "frame": "night/preview-v216-itinerary-2900.png",
-          "rgb565_sha256": "df09b895e44f3be95a9855f8c5a9a9dc29267dc46cbdc76793fcce201ae63dc1"
+          "frame": "night/preview-v216-itinerary-2500.png",
+          "rgb565_sha256": "0ac7b437e76dba79b53cdf022973d061f174c41f528ea0aa900558a14f4636f4"
         },
         {
-          "frame": "night/preview-v216-itinerary-2967.png",
-          "rgb565_sha256": "df09b895e44f3be95a9855f8c5a9a9dc29267dc46cbdc76793fcce201ae63dc1"
+          "frame": "night/preview-v216-itinerary-2567.png",
+          "rgb565_sha256": "0ac7b437e76dba79b53cdf022973d061f174c41f528ea0aa900558a14f4636f4"
         },
         {
-          "frame": "night/preview-v216-itinerary-3034.png",
-          "rgb565_sha256": "df09b895e44f3be95a9855f8c5a9a9dc29267dc46cbdc76793fcce201ae63dc1"
+          "frame": "night/preview-v216-itinerary-2634.png",
+          "rgb565_sha256": "0ac7b437e76dba79b53cdf022973d061f174c41f528ea0aa900558a14f4636f4"
         },
         {
-          "frame": "night/preview-v216-itinerary-3101.png",
-          "rgb565_sha256": "df09b895e44f3be95a9855f8c5a9a9dc29267dc46cbdc76793fcce201ae63dc1"
+          "frame": "night/preview-v216-itinerary-2701.png",
+          "rgb565_sha256": "0ac7b437e76dba79b53cdf022973d061f174c41f528ea0aa900558a14f4636f4"
         },
         {
-          "frame": "night/preview-v216-itinerary-3168.png",
-          "rgb565_sha256": "df09b895e44f3be95a9855f8c5a9a9dc29267dc46cbdc76793fcce201ae63dc1"
+          "frame": "night/preview-v216-itinerary-2768.png",
+          "rgb565_sha256": "0ac7b437e76dba79b53cdf022973d061f174c41f528ea0aa900558a14f4636f4"
         },
         {
-          "frame": "night/preview-v216-itinerary-3235.png",
-          "rgb565_sha256": "df09b895e44f3be95a9855f8c5a9a9dc29267dc46cbdc76793fcce201ae63dc1"
+          "frame": "night/preview-v216-itinerary-2835.png",
+          "rgb565_sha256": "0ac7b437e76dba79b53cdf022973d061f174c41f528ea0aa900558a14f4636f4"
         },
         {
-          "frame": "night/preview-v216-itinerary-3600.png",
-          "rgb565_sha256": "2400a6d6f39dfcd6a3e5423babfaac462ac7e4b52130eb431fed1f341af9e8d1"
+          "frame": "night/preview-v216-itinerary-3000.png",
+          "rgb565_sha256": "51b6eaaff034930ab238323bfa5149be6793fdc5a741de80c4d38ba21eb407d8"
         },
         {
-          "frame": "night/preview-v216-itinerary-3667.png",
-          "rgb565_sha256": "2400a6d6f39dfcd6a3e5423babfaac462ac7e4b52130eb431fed1f341af9e8d1"
+          "frame": "night/preview-v216-itinerary-3067.png",
+          "rgb565_sha256": "51b6eaaff034930ab238323bfa5149be6793fdc5a741de80c4d38ba21eb407d8"
         },
         {
-          "frame": "night/preview-v216-itinerary-3734.png",
-          "rgb565_sha256": "2400a6d6f39dfcd6a3e5423babfaac462ac7e4b52130eb431fed1f341af9e8d1"
+          "frame": "night/preview-v216-itinerary-3134.png",
+          "rgb565_sha256": "51b6eaaff034930ab238323bfa5149be6793fdc5a741de80c4d38ba21eb407d8"
         },
         {
-          "frame": "night/preview-v216-itinerary-3801.png",
-          "rgb565_sha256": "2400a6d6f39dfcd6a3e5423babfaac462ac7e4b52130eb431fed1f341af9e8d1"
+          "frame": "night/preview-v216-itinerary-3201.png",
+          "rgb565_sha256": "51b6eaaff034930ab238323bfa5149be6793fdc5a741de80c4d38ba21eb407d8"
         },
         {
-          "frame": "night/preview-v216-itinerary-3868.png",
-          "rgb565_sha256": "2400a6d6f39dfcd6a3e5423babfaac462ac7e4b52130eb431fed1f341af9e8d1"
+          "frame": "night/preview-v216-itinerary-3268.png",
+          "rgb565_sha256": "51b6eaaff034930ab238323bfa5149be6793fdc5a741de80c4d38ba21eb407d8"
         },
         {
-          "frame": "night/preview-v216-itinerary-3935.png",
-          "rgb565_sha256": "2400a6d6f39dfcd6a3e5423babfaac462ac7e4b52130eb431fed1f341af9e8d1"
+          "frame": "night/preview-v216-itinerary-3335.png",
+          "rgb565_sha256": "51b6eaaff034930ab238323bfa5149be6793fdc5a741de80c4d38ba21eb407d8"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-3500.png",
+          "rgb565_sha256": "08ab544d4b549ff3fa2549fc2bd55bc2dd0e32dc482ddb140796ad4222e8f649"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-3567.png",
+          "rgb565_sha256": "08ab544d4b549ff3fa2549fc2bd55bc2dd0e32dc482ddb140796ad4222e8f649"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-3634.png",
+          "rgb565_sha256": "08ab544d4b549ff3fa2549fc2bd55bc2dd0e32dc482ddb140796ad4222e8f649"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-3701.png",
+          "rgb565_sha256": "08ab544d4b549ff3fa2549fc2bd55bc2dd0e32dc482ddb140796ad4222e8f649"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-3768.png",
+          "rgb565_sha256": "08ab544d4b549ff3fa2549fc2bd55bc2dd0e32dc482ddb140796ad4222e8f649"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-3835.png",
+          "rgb565_sha256": "08ab544d4b549ff3fa2549fc2bd55bc2dd0e32dc482ddb140796ad4222e8f649"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-4000.png",
+          "rgb565_sha256": "c527bfe0879b8deb6b30123ab83114661f20b36ef9fde5f2fd67490beb46e8e9"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-4067.png",
+          "rgb565_sha256": "8aefd4f58ba0107737b2e785adca87e46f0822a2fe6195301cc8fed822e84775"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-4134.png",
+          "rgb565_sha256": "5a18e8d5bc35a60dc5cd929c66d0048fc027a5a274a342412c75828517afe55f"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-4201.png",
+          "rgb565_sha256": "8bd0cb38a38bcd74cb0d9864e90410dd6f141cf9ec15844c56d8258be457a523"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-4268.png",
+          "rgb565_sha256": "645499cf9c6c3da87acf9928338665d9fc9aec56377f755823fda5a166624123"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-4335.png",
+          "rgb565_sha256": "9bcc5912fb9067295f29eceaadb838808b2d166c6cc16848011321effa34103c"
         },
         {
           "frame": "night/preview-v216-itinerary-4500.png",
-          "rgb565_sha256": "df09b895e44f3be95a9855f8c5a9a9dc29267dc46cbdc76793fcce201ae63dc1"
+          "rgb565_sha256": "6e19f4f6e1b831a050ad65ab3157a3050f18e424a3a7183bf465b9181e65ee37"
         },
         {
           "frame": "night/preview-v216-itinerary-4567.png",
-          "rgb565_sha256": "9003f167a56f9f8987883cb60d3025c91368a4b8b86bf746aedc455fdb59318c"
+          "rgb565_sha256": "0ad31505494dc431533c133dd485f99a02195a38d114c2edce21ad623520cd43"
         },
         {
           "frame": "night/preview-v216-itinerary-4634.png",
-          "rgb565_sha256": "056a832924c07e74caa23a3d78ddd4d73916f6aa5a64f4314bc4ba236bcdfcbb"
+          "rgb565_sha256": "6a7bf6d62812f7933f56a4a83ffcb951d723efb71d6693fd3308f475f37e12f0"
         },
         {
           "frame": "night/preview-v216-itinerary-4701.png",
-          "rgb565_sha256": "24f59685b7ab83acd0d7a7e276231167a7a8f33da915969f40a5d38f694a4580"
+          "rgb565_sha256": "c5bf96c93fd361bc771f7645b2ecee75dc7483b1b99d6a6c1841202fa51b5cb6"
         },
         {
           "frame": "night/preview-v216-itinerary-4768.png",
-          "rgb565_sha256": "b65573e5cfcb870eabae1aa3f99d9f68b065b5523441cb258f5a2a8f93e621d2"
+          "rgb565_sha256": "351864d39e5e4e4a50f3e483d91a4d4e1e90bb9ca81244dd96273ea0b4fb3883"
         },
         {
           "frame": "night/preview-v216-itinerary-4835.png",
-          "rgb565_sha256": "f316e9fa1b429f3199f7a6ed2fe65b018376fd8b0288fbcd747268ab7c685e98"
+          "rgb565_sha256": "c80c5ba28d89a29507481858735bcf7b7be365d0d8c3ca5b53e9aca90e6c9284"
         },
         {
-          "frame": "night/preview-v216-itinerary-5300.png",
-          "rgb565_sha256": "d080fb5e1c740d632d03e408b28ac88880f7b4f6a60bf1804408cacc24089674"
+          "frame": "night/preview-v216-itinerary-5000.png",
+          "rgb565_sha256": "d14feb3ab339d7ce2d51e8098b716c0d09c9458d5c120e37612ab3af93cc854f"
         },
         {
-          "frame": "night/preview-v216-itinerary-5367.png",
-          "rgb565_sha256": "d080fb5e1c740d632d03e408b28ac88880f7b4f6a60bf1804408cacc24089674"
+          "frame": "night/preview-v216-itinerary-5067.png",
+          "rgb565_sha256": "d14feb3ab339d7ce2d51e8098b716c0d09c9458d5c120e37612ab3af93cc854f"
         },
         {
-          "frame": "night/preview-v216-itinerary-5434.png",
-          "rgb565_sha256": "d080fb5e1c740d632d03e408b28ac88880f7b4f6a60bf1804408cacc24089674"
+          "frame": "night/preview-v216-itinerary-5134.png",
+          "rgb565_sha256": "d14feb3ab339d7ce2d51e8098b716c0d09c9458d5c120e37612ab3af93cc854f"
         },
         {
-          "frame": "night/preview-v216-itinerary-5501.png",
-          "rgb565_sha256": "d080fb5e1c740d632d03e408b28ac88880f7b4f6a60bf1804408cacc24089674"
+          "frame": "night/preview-v216-itinerary-5201.png",
+          "rgb565_sha256": "d14feb3ab339d7ce2d51e8098b716c0d09c9458d5c120e37612ab3af93cc854f"
         },
         {
-          "frame": "night/preview-v216-itinerary-5568.png",
-          "rgb565_sha256": "d080fb5e1c740d632d03e408b28ac88880f7b4f6a60bf1804408cacc24089674"
+          "frame": "night/preview-v216-itinerary-5268.png",
+          "rgb565_sha256": "d14feb3ab339d7ce2d51e8098b716c0d09c9458d5c120e37612ab3af93cc854f"
         },
         {
-          "frame": "night/preview-v216-itinerary-5635.png",
-          "rgb565_sha256": "d080fb5e1c740d632d03e408b28ac88880f7b4f6a60bf1804408cacc24089674"
+          "frame": "night/preview-v216-itinerary-5335.png",
+          "rgb565_sha256": "d14feb3ab339d7ce2d51e8098b716c0d09c9458d5c120e37612ab3af93cc854f"
         },
         {
-          "frame": "night/preview-v216-itinerary-6100.png",
-          "rgb565_sha256": "f671477e4bdc58520c31880f2ec147682f2350dd78adea8d1fe21dc5b55d1473"
+          "frame": "night/preview-v216-itinerary-5500.png",
+          "rgb565_sha256": "6546f1725a28530d4dba7faf02a98dabbd29d9079ab3ed3e243ad52f65091181"
         },
         {
-          "frame": "night/preview-v216-itinerary-6167.png",
-          "rgb565_sha256": "f671477e4bdc58520c31880f2ec147682f2350dd78adea8d1fe21dc5b55d1473"
+          "frame": "night/preview-v216-itinerary-5567.png",
+          "rgb565_sha256": "6546f1725a28530d4dba7faf02a98dabbd29d9079ab3ed3e243ad52f65091181"
         },
         {
-          "frame": "night/preview-v216-itinerary-6234.png",
-          "rgb565_sha256": "f671477e4bdc58520c31880f2ec147682f2350dd78adea8d1fe21dc5b55d1473"
+          "frame": "night/preview-v216-itinerary-5634.png",
+          "rgb565_sha256": "6546f1725a28530d4dba7faf02a98dabbd29d9079ab3ed3e243ad52f65091181"
         },
         {
-          "frame": "night/preview-v216-itinerary-6301.png",
-          "rgb565_sha256": "f671477e4bdc58520c31880f2ec147682f2350dd78adea8d1fe21dc5b55d1473"
+          "frame": "night/preview-v216-itinerary-5701.png",
+          "rgb565_sha256": "6546f1725a28530d4dba7faf02a98dabbd29d9079ab3ed3e243ad52f65091181"
         },
         {
-          "frame": "night/preview-v216-itinerary-6368.png",
-          "rgb565_sha256": "f671477e4bdc58520c31880f2ec147682f2350dd78adea8d1fe21dc5b55d1473"
+          "frame": "night/preview-v216-itinerary-5768.png",
+          "rgb565_sha256": "6546f1725a28530d4dba7faf02a98dabbd29d9079ab3ed3e243ad52f65091181"
         },
         {
-          "frame": "night/preview-v216-itinerary-6435.png",
-          "rgb565_sha256": "f671477e4bdc58520c31880f2ec147682f2350dd78adea8d1fe21dc5b55d1473"
+          "frame": "night/preview-v216-itinerary-5835.png",
+          "rgb565_sha256": "6546f1725a28530d4dba7faf02a98dabbd29d9079ab3ed3e243ad52f65091181"
         },
         {
-          "frame": "night/preview-v216-itinerary-7400.png",
-          "rgb565_sha256": "f671477e4bdc58520c31880f2ec147682f2350dd78adea8d1fe21dc5b55d1473"
+          "frame": "night/preview-v216-itinerary-6000.png",
+          "rgb565_sha256": "c3ecdc12bd7a467e6b3400ea8a3cca69b1828643cd2dc96319fca51470c4997d"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-6067.png",
+          "rgb565_sha256": "c3ecdc12bd7a467e6b3400ea8a3cca69b1828643cd2dc96319fca51470c4997d"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-6134.png",
+          "rgb565_sha256": "c3ecdc12bd7a467e6b3400ea8a3cca69b1828643cd2dc96319fca51470c4997d"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-6201.png",
+          "rgb565_sha256": "c3ecdc12bd7a467e6b3400ea8a3cca69b1828643cd2dc96319fca51470c4997d"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-6268.png",
+          "rgb565_sha256": "c3ecdc12bd7a467e6b3400ea8a3cca69b1828643cd2dc96319fca51470c4997d"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-6335.png",
+          "rgb565_sha256": "c3ecdc12bd7a467e6b3400ea8a3cca69b1828643cd2dc96319fca51470c4997d"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-6800.png",
+          "rgb565_sha256": "6546f1725a28530d4dba7faf02a98dabbd29d9079ab3ed3e243ad52f65091181"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-6867.png",
+          "rgb565_sha256": "6546f1725a28530d4dba7faf02a98dabbd29d9079ab3ed3e243ad52f65091181"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-6934.png",
+          "rgb565_sha256": "6546f1725a28530d4dba7faf02a98dabbd29d9079ab3ed3e243ad52f65091181"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-7001.png",
+          "rgb565_sha256": "6546f1725a28530d4dba7faf02a98dabbd29d9079ab3ed3e243ad52f65091181"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-7068.png",
+          "rgb565_sha256": "6546f1725a28530d4dba7faf02a98dabbd29d9079ab3ed3e243ad52f65091181"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-7135.png",
+          "rgb565_sha256": "6546f1725a28530d4dba7faf02a98dabbd29d9079ab3ed3e243ad52f65091181"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-7800.png",
+          "rgb565_sha256": "d14feb3ab339d7ce2d51e8098b716c0d09c9458d5c120e37612ab3af93cc854f"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-7867.png",
+          "rgb565_sha256": "d14feb3ab339d7ce2d51e8098b716c0d09c9458d5c120e37612ab3af93cc854f"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-7934.png",
+          "rgb565_sha256": "d14feb3ab339d7ce2d51e8098b716c0d09c9458d5c120e37612ab3af93cc854f"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-8001.png",
+          "rgb565_sha256": "d14feb3ab339d7ce2d51e8098b716c0d09c9458d5c120e37612ab3af93cc854f"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-8068.png",
+          "rgb565_sha256": "d14feb3ab339d7ce2d51e8098b716c0d09c9458d5c120e37612ab3af93cc854f"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-8135.png",
+          "rgb565_sha256": "d14feb3ab339d7ce2d51e8098b716c0d09c9458d5c120e37612ab3af93cc854f"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-8800.png",
+          "rgb565_sha256": "67808e28b012634c6729c34b35df262482a3f01f03b0a0c399f47286b6105049"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-8867.png",
+          "rgb565_sha256": "67808e28b012634c6729c34b35df262482a3f01f03b0a0c399f47286b6105049"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-8934.png",
+          "rgb565_sha256": "67808e28b012634c6729c34b35df262482a3f01f03b0a0c399f47286b6105049"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-9001.png",
+          "rgb565_sha256": "67808e28b012634c6729c34b35df262482a3f01f03b0a0c399f47286b6105049"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-9068.png",
+          "rgb565_sha256": "67808e28b012634c6729c34b35df262482a3f01f03b0a0c399f47286b6105049"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-9135.png",
+          "rgb565_sha256": "67808e28b012634c6729c34b35df262482a3f01f03b0a0c399f47286b6105049"
+        },
+        {
+          "frame": "night/preview-v216-itinerary-9800.png",
+          "rgb565_sha256": "67808e28b012634c6729c34b35df262482a3f01f03b0a0c399f47286b6105049"
         }
       ]
     },
     "trips-layout.gif": {
-      "sha256": "3d562843734c5d0d9bb5eb5fa9c7f288e4c20bf7f656763f5a6314bab06264ac",
+      "sha256": "3e72a2512035122f0afae0036cc0df075b2e28712bf3fd0e354d5c55cbc39894",
       "frames": 60,
       "duration_ms": 13200,
       "reserved_pointer_colours": [
@@ -1600,15 +1768,15 @@
         },
         {
           "frame": "night/preview-trips-layout-0134.png",
-          "rgb565_sha256": "e8edfaf32836b25a2dd7e18f5f51e19417d5bf171486864da640521ae7aa4528"
+          "rgb565_sha256": "0d1b0e46c11de94367a693803f40996460e015de62f63fcd2ebe321742c2dcce"
         },
         {
           "frame": "night/preview-trips-layout-0201.png",
-          "rgb565_sha256": "3b6149431bf8a5ad5cfe7ba68cbf245e9d91f22cd85c191c94964a02b8da605c"
+          "rgb565_sha256": "1aedbcd25370cffc25828fe9d660bdb7871c2f6c6f6ab2d45d63b5d33f942849"
         },
         {
           "frame": "night/preview-trips-layout-0268.png",
-          "rgb565_sha256": "6c401164e8651de0126cfc5bc8e8350b62704c57d6a00e64319242f66c8747f7"
+          "rgb565_sha256": "6823b35d3875c9d0555ba88fc4b312374a2d4ea3828b687422cc86798aa97a16"
         },
         {
           "frame": "night/preview-trips-layout-0335.png",
@@ -1620,11 +1788,11 @@
         },
         {
           "frame": "night/preview-trips-layout-1267.png",
-          "rgb565_sha256": "b7bae84a8202a41fbff8932c1bab75a452560fdf1b8c79e1c5a38b7ccc4d69cb"
+          "rgb565_sha256": "5a56603cd1294d040c02c451b54ae15caf132287c0633b2efa195e8308e43d2d"
         },
         {
           "frame": "night/preview-trips-layout-1334.png",
-          "rgb565_sha256": "e7f8b54520ba9ad2fb4d82cefcfe7816b60a844773fa1471cd78f36c05545368"
+          "rgb565_sha256": "f859db49aecfb6f90ecbe834bec278596892132ed465503a812a0d9b66b55b41"
         },
         {
           "frame": "night/preview-trips-layout-1401.png",
@@ -1740,11 +1908,11 @@
         },
         {
           "frame": "night/preview-trips-layout-6267.png",
-          "rgb565_sha256": "4a8de5b7ab5798cc92b882d1125eb94302ebe9794dc169f4db4365f3a94fb6cc"
+          "rgb565_sha256": "6068b9a6e6c8b66f87da31cf002529a49ba8fac0d302454b285e6f24fc171f0c"
         },
         {
           "frame": "night/preview-trips-layout-6334.png",
-          "rgb565_sha256": "50afc3020c4d56c8bdcd870f138ee577b3f8aa3a9e1bd0290b67ae04a9332894"
+          "rgb565_sha256": "a3a495bbf4c910bb66f174dbbcdbb6d0bbf1226016a0c5a70abfd94f62adf798"
         },
         {
           "frame": "night/preview-trips-layout-6401.png",
@@ -1760,39 +1928,39 @@
         },
         {
           "frame": "night/preview-trips-layout-7000.png",
-          "rgb565_sha256": "fa03b49fb972bed9522c7774017417804066a40de4b04a715e5c2a8d79830c94"
+          "rgb565_sha256": "618e3e55ba012e63c9aaf2a2c45e18b0d88e0f218fd3c86644a955f67d6106eb"
         },
         {
           "frame": "night/preview-trips-layout-7067.png",
-          "rgb565_sha256": "fa03b49fb972bed9522c7774017417804066a40de4b04a715e5c2a8d79830c94"
+          "rgb565_sha256": "618e3e55ba012e63c9aaf2a2c45e18b0d88e0f218fd3c86644a955f67d6106eb"
         },
         {
           "frame": "night/preview-trips-layout-7134.png",
-          "rgb565_sha256": "fa03b49fb972bed9522c7774017417804066a40de4b04a715e5c2a8d79830c94"
+          "rgb565_sha256": "618e3e55ba012e63c9aaf2a2c45e18b0d88e0f218fd3c86644a955f67d6106eb"
         },
         {
           "frame": "night/preview-trips-layout-7201.png",
-          "rgb565_sha256": "fa03b49fb972bed9522c7774017417804066a40de4b04a715e5c2a8d79830c94"
+          "rgb565_sha256": "618e3e55ba012e63c9aaf2a2c45e18b0d88e0f218fd3c86644a955f67d6106eb"
         },
         {
           "frame": "night/preview-trips-layout-7268.png",
-          "rgb565_sha256": "fa03b49fb972bed9522c7774017417804066a40de4b04a715e5c2a8d79830c94"
+          "rgb565_sha256": "618e3e55ba012e63c9aaf2a2c45e18b0d88e0f218fd3c86644a955f67d6106eb"
         },
         {
           "frame": "night/preview-trips-layout-7335.png",
-          "rgb565_sha256": "fa03b49fb972bed9522c7774017417804066a40de4b04a715e5c2a8d79830c94"
+          "rgb565_sha256": "618e3e55ba012e63c9aaf2a2c45e18b0d88e0f218fd3c86644a955f67d6106eb"
         },
         {
           "frame": "night/preview-trips-layout-7800.png",
-          "rgb565_sha256": "fa03b49fb972bed9522c7774017417804066a40de4b04a715e5c2a8d79830c94"
+          "rgb565_sha256": "618e3e55ba012e63c9aaf2a2c45e18b0d88e0f218fd3c86644a955f67d6106eb"
         },
         {
           "frame": "night/preview-trips-layout-7867.png",
-          "rgb565_sha256": "9af433460624b3370635f76ded48130522eca719692bb0ba66d4c169e8d3eaf1"
+          "rgb565_sha256": "9f422d9c0c472d2fa9d5fb98319962bb72adcc914b60ca9b8f03b0e3163c4cbf"
         },
         {
           "frame": "night/preview-trips-layout-7934.png",
-          "rgb565_sha256": "1ef01b1323a8da6a7894b52614c11a6a691e7e861a414585e4a02c28ada0e644"
+          "rgb565_sha256": "61f4a8223826c039884b9a856432d8cbc715d06f980c041aed79b978b3f4d33c"
         },
         {
           "frame": "night/preview-trips-layout-8001.png",
@@ -1812,23 +1980,23 @@
         },
         {
           "frame": "night/preview-trips-layout-8667.png",
-          "rgb565_sha256": "8727a8529260dfe43c599ddf9391c2deed088dca6ea6e6b0fe328f508926cc3a"
+          "rgb565_sha256": "6a9f58be4fa5906c50003920c487cb6bb7bee17ac07d25caf3bb43740bd48c20"
         },
         {
           "frame": "night/preview-trips-layout-8734.png",
-          "rgb565_sha256": "19305788cbc8499eb2bc90645ff5eb76c9cce70a8acef5a908af3f70c4413196"
+          "rgb565_sha256": "6527a104c9482e40400fb265856a8e05033dc0f6990feb2bb14487a53ed98bbd"
         },
         {
           "frame": "night/preview-trips-layout-8801.png",
-          "rgb565_sha256": "86de0ff2e40fa8840ddd6b1bdb730ed49cbac297fa7df7082fa2861a75c4ea25"
+          "rgb565_sha256": "7eaba37a89bb81dbb8cb7314292b4d5f835093fb83f30b632260209383c7f72b"
         },
         {
           "frame": "night/preview-trips-layout-8868.png",
-          "rgb565_sha256": "0f3f08cb300f72fdfdb75d8d876dd2c413099ae90e1e4d3f32acf087ee690ddd"
+          "rgb565_sha256": "4a3e2d74da356737528bc030106e721e263871f4264c3067ed417548c594a267"
         },
         {
           "frame": "night/preview-trips-layout-8935.png",
-          "rgb565_sha256": "fa03b49fb972bed9522c7774017417804066a40de4b04a715e5c2a8d79830c94"
+          "rgb565_sha256": "618e3e55ba012e63c9aaf2a2c45e18b0d88e0f218fd3c86644a955f67d6106eb"
         },
         {
           "frame": "night/preview-trips-layout-9400.png",
@@ -1860,11 +2028,11 @@
         },
         {
           "frame": "night/preview-trips-layout-9867.png",
-          "rgb565_sha256": "b647a0ff47acb705c7c59dc2ac9d354ec770ef597a3a0198cf18536a8a8ef296"
+          "rgb565_sha256": "6d6ab98434bc2abbf567f8a1925d92b78e925b7a6efaa84dbac7542e94dd2695"
         },
         {
           "frame": "night/preview-trips-layout-9934.png",
-          "rgb565_sha256": "af5267d4a864f8b0e40a17daabc90fae8e8af9192c4fb45b60d0fc7c98732cd0"
+          "rgb565_sha256": "f9be1e4864ec6a8e96e8b115e83c3a5fe71909c7e066fee23b04746eda582758"
         },
         {
           "frame": "night/preview-trips-layout-10001.png",
@@ -2062,7 +2230,7 @@
       ]
     },
     "popups-layout.gif": {
-      "sha256": "c57002ae04c8ed633dd12c3c78462c1d7a5cdc0e880450d02a2f23379f4af649",
+      "sha256": "bf1f9e6b34856484f2e22095ad0190ca1e137f5e1af0367e9f1f6607259ec637",
       "frames": 42,
       "duration_ms": 10800,
       "reserved_pointer_colours": [
@@ -2098,15 +2266,15 @@
         },
         {
           "frame": "night/preview-popups-layout-0134.png",
-          "rgb565_sha256": "e8edfaf32836b25a2dd7e18f5f51e19417d5bf171486864da640521ae7aa4528"
+          "rgb565_sha256": "0d1b0e46c11de94367a693803f40996460e015de62f63fcd2ebe321742c2dcce"
         },
         {
           "frame": "night/preview-popups-layout-0201.png",
-          "rgb565_sha256": "3b6149431bf8a5ad5cfe7ba68cbf245e9d91f22cd85c191c94964a02b8da605c"
+          "rgb565_sha256": "1aedbcd25370cffc25828fe9d660bdb7871c2f6c6f6ab2d45d63b5d33f942849"
         },
         {
           "frame": "night/preview-popups-layout-0268.png",
-          "rgb565_sha256": "6c401164e8651de0126cfc5bc8e8350b62704c57d6a00e64319242f66c8747f7"
+          "rgb565_sha256": "6823b35d3875c9d0555ba88fc4b312374a2d4ea3828b687422cc86798aa97a16"
         },
         {
           "frame": "night/preview-popups-layout-0335.png",
@@ -2118,115 +2286,115 @@
         },
         {
           "frame": "night/preview-popups-layout-0967.png",
-          "rgb565_sha256": "01a86292abcf738724e38ff4f7c6108da3fa87c7090fbd98e6468e1bfda4bd83"
+          "rgb565_sha256": "19d56eed890382c26706b98f21e0dabdd611c56fd60ae93f0fd8d8b61c500b42"
         },
         {
           "frame": "night/preview-popups-layout-1034.png",
-          "rgb565_sha256": "7fc8cfa8b1808a90acedb041e320a38fbcee7965f30d132c00852edd7c75c742"
+          "rgb565_sha256": "2c6ccb026e41d7ce9bfe7d8feef7111a9fcf5eddaddd68ed28f7cdeb5a3b55af"
         },
         {
           "frame": "night/preview-popups-layout-1101.png",
-          "rgb565_sha256": "43b4bcd8005e9865b6195f4da8d5798c8bce18ad924d57c41b826da05c2e9c6a"
+          "rgb565_sha256": "8261056ff8f51cd3a0f39f5bd1809dd5e819d68cdf4d82d99a62011685b92b18"
         },
         {
           "frame": "night/preview-popups-layout-1168.png",
-          "rgb565_sha256": "cc96d9e22fcdfbaabef9adee29b9cebb13a70d9c691260c75fcd74c5944ba12e"
+          "rgb565_sha256": "b6c94098515d3cc527dab6e79e9f90826b2d2f2ed1cc70c24fea7d65bc71831b"
         },
         {
           "frame": "night/preview-popups-layout-1235.png",
-          "rgb565_sha256": "6996cca9307c9c2407afcf8d2542949c30df619e896b1bb07e065837b9123d2a"
+          "rgb565_sha256": "d1f144c3b24e51d360cb4403cfe21b0aafb1f45db3ef06e9b6b3f8829d49f02c"
         },
         {
           "frame": "night/preview-popups-layout-2350.png",
-          "rgb565_sha256": "6996cca9307c9c2407afcf8d2542949c30df619e896b1bb07e065837b9123d2a"
+          "rgb565_sha256": "d1f144c3b24e51d360cb4403cfe21b0aafb1f45db3ef06e9b6b3f8829d49f02c"
         },
         {
           "frame": "night/preview-popups-layout-2417.png",
-          "rgb565_sha256": "93303aecda258651670418b189150c3bfa75bb06e1fc4112dbff3d2f9f4c660e"
+          "rgb565_sha256": "04163ad44ed846af715b38fa14b5a205291a46045b93a3d9021d0cf1f19ca0de"
         },
         {
           "frame": "night/preview-popups-layout-2484.png",
-          "rgb565_sha256": "3a2828a22240b150d01c7271f79a4e450493b6d0f7753cc9611b72436b40e6ff"
+          "rgb565_sha256": "f0f7598f431eb4eaef7e3bd833be87125870cfb6a02d48b9d633f8b89b2b64dc"
         },
         {
           "frame": "night/preview-popups-layout-2551.png",
-          "rgb565_sha256": "64398a8643f250a51a3679fa5ebd37e8b0ae98b4dfb70cc3467b3fae5ceb80d1"
+          "rgb565_sha256": "2323880151e273f9a3739d2c2e1065b1aaea22b02a8de5831fbc0945ef324ba0"
         },
         {
           "frame": "night/preview-popups-layout-2618.png",
-          "rgb565_sha256": "790881635ebb05b1f15d06138721ac0b546245e85348ea63424aa300a2cb5d9b"
+          "rgb565_sha256": "f65d05bbb02ce86148d382154cb8b09e6fd02581cf332aee551822105ff7087f"
         },
         {
           "frame": "night/preview-popups-layout-2685.png",
-          "rgb565_sha256": "4f6aa6789acf410deb4e358831aba657de4c0d173f75c5c376e6ed9b4d1d73e7"
+          "rgb565_sha256": "9a1c59532504648b240a13bee2e1ea384e93647275fe2504a4abecbe9a0a1d77"
         },
         {
           "frame": "night/preview-popups-layout-4000.png",
-          "rgb565_sha256": "4f6aa6789acf410deb4e358831aba657de4c0d173f75c5c376e6ed9b4d1d73e7"
+          "rgb565_sha256": "9a1c59532504648b240a13bee2e1ea384e93647275fe2504a4abecbe9a0a1d77"
         },
         {
           "frame": "night/preview-popups-layout-4067.png",
-          "rgb565_sha256": "911aa28d9f51d9a2229e2cb7341cd4ff074349d47e26b8a0a2bb66904474d05e"
+          "rgb565_sha256": "5dcf883651c6544ed613a8cf27d7ed30cdd0f469856949e88f37f49935e212c5"
         },
         {
           "frame": "night/preview-popups-layout-4134.png",
-          "rgb565_sha256": "3b45d5ac211cbaffdc9d262f9f54b7d444aa70c93497a600025d7028a4ff8c4e"
+          "rgb565_sha256": "2983d109a9627ac27341ffda3d7c3dd111b53e335b2b838da73b655b83b5d93f"
         },
         {
           "frame": "night/preview-popups-layout-4201.png",
-          "rgb565_sha256": "81cf9546a59a35c1ab34b26ac72819a37f830d49ebaf8eee517908338feb4915"
+          "rgb565_sha256": "ae27b7f4fdc15015d5d5bd70aa9f483c796d600d220e5e655e40fc65ab2ccc6a"
         },
         {
           "frame": "night/preview-popups-layout-4268.png",
-          "rgb565_sha256": "d693470513707ac31d7410bdab85ff8a52d796aaec6eb4ab95e54ec93cf7199d"
+          "rgb565_sha256": "fc1af29b2b5eadb963dd70f7a42e1fe7c023f37e4603a497f21d361ced10efec"
         },
         {
           "frame": "night/preview-popups-layout-4335.png",
-          "rgb565_sha256": "913343e0342de6fb70d65574ab5067bb66483796cdb6a298d4e806d8c62b4455"
+          "rgb565_sha256": "368194073a2750d380e98fe2170bd45ab20053f1c2c86f8c512aa4bc78fe45f7"
         },
         {
           "frame": "night/preview-popups-layout-5400.png",
-          "rgb565_sha256": "913343e0342de6fb70d65574ab5067bb66483796cdb6a298d4e806d8c62b4455"
+          "rgb565_sha256": "368194073a2750d380e98fe2170bd45ab20053f1c2c86f8c512aa4bc78fe45f7"
         },
         {
           "frame": "night/preview-popups-layout-5467.png",
-          "rgb565_sha256": "2ba02d71cbf28bd3c999ee3e991f1a61cc477f35999fdc0b9ddbbc771a4e4d00"
+          "rgb565_sha256": "fe5fbfcf468b7c5c8f77a5b1db21445f5786cde06595a4332aa1ae6c7f76656b"
         },
         {
           "frame": "night/preview-popups-layout-5534.png",
-          "rgb565_sha256": "848a142adb67c0129a51c907a947eba728554f67140d30a8b81e9c5d966af338"
+          "rgb565_sha256": "a81605d3c42142fa19e4614da8b72c392a0fa1bdf04523c8d2c62ceda3e339a2"
         },
         {
           "frame": "night/preview-popups-layout-5601.png",
-          "rgb565_sha256": "2df649fa2af020f190e62b89cb09a9c462c8f34a6b792c95fc4a3dda429e0cb0"
+          "rgb565_sha256": "ccccdede72fe538b213de867ac45af856d74ce759627f4f2c6ebdb45b04c5005"
         },
         {
           "frame": "night/preview-popups-layout-5668.png",
-          "rgb565_sha256": "721b5ee32812b49c7541dd6ef3d2f81b111d6773d78730a92b5d435f8813f667"
+          "rgb565_sha256": "b3891e56be42c4239eac9af3a173da920f2bd3c66dca727da29ac04befa2f44b"
         },
         {
           "frame": "night/preview-popups-layout-5735.png",
-          "rgb565_sha256": "c6dd20cd3b9c795569ae4c1b6cc55d31bdcc0f636861c16ae7b61d5c6e187001"
+          "rgb565_sha256": "a7ed627ef5ff7200297d23da75861a070b12d4feca0ea8f4e9b62f80b9c294a9"
         },
         {
           "frame": "night/preview-popups-layout-6650.png",
-          "rgb565_sha256": "c6dd20cd3b9c795569ae4c1b6cc55d31bdcc0f636861c16ae7b61d5c6e187001"
+          "rgb565_sha256": "a7ed627ef5ff7200297d23da75861a070b12d4feca0ea8f4e9b62f80b9c294a9"
         },
         {
           "frame": "night/preview-popups-layout-6717.png",
-          "rgb565_sha256": "de298bfe29aeed61b4d816e08da907475df247e4e7607b95f43aad3d694c8f13"
+          "rgb565_sha256": "dc0c28f4479cf0ecd5e1a3eb90068969623adb79e1c61667721431af14f37682"
         },
         {
           "frame": "night/preview-popups-layout-6784.png",
-          "rgb565_sha256": "ce2973470f3626b0522bc7c440180bd99e6d209476290763a774e6fad29bd106"
+          "rgb565_sha256": "638897456f90b6e35729e238af1d1e99e9e53766078e974ecf1a2a43201e93e5"
         },
         {
           "frame": "night/preview-popups-layout-6851.png",
-          "rgb565_sha256": "d88584a924520820fcce43403fe54d6e8c63845717b6959177a1c5e2ff2a83e0"
+          "rgb565_sha256": "9cb76431607528d6b7c644b0680666bf175c5f3e8b58d2d1ae45dd327984c058"
         },
         {
           "frame": "night/preview-popups-layout-6918.png",
-          "rgb565_sha256": "24384813ae477a9d274a86493e5a40f37fc1cd28c85360802fc3c0f8ce0c8131"
+          "rgb565_sha256": "4ab8e89007643efdf614679def56625ca4b111ab66e755a6e562222c44bf8165"
         },
         {
           "frame": "night/preview-popups-layout-6985.png",
@@ -2287,7 +2455,7 @@
       ]
     },
     "boot-day.gif": {
-      "sha256": "38826d5b59b158d5abe611cb60602d1e37ac78d286bce8b5f9f5b99f64410c4c",
+      "sha256": "f8858291d90e6e8a7f446f700c7648bf34a6bb25489c9a2ff99117b9238cb482",
       "frames": 9,
       "duration_ms": 2280,
       "reserved_pointer_colours": [
@@ -2315,31 +2483,31 @@
       "source_frames": [
         {
           "frame": "day/boot-fade-0000.png",
-          "rgb565_sha256": "985df8f10cc833432e1b90caa454cb49a2f98cf3788b839a35e5105e82612d51"
+          "rgb565_sha256": "cac9efb36be128a513e119bb4bfb80b7ad58fecd4c5da0e10c681b6020350f97"
         },
         {
           "frame": "day/boot-fade-0067.png",
-          "rgb565_sha256": "13718fedd0d010f3cf5c54f31b09d44d0fa4db1929409f64335511c98b930acb"
+          "rgb565_sha256": "781bbca2e10c47862c979292559150900a904191c8c85acfb18f9b077691537f"
         },
         {
           "frame": "day/boot-fade-0134.png",
-          "rgb565_sha256": "d43cfb8ca8a41f03fff38752dfc421a8f3c265b9baeb509843229a8b42c24d00"
+          "rgb565_sha256": "8e6c4c43d2a0318d2ec68a0487b59ee9b6d6f6d31a2f48e1543eed3c1f285408"
         },
         {
           "frame": "day/boot-fade-0201.png",
-          "rgb565_sha256": "b3a22835645ba65aaf67422a49ae18bb0d78b7a99114c608f98f9d6359dd33b4"
+          "rgb565_sha256": "f7e4e755d6e40a7ee36b3dacf986f2c701575182b1a9cac8ba26073cbf80b141"
         },
         {
           "frame": "day/boot-fade-0268.png",
-          "rgb565_sha256": "071ea38cb6d2936103787698afec70b9bd125270e1d6e946c6793a645a9930ee"
+          "rgb565_sha256": "5a8e050f154b8718a8bae435f1192b2fa452ca5a4e25958717241954b42f3ddf"
         },
         {
           "frame": "day/boot-fade-0335.png",
-          "rgb565_sha256": "b2e4f9419403498fd45f82f45cedd3618c252dce173e5f0fcf588ee1089b06ab"
+          "rgb565_sha256": "3040ed0496d8a0211a27dc00dc33fa25b6a4bfa3ffcb7452625a2ec15421e1c3"
         },
         {
           "frame": "day/boot-fade-0402.png",
-          "rgb565_sha256": "4a0deca0f30f1348497226f077022650298976a3b47b838b870dd8aa0c616688"
+          "rgb565_sha256": "ff1ca05547376b003d17081d9e9e75275acf5e66f3e936c6b143ca8e58e6eb3d"
         },
         {
           "frame": "day/boot-fade-0469.png",
@@ -2356,7 +2524,7 @@
       ]
     },
     "boot-night.gif": {
-      "sha256": "37971f3807ce38b93b81759a622734eae3851f4cf325517f0c3613e0da0a3ca5",
+      "sha256": "6ac75b89fa9cb569b477469df0906eb5474f9aa1cfed5c0a1a72542a5ca8d9a4",
       "frames": 9,
       "duration_ms": 2280,
       "reserved_pointer_colours": [
@@ -2384,31 +2552,31 @@
       "source_frames": [
         {
           "frame": "night/boot-fade-0000.png",
-          "rgb565_sha256": "a9fe66f4835c3b1f7a05c302fb346a477ea0e7d7ced1c7500e7ce5f6438cee10"
+          "rgb565_sha256": "680e4b0ae5067d12c9013eca14ac27c64d33cfa3a42d3ceb93519dbcbfc5528a"
         },
         {
           "frame": "night/boot-fade-0067.png",
-          "rgb565_sha256": "e24f8f93efd797ae2f41c84bfdb3d2c3470f42446ff1fcbf5f5c3fed63aa4f53"
+          "rgb565_sha256": "8d800a4d885bdb36cab4509567fa2599f0d70f83c4ee267fa298a434e45d0723"
         },
         {
           "frame": "night/boot-fade-0134.png",
-          "rgb565_sha256": "8f54bf0831d3541af636b99232e5f62a15e8718f6cd57d03373e17064b5995b7"
+          "rgb565_sha256": "b72d5a8e18a3e89b591d73842b94a8bc4ce7d571e4681469919e5d11721d5f28"
         },
         {
           "frame": "night/boot-fade-0201.png",
-          "rgb565_sha256": "e3c8585100c7cdaf1d6c2da9e31e4205a6473043b45304f4eab69e9d25c126c1"
+          "rgb565_sha256": "5cbeeaafb1088c35a0ff7014067ab21f52853db59cb321db38613b27c3f1f0d1"
         },
         {
           "frame": "night/boot-fade-0268.png",
-          "rgb565_sha256": "b0197305040caa10c0dc2d998430eb7715851ab42693fd0b116d3c48c9161064"
+          "rgb565_sha256": "ce4d9189d7985297e0844bd246a56990af70cc816133da3db6d39d6e5b562ed7"
         },
         {
           "frame": "night/boot-fade-0335.png",
-          "rgb565_sha256": "2f39f1a9e83aeabfdc8f749ce420503aeeefa9137d6369407988a4e427c30f07"
+          "rgb565_sha256": "6ac22d1f77dc6939627c4d4f260e9de431bc1e2dc4d6c93486b39f325fa86481"
         },
         {
           "frame": "night/boot-fade-0402.png",
-          "rgb565_sha256": "eac8e6576fb15aafd5e5809d8cecb22baf0ef109e811c3bb3a7226b3ca3ada51"
+          "rgb565_sha256": "36d7afd6c545d9f1be90335b170a020fc005d0caea4fa4d27f01ea66f3fa4358"
         },
         {
           "frame": "night/boot-fade-0469.png",
@@ -2425,7 +2593,7 @@
       ]
     },
     "popups.gif": {
-      "sha256": "ba514fd93092a4241b14df80bdbc32af5247d583db9f27b1501d3e5a69ab4cd7",
+      "sha256": "aa29ee20a1a5dd7fa1af517e8f2f3526d9a7701a1905636127acfb8b0549ae4c",
       "frames": 54,
       "duration_ms": 7200,
       "reserved_pointer_colours": [
@@ -2457,67 +2625,67 @@
         },
         {
           "frame": "night/preview-popups-0067.png",
-          "rgb565_sha256": "88d4ddfca2d05fe368468230a4d3e3d31f9971f1671247bf2b32eed9c21b28dd"
+          "rgb565_sha256": "a4c5868d7029fbd4ae8d163c0a8442126d98636d61ffdc4a786352f57bac0de3"
         },
         {
           "frame": "night/preview-popups-0134.png",
-          "rgb565_sha256": "f93f9351148589d4029f2f44e96d3dfd4d183f55fc06e67cc5d0dd98ec0e49a4"
+          "rgb565_sha256": "c17a35c86944ff3fcbfe740332248d3cd34715160394a2b5abd5b069dc406245"
         },
         {
           "frame": "night/preview-popups-0201.png",
-          "rgb565_sha256": "42c65b3ce8535a58d68a2e12e19db06096efdd0db49d14d00d1710c8a0fbc387"
+          "rgb565_sha256": "32487cdde97e38820f9bd888100b398bb12f8880822c79eaffc179f635826181"
         },
         {
           "frame": "night/preview-popups-0268.png",
-          "rgb565_sha256": "e0cbf282b23adcccfd46aa25b3f8f91e768e5a05f9f59e88fe52c3c900521e48"
+          "rgb565_sha256": "4f77146ba87e2092005fa8bb2290cefe606d6a7bbc4d25273fa1409850a37e1f"
         },
         {
           "frame": "night/preview-popups-0335.png",
-          "rgb565_sha256": "c5c701c128b1fd4e5a2d63d18d714a0033cda18e3d5ad971062e20f795cdbc82"
+          "rgb565_sha256": "8c14ec03afcd08a8687ed28cec8ca71d2115bfdc026963719bf779e8f1b5c9a1"
         },
         {
           "frame": "night/preview-popups-0600.png",
-          "rgb565_sha256": "c5c701c128b1fd4e5a2d63d18d714a0033cda18e3d5ad971062e20f795cdbc82"
+          "rgb565_sha256": "8c14ec03afcd08a8687ed28cec8ca71d2115bfdc026963719bf779e8f1b5c9a1"
         },
         {
           "frame": "night/preview-popups-0667.png",
-          "rgb565_sha256": "c5fa9f0cd9eb4782d32e14d5c7a4c6f5cb2d894fffb279947ea48a2d4b93654a"
+          "rgb565_sha256": "c4fd65fb0d445a9406e6e05bb8197301855b532b86d683c49f66aca08baa7f43"
         },
         {
           "frame": "night/preview-popups-0734.png",
-          "rgb565_sha256": "e7af6ca6c99d4e0fc9c9a91ea7c5f072fdfb476715a99a9b159d21d6ed7131f6"
+          "rgb565_sha256": "d0adcbfdd913d20a8d5664eda3248fc54176fb099189440e7131632d0c223e2c"
         },
         {
           "frame": "night/preview-popups-0801.png",
-          "rgb565_sha256": "e52ef251ef20f6a01f5d81c9dc3b7ded7aa97b82e25ea3d789f9ad6e9a6839b7"
+          "rgb565_sha256": "ffba854646c999686094f641b9d8b0eca4523236f83b18b2399635d697701a21"
         },
         {
           "frame": "night/preview-popups-0868.png",
-          "rgb565_sha256": "e52ef251ef20f6a01f5d81c9dc3b7ded7aa97b82e25ea3d789f9ad6e9a6839b7"
+          "rgb565_sha256": "ffba854646c999686094f641b9d8b0eca4523236f83b18b2399635d697701a21"
         },
         {
           "frame": "night/preview-popups-0935.png",
-          "rgb565_sha256": "e52ef251ef20f6a01f5d81c9dc3b7ded7aa97b82e25ea3d789f9ad6e9a6839b7"
+          "rgb565_sha256": "ffba854646c999686094f641b9d8b0eca4523236f83b18b2399635d697701a21"
         },
         {
           "frame": "night/preview-popups-1000.png",
-          "rgb565_sha256": "e52ef251ef20f6a01f5d81c9dc3b7ded7aa97b82e25ea3d789f9ad6e9a6839b7"
+          "rgb565_sha256": "ffba854646c999686094f641b9d8b0eca4523236f83b18b2399635d697701a21"
         },
         {
           "frame": "night/preview-popups-1067.png",
-          "rgb565_sha256": "44952382e725a85ef32713d698c827af3a6e26b179d72451228343545d369d8b"
+          "rgb565_sha256": "470f0f625055d4499aac9d5af027362bd40b46823c842ce0f009b7f12ceee0b8"
         },
         {
           "frame": "night/preview-popups-1134.png",
-          "rgb565_sha256": "7f3a635eba13de49d0ef39dca6f4fba7343ce68033ad29c83ce00c31a54d6c2e"
+          "rgb565_sha256": "82cc1496ee18632603554c230d99b69d5e645edca3c15169ef2837400a226306"
         },
         {
           "frame": "night/preview-popups-1201.png",
-          "rgb565_sha256": "fcd0d13d9c525ed163339fee88710668657049f28d366c2cbfba7ab4960f41e1"
+          "rgb565_sha256": "39ad5ff735224de219c2f6f9a9d89cb8452c0e48b104dc6da203350e67f85b03"
         },
         {
           "frame": "night/preview-popups-1268.png",
-          "rgb565_sha256": "15c8904e9131e2d2acb10a727ff93a701fa5e87d1605998e2d9d81b022319770"
+          "rgb565_sha256": "a0794bb3b0890649c73b02a31f6042da8d03547bfb890235341610efebaaacfd"
         },
         {
           "frame": "night/preview-popups-1335.png",
@@ -2529,11 +2697,11 @@
         },
         {
           "frame": "night/preview-popups-1567.png",
-          "rgb565_sha256": "fb946825cd43a643aa35de9a8dcb1d224f44d70dd77aca1ec7f316cee5eeda6c"
+          "rgb565_sha256": "77a665d08cf778c78f7ff07a3251a2b7c1462a8200fc37a64f70c6af8f7dd372"
         },
         {
           "frame": "night/preview-popups-1634.png",
-          "rgb565_sha256": "347565466a56fa5279d0f9b524ec867b44b93804bf614e375966e2df35a9088b"
+          "rgb565_sha256": "c64b23e67f7bc4be9504d0620cd42a6b0d6b954046d545779646fd1baea5f90c"
         },
         {
           "frame": "night/preview-popups-1701.png",
@@ -2577,15 +2745,15 @@
         },
         {
           "frame": "night/preview-popups-2567.png",
-          "rgb565_sha256": "a84ac619aec217123d6ab26e7fae0f974613ad3576817aa7e25d8fdc71efb50c"
+          "rgb565_sha256": "79cd1c632a13ac1baf477df093f1c73043e77df1146f3d710ff71ed93798c27e"
         },
         {
           "frame": "night/preview-popups-2634.png",
-          "rgb565_sha256": "2cb42e8f6a39fe5169a7cdd61adf08b3a9480c55a46888bf5e72393899ba5382"
+          "rgb565_sha256": "9f87c6a5293241b20238bc6bcd29c69f6f6cfdac6afe0deca3a0dd5d0a40033d"
         },
         {
           "frame": "night/preview-popups-2701.png",
-          "rgb565_sha256": "9c666dde02d296174d4bad5b4ad2ac7bd878c160c6ddc40f9419ac84b30984e4"
+          "rgb565_sha256": "8d25167b5690a851d30b6b03b7f0e7d82f951b03f64cf1b6a733762256a78885"
         },
         {
           "frame": "night/preview-popups-2768.png",
@@ -2601,11 +2769,11 @@
         },
         {
           "frame": "night/preview-popups-3267.png",
-          "rgb565_sha256": "2828a2e13ee7335ae122a925bc1b14c46fb0da332155f93f08bd39b1a2dc2372"
+          "rgb565_sha256": "2f2eaaf151386be34d5d6abbd0b61f4d816da7856923fba5d451cd21fd03f95f"
         },
         {
           "frame": "night/preview-popups-3334.png",
-          "rgb565_sha256": "5e6f2664d40414b68d623a06cba0b0b668584be3daaf6f4dbe866990c0c781ea"
+          "rgb565_sha256": "c88b0df8ac1870c96108a0e897f60f75bc9cdb3b7bf4ba4fef3ec6b56c1eb871"
         },
         {
           "frame": "night/preview-popups-3401.png",
@@ -3277,7 +3445,7 @@
       ]
     },
     "menus.gif": {
-      "sha256": "0ecc817553d98a2a783e2f0cbf90649b6fcbdabed147da5be07e0ea8bd4d0eec",
+      "sha256": "0cd47937ac2b0db5f8645464d8e574f9f34dfd582eed6c8f8fbd602da8c5e1cd",
       "frames": 60,
       "duration_ms": 9900,
       "reserved_pointer_colours": [
@@ -3333,15 +3501,15 @@
         },
         {
           "frame": "night/preview-menu-tour-0767.png",
-          "rgb565_sha256": "cee3032bc78d0551beb3bc09f07b1695257d0aa99162513a19109a403aed9be6"
+          "rgb565_sha256": "0527e92e07b8708f3a49faacf27cb74ab11513967a2d6138bf1645e0b0b6dd29"
         },
         {
           "frame": "night/preview-menu-tour-0834.png",
-          "rgb565_sha256": "c8fe0b81bcc2023c9772c5c108cec01d073eb353d0158c47f14b046199c347eb"
+          "rgb565_sha256": "57848ba24f01b8f72e2930be4d791fb67d8415a257b6878229fab69de87531d7"
         },
         {
           "frame": "night/preview-menu-tour-0901.png",
-          "rgb565_sha256": "20a7c9fc4a0b9ebc469dd12f1c0a64bed6354e3531956e4a761915443481315a"
+          "rgb565_sha256": "aa53b1c0f18314445c8e02857171079d3169c739671c5310502748475f7708b4"
         },
         {
           "frame": "night/preview-menu-tour-0968.png",
@@ -3357,11 +3525,11 @@
         },
         {
           "frame": "night/preview-menu-tour-1567.png",
-          "rgb565_sha256": "446969256732b258331dc14d6913a62ea8282c74ce256d8797ba4b645cd397dd"
+          "rgb565_sha256": "343e1bfb350444b89381b2b5aa19146371b1e968afae7aad90f23afc5cde1444"
         },
         {
           "frame": "night/preview-menu-tour-1634.png",
-          "rgb565_sha256": "1ae3b65bed5921f80e5d21b7055df5e711e45bd659e46724f4386c29542be3f3"
+          "rgb565_sha256": "b3b58cb61464b5052f0059eebfcccba34cbd98007e7e3e3204bb111d23dceaa8"
         },
         {
           "frame": "night/preview-menu-tour-1701.png",
@@ -3525,83 +3693,83 @@
         },
         {
           "frame": "night/preview-menu-tour-7067.png",
-          "rgb565_sha256": "da04f9e38d0668d92c3f038db85c83292abb73f3169d96d076616e1c534d6221"
+          "rgb565_sha256": "d96cbdb3490f6c8d974f6417ec2ec8213f184ad43ca2fdb7a133830aff19add4"
         },
         {
           "frame": "night/preview-menu-tour-7134.png",
-          "rgb565_sha256": "2ffd58b698c5b6f122ca946bdc59ec56b7bac543c50611b6d2aab56e14ed41c4"
+          "rgb565_sha256": "a7ca55a9cddb36501831cc10c95044b82a7c153f42b11a3ac5c22a7f20a7cab2"
         },
         {
           "frame": "night/preview-menu-tour-7201.png",
-          "rgb565_sha256": "eee661dac65e084e535c503eb97b4ffbad0847f4f1e97bf1a2cd4d332e48b7b1"
+          "rgb565_sha256": "486632946834d838b50002e8b74448f88aa8ccfc8824ed4c1f69ac6d192e496f"
         },
         {
           "frame": "night/preview-menu-tour-7268.png",
-          "rgb565_sha256": "37dadd4ef7fe6f88c5321f1db00bc7a20d975741e303df4014b6725a23cb02e7"
+          "rgb565_sha256": "e1b6d68a50ca96ca06eb02ada809be38c8bb144f230265cc1fbf7aa8bbedb3f2"
         },
         {
           "frame": "night/preview-menu-tour-7335.png",
-          "rgb565_sha256": "a59a45a5ba336848d73120f9f721355fcc9dfcf90bc6c849b723d089bcd942ee"
+          "rgb565_sha256": "f23d7c03e2a5b76bcf0efe88071d49e7c76103a9932783e2beb0adb7ea7c6af6"
         },
         {
           "frame": "night/preview-menu-tour-7800.png",
-          "rgb565_sha256": "1a165fc0cd366ce187b9c8191c42af57ec9628d960cbe3e8f2dc539868dba7fb"
+          "rgb565_sha256": "11ea4fcc2f7b0364ea157cf44771684794a5021873d7c5bf687c3bc1c454a049"
         },
         {
           "frame": "night/preview-menu-tour-7867.png",
-          "rgb565_sha256": "1a165fc0cd366ce187b9c8191c42af57ec9628d960cbe3e8f2dc539868dba7fb"
+          "rgb565_sha256": "11ea4fcc2f7b0364ea157cf44771684794a5021873d7c5bf687c3bc1c454a049"
         },
         {
           "frame": "night/preview-menu-tour-7934.png",
-          "rgb565_sha256": "1a165fc0cd366ce187b9c8191c42af57ec9628d960cbe3e8f2dc539868dba7fb"
+          "rgb565_sha256": "11ea4fcc2f7b0364ea157cf44771684794a5021873d7c5bf687c3bc1c454a049"
         },
         {
           "frame": "night/preview-menu-tour-8001.png",
-          "rgb565_sha256": "1a165fc0cd366ce187b9c8191c42af57ec9628d960cbe3e8f2dc539868dba7fb"
+          "rgb565_sha256": "11ea4fcc2f7b0364ea157cf44771684794a5021873d7c5bf687c3bc1c454a049"
         },
         {
           "frame": "night/preview-menu-tour-8068.png",
-          "rgb565_sha256": "1a165fc0cd366ce187b9c8191c42af57ec9628d960cbe3e8f2dc539868dba7fb"
+          "rgb565_sha256": "11ea4fcc2f7b0364ea157cf44771684794a5021873d7c5bf687c3bc1c454a049"
         },
         {
           "frame": "night/preview-menu-tour-8135.png",
-          "rgb565_sha256": "1a165fc0cd366ce187b9c8191c42af57ec9628d960cbe3e8f2dc539868dba7fb"
+          "rgb565_sha256": "11ea4fcc2f7b0364ea157cf44771684794a5021873d7c5bf687c3bc1c454a049"
         },
         {
           "frame": "night/preview-menu-tour-8600.png",
-          "rgb565_sha256": "8428a0a5841a91dfa621dabd2da357e8f7be9680d758217d44d37c65441503bb"
+          "rgb565_sha256": "c3af254c25dda32f210f1a200ba219bab05e27ff893742015be6d7c2146a8b1f"
         },
         {
           "frame": "night/preview-menu-tour-8667.png",
-          "rgb565_sha256": "8428a0a5841a91dfa621dabd2da357e8f7be9680d758217d44d37c65441503bb"
+          "rgb565_sha256": "c3af254c25dda32f210f1a200ba219bab05e27ff893742015be6d7c2146a8b1f"
         },
         {
           "frame": "night/preview-menu-tour-8734.png",
-          "rgb565_sha256": "8428a0a5841a91dfa621dabd2da357e8f7be9680d758217d44d37c65441503bb"
+          "rgb565_sha256": "c3af254c25dda32f210f1a200ba219bab05e27ff893742015be6d7c2146a8b1f"
         },
         {
           "frame": "night/preview-menu-tour-8801.png",
-          "rgb565_sha256": "8428a0a5841a91dfa621dabd2da357e8f7be9680d758217d44d37c65441503bb"
+          "rgb565_sha256": "c3af254c25dda32f210f1a200ba219bab05e27ff893742015be6d7c2146a8b1f"
         },
         {
           "frame": "night/preview-menu-tour-8868.png",
-          "rgb565_sha256": "8428a0a5841a91dfa621dabd2da357e8f7be9680d758217d44d37c65441503bb"
+          "rgb565_sha256": "c3af254c25dda32f210f1a200ba219bab05e27ff893742015be6d7c2146a8b1f"
         },
         {
           "frame": "night/preview-menu-tour-8935.png",
-          "rgb565_sha256": "8428a0a5841a91dfa621dabd2da357e8f7be9680d758217d44d37c65441503bb"
+          "rgb565_sha256": "c3af254c25dda32f210f1a200ba219bab05e27ff893742015be6d7c2146a8b1f"
         },
         {
           "frame": "night/preview-menu-tour-9400.png",
-          "rgb565_sha256": "8428a0a5841a91dfa621dabd2da357e8f7be9680d758217d44d37c65441503bb"
+          "rgb565_sha256": "c3af254c25dda32f210f1a200ba219bab05e27ff893742015be6d7c2146a8b1f"
         },
         {
           "frame": "night/preview-menu-tour-9467.png",
-          "rgb565_sha256": "ffa89e3a6d03365a57c8f22f1c4aedb9719fbbf4fccdac5c17fb05b541db3113"
+          "rgb565_sha256": "587ef5f6df7403162daae58cfa287f039bd39debc525f8ed64d7a05e3bf8e413"
         },
         {
           "frame": "night/preview-menu-tour-9534.png",
-          "rgb565_sha256": "9c3f253809f2141d501f75fefccf285b2179d1ee19fad4caf7ac7d7604b0119c"
+          "rgb565_sha256": "997aa1174a6082cfef940257397037a515ab7919b379620befe9ae07afa0e3f8"
         },
         {
           "frame": "night/preview-menu-tour-9601.png",
@@ -3819,7 +3987,7 @@
       ]
     },
     "phone-destination.gif": {
-      "sha256": "6071f4c18a788615db97c4d025ebba8c687b18e6f7dc44e2260db5bd3a69fdc4",
+      "sha256": "25ca7b919336a40b6b86318859dbe7e232688b09da59bd1846cfe2fc46e6b80a",
       "frames": 11,
       "duration_ms": 7200,
       "reserved_pointer_colours": [
@@ -3908,7 +4076,7 @@
           "transfer-056.jpg": "01cd1bf92bb29e65bba8e31beb96ba341b0e206a675d3970ef29cbae5f85a5fc"
         },
         "ready_sha256": "93bc757770a4188a9de3234f4f0d4a60d8c77855b80e625fb949db06a93ee37c",
-        "previous_gif_sha256": "fe9fb43c0ee5b8634e4dab25499717b1f255b032e2b2af09ebaf67a1a91ad2c4"
+        "previous_gif_sha256": "6071f4c18a788615db97c4d025ebba8c687b18e6f7dc44e2260db5bd3a69fdc4"
       },
       "source_frames": [
         {
@@ -4583,7 +4751,7 @@
       "routing_provenance": "Production remote handlers create the destination and production routing runs to R_READY on the local map bundle; target coordinates and nonempty route geometry are asserted. GPS is held stationary. The 1.3-second calculation display is a controlled preview interval, not a timing benchmark."
     },
     "map-point-route.gif": {
-      "sha256": "0e87710fc299fbe4e0c6d7ee2c5b299bdc6876bc226bd287707057fdc7be586e",
+      "sha256": "ceb2a1ee69c4a929f24a4c66f969798e41e3eb94676f9554c02d3124dd3a5086",
       "frames": 25,
       "duration_ms": 7000,
       "reserved_pointer_colours": [
@@ -4655,7 +4823,7 @@
         },
         {
           "frame": "night/map-point-confirm.png",
-          "rgb565_sha256": "00f8ae37c460475aaa410f2870a9ac4a0d1eff60b8f5aa7ad1a5418f373af79b"
+          "rgb565_sha256": "d2e9ec8d30ad851b14bda6d4ddfafeba177eaf0313ebc1d96534b44de7c43f9f"
         },
         {
           "frame": "night/map-point-calculating-0000.png",
@@ -4798,7 +4966,7 @@
       ]
     },
     "add-stop.gif": {
-      "sha256": "2b2b29681551b573ddc8c4af2a2261246b3c0427b315733dc70c4fa38cfd209d",
+      "sha256": "f43e54982c10b1b9960defca7c1280810f4d60336ab19a3466dd7275f0a2c72b",
       "frames": 5,
       "duration_ms": 6350,
       "reserved_pointer_colours": [
@@ -4842,7 +5010,7 @@
         },
         {
           "frame": "night/preview-stop-added.png",
-          "rgb565_sha256": "87453fc67a5e00e49ea2f4a44db3667d3b9c63917c9a15089651f282574f1aef"
+          "rgb565_sha256": "f175bdbc0700151f27d652d0e500176b3690e1c29e577e4984b1e95308af8cb9"
         }
       ]
     }

@@ -56,13 +56,7 @@ def source_records(pbf, corrections, work):
             cls = ROAD[props['highway']][0]
             for lvl, tx, ty, points in tile_paths(coords, 6, True):
                 raw = geom_blob(0, cls, points)
-                # Earlier CPM5 builders left the new no-estimate flag clear.
-                # Accept that exact legacy record too, retaining geometry checks.
-                legacy = bytearray(old) if old is not None else None
-                if legacy is not None:
-                    legacy[1] &= ~16;legacy[3] &= ~16
-                    legacy = bytes(legacy)
-                for meta in (old, legacy, new):
+                for meta in (old, new):
                     key = (lvl, tx, ty, raw[:3]+raw[4:], meta)
                     if key in records and records[key][0] != new:
                         raise ValueError('Ambiguous overlapping source-way corrections')
@@ -76,7 +70,7 @@ def source_records(pbf, corrections, work):
 
 
 def patch_tile(raw, lvl, tx, ty, records, matched):
-    _validate_meta_container(raw, 5)
+    _validate_meta_container(raw)
     ng, nl, nm, reserved = struct.unpack_from('<4H', raw)
     pos, geometry = 8, []
     for _ in range(ng):
@@ -122,7 +116,7 @@ def patch_tile(raw, lvl, tx, ty, records, matched):
               raw[geom_end:meta_start]+b''.join(new_metas))
     if len(result) > 32768:
         raise ValueError('Corrected tile exceeds native 32 KiB tile limit')
-    _validate_meta_container(result, 5)
+    _validate_meta_container(result)
     return bytes(result)
 
 

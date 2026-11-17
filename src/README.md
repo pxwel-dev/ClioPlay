@@ -1,4 +1,4 @@
-# ClioPlay version 2.1.7
+# ClioPlay version 2.1.8
 
 ## Set up a card
 
@@ -244,7 +244,11 @@ calculation uses the existing five-frame-per-second cap. Declining keeps Explore
 - **Trip:** always opens **Itinerary** first. **Left / Right** or the left/right
   soft keys cycle **Itinerary → Recents → Favourites**, remembering each tab's
   selection. **Up / Down** or knob rotation scrolls. **OK** opens stop, destination
-  or saved-place actions. The itinerary includes **Add stop** and **Cancel route**;
+  or saved-place actions. A trip holds up to **10 targets** (9 stops plus the final
+  destination), including stops already visited. Scroll to see targets beyond the
+  visible rows; connector lines end at the last visible marker. **Add stop** is
+  disabled at capacity; remove an unvisited stop or start a new trip to free space.
+  The itinerary includes **Add stop** and **Cancel route**;
   an empty itinerary offers **Coordinates**. Add stop and Change destination let
   you choose Recents, Favourites or Coordinates, then review before confirmation.
   **BACK** returns one level without applying a draft. Phone destinations arrive
@@ -397,13 +401,15 @@ speed-limit insets are sampled afresh.
 
 All popup windows use this glass, including route confirmations, saved-place and
 itinerary actions, phone prompts, Bluetooth actions and keyboard language choices.
-Their entrances, exits, resizing, text changes and moving selection highlights
+Yes/No confirmations use compact cards with reduced padding; itinerary removal
+and cancellation retain the target name. Action menus size to their available
+choices. Their entrances, exits, resizing, text changes and moving selection highlights
 share the pills' independent 15 FPS animation clock (5 FPS during calculation).
 Popup-only input does not force a new map frame. Actions take effect immediately;
 copied popup content remains available while closing, including after deletion
 or a page change. A settled popup returns to the normal presentation cadence.
 
-Scrollable Recents, Favourites, saved-phone, Settings and keyboard-language lists
+Scrollable Itinerary, Recents, Favourites, saved-phone, Settings and keyboard-language lists
 show a proportional scrollbar only when more rows exist than fit onscreen.
 The thumb tracks the actual scrollable list size and visible window. The
 phone-pairing action is pinned separately above the device list. Popup scrollbars use translucent antialiased strokes over the glass
@@ -479,7 +485,11 @@ entered; the router stores 1e-5 degree integers and review displays the rounded
 five-decimal values. Exact geographic bounds are checked before rounding. Parsing
 uses bounded integer operations, without floating point or a geocoding service.
 An empty/space-only name becomes the coordinate pair. Saved names use the existing
-40-character Unicode limit and the existing Recents/favourites/trip formats.
+40-character Unicode limit. Recents and Favourites use CLP2 only; current saved places are retained.
+Trips use CTR4 only. Older trip and saved-place formats are ignored, not migrated
+or deleted on load. Subsequent saves replace the respective file. Current maps
+use CPM5, CPR2 version 5 and matching QAD7; the installer accepts version-2
+navigation/atlas manifests. Rebuild outdated navigation packs before use.
 Existing nearby-place deduplication applies to Recents. Coordinate entry does not
 expand map coverage; normal navigation-data/routing errors still apply.
 

@@ -1,4 +1,4 @@
-"""Navigation delivery layout; v1 is retained only for existing-card upgrades."""
+"""Current Global navigation delivery layout."""
 import json
 import re
 from pathlib import Path
@@ -10,19 +10,17 @@ NAMES = (*REGIONAL, *SHARED)
 
 def bundle_names(manifest):
     builder = manifest.get('builder')
-    if builder not in ('global-navigation-1', 'global-navigation-2',
-                       'global-atlas-1', 'global-atlas-2'):
+    if builder not in ('global-navigation-2', 'global-atlas-2'):
         raise ValueError('not a Global bundle manifest')
-    regional = (*REGIONAL, 'search.cps') if builder.endswith('-1') else REGIONAL
     if builder.startswith('global-navigation-'):
-        return (*regional, *SHARED)
+        return (*REGIONAL, *SHARED)
     regions = manifest.get('regions', [])
     if not 1 <= len(regions) <= 256:
         raise ValueError('invalid regional atlas size')
     paths = [r['path'] for r in regions]
     if len(paths) != len(set(paths)) or any(not re.fullmatch('[a-z0-9_-]{1,23}', n) for n in paths):
         raise ValueError('invalid atlas region path')
-    return ('atlas.cpa', *SHARED, *(region+'/'+name for region in paths for name in regional))
+    return ('atlas.cpa', *SHARED, *(region+'/'+name for region in paths for name in REGIONAL))
 
 
 def remove_obsolete(output, names):

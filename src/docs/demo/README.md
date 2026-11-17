@@ -3,7 +3,7 @@
 | Preview | What it shows |
 | --- | --- |
 | [Day boot](boot-day.gif) / [Night boot](boot-night.gif) | Logo and wordmark on a soft theme-aware background, followed by the production half-second cross-fade into the live UI. The initial hold is illustrative, not a boot-time measurement. |
-| [Popups](popups.gif) | Route confirmation, destination-source choices, saved-phone actions and the keyboard language picker share glass entrance, exit, text and focus transitions. |
+| [Popups](popups.gif) | Compact route confirmation, destination-source choices, saved-phone actions and the keyboard language picker share glass entrance, exit, text and focus transitions. |
 | [Song and radio updates](metadata-updates.gif) | New song titles animate in, including during BT CTRL. Radio tuning updates even when the station name stays the same. |
 | [Status notifications](status-notifications.gif) | GPS acquisition and recovery, phone connection, volume and no-active-route messages share one animated pill. |
 | [Driving](driving.gif) | A new road name appears. A camera alert joins the same pill and remains after the name fades. |
@@ -20,8 +20,8 @@
 | [Coordinate keypad (2.1.7)](v216-coordinates.gif) | Split sign/decimal keys, soft-key field toggle/delete, Next validation and optional naming. The existing filename is retained for compatibility. |
 | [Trip layout](trips-layout.gif) | Compact Itinerary, Recents, Favourites, and destination-source review. |
 | [Empty trip layout](trips-empty-layout.gif) | Open Coordinates from an empty itinerary and return using Back. |
-| [Popup layout](popups-layout.gif) | Compact confirmation and language picker; expanded name keyboard. |
-| [Itinerary](v216-itinerary.gif) | Scroll compact itinerary rows with centred symbols. |
+| [Popup layout](popups-layout.gif) | Smaller confirmation cards, dynamic action menus and compact language picker; expanded name keyboard. |
+| [Itinerary](v216-itinerary.gif) | Scroll all ten targets (nine stops and destination), with centred symbols and connectors ending at the last visible row; Add stop is unavailable when full. |
 | [Bluetooth hidden](v216-bluetooth-hidden.gif) | Able to use ClioPlay, even if hw_bluetooth=0 |
 | [Hud Customisability](v216-hud-settings.gif) | Change top and bottom bar pill positions in settings |
 

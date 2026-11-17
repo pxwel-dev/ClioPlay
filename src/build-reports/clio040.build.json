@@ -1,30 +1,30 @@
 {
   "machine": "ARM7TDMI / ARMv4T",
   "abi": "ELF32 EABI5 soft-float; Linux OABI syscalls",
-  "entry": "0x855e4",
-  "bytes": 1035848,
-  "sha256": "3e7094e5e4330ebc04b3e01280ad8fff6873b1872ed30cb0e745f6d00d17ef3f",
+  "entry": "0x85494",
+  "bytes": 1018680,
+  "sha256": "a5f28b2812bafbe9790b9760e6f793b99e66f56bddb44d0d187f34f313326996",
   "sections": {
     ".text": {
-      "address": "0x853f0",
-      "bytes": 456100
+      "address": "0x852a0",
+      "bytes": 442468
     },
     ".rodata": {
       "address": "0x10108",
-      "bytes": 414438
+      "bytes": 414102
     },
     ".data": {
-      "address": "0x104998",
-      "bytes": 1488
+      "address": "0x101308",
+      "bytes": 1472
     },
     ".bss": {
-      "address": "0x104f70",
-      "bytes": 11488672
+      "address": "0x1018d0",
+      "bytes": 10903696
     }
   },
-  "version": "2.1.7",
+  "version": "2.1.8",
   "source": "clio843/src/clio040.c",
-  "source_tree_sha256": "2a81146f078ac347f00b2b0b0cdc1eb3b66c1db0eb112ce8e9b128cf5c307319",
+  "source_tree_sha256": "8363c42c26109bca2992e7facedf1648346f88bc6c12c9c9a1ab50e6b7a69720",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "e68482414282efe29ca954b24778c89e03a3d70197bc9b29effd830dec97f8f0",
@@ -36,7 +36,7 @@
     "clio843/src/boot_handoff.h": "085fda60af400019c684dd5ea9d12e799442cfc9b5e54456caf8d2415f66e23b",
     "clio843/src/boot_theme.h": "fa46f1bda9c0f37306c90f34d497192953aa718b30fa688291bbc7a66ddab746",
     "clio843/src/boot_transition.h": "8ea391927a52cf8eaa9f010a70b8f8e012b768346ca9cd297110e40e6a850007",
-    "clio843/src/clio040.c": "9786bfa4c65fea88e70376aca1c51b392049b607ddd0f9f4502e391c62096a3e",
+    "clio843/src/clio040.c": "7261d241856b7c3eb9b6689a8837513e94f3e2ff9dc67d7e42917b9ea8ab7344",
     "clio843/src/clioa2dp.c": "7a1e8dc00e36d863c7aadcda3c1058e8a4012b2f7ce0b2029abdfd06fe8ce7ed",
     "clio843/src/cliospl.c": "523530da194e4a859de29b448926f347d70c6c6c243d08d9b048fb68e08e3d33",
     "clio843/src/coordinates.h": "2304d8a216e0524a33acd5b8bc662c8f098b618417dcdcf4f90ca1c54c37a4e3",
@@ -46,7 +46,7 @@
     "clio843/src/frame_schedule.h": "50bac892308f48eb49dbc30948b2531ca3b8d1ff71296820168f86a48a12751a",
     "clio843/src/global_cameras.h": "d07e8dabf65f3513a5ec88eb15e34bdcad628cdb291f08a518eb46a3ebed9cd9",
     "clio843/src/global_clock.h": "5fbcf43cb8aceb59e87d6f8118d121ce5798eec064c0ed5a7586a2eb25de8512",
-    "clio843/src/global_regions.h": "1d8341489f0394ce7d1cef200e252129bc9eebcbe60b29dc2923dfd156a77969",
+    "clio843/src/global_regions.h": "00772a81c56fefdcf466ce0594c05a9d62983861a6f81be872fb7e474956d647",
     "clio843/src/global_text.cc": "fcc87baf5b5a8073e1043c6a82f4021299f8757b32a8897966f1ed7f8c19cc4f",
     "clio843/src/global_text.h": "afb6807676750c41030d6e6723b933c538774e622881251056c8091a00b48695",
     "clio843/src/hud.h": "12d701997e7b46957ad72c0a90ec2c2a01898ffcb4215a53ff86d24ae1974a76",
@@ -64,11 +64,11 @@
     "clio843/src/map_thin_coverage.h": "d4632a1dd789176be35ded06a21b84d272d69910532f31e05dc03fbfc092e5fb",
     "clio843/src/menu_keyboard.h": "c2bbd1281013adcf7e0620b4f360133b837ac2596fe9b5ea81f1e0cac423b5a0",
     "clio843/src/menu_layout.h": "c413f261277151f8bd9be15f08cc896a41fc186619ec607501c1a18a463bd23e",
-    "clio843/src/menu_sheet.h": "b416860405e851278186eac8ed01841089d21a89b4700a920c3ebe47aa36951e",
+    "clio843/src/menu_sheet.h": "a804bb6c81872412fda84d759ddce010efbd9797ae023ed189ae1d43884da9f4",
     "clio843/src/nav_roundabout.h": "470390303a8f18184a020710012ea0353d0425c26a1381bbaa4064ca2d7f39be",
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
-    "clio843/src/popups.h": "b0368f86a9daa163b1acf00f8cffa016e65597c5f6b0ce774245020dbfd1c53a",
-    "clio843/src/release_version.h": "1d09efca3656aa0e853a97223018ffb18c263338b8bac864ef61b598e2a90c0d",
+    "clio843/src/popups.h": "5b07ca6fdb099d346763c1e06a1055d01452a22bfa882a9f879c022f48c40b8f",
+    "clio843/src/release_version.h": "81ca6298cd0afb2a1d10d7daa9e3c04a71825e5e576eef20ce97d70bfc6aef40",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
     "clio843/src/splash_icon.h": "1c0cb3bf3be97ce49cdf626bc0184b0736b49fee877a92f5bf2e5cb2d0ec17eb",
     "clio843/src/ui_raster.h": "50767eb3a56c5192daabb07944b255b34d4e77b1db48b14a30a6914871420284",
@@ -1037,7 +1037,7 @@
     "clio843/src/vendor/sheenbidi/Source/UBA/StatusStack.h": "348774283d029f4afa64b95ba9fe04240d754587b483a8bcc345e1d6e78c6261",
     "clio843/src/vstatd.c": "a359d214853cdd511fb79e905fafc52f5413b635bb3288b268d04c15724a666f",
     "tools/build_ui.py": "b5874193f7b1903d2da65043e329011c3df07a4b5fcfedd9e424814a905c5c05",
-    "VERSION": "6078262e31ddd481891e755708940cf065ddc50570c601e040d352db4a69c48e",
+    "VERSION": "4b0b575867a34ab4fff0dc076a5f543ab829be1ee0b172fdc58015f3f67cf521",
     "tools/release_version.py": "451f42b3395dad4e8351570645f5f1cba50d48e2051f9681cb77fe1328be78dc",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
     "tools/build_translations.py": "f0970483186937bbbc3b86f4bab877a2a6fe244830e99ee9ac82c2f58858e6f0",

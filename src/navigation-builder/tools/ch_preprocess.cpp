@@ -51,7 +51,7 @@ int main(int argc,char**argv){
  std::sort(roots.begin(),roots.end(),[](auto&a,auto&b){return a.first>b.first;});
  std::unordered_map<uint32_t,uint32_t> compmap;for(uint32_t i=0;i<roots.size();i++)compmap[roots[i].second]=i;
  std::vector<uint32_t> comp(n);for(uint32_t i=0;i<n;i++)comp[i]=compmap[uf.find(i)];
- std::cerr<<"CPR2 v4 turn-aware compact CH: nodes="<<n<<" base_arcs="<<base_m<<" components="<<roots.size()<<" largest="<<(roots.empty()?0:roots[0].first)<<" witness_limit="<<witness_limit<<" max_shortcut_ratio="<<max_shortcut_ratio<<"\n";
+ std::cerr<<"CPR2 v5 turn-aware compact CH: nodes="<<n<<" base_arcs="<<base_m<<" components="<<roots.size()<<" largest="<<(roots.empty()?0:roots[0].first)<<" witness_limit="<<witness_limit<<" max_shortcut_ratio="<<max_shortcut_ratio<<"\n";
 
  std::vector<uint8_t> portal(n,0);
  if(argc>5){std::ifstream pf(argv[5],std::ios::binary);uint32_t id;while(pf.read((char*)&id,4)){if(id>=n){std::cerr<<"bad portal node\n";return 2;}portal[id]=1;}}

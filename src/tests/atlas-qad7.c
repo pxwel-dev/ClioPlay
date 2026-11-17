@@ -39,7 +39,7 @@ int main(int argc,char**argv){
   u32 r=pass?atlas_nr-1-i:i;assert(atlas_open_route((int)r));assert(qadjmode==7&&qadjok);
   assert(qadj_map_ok==!force_paged);
   u32 ids[3]={0,rh.nodes>17?17:0,rh.nodes/2};
-  for(int k=0;k<3;k++){u32 got=0,want=0;assert(qadj5_index_get(ids[k],&got));assert(s_lseek(qadjfd,qh5.index_off+ids[k]*4u,0)>=0);assert(s_read(qadjfd,&want,4)==4);assert(got==want);}
+  for(int k=0;k<3;k++){u32 got=0,want=0;assert(qadj7_index_get(ids[k],&got));assert(s_lseek(qadjfd,qh7_query.index_off+ids[k]*4u,0)>=0);assert(s_read(qadjfd,&want,4)==4);assert(got==want);}
  }
  position(5497548,-164050);pref.debug=1;assert(route_start(5496800,-160800));
  u32 start=s_now_ms();unsigned calls=finish();u32 elapsed=s_now_ms()-start,queries=atlas_cost_queries;

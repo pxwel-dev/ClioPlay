@@ -82,7 +82,7 @@ def install(bundle,sd,runtime=None):
     shutil.copyfileobj(inp,out,4*1024*1024);out.flush();os.fsync(out.fileno())
    if sha(src)!=sha(dst):raise ValueError('staging verification failed: '+str(rel))
    if src.stat().st_mode&0o111:dst.chmod(0o755)
-  # Save old persisted formats before the new runtime migrates them on first use.
+  # Back up persisted data before updating the runtime. Unsupported state formats are ignored.
   # The live copies and Bluetooth pairing store stay in place.
   for name in ('prefs.ini','recent.dat','faves.dat','trip.dat'):
    rel=Path('clio843')/name
@@ -91,7 +91,7 @@ def install(bundle,sd,runtime=None):
   for rel in obsolete:
    if (sd/rel).is_file():
     bak=backup/rel;bak.parent.mkdir(parents=True,exist_ok=True);os.replace(sd/rel,bak);moved.append(rel)
-  # Preferences are intentionally retained, including pairings, places and trips.
+  # Preferences, pairings and state files are intentionally retained; current-format state can resume.
   for src,rel in files:
    dst=sd/rel;dst.parent.mkdir(parents=True,exist_ok=True)
    if dst.exists():

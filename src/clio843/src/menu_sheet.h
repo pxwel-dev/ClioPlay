@@ -43,7 +43,8 @@ static struct HudBox menu_box(int p){
  if(p==P_LANG){w=364;h=220;}
  if(p==P_STOP||p==P_DEST||p==P_PLACE){w=356;h=p==P_PLACE?174:154;}
  if(p==P_PHONE_ACTIONS){w=324;h=136;}
- if(p==P_PAIR||p==P_CONFIRM){w=316;h=128;}
+ if(p==P_PAIR){w=316;h=128;}
+ if(p==P_CONFIRM){w=280;h=92;}
  if(p==P_SOURCE){w=356;h=154;}
  /* Keep a real margin above the driver HUD even when its cards are
   * temporarily absent. Shorter pages scroll instead of covering the pills. */
@@ -258,6 +259,9 @@ static void trip_header(struct HudBox b,int p,int opacity){
 }
 
 static void trip_content(struct HudBox b,int selected,int opacity){
+ /* During a transition to/from a compact confirmation the interpolated
+  * panel may be too short for even one itinerary row and the footer. */
+ if(b.h<120)return;
  trip_header(b,P_TRIP,opacity);char total[96]="";
  if(!trip.count){
   hud_ink_alpha=opacity;compact_center(b.x+b.w/2,b.y+62,b.w-36,1,ui_tr("Where would you like to go?"),C_WHITE);
@@ -275,13 +279,15 @@ static void trip_content(struct HudBox b,int selected,int opacity){
  int visible=list_space/21;if(visible<1)visible=1;if(visible>trip.count)visible=trip.count;
  int first=selected>=visible?selected-visible+1:0;if(first+visible>trip.count)first=trip.count-visible;
  int start=b.y+71,step=list_space/visible;if(step>26)step=26;
+ for(int row=0;row<visible;row++)if(first+row==selected)menu_tile(b.x+9,start+row*step-2,b.w-18,step-1,1,opacity);
  for(int row=0;row<visible;row++){int i=first+row;
   int y=start+row*step,active=i==selected;
   /* Centre each route marker in the selection highlight itself. */
   int cy=y-2+(step-1)/2;
-  if(active)menu_tile(b.x+9,y-2,b.w-18,step-1,1,opacity);
   hud_ink_alpha=opacity;
-  if(i+1<trip.count&&step>=12)round_rect(b.x+23,cy+4,1,step-6,0,C_BORDER,10);
+  /* Connect only visible neighbours. The final visible marker has no
+   * outgoing stem, even when more targets exist below the viewport. */
+  if(row+1<visible&&step>=12)round_rect(b.x+23,cy+5,1,step-9,0,C_BORDER,10);
   round_rect(b.x+19,cy-4,9,9,i==trip.count-1?2:4,active?C_ACTIVE_TEXT:i==trip.active_idx?C_CYAN:C_MUTED,15);
   if(active&&i==trip.active_idx)round_rect(b.x+22,cy-1,3,3,i==trip.count-1?0:1,C_ACTIVE,15);
   char num[8]="";append_int(num,sizeof(num),i+1);
@@ -424,9 +430,9 @@ static void menu_contents(int p,int selected,struct HudBox b,int opacity,u32 now
  if(p==P_PLACE){options[0]="Route as new";options[1]="Add as stop";options[2]=places_tab?"Rename":"Save favourite";options[3]="Remove favourite";count=places_tab?4:3;}
  if(p==P_PHONE_ACTIONS){text_value(b.x+18,b.y+31,b.w-36,bt_display_name(phone_index),opacity);options[0]=btdev[phone_index].connected?"Disconnect":"Connect";options[1]="Forget";count=2;}
  if(p==P_CONFIRM){
-  text_value(b.x+18,b.y+37,b.w-36,confirm_kind?context_name:trip.target[trip.count-1].name,opacity);
-  int w=(b.w-44)/2;const char*choices[]={"Yes","No"};
-  for(int i=0;i<2;i++){int x=b.x+16+i*(w+12);menu_tile(x,b.y+b.h-38,w,24,selected==i,opacity);hud_ink_alpha=opacity;box_text(x,b.y+b.h-38,w,24,1,ui_tr(choices[i]),selected==i?C_ACTIVE_TEXT:C_WHITE);}return;
+  text_value(b.x+14,b.y+29,b.w-28,confirm_kind?context_name:trip.count?trip.target[trip.count-1].name:"",opacity);
+  int w=(b.w-40)/2;const char*choices[]={"Yes","No"};
+  for(int i=0;i<2;i++){int x=b.x+14+i*(w+12);menu_tile(x,b.y+b.h-34,w,24,selected==i,opacity);hud_ink_alpha=opacity;box_text(x,b.y+b.h-34,w,24,1,ui_tr(choices[i]),selected==i?C_ACTIVE_TEXT:C_WHITE);}return;
  }
  if(p==P_PAIR){text_value(b.x+18,b.y+42,b.w-36,bt_status_text(),opacity);text_value(b.x+18,b.y+64,b.w-36,ui_tr("Waiting for phone"),opacity);return;}
  if(p==P_LANG){

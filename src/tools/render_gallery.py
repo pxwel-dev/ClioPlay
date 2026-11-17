@@ -116,8 +116,14 @@ V216_HUD_SETTINGS_EVENTS = ((0, 'menu_open(P_SETTINGS,10,hud_now_ms());'), (1700
 V216_HUD_SETTINGS_SAMPLES = sorted({at+step for at,_ in V216_HUD_SETTINGS_EVENTS for step in TWEEN_STEPS} | {9900})
 V216_BLUETOOTH_HIDDEN_EVENTS = ((0, 'menu_open(P_HOME,0,hud_now_ms());'), (2200, 'hw_bluetooth_enabled=0;menu_change(P_HOME,0,hud_now_ms());assert(menu_count(P_HOME)==2);'), (4400, 'key_handle(K_DOWN);key_handle(K_ENTER);assert(sheet_page==P_SETTINGS);'), (6600, 'key_handle(K_MENU);assert(sheet_page==P_HOME);'), (7500, 'hw_bluetooth_enabled=1;menu_change(P_HOME,1,hud_now_ms());'), (8500, 'key_handle(K_ENTER);assert(sheet_page==P_PHONE);'))
 V216_BLUETOOTH_HIDDEN_SAMPLES = sorted({at+step for at,_ in V216_BLUETOOTH_HIDDEN_EVENTS for step in TWEEN_STEPS} | {9500})
-V216_ITINERARY_EVENTS = ((0, 'assert(trip_add_stop("Museum",5498000,-164000));assert(trip_add_stop("Gallery",5498500,-165000));assert(trip_add_stop("Cafe",5498700,-166000));menu_open(P_TRIP,0,hud_now_ms());'), (1500, 'key_handle(K_DOWN);'), (2200, 'key_handle(K_DOWN);'), (2900, 'key_handle(K_DOWN);'), (3600, 'key_handle(K_DOWN);assert(sheet_focus==trip.count-1);'), (4500, 'key_handle(K_UP);'), (5300, 'key_handle(K_UP);'), (6100, 'key_handle(K_UP);'))
-V216_ITINERARY_SAMPLES = sorted({at+step for at,_ in V216_ITINERARY_EVENTS for step in TWEEN_STEPS} | {7400})
+# Ten-target example scrolls through every stop, the destination and the footer.
+ITINERARY_SETUP = 'for(int i=trip.count;i<TRIP_MAX_TARGETS;i++){char name[32];snprintf(name,sizeof(name),"Stop %d",i);assert(trip_add_stop(name,5498000+i*100,-164000-i*100));}menu_open(P_TRIP,0,hud_now_ms());'
+V216_ITINERARY_EVENTS = ((0, ITINERARY_SETUP),) + tuple(
+    (1000+i*500, 'key_handle(K_DOWN);assert(sheet_focus==%d);' % (i+1)) for i in range(11)) + (
+    (6800, 'key_handle(K_UP);assert(sheet_focus==trip.count);key_handle(K_ENTER);assert(sheet_page==P_TRIP);'),
+    (7800, 'key_handle(K_UP);assert(sheet_focus==trip.count-1);'),
+    (8800, 'for(int i=0;i<9;i++)key_handle(K_UP);assert(sheet_focus==0);'))
+V216_ITINERARY_SAMPLES = sorted({at+step for at,_ in V216_ITINERARY_EVENTS for step in TWEEN_STEPS} | {9800})
 
 
 
@@ -319,7 +325,7 @@ def catalog(sender_receipts=None):
     key('Destinations','saved-focus','Move focus to saved places','screen=SCR_TRIP;trip_pane=1;','key_handle(K_ESC);','assert(trip_pane==0);')
     key('Destinations','itinerary-down','Select next itinerary item','screen=SCR_TRIP;trip_pane=1;','key_handle(K_DOWN);','assert(trip_right_focus==1);')
     key('Destinations','itinerary-up','Select previous itinerary item','screen=SCR_TRIP;trip_pane=1;trip_right_focus=1;','key_handle(K_UP);','assert(trip_right_focus==0);')
-    add('Destinations','itinerary-full','Five-target itinerary','screen=SCR_TRIP;trip_pane=1;four_stops();')
+    add('Destinations','itinerary-full','Ten-target itinerary','full_itinerary();menu_open(P_TRIP,0,hud_now_ms());')
     add('Destinations','itinerary-empty','No current route','screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;')
     key('Destinations','empty-receive','Receive first destination from phone','screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;','', 'assert(modal==MOD_NONE);')
     for stage, title in [('entry','Enter latitude'),('latitude','Latitude ready'),('longitude','Longitude ready'),('name','Optional destination name'),('review','Review coordinates and name'),('saved','Named destination saved to Recents')]:
@@ -359,7 +365,7 @@ def catalog(sender_receipts=None):
         'coordinate_preview("latitude");pref.language=12;coordinates.error=1;')
     add('Coordinates','coordinates-review-hebrew','Hebrew review with left-to-right coordinates',
         'coordinate_preview("review");pref.language=17;')
-    key('Destinations','full-add-disabled','Full itinerary: add-stop limit','screen=SCR_TRIP;trip_pane=1;four_stops();trip_right_focus=5;','key_handle(K_ENTER);','assert(modal==MOD_NONE&&trip.count==5);')
+    key('Destinations','full-add-disabled','Full itinerary: add-stop limit','full_itinerary();menu_open(P_TRIP,TRIP_MAX_TARGETS,hud_now_ms());','key_handle(K_ENTER);','assert(modal==MOD_NONE&&trip.count==TRIP_MAX_TARGETS);')
     add_stop = 'key_handle(K_MENU);key_handle(K_ENTER);key_handle(K_SR);key_handle(K_DOWN);key_handle(K_DOWN);'
     add_source = add_stop + 'key_handle(K_ENTER);key_handle(K_DOWN);'
     pick_favourite = add_source + 'key_handle(K_ENTER);key_handle(K_DOWN);'
@@ -431,7 +437,7 @@ def catalog(sender_receipts=None):
         phone_received + 'u32 deadline=s_now_ms()+120000;'
         'while(route_status==R_CALC&&time_before_u32(s_now_ms(),deadline))route_service_until(s_now_ms()+12);'
         'screen=SCR_TRIP;trip_pane=1;', check='assert(route_status==R_READY);')
-    add('Phone destinations','incoming-full','Phone stop rejected: itinerary full','screen=SCR_TRIP;four_stops();incoming("Extra stop",\'S\');')
+    add('Phone destinations','incoming-full','Phone stop rejected: itinerary full','screen=SCR_TRIP;full_itinerary();incoming("Extra stop",\'S\');')
     add('Phone destinations','incoming-no-route','Phone stop rejected: no active route','screen=SCR_TRIP;trip.active=0;trip.count=0;incoming("Extra stop",\'S\');')
     for choice,title,command in [(0,'Disconnect','DISCONNECT'),(1,'Forget connected phone','UNPAIR')]:
         state=f'screen=SCR_BT;bt_page_connected_choice={choice};'
@@ -638,7 +644,7 @@ def modern_menus():
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_HUD_SETTINGS_EVENTS, V216_HUD_SETTINGS_SAMPLES)
     motion('Version 2.1.6', 'preview-v216-bluetooth-hidden', 'Simulated Bluetooth hardware flag hides UI entries',
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_BLUETOOTH_HIDDEN_EVENTS, V216_BLUETOOTH_HIDDEN_SAMPLES)
-    motion('Version 2.1.6', 'preview-v216-itinerary', 'Scroll and centre trip icons with five destinations',
+    motion('Version 2.1.8', 'preview-v216-itinerary', 'Scroll ten targets, with connectors bounded to the visible list',
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_ITINERARY_EVENTS, V216_ITINERARY_SAMPLES)
     add('Menu sheets','empty-receive','Empty itinerary receives phone destinations automatically','trip.active=trip.count=0;menu_open(P_TRIP,0,hud_now_ms());')
     add_stop='key_handle(K_MENU);key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_DOWN);'
@@ -713,7 +719,7 @@ static void map_point_preview(const char*stage){
  trip_service();trip_service();assert(screen==SCR_MAP&&!freecam&&route_status==R_CALC);
 }
 static void three_stops(void){trip.count=4;trip.active_idx=0;for(int i=0;i<3;i++){trip.target[i].lat=5497300+i*100;trip.target[i].lon=-161300-i*100;snprintf(trip.target[i].name,sizeof(trip.target[i].name),"Stop %d",i+1);}trip.target[3]=trip.target[0];copystr(trip.target[3].name,sizeof(trip.target[3].name),"Home");}
-static void four_stops(void){three_stops();trip.count=5;trip.target[4]=trip.target[3];copystr(trip.target[3].name,sizeof(trip.target[3].name),"Stop 4");}
+static void full_itinerary(void){three_stops();trip.target[TRIP_MAX_TARGETS-1]=trip.target[3];for(int i=3;i<TRIP_MAX_TARGETS-1;i++){trip.target[i]=trip.target[0];snprintf(trip.target[i].name,sizeof(trip.target[i].name),"Stop %d",i+1);}trip.count=TRIP_MAX_TARGETS;}
 static void incoming(const char*name,char action){phone_dest.valid=1;phone_dest.action=action;phone_dest.lat=5497370;phone_dest.lon=-161331;copystr(phone_dest.name,sizeof(phone_dest.name),name);phone_destination_apply();}
 static void incoming_sender(const char*name,int seq,char action,int lat,int lon){char packet[512];int n=snprintf(packet,sizeof(packet),"SEQ=%d\nACTION=%c\nLAT=%d\nLON=%d\nNAME=%s\n",seq,action,lat,lon,name);long fd=s_open(BT_NAV_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);assert(fd>=0);assert(s_write((int)fd,packet,n)==n);s_close((int)fd);poll_phone_destination();assert(phone_dest.valid);phone_destination_apply();}
 static void show_camera(int kind,int avg){camera_visible=1;camera_average=avg;camera_current.kind=kind;camera_current.speed=30;camera_current.flags=2;camera_distance=avg?850:180;camera_average_speed=42;}

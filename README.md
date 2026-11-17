@@ -1,6 +1,6 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
-<h1 align="center">ClioPlay 2.1.7</h1>
+<h1 align="center">ClioPlay 2.1.8</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
 <p align="center">
   Created and maintained by <a href="https://github.com/pxwel-dev">Pawel (pxwel-dev)</a>.
@@ -9,14 +9,14 @@
 
 <p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases/tag/Release">Download latest release</a> · <a href="#install">Install instructions</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-## Version 2.1.7 — Development update
+## Version 2.1.8 — Development update
 
 ### Changes in this version
 
-- Restored **BACK** to return to the previous page without advancing or applying a coordinate draft.
-- Added a full-width **Next** key at the bottom right of the coordinate keypad. The **±** and **.** keys share the bottom-left column; **0** remains in the middle.
-- **Next** validates both fields and opens optional naming; invalid entries stay editable. Soft-right still cycles latitude/longitude and soft-left deletes.
-- Updated directional/rotary navigation, regression checks and demo capture scripts.
+- Fixed itinerary connector lines extending towards the Add stop action when additional targets are off-screen. Connections now join visible markers only.
+- Increased trip capacity from five to ten targets in total (nine intermediate stops plus the final destination). Saved trips use CTR4 only; unfinished trips from older formats cannot be resumed.
+- Removed obsolete saved-place, map, routing and bundle-format readers. Current CLP2 places and current navigation packs remain supported; unsupported formats require fresh data.
+- Reduced the size of confirmation dialogs and their action menus while retaining readable labels, existing choices, focus targets and animation behaviour.
 
 See [version history](CHANGELOG.md) for implemented changes by version.
 
@@ -215,3 +215,5 @@ Original ClioPlay development includes:
 - [Geofabrik](https://www.geofabrik.de/) — distribution of regional OpenStreetMap extracts.
 
 Third-party software and dependencies retain their respective licences and attribution notices, as documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+<sub>Release files refreshed 16 November 2026 (Europe/London).</sub>

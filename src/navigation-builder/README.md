@@ -58,11 +58,13 @@ For a single region, keep these seven files together with their `build.json` SHA
 | `fonts.cpf` | Bundled 23 MB native-script glyphs and shaping tables |
 | `timezones.cpt` | Offline GPS timezone/DST polygons and 2020–2060 transitions |
 
-**Use the Global executable. Older ClioPlay versions cannot read the new map/route
-formats.** `route.qadj` is specific to the exact `route.cpr`; never mix builds.
+**Use the Global executable and current navigation formats.** The runtime
+requires CPM5 and CPR2 v5; QAD7 is the supported acceleration sidecar. The
+installer accepts version-2 navigation and atlas manifests only. `route.qadj` is specific to the exact `route.cpr`; never mix builds.
 The wizard in the parent folder installs the executable and complete data set
-with staging, checksum verification and backups. Upgrading an older Global card
-also backs up and removes its unused search indexes. Alternatively:
+with staging, checksum verification and backups. Known stale search indexes on the card are backed up and removed during install.
+If your pack uses an unsupported format, build a fresh pack; current packs
+can be reused without rebuilding. Alternatively:
 
 ```sh
 python3 ../tools/prepare_card.py /path/to/prepared-runtime

@@ -6,7 +6,7 @@ class CPR2:
  def __init__(self,p):
   self.p=Path(p);self.f=self.p.open('rb');h=HDR.unpack(self.f.read(HDR.size))
   (self.magic,self.ver,self.flags,self.n,self.nphys,self.nb,self.rm,self.nt,self.ntr,self.na,self.nuf,self.nur,self.ng,self.nsrc,self.to,self.tro,self.no,self.eo,self.bo,self.so,self.ao,self.ufo,self.uro,self.go,*self.bounds)=h
-  if self.magic!=b'CPR2' or self.ver not in (4,5):raise ValueError('not CPR2 v4')
+  if self.magic!=b'CPR2' or self.ver != 5:raise ValueError('not CPR2 v5')
  def node(self,i):self.f.seek(self.no+i*NODE.size);return NODE.unpack(self.f.read(NODE.size))
  def base(self,i):self.f.seek(self.bo+i*BASE.size);return BASE.unpack(self.f.read(BASE.size))
  def arc(self,i):self.f.seek(self.ao+i*CHARC.size);return CHARC.unpack(self.f.read(CHARC.size))

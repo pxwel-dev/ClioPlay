@@ -9,9 +9,7 @@
  *   /dev/input/event0..7   TomTom remote (hot-discovered after HID bring-up)
  *   /proc/barcelona/onoff  power request latch
  *
- * CPM1/2 remain readable for rollback. CPM3/4 add Z6 road metadata used for
- * current-street and OSM-derived speed-limit context. CPM4 adds a metadata
- * flags byte; bit 0 marks weak/estimated speed limits. Device-side code uses
+ * CPM5 provides global tiles and directional road metadata. Device-side code uses
  * fixed-point integer maths only; no libc, malloc, SQLite, protobuf or libm.
  */
 #include "release_version.h"
@@ -29,18 +27,18 @@ static inline long sc1(long nr,long a){ register long r0 __asm__("r0")=a; __asm_
 static inline long sc2(long nr,long a,long b){ register long r0 __asm__("r0")=a; register long r1 __asm__("r1")=b; __asm__ volatile("svc %2":"+r"(r0):"r"(r1),"i"(0x900000+nr):"memory","cc"); return r0; }
 static inline long sc3(long nr,long a,long b,long c){ register long r0 __asm__("r0")=a; register long r1 __asm__("r1")=b; register long r2 __asm__("r2")=c; __asm__ volatile("svc %3":"+r"(r0):"r"(r1),"r"(r2),"i"(0x900000+nr):"memory","cc"); return r0; }
 static inline long sc6(long nr,long a,long b,long c,long d,long e,long f){ register long r0 __asm__("r0")=a; register long r1 __asm__("r1")=b; register long r2 __asm__("r2")=c; register long r3 __asm__("r3")=d; register long r4 __asm__("r4")=e; register long r5 __asm__("r5")=f; __asm__ volatile("svc %6":"+r"(r0):"r"(r1),"r"(r2),"r"(r3),"r"(r4),"r"(r5),"i"(0x900000+nr):"memory","cc"); return r0; }
-static long s_read(int fd,void*p,unsigned n){return sc3(3,fd,(long)p,(long)n);} 
-static long s_write(int fd,const void*p,unsigned n){return sc3(4,fd,(long)p,(long)n);} 
-static long s_open(const char*p,int f,int m){return sc3(5,(long)p,f,m);} 
-static long s_close(int fd){return sc1(6,fd);} 
-static long s_unlink(const char*p){return sc1(10,(long)p);} 
-static long s_lseek(int fd,long o,int w){return sc3(19,fd,o,w);} 
-static long s_ioctl(int fd,u32 req,long arg){return sc3(54,fd,(long)req,arg);} 
-static long s_brk(long a){return sc1(45,a);} 
+static long s_read(int fd,void*p,unsigned n){return sc3(3,fd,(long)p,(long)n);}
+static long s_write(int fd,const void*p,unsigned n){return sc3(4,fd,(long)p,(long)n);}
+static long s_open(const char*p,int f,int m){return sc3(5,(long)p,f,m);}
+static long s_close(int fd){return sc1(6,fd);}
+static long s_unlink(const char*p){return sc1(10,(long)p);}
+static long s_lseek(int fd,long o,int w){return sc3(19,fd,o,w);}
+static long s_ioctl(int fd,u32 req,long arg){return sc3(54,fd,(long)req,arg);}
+static long s_brk(long a){return sc1(45,a);}
 static void*s_mmap2(void*addr,u32 len,int prot,int flags,int fd,u32 pgoff){long r=sc6(192,(long)addr,(long)len,prot,flags,fd,(long)pgoff);return (u32)r>=0xfffff001u?0:(void*)r;}
-static long s_munmap(void*p,u32 len){return sc2(91,(long)p,(long)len);} 
-static long s_sync(void){return sc0(36);} 
-static long s_rename(const char*a,const char*b){return sc2(38,(long)a,(long)b);} 
+static long s_munmap(void*p,u32 len){return sc2(91,(long)p,(long)len);}
+static long s_sync(void){return sc0(36);}
+static long s_rename(const char*a,const char*b){return sc2(38,(long)a,(long)b);}
 struct kts { long sec,nsec; };
 struct ktv { long sec,usec; };
 static long s_nanosleep(long sec,long ns){ struct kts t={sec,ns}; return sc2(162,(long)&t,0); }
@@ -63,25 +61,25 @@ __attribute__((noreturn)) static void s_exit(int c){sc1(1,c);for(;;){}}
 #include <poll.h>
 #include <errno.h>
 #include <string.h>
-static long s_read(int fd,void*p,unsigned n){return read(fd,p,n);} 
-static long s_write(int fd,const void*p,unsigned n){return write(fd,p,n);} 
+static long s_read(int fd,void*p,unsigned n){return read(fd,p,n);}
+static long s_write(int fd,const void*p,unsigned n){return write(fd,p,n);}
 /* The runtime uses Linux flag values; native macOS tests need host flags. */
 static long s_open(const char*p,int f,int m){
  int flags=f&3;if(f&64)flags|=O_CREAT;if(f&512)flags|=O_TRUNC;
  if(f&1024)flags|=O_APPEND;if(f&2048)flags|=O_NONBLOCK;
  return open(p,flags,m);
-} 
-static long s_close(int fd){return close(fd);} 
-static long s_unlink(const char*p){return unlink(p);} 
-static long s_lseek(int fd,long o,int w){return lseek(fd,o,w);} 
-static long s_ioctl(int fd,u32 req,long arg){return ioctl(fd,(unsigned long)req,(void*)arg);} 
+}
+static long s_close(int fd){return close(fd);}
+static long s_unlink(const char*p){return unlink(p);}
+static long s_lseek(int fd,long o,int w){return lseek(fd,o,w);}
+static long s_ioctl(int fd,u32 req,long arg){return ioctl(fd,(unsigned long)req,(void*)arg);}
 static void*s_mmap2(void*addr,u32 len,int prot,int flags,int fd,u32 pgoff){if(flags&32)flags=(flags&~32)|MAP_ANON;void*p=mmap(addr,len,prot,flags,fd,(off_t)pgoff*4096);return p==MAP_FAILED?0:p;}
 static long s_munmap(void*p,u32 len){return munmap(p,len);}
-static long s_sync(void){return 0;} 
-static long s_rename(const char*a,const char*b){return rename(a,b);} 
+static long s_sync(void){return 0;}
+static long s_rename(const char*a,const char*b){return rename(a,b);}
 static long s_nanosleep(long sec,long ns){(void)sec;(void)ns;return 0;}
-static u32 s_now_ms(void){struct timespec t;if(clock_gettime(CLOCK_MONOTONIC,&t)==0)return (u32)t.tv_sec*1000u+(u32)(t.tv_nsec/1000000L);return 0;} 
-__attribute__((noreturn)) static void s_exit(int c){exit(c);} 
+static u32 s_now_ms(void){struct timespec t;if(clock_gettime(CLOCK_MONOTONIC,&t)==0)return (u32)t.tv_sec*1000u+(u32)(t.tv_nsec/1000000L);return 0;}
+__attribute__((noreturn)) static void s_exit(int c){exit(c);}
 #endif
 
 enum { O_RDONLY_=0,O_WRONLY_=1,O_RDWR_=2,O_CREAT_=64,O_TRUNC_=512,O_APPEND_=1024,O_NONBLOCK_=2048 };
@@ -432,7 +430,7 @@ struct Prefs {int bright,hoff,moff,autozoom,debug,theme,units,cameras,clock_auto
 static struct Prefs pref={50,0,0,1,0,THEME_AUTO,0,1,1,0,CLIO_DAY_START,CLIO_NIGHT_START};
 static int pref_keyboard_language=-1;
 /* The TomTom hardware export is authoritative when present; unknown hardware
- * keeps Bluetooth visible for backwards compatibility. */
+ * keeps Bluetooth visible when the hardware export is unavailable. */
 static int hw_bluetooth_enabled=1;
 #ifdef HOST_TEST
 #define CLIO_HW_EXPORT_PATH CLIO_HOST_ROOT "proc/barcelona/export_hw_var"
@@ -932,9 +930,7 @@ static void bt_poll_status(void){
 static const char* bt_action_label(void){if(btui.connected)return"DISCONNECT PHONE";if(btui.paired)return"RECONNECT PHONE";return"PAIR PHONE";}
 static void bt_action_connection(void){if(btui.connected)bt_command("DISCONNECT");else if(btui.paired)bt_command("CONNECT");else bt_command("PAIR");}
 
-/* CPM1/CPM2/CPM3/CPM4 map formats. Header/index layout is shared. CPM3/4
- * keep geometry/labels seekable and add a tile-local metadata table referenced
- * by Z6 road geometry. CPM4 extends each road-metadata record with a flags byte. */
+/* CPM5 global map header, index and tile-local road metadata. */
 struct CpmHeader {char magic[4];u16 ver;u8 minlvl,maxlvl;u32 flags,count,index_off,data_off; s32 minlat,minlon,maxlat,maxlon;};
 struct CpmIndex {u8 lvl,flags;u16 reserved;s32 tx,ty;u32 off,len;u16 features,pad;};
 static struct CpmHeader mh;static int mapfd=-1,mapok=0,mapfmt=0;
@@ -945,9 +941,9 @@ static struct Tile tc[TILE_CACHE];static u32 agec=1;
 static u16 rd16(const u8*p){return(u16)(p[0]|((u16)p[1]<<8));}
 static u32 rd32u(const u8*p){return(u32)p[0]|((u32)p[1]<<8)|((u32)p[2]<<16)|((u32)p[3]<<24);}
 #include "atlas_catalog.h"
-static int load_map(void){load_atlas();mapfd=(int)s_open(atlas_ready?atlas_map_path:MAP_PATH,O_RDONLY_,0);if(mapfd<0)return 0;if(s_read(mapfd,&mh,sizeof(mh))!=(long)sizeof(mh)){s_close(mapfd);mapfd=-1;return 0;}if(mh.magic[0]=='C'&&mh.magic[1]=='P'&&mh.magic[2]=='M'&&mh.magic[3]=='1'&&mh.ver==1)mapfmt=1;else if(mh.magic[0]=='C'&&mh.magic[1]=='P'&&mh.magic[2]=='M'&&mh.magic[3]=='2'&&mh.ver==2)mapfmt=2;else if(mh.magic[0]=='C'&&mh.magic[1]=='P'&&mh.magic[2]=='M'&&mh.magic[3]=='3'&&mh.ver==3)mapfmt=3;else if(mh.magic[0]=='C'&&mh.magic[1]=='P'&&mh.magic[2]=='M'&&mh.magic[3]=='4'&&mh.ver==4)mapfmt=4;else if(mh.magic[0]=='C'&&mh.magic[1]=='P'&&mh.magic[2]=='M'&&mh.magic[3]=='5'&&mh.ver==5)mapfmt=5;else mapfmt=0;if(!mapfmt||mh.minlvl>mh.maxlvl||mh.maxlvl>6){s_close(mapfd);mapfd=-1;return 0;}mapok=1;manual_zoom=manual_zoom<(int)mh.minlvl?(int)mh.minlvl:manual_zoom;manual_zoom=manual_zoom>(int)mh.maxlvl?(int)mh.maxlvl:manual_zoom;return 1;}
+static int load_map(void){mapok=0;mapfmt=0;if(mapfd>=0){s_close(mapfd);mapfd=-1;}load_atlas();mapfd=(int)s_open(atlas_ready?atlas_map_path:MAP_PATH,O_RDONLY_,0);if(mapfd<0)return 0;if(s_read(mapfd,&mh,sizeof(mh))!=(long)sizeof(mh)){s_close(mapfd);mapfd=-1;return 0;}if(mh.magic[0]=='C'&&mh.magic[1]=='P'&&mh.magic[2]=='M'&&mh.magic[3]=='5'&&mh.ver==5)mapfmt=5;else mapfmt=0;if(!mapfmt||mh.minlvl>mh.maxlvl||mh.maxlvl>6){s_close(mapfd);mapfd=-1;return 0;}mapok=1;manual_zoom=manual_zoom<(int)mh.minlvl?(int)mh.minlvl:manual_zoom;manual_zoom=manual_zoom>(int)mh.maxlvl?(int)mh.maxlvl:manual_zoom;return 1;}
 static int keycmp(u8 l,s32 x,s32 y,const struct CpmIndex*e){if(l<e->lvl)return-1;if(l>e->lvl)return 1;if(x<e->tx)return-1;if(x>e->tx)return 1;if(y<e->ty)return-1;if(y>e->ty)return 1;return 0;}
-static int find_index(u8 l,s32 x,s32 y,u8 page,struct CpmIndex*out){u32 lo=0,hi=mh.count;u32 size=mapfmt>=5?24:20;while(lo<hi){u32 mid=lo+(hi-lo)/2;u8 b[24];s_lseek(mapfd,(long)(mh.index_off+mid*size),SEEK_SET_);if(s_read(mapfd,b,size)!=(long)size)return 0;struct CpmIndex e;e.lvl=b[0];e.flags=b[1];e.tx=mapfmt>=5?(s32)rd32u(b+4):(s16)rd16(b+2);e.ty=mapfmt>=5?(s32)rd32u(b+8):(s16)rd16(b+4);unsigned k=mapfmt>=5?12:8;e.off=rd32u(b+k);e.len=rd32u(b+k+4);e.features=rd16(b+k+8);e.pad=rd16(b+k+10);int c=keycmp(l,x,y,&e);if(!c)c=page<e.flags?-1:(page>e.flags?1:0);if(c==0){*out=e;return 1;}if(c<0)hi=mid;else lo=mid+1;}return 0;}
+static int find_index(u8 l,s32 x,s32 y,u8 page,struct CpmIndex*out){u32 lo=0,hi=mh.count;u32 size=24;while(lo<hi){u32 mid=lo+(hi-lo)/2;u8 b[24];s_lseek(mapfd,(long)(mh.index_off+mid*size),SEEK_SET_);if(s_read(mapfd,b,size)!=(long)size)return 0;struct CpmIndex e;e.lvl=b[0];e.flags=b[1];e.tx=(s32)rd32u(b+4);e.ty=(s32)rd32u(b+8);unsigned k=12;e.off=rd32u(b+k);e.len=rd32u(b+k+4);e.features=rd16(b+k+8);e.pad=rd16(b+k+10);int c=keycmp(l,x,y,&e);if(!c)c=page<e.flags?-1:(page>e.flags?1:0);if(c==0){*out=e;return 1;}if(c<0)hi=mid;else lo=mid+1;}return 0;}
 static struct Tile* get_tile_page_raw(u8 l,s32 x,s32 y,u8 page){int i,best=0;u32 ba=0xffffffff;for(i=0;i<TILE_CACHE;i++){if(tc[i].valid&&tc[i].lvl==l&&tc[i].page==page&&tc[i].tx==x&&tc[i].ty==y){tc[i].age=agec++;return tc[i].valid==2?0:&tc[i];}if(!tc[i].valid){best=i;ba=0;break;}if(tc[i].age<ba){ba=tc[i].age;best=i;}}struct CpmIndex e;if(!find_index(l,x,y,page,&e)){tc[best].valid=2;tc[best].lvl=l;tc[best].page=page;tc[best].tx=x;tc[best].ty=y;tc[best].len=0;tc[best].age=agec++;return 0;}if(e.len>TILE_MAX)return 0;s_lseek(mapfd,(long)(mh.data_off+e.off),SEEK_SET_);if(s_read(mapfd,tc[best].data,e.len)!=(long)e.len)return 0;tc[best].valid=1;tc[best].lvl=l;tc[best].page=page;tc[best].tx=x;tc[best].ty=y;tc[best].len=e.len;tc[best].age=agec++;return &tc[best];}
 static int atlas_map_fd[4]={-1,-1,-1,-1},atlas_map_id[4]={-1,-1,-1,-1};static struct CpmHeader atlas_map_header[4];static u32 atlas_map_slot=0;
 static struct Tile* get_tile_page(u8 l,s32 x,s32 y,u8 page){
@@ -1186,11 +1182,8 @@ static int nav_card_x=0,nav_card_y=0,nav_card_w=0,nav_card_h=0;
 #endif
 struct MapAreaEdge {int first,last,x,step,smooth;};
 static void draw_closed_area(struct Tile*t,int span,int layer,int style,int np,const u8*p,int viewz){
-  /* Rebuilt CPM4 packs mark complete clipped polygons with style bit 7.
-   * Their bridged hole contours use even/odd filling; old boundary fragments
-   * must not independently refill an island. Unmarked legacy packs still use
-   * the closed-outline compatibility path. */
-  if((mh.flags&2)&&!(style&128))return;
+  /* Only complete clipped polygons carry the area bit. */
+  if(!(style&128))return;
   style&=127;
   if(!MAP_AREA_FILLS||np<4||np>255||(layer!=2&&!(layer==1&&(style==4||style==5))))return;
   if(rd16(p)!=rd16(p+(np-1)*4)||rd16(p+2)!=rd16(p+(np-1)*4+2))return;
@@ -1250,11 +1243,8 @@ enum {MAP_DRAW_CONTEXT=0,MAP_DRAW_AREAS=1,MAP_DRAW_ROADS=2,MAP_DRAW_OCEAN=3};
 static void draw_tile_geometry(struct Tile*t,int viewz,int pass){
   render_checkpoint();
   if(!t)return;const u8*p=t->data,*end=t->data+t->len;int span=span_for_level((int)t->lvl);
-  if(mapfmt==1){
-    if(pass!=MAP_DRAW_ROADS||t->len<2)return;u16 nf=rd16(p);p+=2;
-    for(u16 f=0;f<nf&&p+2<=end;f++){int cls=*p++,np=*p++;draw_path(t,span,0,cls,np,&p,end,viewz);}return;
-  }
-  int hs=mapfmt>=3?8:4;if(t->len<(u32)hs)return;u16 ng=rd16(p);p+=hs;
+
+  int hs=8;if(t->len<(u32)hs)return;u16 ng=rd16(p);p+=hs;
   for(u16 f=0;f<ng&&p+4<=end;f++){
     if(!(f&7))render_checkpoint();
     int layer=*p++,style=*p++,np=*p++;p++;if(p+np*4>end)return;
@@ -1263,7 +1253,7 @@ static void draw_tile_geometry(struct Tile*t,int viewz,int pass){
       if((pass==MAP_DRAW_OCEAN)==ocean)draw_closed_area(t,span,layer,style,np,p,viewz);p+=np*4;
     }
     else{
-      int area=mapfmt>=4&&(style&128);
+      int area=(style&128);
       int wanted=!area&&((pass==MAP_DRAW_ROADS&&layer==0)||(pass==MAP_DRAW_CONTEXT&&layer!=0));
       if(wanted)draw_path(t,span,layer,style,np,&p,end,viewz);else p+=np*4;
     }
@@ -1350,11 +1340,9 @@ static void poi_reserve(void){
  }
 }
 static void poi_render(void){for(int i=0;i<poi_visible;i++)poi_icon(poi_labels[i].kind,poi_labels[i].x,poi_labels[i].y);}
-static void draw_tile_labels(struct Tile*t,int viewz,int plo,int phi){if(mapfmt<2||!t)return;const u8*p=t->data,*end=t->data+t->len;int hs=mapfmt>=3?8:4;if(t->len<(u32)hs)return;u16 ng=rd16(p),nl=rd16(p+2);p+=hs;for(u16 f=0;f<ng&&p+4<=end;f++){int np=p[2];p+=4+(unsigned)np*4;if(p>end)return;}int span=span_for_level((int)t->lvl);for(u16 i=0;i<nl&&p+8<=end;i++){if(!(i&15))render_checkpoint();int kind=p[0],prio=p[1];u16 lx=rd16(p+2),ly=rd16(p+4);int tl=p[6];p+=8;if(p+tl>end)return;if(((plo==256&&kind>=6)||(plo!=256&&kind<6&&prio>=plo&&prio<=phi))&&tl>0&&tl<113){char b[113];int n=tl;for(int j=0;j<n;j++)b[j]=(char)p[j];b[n]=0;s32 lon=(s32)t->tx*span+map_tile_offset(lx,(u32)span);s32 lat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);int x,y;world_to_screen(lat,lon,viewz,&x,&y);if(kind>=6){if(plo==256)poi_offer(x,y,kind,prio);}else if(plo!=256){if(!freecam)drive_label_offer(x,y,kind,prio,b);else{int w=textw(b,1),x0=x-w/2,y0=y-6;if(!label_text_seen(b)&&label_free(x0-2,y0-2,x0+w+2,y0+14)){u16 c=label_color(kind);text(x0+1,y0+1,b,C_BG,1);text(x0,y0,b,c,1);label_text_add(b);}}}}p+=tl;}}
+static void draw_tile_labels(struct Tile*t,int viewz,int plo,int phi){if(!t)return;const u8*p=t->data,*end=t->data+t->len;int hs=8;if(t->len<(u32)hs)return;u16 ng=rd16(p),nl=rd16(p+2);p+=hs;for(u16 f=0;f<ng&&p+4<=end;f++){int np=p[2];p+=4+(unsigned)np*4;if(p>end)return;}int span=span_for_level((int)t->lvl);for(u16 i=0;i<nl&&p+8<=end;i++){if(!(i&15))render_checkpoint();int kind=p[0],prio=p[1];u16 lx=rd16(p+2),ly=rd16(p+4);int tl=p[6];p+=8;if(p+tl>end)return;if(((plo==256&&kind>=6)||(plo!=256&&kind<6&&prio>=plo&&prio<=phi))&&tl>0&&tl<113){char b[113];int n=tl;for(int j=0;j<n;j++)b[j]=(char)p[j];b[n]=0;s32 lon=(s32)t->tx*span+map_tile_offset(lx,(u32)span);s32 lat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);int x,y;world_to_screen(lat,lon,viewz,&x,&y);if(kind>=6){if(plo==256)poi_offer(x,y,kind,prio);}else if(plo!=256){if(!freecam)drive_label_offer(x,y,kind,prio,b);else{int w=textw(b,1),x0=x-w/2,y0=y-6;if(!label_text_seen(b)&&label_free(x0-2,y0-2,x0+w+2,y0+14)){u16 c=label_color(kind);text(x0+1,y0+1,b,C_BG,1);text(x0,y0,b,c,1);label_text_add(b);}}}}p+=tl;}}
 
-/* Current road context: at Z6 each road geometry may reference tile-local
- * metadata. CPM3 records are [speed_mph, text_len, text]; CPM4 records are
- * [speed_mph, flags, text_len, text]. Bit 0 means weak/estimated speed. */
+/* CPM5 directional speed/flag pairs and UTF-8 street names. */
 struct RoadCtx {int valid,speed,reverse_speed;u8 speed_flags,reverse_flags;char street[113];};static struct RoadCtx roadctx;
 /* road-name fallback is longitudinal, not radial.  The normal
  * nearest-road winner still owns speed/flags.  If that exact matched geometry
@@ -1374,7 +1362,7 @@ static struct RoadNameCache roadname_cache;
 static s32 roadctx_lat=0,roadctx_lon=0;static int roadctx_pos_valid=0,roadctx_slow_age=0;
 static int roadctx_position_changed(s32 lat,s32 lon){if(!roadctx_pos_valid)return 1;s32 dy=lat-roadctx_lat,dx=lon-roadctx_lon;int cq=coslat_q15(lat);dx=lon_scale(dx,cq);if(dy<0)dy=-dy;if(dx<0)dx=-dx;return dy>=12||dx>=12;}
 static const u8* cpm_meta_start(struct Tile*t,u16*nm){if(!t||t->len<8)return 0;const u8*p=t->data,*end=t?t->data+t->len:0;u16 ng=rd16(p),nl=rd16(p+2);*nm=rd16(p+4);p+=8;for(u16 i=0;i<ng;i++){if(p+4>end)return 0;int np=p[2];p+=4+(unsigned)np*4;if(p>end)return 0;}for(u16 i=0;i<nl;i++){if(p+8>end)return 0;int tl=p[6];p+=8+tl;if(p>end)return 0;}return p;}
-static int read_road_meta(struct Tile*t,int idx,struct RoadCtx*out){u16 nm=0;const u8*p=cpm_meta_start(t,&nm),*end=t?t->data+t->len:0;if(!p||idx<0||idx>=nm||mapfmt<3)return 0;for(int i=0;i<nm;i++){int speed,flags=0,back=0,bflags=0,tl;if(mapfmt>=5){if(p+5>end)return 0;speed=p[0];flags=p[1];back=p[2];bflags=p[3];tl=p[4];p+=5;}else if(mapfmt>=4){if(p+3>end)return 0;speed=p[0];flags=p[1]|2;back=speed;bflags=flags;tl=p[2];p+=3;}else{if(p+2>end)return 0;speed=p[0];back=speed;flags=bflags=2;tl=p[1];p+=2;}if(p+tl>end)return 0;if(i==idx){out->speed=speed;out->speed_flags=(u8)flags;out->reverse_speed=back;out->reverse_flags=(u8)bflags;int n=tl;if(n>112)n=112;for(int j=0;j<n;j++)out->street[j]=(char)p[j];out->street[n]=0;out->valid=1;return 1;}p+=tl;}return 0;}
+static int read_road_meta(struct Tile*t,int idx,struct RoadCtx*out){u16 nm=0;const u8*p=cpm_meta_start(t,&nm),*end=t?t->data+t->len:0;if(!p||idx<0||idx>=nm)return 0;for(int i=0;i<nm;i++){int speed,flags=0,back=0,bflags=0,tl;if(p+5>end)return 0;speed=p[0];flags=p[1];back=p[2];bflags=p[3];tl=p[4];p+=5;if(p+tl>end)return 0;if(i==idx){out->speed=speed;out->speed_flags=(u8)flags;out->reverse_speed=back;out->reverse_flags=(u8)bflags;int n=tl;if(n>112)n=112;for(int j=0;j<n;j++)out->street[j]=(char)p[j];out->street[n]=0;out->valid=1;return 1;}p+=tl;}return 0;}
 static int display_imperial(void);
 static int display_limit(int value,int flags){if(!value)return 0;if(display_imperial())return flags&2?value:(value*100000+80467)/160934;return flags&2?(value*160934+50000)/100000:value;}
 static void append_road_limit(char*b,unsigned cap,const struct RoadCtx*r){if(!r->valid){appendstr(b,cap,"--");return;}if(r->speed_flags&8){appendstr(b,cap,"VAR");return;}if(r->speed_flags&4){appendstr(b,cap,"INF");return;}if(r->speed<=0){appendstr(b,cap,"--");return;}append_int(b,cap,display_limit(r->speed,r->speed_flags));if(r->speed_flags&1)appendstr(b,cap,"?");}
@@ -1413,16 +1401,16 @@ static int road_trace_dir(const struct RoadGeomRef*start,int side,char*out,unsig
 static int road_trace_name(const struct RoadGeomRef*r,char*out,unsigned cap){char a[29],b[29];a[0]=b[0]=0;u32 am=0xffffffffu,bm=0xffffffffu;int ha=road_trace_dir(r,0,a,sizeof(a),&am),hb=road_trace_dir(r,1,b,sizeof(b),&bm);if(!ha&&!hb)return 0;if(ha&&hb&&!streq(a,b)){u32 dif=am>bm?am-bm:bm-am;if(dif<30u)return 0;}const char*s=ha&&(!hb||am<=bm)?a:b;copystr(out,cap,s);return out[0]!=0;}
 static void scan_road_tile(struct Tile*t,s32 plat,s32 plon,u32*best,struct RoadGeomRef*winner){if(!t||t->lvl!=6||t->len<8)return;const u8*p=t->data,*end=t->data+t->len;u16 ng=rd16(p);p+=8;int span=256,cq=coslat_q15(plat);for(u16 g=0;g<ng&&p+4<=end;g++){int layer=p[0],cls=p[1],np=p[2],mi=p[3];p+=4;if(p+(unsigned)np*4>end)return;if(layer==0&&mi!=255&&np>=2){int lx=rd16(p),ly=rd16(p+2);s32 alon=(s32)t->tx*span+map_tile_offset(lx,(u32)span),alat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);s32 ax=lon_scale(alon-plon,cq),ay=alat-plat;const u8*q=p+4;for(int i=1;i<np;i++,q+=4){lx=rd16(q);ly=rd16(q+2);s32 blon=(s32)t->tx*span+map_tile_offset(lx,(u32)span),blat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);s32 bx=lon_scale(blon-plon,cq),by=blat-plat;u32 d=seg_dist2(ax,ay,bx,by);if(gps.mph10>=20){int k=((shown_course()+5)/10)%36;int hx=SIN36[k],hy=COS36[k];s32 vx=bx-ax,vy=by-ay;u32 norm=(u32)(iabs32(vx)+iabs32(vy));if(norm){s32 dp=vx*hx+vy*hy;u32 ad=(u32)(dp<0?-dp:dp);u32 lo=norm*12000u,mid=norm*22000u;if(ad<lo)d+=900;else if(ad<mid)d+=225;}}if(d<*best){*best=d;road_ref_fill(t,g,cls,mi,p,np,i-1,winner);}ax=bx;ay=by;}}p+=(unsigned)np*4;}}
 static void roadname_cache_set(const char*s,const struct RoadGeomRef*r){if(!r||!r->valid){roadname_cache.key_valid=roadname_cache.name_valid=0;return;}roadname_cache.key_valid=1;roadname_cache.last=*r;roadname_cache.name_valid=s&&s[0]?1:0;roadname_cache.name[0]=0;if(roadname_cache.name_valid)copystr(roadname_cache.name,sizeof(roadname_cache.name),s);}
-static void road_direction_select(struct Tile*t,const struct RoadGeomRef*r){if(mapfmt<5)return;int n=0;const u8*p=road_feature_points(t,r->gi,0,0,&n);if(!p||r->seg<0||r->seg+1>=n)return;s32 la,lo,lb,lob;road_raw_point(t,p+r->seg*4,&la,&lo);road_raw_point(t,p+(r->seg+1)*4,&lb,&lob);int k=((shown_course()+5)/10)%36;long long dot=(long long)lon_scale(lob-lo,coslat_q15(gps.lat))*SIN36[k]+(long long)(lb-la)*COS36[k];if(gps.mph10<30){if(roadctx.speed!=roadctx.reverse_speed||roadctx.speed_flags!=roadctx.reverse_flags){roadctx.speed=0;roadctx.speed_flags=0;}}else if(dot<0){roadctx.speed=roadctx.reverse_speed;roadctx.speed_flags=roadctx.reverse_flags;}}
+static void road_direction_select(struct Tile*t,const struct RoadGeomRef*r){int n=0;const u8*p=road_feature_points(t,r->gi,0,0,&n);if(!p||r->seg<0||r->seg+1>=n)return;s32 la,lo,lb,lob;road_raw_point(t,p+r->seg*4,&la,&lo);road_raw_point(t,p+(r->seg+1)*4,&lb,&lob);int k=((shown_course()+5)/10)%36;long long dot=(long long)lon_scale(lob-lo,coslat_q15(gps.lat))*SIN36[k]+(long long)(lb-la)*COS36[k];if(gps.mph10<30){if(roadctx.speed!=roadctx.reverse_speed||roadctx.speed_flags!=roadctx.reverse_flags){roadctx.speed=0;roadctx.speed_flags=0;}}else if(dot<0){roadctx.speed=roadctx.reverse_speed;roadctx.speed_flags=roadctx.reverse_flags;}}
 static void road_estimate_missing(const struct RoadGeomRef*r);
-static void update_road_context(void){if(!gps.fix){roadctx_slow_age=0;return;}int moved=roadctx_position_changed(gps.lat,gps.lon);if(gps.mph10<20&&roadctx.valid&&!moved){if(++roadctx_slow_age<3)return;}roadctx_slow_age=0;roadctx.valid=0;roadctx.speed=0;roadctx.speed_flags=0;roadctx.street[0]=0;if(mapfmt<3||!mapok||mh.maxlvl<6)return;s32 plat=gps.lat,plon=gps.lon;int tx=tile_div(plon,6),ty=tile_div(plat,6);u32 best=2500;struct RoadGeomRef winner;memzero(&winner,sizeof(winner));for(int y=ty-1;y<=ty+1;y++)for(int x=tx-1;x<=tx+1;x++)scan_road_tile(get_tile(6,x,y),plat,plon,&best,&winner);if(winner.valid){struct Tile*t=get_tile(6,winner.tx,winner.ty);if(t&&read_road_meta(t,winner.mi,&roadctx)){road_estimate_missing(&winner);t=get_tile(6,winner.tx,winner.ty);if(t)road_direction_select(t,&winner);if(roadctx.street[0])roadname_cache_set(roadctx.street,&winner);else if(roadname_cache.key_valid&&road_ref_same(&roadname_cache.last,&winner)){if(roadname_cache.name_valid)copystr(roadctx.street,sizeof(roadctx.street),roadname_cache.name);}else if(roadname_cache.key_valid&&roadname_cache.name_valid&&road_refs_continuous(&roadname_cache.last,&winner)){copystr(roadctx.street,sizeof(roadctx.street),roadname_cache.name);roadname_cache.last=winner;}else{char traced[113];traced[0]=0;if(road_trace_name(&winner,traced,sizeof(traced))){copystr(roadctx.street,sizeof(roadctx.street),traced);roadname_cache_set(traced,&winner);}else roadname_cache_set(0,&winner);}}}roadctx_lat=plat;roadctx_lon=plon;roadctx_pos_valid=1;}
+static void update_road_context(void){if(!gps.fix){roadctx_slow_age=0;return;}int moved=roadctx_position_changed(gps.lat,gps.lon);if(gps.mph10<20&&roadctx.valid&&!moved){if(++roadctx_slow_age<3)return;}roadctx_slow_age=0;roadctx.valid=0;roadctx.speed=0;roadctx.speed_flags=0;roadctx.street[0]=0;if(!mapok||mh.maxlvl<6)return;s32 plat=gps.lat,plon=gps.lon;int tx=tile_div(plon,6),ty=tile_div(plat,6);u32 best=2500;struct RoadGeomRef winner;memzero(&winner,sizeof(winner));for(int y=ty-1;y<=ty+1;y++)for(int x=tx-1;x<=tx+1;x++)scan_road_tile(get_tile(6,x,y),plat,plon,&best,&winner);if(winner.valid){struct Tile*t=get_tile(6,winner.tx,winner.ty);if(t&&read_road_meta(t,winner.mi,&roadctx)){road_estimate_missing(&winner);t=get_tile(6,winner.tx,winner.ty);if(t)road_direction_select(t,&winner);if(roadctx.street[0])roadname_cache_set(roadctx.street,&winner);else if(roadname_cache.key_valid&&road_ref_same(&roadname_cache.last,&winner)){if(roadname_cache.name_valid)copystr(roadctx.street,sizeof(roadctx.street),roadname_cache.name);}else if(roadname_cache.key_valid&&roadname_cache.name_valid&&road_refs_continuous(&roadname_cache.last,&winner)){copystr(roadctx.street,sizeof(roadctx.street),roadname_cache.name);roadname_cache.last=winner;}else{char traced[113];traced[0]=0;if(road_trace_name(&winner,traced,sizeof(traced))){copystr(roadctx.street,sizeof(roadctx.street),traced);roadname_cache_set(traced,&winner);}else roadname_cache_set(0,&winner);}}}roadctx_lat=plat;roadctx_lon=plon;roadctx_pos_valid=1;}
 
 #include "global_regions.h"
 #include "speed_estimates.h"
-static int display_imperial(void){if(pref.units)return pref.units==2;if(region_iso[0])return (region_flags&1)!=0;if(roadctx.valid&&mapfmt>=5&&roadctx.speed&&(roadctx.speed_flags&2))return 1;return (region_flags&1)!=0;}
+static int display_imperial(void){if(pref.units)return pref.units==2;if(region_iso[0])return (region_flags&1)!=0;if(roadctx.valid&&roadctx.speed&&(roadctx.speed_flags&2))return 1;return (region_flags&1)!=0;}
 static int display_speed(void){return display_imperial()?(gps.mph10+5)/10:(gps.mph10*160934+500000)/1000000;}
 
-/* CPR2 v4 turn-aware compact contraction-hierarchy runtime.
+/* CPR2 v5 turn-aware compact contraction-hierarchy runtime.
  * Physical road geometry stays compact. Only OSM turn-restricted junctions
  * gain arrival-context routing states, so CH shortcuts cannot encode an
  * illegal OSM no/only turn manoeuvre. */
@@ -1432,63 +1420,21 @@ struct CprNode {s32 lat,lon;u32 first_edge;u16 edge_count,flags;u32 phys,rank,co
 struct CprBase {u32 cost,geom_first,src_first,to_state;u16 geom_count,src_count;u8 cls,flags;u16 pad;};
 struct CprArc {u32 from,to,cost,left,right;u8 cls,flags;u16 pad;};
 struct CprPoint {s32 lat,lon;};
-/* QAD1 / QAD2: optional query-only adjacency sidecar.  Each upward reference
- * is materialised as (other state, cost, original CPR2 arc id).  The CH query
- * can therefore relax a node with one small sequential read instead of reading
- * a u32 ref and then chasing a scattered 24-byte CprArc.  route.cpr remains
- * authoritative for snapping, shortcut unpacking and geometry reconstruction. */
-struct QAdjHeader {char magic[4];u16 ver,entry_size;u32 nodes,ch_arcs,upf_count,upr_count,route_edges,route_bytes,fwd_off,rev_off;};
-/* QAD2: node-blocked adjacency.  One u32 offset per route state is
- * loaded into the temporary route arena; each expanded state then needs one
- * sidecar read containing counts + both direction adjacency lists. QAD1 stays
- * accepted for backwards compatibility. */
-struct QAdj2Header {char magic[4];u16 ver,entry_size;u32 nodes,ch_arcs,upf_count,upr_count,route_edges,route_bytes,index_off,data_off,data_bytes,flags;};
-/* QAD3: 64-node-ish group blocks shrink the resident directory from the
- * QAD2 per-node 27 MiB index to a sub-MiB group index.  Reconstruction metadata
- * lives in the same optional sidecar: every CH arc stores only the fields the
- * finaliser needs, and base arcs replace their unused right-child field with a
- * builder-computed geometry total.  CPR2-v4 remains the source of truth. */
-struct QAdj3Header {char magic[4];u16 ver,entry_size;u32 nodes,ch_arcs,upf_count,upr_count,route_edges,route_bytes,group_shift,group_count,gindex_off,data_off,data_bytes,rmeta_off,rmeta_bytes,flags;};
-struct QAdjEntry {u32 other,cost,arc;};
-struct QRec {u32 from,cost,left,right_geom,to_flags;};
-/* QAD4 keeps the QAD3 group-query layout, but uses sidecar-local CH arc
- * IDs ordered for shortcut-tree locality.  Base records additionally carry
- * their physical geometry descriptor, eliminating CPR base reads while
- * reconstructing the winning CH path. */
-struct QRec4 {u32 from,cost,left,right_geom,to_flags,geom_first,geom_info;};
-/* QAD5: query node blocks are physically written in CH-rank order.
- * A mapped node->block offset index is needed only for seed states; every
- * QAD5 adjacency entry carries the target block offset so discovered CH states
- * never perform another index lookup. Reconstruction records remain QAD4-
- * compatible sidecar-local IDs. */
-struct QAdj5Header {char magic[4];u16 ver,entry_size;u32 nodes,ch_arcs,upf_count,upr_count,route_edges,route_bytes,index_off,index_bytes,data_off,data_bytes,rmeta_off,rmeta_bytes,flags,reserved;};
-/* QAD6 appends one compact arithmetic record per stored CPR geometry
- * point.  Intermediate cumulative fractions are precomputed in both physical
- * directions and segment metres use the exact runtime integer formula. */
-struct QAdj6Header {struct QAdj5Header q;u32 gmeta_off,gmeta_bytes,geom_points,gmeta_entry_size;};
-/* An earlier builder serialized QAD6 geometry fields before the inherited
- * QAD5 flags/reserved words. The runtime accepts that layout so existing
- * sidecars remain usable; corrected builders write QAdj6Header layout above. */
-struct QAdj6LegacyHeader {char magic[4];u16 ver,entry_size;u32 nodes,ch_arcs,upf_count,upr_count,route_edges,route_bytes,index_off,index_bytes,data_off,data_bytes,rmeta_off,rmeta_bytes,gmeta_off,gmeta_bytes,geom_points,flags,reserved0,reserved1;};
-/* QAD7 fuses complete physical geometry with its arithmetic metadata into
- * one reconstruction-local packet stream.  The first 28 bytes of QRec7 remain
- * QRec4-compatible; packet_off is relative to packet_off in QAdj7Header. */
+/* QAD7 rank-ordered node blocks and direct successor offsets. */
+struct QAdj7QueryHeader {char magic[4];u16 ver,entry_size;u32 nodes,ch_arcs,upf_count,upr_count,route_edges,route_bytes,index_off,index_bytes,data_off,data_bytes,rmeta_off,rmeta_bytes,flags,reserved;};
+/* QAD7 combines geometry and arithmetic metadata in a packet stream. */
 struct QRec7 {u32 from,cost,left,right_geom,to_flags,geom_first,geom_info,packet_off;};
-struct QAdj7Header {struct QAdj5Header q;u32 packet_off,packet_bytes,packet_points,packet_entry_size;};
-struct QAdj5Entry {u32 other,cost,arc,next_off;};
-#define QAD2_NODE_BLOCKS 1u
-#define QAD3_GROUP_BLOCKS 1u
-#define QAD3_RECON_META 2u
-#define QAD4_LOCAL_ARC_IDS 4u
-#define QAD5_DIRECT_INDEX 8u
-#define QAD5_RANK_ORDER 16u
-#define QAD6_GEOM_META 32u
-#define QAD6_GMETA_SIZE 12u
+struct QAdj7Header {struct QAdj7QueryHeader q;u32 packet_off,packet_bytes,packet_points,packet_entry_size;};
+struct QAdj7Entry {u32 other,cost,arc,next_off;};
+#define QAD_RECON_META 2u
+#define QAD_LOCAL_ARC_IDS 4u
+#define QAD_DIRECT_INDEX 8u
+#define QAD_RANK_ORDER 16u
 #define QAD7_PACKET_GEOM 64u
 #define QAD7_POINT_SIZE 20u
 #define CPR_ARC_SHORTCUT 1u
 #define CPR_ARC_GEOM_REVERSED 2u
-static struct CprHeader rh;static struct QAdjHeader qh;static struct QAdj2Header qh2;static struct QAdj3Header qh3;static struct QAdj5Header qh5;static struct QAdj6Header qh6;static struct QAdj7Header qh7;static int routefd=-1,qadjfd=-1,routeok=0,qadjok=0,qadjmode=0;static int qadj6_legacy_header=0;
+static struct CprHeader rh;static struct QAdj7QueryHeader qh7_query;static struct QAdj7Header qh7;static int routefd=-1,qadjfd=-1,routeok=0,qadjok=0,qadjmode=0;
 static u8*qadj_map=0;static u32 qadj_map_bytes=0;static int qadj_map_ok=0;
 static u8*route_geom_map=0;static u32 route_geom_map_bytes=0,route_geom_map_delta=0,route_geom_map_fileoff=0;static int route_geom_map_ok=0;
 /* Routing performs scattered reads from a ~GB-scale CPR2 file.
@@ -1528,178 +1474,66 @@ static u32 route_prof_tile_reads=0,route_prof_tile_bytes=0,route_prof_relax=0;
 static u32 route_prof_qadj_reads=0,route_prof_qadj_bytes=0,route_prof_qidx_bytes=0,route_prof_strong_stop=0,route_prof_geom_reuse_arcs=0,route_prof_geom_reuse_pts=0;
 static u32 route_prof_qrec_hit=0,route_prof_qrec_miss=0,route_prof_qrec_bytes=0;
 static u32 route_prof_stall=0,route_prof_qmap_access=0,route_prof_gmap_access=0;
-static u32 route_prof_prefetch_pages=0,route_prof_prefetch_reads=0,route_prof_prefetch_bytes=0;
-static u32 route_prof_gmeta=0,route_prof_div_fallback=0,route_prof_mfast=0,route_prof_packet_pts=0;
+static u32 route_prof_div_fallback=0,route_prof_mfast=0,route_prof_packet_pts=0;
 static u32 route_prof_build_phase_steps[16]={0};
 static u32 route_prof_start_ms=0,route_prof_query_ms=0,route_prof_build_ms=0,route_prof_cpu_ms=0,route_prof_slice_ms=0;
 static u32 route_prof_pre_io=0,route_prof_build_io=0;
 #define RPROF_INC(x) do{if(route_prof_on)(x)++;}while(0)
 #define RPROF_ADD(x,v) do{if(route_prof_on)(x)+=(u32)(v);}while(0)
-static u32 route_prof_io_bytes(void){u32 n=route_prof_n_bytes+route_prof_b_bytes+route_prof_a_bytes+route_prof_g_bytes+route_prof_tile_bytes+route_prof_qadj_bytes+route_prof_qidx_bytes+route_prof_qrec_bytes+route_prof_prefetch_bytes;for(int i=0;i<4;i++)n+=route_prof_r_bytes[i];return n;}
-static void route_prof_reset(void){route_prof_on=pref.debug?1:0;route_prof_n_hit=route_prof_n_miss=route_prof_n_bytes=0;route_prof_b_hit=route_prof_b_miss=route_prof_b_bytes=0;route_prof_a_hit=route_prof_a_miss=route_prof_a_bytes=0;route_prof_g_hit=route_prof_g_miss=route_prof_g_bytes=0;for(int i=0;i<4;i++)route_prof_r_hit[i]=route_prof_r_miss[i]=route_prof_r_bytes[i]=0;route_prof_tile_reads=route_prof_tile_bytes=route_prof_relax=0;route_prof_qadj_reads=route_prof_qadj_bytes=route_prof_qidx_bytes=route_prof_strong_stop=route_prof_geom_reuse_arcs=route_prof_geom_reuse_pts=0;route_prof_qrec_hit=route_prof_qrec_miss=route_prof_qrec_bytes=0;route_prof_stall=route_prof_qmap_access=route_prof_gmap_access=0;route_prof_prefetch_pages=route_prof_prefetch_reads=route_prof_prefetch_bytes=0;route_prof_gmeta=route_prof_div_fallback=route_prof_mfast=route_prof_packet_pts=0;memzero(route_prof_build_phase_steps,sizeof(route_prof_build_phase_steps));route_prof_query_ms=route_prof_build_ms=route_prof_cpu_ms=route_prof_slice_ms=0;route_prof_pre_io=route_prof_build_io=0;route_prof_start_ms=route_prof_on?s_now_ms():0;}
-static int qadj3_load_index(void);
+static u32 route_prof_io_bytes(void){u32 n=route_prof_n_bytes+route_prof_b_bytes+route_prof_a_bytes+route_prof_g_bytes+route_prof_tile_bytes+route_prof_qadj_bytes+route_prof_qidx_bytes+route_prof_qrec_bytes;for(int i=0;i<4;i++)n+=route_prof_r_bytes[i];return n;}
+static void route_prof_reset(void){route_prof_on=pref.debug?1:0;route_prof_n_hit=route_prof_n_miss=route_prof_n_bytes=0;route_prof_b_hit=route_prof_b_miss=route_prof_b_bytes=0;route_prof_a_hit=route_prof_a_miss=route_prof_a_bytes=0;route_prof_g_hit=route_prof_g_miss=route_prof_g_bytes=0;for(int i=0;i<4;i++)route_prof_r_hit[i]=route_prof_r_miss[i]=route_prof_r_bytes[i]=0;route_prof_tile_reads=route_prof_tile_bytes=route_prof_relax=0;route_prof_qadj_reads=route_prof_qadj_bytes=route_prof_qidx_bytes=route_prof_strong_stop=route_prof_geom_reuse_arcs=route_prof_geom_reuse_pts=0;route_prof_qrec_hit=route_prof_qrec_miss=route_prof_qrec_bytes=0;route_prof_stall=route_prof_qmap_access=route_prof_gmap_access=0;route_prof_div_fallback=route_prof_mfast=route_prof_packet_pts=0;memzero(route_prof_build_phase_steps,sizeof(route_prof_build_phase_steps));route_prof_query_ms=route_prof_build_ms=route_prof_cpu_ms=route_prof_slice_ms=0;route_prof_pre_io=route_prof_build_io=0;route_prof_start_ms=route_prof_on?s_now_ms():0;}
 static void qadj_reset_caches(void);
 static void qadj_unmap(void){qadj_reset_caches();if(qadj_map){s_munmap(qadj_map,qadj_map_bytes);qadj_map=0;}qadj_map_bytes=0;qadj_map_ok=0;}
 static int qadj_try_map(u32 bytes){qadj_unmap();if(!bytes)return 0;void*p=s_mmap2(0,bytes,PROT_READ_,MAP_PRIVATE_,qadjfd,0);if(!p)return 0;qadj_map=(u8*)p;qadj_map_bytes=bytes;qadj_map_ok=1;return 1;}
 static void route_geom_unmap(void){if(route_geom_map){s_munmap(route_geom_map,route_geom_map_bytes);route_geom_map=0;}route_geom_map_bytes=route_geom_map_delta=route_geom_map_fileoff=0;route_geom_map_ok=0;}
 static int route_geom_try_map(void){route_geom_unmap();if(routefd<0||!rh.geom_points)return 0;u32 page=rh.geom_off&~4095u,delta=rh.geom_off-page;u32 gb=rh.geom_points*(u32)sizeof(struct CprPoint);if(gb/sizeof(struct CprPoint)!=rh.geom_points||delta>0xffffffffu-gb)return 0;u32 len=delta+gb;void*p=s_mmap2(0,len,PROT_READ_,MAP_PRIVATE_,routefd,page>>12);if(!p)return 0;route_geom_map=(u8*)p;route_geom_map_bytes=len;route_geom_map_delta=delta;route_geom_map_fileoff=page;route_geom_map_ok=1;return 1;}
 static void load_qadj_data(void){
-  qadjok=0;qadjmode=0;qadj6_legacy_header=0;memzero(&qh,sizeof(qh));memzero(&qh2,sizeof(qh2));memzero(&qh3,sizeof(qh3));memzero(&qh5,sizeof(qh5));memzero(&qh6,sizeof(qh6));memzero(&qh7,sizeof(qh7));
+  qadjok=0;qadjmode=0;memzero(&qh7_query,sizeof(qh7_query));memzero(&qh7,sizeof(qh7));
   qadj_unmap();if(qadjfd>=0){s_close(qadjfd);qadjfd=-1;}qadjfd=(int)s_open(atlas_ready?atlas_qadj_path:QADJ_PATH,O_RDONLY_,0);if(qadjfd<0)return;
   char m[4];if(s_read(qadjfd,m,4)!=4)goto bad;s_lseek(qadjfd,0,SEEK_SET_);long rb=s_lseek(routefd,0,SEEK_END_);if(rb<=0)goto bad;
   if(m[0]=='Q'&&m[1]=='A'&&m[2]=='D'&&m[3]=='7'){
-    u32 need=QAD3_RECON_META|QAD4_LOCAL_ARC_IDS|QAD5_DIRECT_INDEX|QAD5_RANK_ORDER|QAD7_PACKET_GEOM;
+    u32 need=QAD_RECON_META|QAD_LOCAL_ARC_IDS|QAD_DIRECT_INDEX|QAD_RANK_ORDER|QAD7_PACKET_GEOM;
     if(s_read(qadjfd,&qh7,sizeof(qh7))!=(long)sizeof(qh7))goto bad;
-    if(qh7.q.ver!=7||qh7.q.entry_size!=sizeof(struct QAdj5Entry)||(qh7.q.flags&need)!=need||qh7.q.nodes!=rh.nodes||qh7.q.ch_arcs!=rh.ch_arcs||qh7.q.upf_count!=rh.upf_count||qh7.q.upr_count!=rh.upr_count||qh7.q.route_edges!=rh.route_edges||(u32)rb!=qh7.q.route_bytes)goto bad;
+    if(qh7.q.ver!=7||qh7.q.entry_size!=sizeof(struct QAdj7Entry)||(qh7.q.flags&need)!=need||qh7.q.nodes!=rh.nodes||qh7.q.ch_arcs!=rh.ch_arcs||qh7.q.upf_count!=rh.upf_count||qh7.q.upr_count!=rh.upr_count||qh7.q.route_edges!=rh.route_edges||(u32)rb!=qh7.q.route_bytes)goto bad;
     if(qh7.q.index_off!=sizeof(struct QAdj7Header)||qh7.q.index_bytes!=rh.nodes*4u||qh7.q.data_off!=qh7.q.index_off+qh7.q.index_bytes||qh7.q.rmeta_off!=qh7.q.data_off+qh7.q.data_bytes||qh7.q.rmeta_bytes!=rh.ch_arcs*(u32)sizeof(struct QRec7))goto bad;
     if(qh7.packet_off!=qh7.q.rmeta_off+qh7.q.rmeta_bytes||qh7.packet_entry_size!=QAD7_POINT_SIZE||qh7.packet_bytes!=qh7.packet_points*QAD7_POINT_SIZE)goto bad;
-    long qb=s_lseek(qadjfd,0,SEEK_END_);if(qb<=0||(u32)qb!=qh7.packet_off+qh7.packet_bytes)goto bad;qh5=qh7.q;qadjmode=7;qadjok=1;qadj_try_map((u32)qb);return;
-  }
-  if(m[0]=='Q'&&m[1]=='A'&&m[2]=='D'&&m[3]=='6'){
-    u32 need=QAD3_RECON_META|QAD4_LOCAL_ARC_IDS|QAD5_DIRECT_INDEX|QAD5_RANK_ORDER|QAD6_GEOM_META;int h6ok=0;
-    if(s_read(qadjfd,&qh6,sizeof(qh6))==(long)sizeof(qh6)){
-      if(qh6.q.ver==6&&qh6.q.entry_size==sizeof(struct QAdj5Entry)&&(qh6.q.flags&need)==need&&qh6.q.nodes==rh.nodes&&qh6.q.ch_arcs==rh.ch_arcs&&qh6.q.upf_count==rh.upf_count&&qh6.q.upr_count==rh.upr_count&&qh6.q.route_edges==rh.route_edges&&(u32)rb==qh6.q.route_bytes&&qh6.q.index_off==sizeof(struct QAdj6Header)&&qh6.q.index_bytes==rh.nodes*4u&&qh6.q.data_off==qh6.q.index_off+qh6.q.index_bytes&&qh6.q.rmeta_off==qh6.q.data_off+qh6.q.data_bytes&&qh6.q.rmeta_bytes==rh.ch_arcs*(u32)sizeof(struct QRec4)&&qh6.gmeta_off==qh6.q.rmeta_off+qh6.q.rmeta_bytes&&qh6.geom_points==rh.geom_points&&qh6.gmeta_entry_size==QAD6_GMETA_SIZE&&qh6.gmeta_bytes==rh.geom_points*QAD6_GMETA_SIZE)h6ok=1;
-    }
-    if(!h6ok){
-      struct QAdj6LegacyHeader l;memzero(&l,sizeof(l));s_lseek(qadjfd,0,SEEK_SET_);
-      if(s_read(qadjfd,&l,sizeof(l))!=(long)sizeof(l))goto bad;
-      if(l.ver!=6||l.entry_size!=sizeof(struct QAdj5Entry)||(l.flags&need)!=need||l.nodes!=rh.nodes||l.ch_arcs!=rh.ch_arcs||l.upf_count!=rh.upf_count||l.upr_count!=rh.upr_count||l.route_edges!=rh.route_edges||(u32)rb!=l.route_bytes||l.index_off!=sizeof(struct QAdj6LegacyHeader)||l.index_bytes!=rh.nodes*4u||l.data_off!=l.index_off+l.index_bytes||l.rmeta_off!=l.data_off+l.data_bytes||l.rmeta_bytes!=rh.ch_arcs*(u32)sizeof(struct QRec4)||l.gmeta_off!=l.rmeta_off+l.rmeta_bytes||l.geom_points!=rh.geom_points||l.gmeta_bytes!=rh.geom_points*QAD6_GMETA_SIZE)goto bad;
-      memzero(&qh6,sizeof(qh6));qh6.q.magic[0]='Q';qh6.q.magic[1]='A';qh6.q.magic[2]='D';qh6.q.magic[3]='6';qh6.q.ver=l.ver;qh6.q.entry_size=l.entry_size;qh6.q.nodes=l.nodes;qh6.q.ch_arcs=l.ch_arcs;qh6.q.upf_count=l.upf_count;qh6.q.upr_count=l.upr_count;qh6.q.route_edges=l.route_edges;qh6.q.route_bytes=l.route_bytes;qh6.q.index_off=l.index_off;qh6.q.index_bytes=l.index_bytes;qh6.q.data_off=l.data_off;qh6.q.data_bytes=l.data_bytes;qh6.q.rmeta_off=l.rmeta_off;qh6.q.rmeta_bytes=l.rmeta_bytes;qh6.q.flags=l.flags;qh6.q.reserved=0;qh6.gmeta_off=l.gmeta_off;qh6.gmeta_bytes=l.gmeta_bytes;qh6.geom_points=l.geom_points;qh6.gmeta_entry_size=QAD6_GMETA_SIZE;qadj6_legacy_header=1;h6ok=1;
-    }
-    if(!h6ok)goto bad;long qb=s_lseek(qadjfd,0,SEEK_END_);if(qb<=0||(u32)qb!=qh6.gmeta_off+qh6.gmeta_bytes)goto bad;qh5=qh6.q;qadjmode=6;qadjok=1;qadj_try_map((u32)qb);return;
-  }
-  if(m[0]=='Q'&&m[1]=='A'&&m[2]=='D'&&m[3]=='5'){
-    if(s_read(qadjfd,&qh5,sizeof(qh5))!=(long)sizeof(qh5))goto bad;
-    u32 need=QAD3_RECON_META|QAD4_LOCAL_ARC_IDS|QAD5_DIRECT_INDEX|QAD5_RANK_ORDER;
-    if(qh5.ver!=5||qh5.entry_size!=sizeof(struct QAdj5Entry)||(qh5.flags&need)!=need)goto bad;
-    if(qh5.nodes!=rh.nodes||qh5.ch_arcs!=rh.ch_arcs||qh5.upf_count!=rh.upf_count||qh5.upr_count!=rh.upr_count||qh5.route_edges!=rh.route_edges||(u32)rb!=qh5.route_bytes)goto bad;
-    if(qh5.index_off!=sizeof(struct QAdj5Header)||qh5.index_bytes!=rh.nodes*4u||qh5.data_off!=qh5.index_off+qh5.index_bytes||qh5.rmeta_off!=qh5.data_off+qh5.data_bytes||qh5.rmeta_bytes!=rh.ch_arcs*(u32)sizeof(struct QRec4))goto bad;
-    long qb=s_lseek(qadjfd,0,SEEK_END_);if(qb<=0||(u32)qb!=qh5.rmeta_off+qh5.rmeta_bytes)goto bad;qadjmode=5;qadjok=1;qadj_try_map((u32)qb);return;
-  }
-  if(m[0]=='Q'&&m[1]=='A'&&m[2]=='D'&&m[3]=='4'){
-    if(s_read(qadjfd,&qh3,sizeof(qh3))!=(long)sizeof(qh3))goto bad;
-    if(qh3.ver!=4||qh3.entry_size!=sizeof(struct QAdjEntry)||(qh3.flags&(QAD3_GROUP_BLOCKS|QAD3_RECON_META|QAD4_LOCAL_ARC_IDS))!=(QAD3_GROUP_BLOCKS|QAD3_RECON_META|QAD4_LOCAL_ARC_IDS))goto bad;
-    if(qh3.nodes!=rh.nodes||qh3.ch_arcs!=rh.ch_arcs||qh3.upf_count!=rh.upf_count||qh3.upr_count!=rh.upr_count||qh3.route_edges!=rh.route_edges||(u32)rb!=qh3.route_bytes||qh3.group_shift<3||qh3.group_shift>8)goto bad;
-    u32 want_groups=(rh.nodes+(1u<<qh3.group_shift)-1u)>>qh3.group_shift;if(qh3.group_count!=want_groups||qh3.gindex_off!=sizeof(struct QAdj3Header)||qh3.data_off!=qh3.gindex_off+(qh3.group_count+1u)*4u||qh3.rmeta_off!=qh3.data_off+qh3.data_bytes||qh3.rmeta_bytes!=rh.ch_arcs*(u32)sizeof(struct QRec4))goto bad;
-    long qb=s_lseek(qadjfd,0,SEEK_END_);if(qb<=0||(u32)qb!=qh3.rmeta_off+qh3.rmeta_bytes)goto bad;qadjmode=4;qadjok=1;qadj_try_map((u32)qb);return;
-  }
-  if(m[0]=='Q'&&m[1]=='A'&&m[2]=='D'&&m[3]=='3'){
-    if(s_read(qadjfd,&qh3,sizeof(qh3))!=(long)sizeof(qh3))goto bad;
-    if(qh3.ver!=3||qh3.entry_size!=sizeof(struct QAdjEntry)||(qh3.flags&(QAD3_GROUP_BLOCKS|QAD3_RECON_META))!=(QAD3_GROUP_BLOCKS|QAD3_RECON_META))goto bad;
-    if(qh3.nodes!=rh.nodes||qh3.ch_arcs!=rh.ch_arcs||qh3.upf_count!=rh.upf_count||qh3.upr_count!=rh.upr_count||qh3.route_edges!=rh.route_edges||(u32)rb!=qh3.route_bytes||qh3.group_shift<3||qh3.group_shift>8)goto bad;
-    u32 want_groups=(rh.nodes+(1u<<qh3.group_shift)-1u)>>qh3.group_shift;if(qh3.group_count!=want_groups||qh3.gindex_off!=sizeof(struct QAdj3Header)||qh3.data_off!=qh3.gindex_off+(qh3.group_count+1u)*4u||qh3.rmeta_off!=qh3.data_off+qh3.data_bytes||qh3.rmeta_bytes!=rh.ch_arcs*(u32)sizeof(struct QRec))goto bad;
-    long qb=s_lseek(qadjfd,0,SEEK_END_);if(qb<=0||(u32)qb!=qh3.rmeta_off+qh3.rmeta_bytes)goto bad;qadjmode=3;qadjok=1;qadj_try_map((u32)qb);return;
-  }
-  if(m[0]=='Q'&&m[1]=='A'&&m[2]=='D'&&m[3]=='2'){
-    if(s_read(qadjfd,&qh2,sizeof(qh2))!=(long)sizeof(qh2))goto bad;if(qh2.ver!=2||qh2.entry_size!=sizeof(struct QAdjEntry)||!(qh2.flags&QAD2_NODE_BLOCKS))goto bad;
-    if(qh2.nodes!=rh.nodes||qh2.ch_arcs!=rh.ch_arcs||qh2.upf_count!=rh.upf_count||qh2.upr_count!=rh.upr_count||qh2.route_edges!=rh.route_edges||(u32)rb!=qh2.route_bytes)goto bad;u32 ibytes=(rh.nodes+1u)*4u;if(qh2.index_off!=sizeof(struct QAdj2Header)||qh2.data_off!=qh2.index_off+ibytes)goto bad;long qb=s_lseek(qadjfd,0,SEEK_END_);if(qb<=0||(u32)qb!=qh2.data_off+qh2.data_bytes)goto bad;qadjmode=2;qadjok=1;return;
-  }
-  if(m[0]=='Q'&&m[1]=='A'&&m[2]=='D'&&m[3]=='1'){
-    if(s_read(qadjfd,&qh,sizeof(qh))!=(long)sizeof(qh))goto bad;if(qh.ver!=1||qh.entry_size!=sizeof(struct QAdjEntry))goto bad;
-    if(qh.nodes!=rh.nodes||qh.ch_arcs!=rh.ch_arcs||qh.upf_count!=rh.upf_count||qh.upr_count!=rh.upr_count||qh.route_edges!=rh.route_edges||(u32)rb!=qh.route_bytes)goto bad;u32 want_rev=qh.fwd_off+qh.upf_count*(u32)sizeof(struct QAdjEntry);if(qh.fwd_off!=sizeof(struct QAdjHeader)||qh.rev_off!=want_rev)goto bad;long qb=s_lseek(qadjfd,0,SEEK_END_);if(qb<=0||(u32)qb!=qh.rev_off+qh.upr_count*(u32)sizeof(struct QAdjEntry))goto bad;qadjmode=1;qadjok=1;return;
+    long qb=s_lseek(qadjfd,0,SEEK_END_);if(qb<=0||(u32)qb!=qh7.packet_off+qh7.packet_bytes)goto bad;qh7_query=qh7.q;qadjmode=7;qadjok=1;qadj_try_map((u32)qb);return;
   }
 bad:qadj_unmap();s_close(qadjfd);qadjfd=-1;qadjok=0;qadjmode=0;
 }
-static int load_route_data(void){route_geom_unmap();routeok=0;if(routefd>=0)s_close(routefd);routefd=(int)s_open(atlas_ready?atlas_route_path:ROUTE_PATH,O_RDONLY_,0);if(routefd<0)return 0;if(s_read(routefd,&rh,sizeof(rh))!=(long)sizeof(rh)){s_close(routefd);routefd=-1;return 0;}if(rh.magic[0]!='C'||rh.magic[1]!='P'||rh.magic[2]!='R'||rh.magic[3]!='2'||(rh.ver!=4&&rh.ver!=5)||!rh.nodes||!rh.base_edges||!rh.ch_arcs||!rh.geom_points){s_close(routefd);routefd=-1;return 0;}routeok=1;cpr_bcache_count=0;cpr_acache_tick=cpr_gcache_tick=cpr_tcache_tick=1;for(int i=0;i<CPR_ARC_SLOTS;i++){cpr_acache_first[i]=0;cpr_acache_count[i]=0;cpr_acache_stamp[i]=0;}for(int i=0;i<CPR_GEOM_SLOTS;i++){cpr_gcache_first[i]=0;cpr_gcache_count[i]=0;cpr_gcache_stamp[i]=0;}for(int i=0;i<CPR_TILE_SLOTS;i++){cpr_tcache_first[i]=0;cpr_tcache_count[i]=0;cpr_tcache_stamp[i]=0;}for(int i=0;i<4;i++){cpr_rcache_first[i]=0;cpr_rcache_count[i]=0;}route_geom_try_map();load_qadj_data();if(qadjmode>=3&&qadjmode<5&&!qadj3_load_index()){qadjok=0;qadjmode=0;}return 1;}
-static int route_decode_tile(const u8*b,struct CprTile*out){out->tx=rh.ver>=5?(s32)rd32u(b):(s16)rd16(b);out->ty=rh.ver>=5?(s32)rd32u(b+4):(s16)rd16(b+2);u32 k=rh.ver>=5?8:4;out->first=rd32u(b+k);out->count=rd32u(b+k+4);return 1;}
-static int route_read_tile(u32 id,struct CprTile*out){if(!routeok||id>=rh.tiles||!out)return 0;u32 size=rh.ver>=5?16:12;u32 per=CPR_TILE_PAGE/size,slot=CPR_TILE_SLOTS,old=0,oldst=0xffffffffu;for(u32 i=0;i<CPR_TILE_SLOTS;i++){if(cpr_tcache_count[i]&&id>=cpr_tcache_first[i]&&id<cpr_tcache_first[i]+cpr_tcache_count[i]){cpr_tcache_stamp[i]=++cpr_tcache_tick;return route_decode_tile((const u8*)cpr_tcache_w[i]+(id-cpr_tcache_first[i])*size,out);}if(!cpr_tcache_count[i]&&slot==CPR_TILE_SLOTS)slot=i;if(cpr_tcache_count[i]&&cpr_tcache_stamp[i]<oldst){oldst=cpr_tcache_stamp[i];old=i;}}if(slot==CPR_TILE_SLOTS)slot=old;u32 first=(id/per)*per,count=rh.tiles-first;if(count>per)count=per;s_lseek(routefd,(long)(rh.tile_off+first*size),SEEK_SET_);long n=s_read(routefd,cpr_tcache_w[slot],count*size);if(n<=0)return 0;RPROF_INC(route_prof_tile_reads);RPROF_ADD(route_prof_tile_bytes,n);cpr_tcache_first[slot]=first;cpr_tcache_count[slot]=(u32)n/size;cpr_tcache_stamp[slot]=++cpr_tcache_tick;return route_decode_tile((const u8*)cpr_tcache_w[slot]+(id-first)*size,out);}
+static int load_route_data(void){route_geom_unmap();qadj_unmap();if(qadjfd>=0){s_close(qadjfd);qadjfd=-1;}qadjok=0;qadjmode=0;routeok=0;if(routefd>=0)s_close(routefd);routefd=(int)s_open(atlas_ready?atlas_route_path:ROUTE_PATH,O_RDONLY_,0);if(routefd<0)return 0;if(s_read(routefd,&rh,sizeof(rh))!=(long)sizeof(rh)){s_close(routefd);routefd=-1;return 0;}if(rh.magic[0]!='C'||rh.magic[1]!='P'||rh.magic[2]!='R'||rh.magic[3]!='2'||rh.ver!=5||!rh.nodes||!rh.base_edges||!rh.ch_arcs||!rh.geom_points){s_close(routefd);routefd=-1;return 0;}routeok=1;cpr_bcache_count=0;cpr_acache_tick=cpr_gcache_tick=cpr_tcache_tick=1;for(int i=0;i<CPR_ARC_SLOTS;i++){cpr_acache_first[i]=0;cpr_acache_count[i]=0;cpr_acache_stamp[i]=0;}for(int i=0;i<CPR_GEOM_SLOTS;i++){cpr_gcache_first[i]=0;cpr_gcache_count[i]=0;cpr_gcache_stamp[i]=0;}for(int i=0;i<CPR_TILE_SLOTS;i++){cpr_tcache_first[i]=0;cpr_tcache_count[i]=0;cpr_tcache_stamp[i]=0;}for(int i=0;i<4;i++){cpr_rcache_first[i]=0;cpr_rcache_count[i]=0;}route_geom_try_map();load_qadj_data();return 1;}
+static int route_decode_tile(const u8*b,struct CprTile*out){out->tx=(s32)rd32u(b);out->ty=(s32)rd32u(b+4);u32 k=8;out->first=rd32u(b+k);out->count=rd32u(b+k+4);return 1;}
+static int route_read_tile(u32 id,struct CprTile*out){if(!routeok||id>=rh.tiles||!out)return 0;u32 size=16;u32 per=CPR_TILE_PAGE/size,slot=CPR_TILE_SLOTS,old=0,oldst=0xffffffffu;for(u32 i=0;i<CPR_TILE_SLOTS;i++){if(cpr_tcache_count[i]&&id>=cpr_tcache_first[i]&&id<cpr_tcache_first[i]+cpr_tcache_count[i]){cpr_tcache_stamp[i]=++cpr_tcache_tick;return route_decode_tile((const u8*)cpr_tcache_w[i]+(id-cpr_tcache_first[i])*size,out);}if(!cpr_tcache_count[i]&&slot==CPR_TILE_SLOTS)slot=i;if(cpr_tcache_count[i]&&cpr_tcache_stamp[i]<oldst){oldst=cpr_tcache_stamp[i];old=i;}}if(slot==CPR_TILE_SLOTS)slot=old;u32 first=(id/per)*per,count=rh.tiles-first;if(count>per)count=per;s_lseek(routefd,(long)(rh.tile_off+first*size),SEEK_SET_);long n=s_read(routefd,cpr_tcache_w[slot],count*size);if(n<=0)return 0;RPROF_INC(route_prof_tile_reads);RPROF_ADD(route_prof_tile_bytes,n);cpr_tcache_first[slot]=first;cpr_tcache_count[slot]=(u32)n/size;cpr_tcache_stamp[slot]=++cpr_tcache_tick;return route_decode_tile((const u8*)cpr_tcache_w[slot]+(id-first)*size,out);}
 static int route_find_tile(s32 tx,s32 ty,struct CprTile*out){u32 lo=0,hi=rh.tiles;while(lo<hi){u32 m=lo+(hi-lo)/2;struct CprTile t;if(!route_read_tile(m,&t))return 0;int c=tx<t.tx?-1:(tx>t.tx?1:(ty<t.ty?-1:(ty>t.ty?1:0)));if(!c){*out=t;return 1;}if(c<0)hi=m;else lo=m+1;}return 0;}
 static int route_read_node(u32 id,struct CprNode*out){if(!routeok||id>=rh.nodes)return 0;RPROF_INC(route_prof_n_miss);s_lseek(routefd,(long)(rh.node_off+id*sizeof(struct CprNode)),SEEK_SET_);long n=s_read(routefd,out,sizeof(*out));if(n>0)RPROF_ADD(route_prof_n_bytes,n);return n==(long)sizeof(*out);}
 static int route_read_base(u32 id,struct CprBase*out){if(!routeok||id>=rh.base_edges)return 0;u32 per=CPR_BASE_CACHE/(u32)sizeof(struct CprBase);if(!(id>=cpr_bcache_first&&id<cpr_bcache_first+cpr_bcache_count)){RPROF_INC(route_prof_b_miss);u32 first=(id/per)*per,count=rh.base_edges-first;if(count>per)count=per;s_lseek(routefd,(long)(rh.base_off+first*sizeof(struct CprBase)),SEEK_SET_);long n=s_read(routefd,cpr_bcache_w,count*sizeof(struct CprBase));if(n<=0)return 0;RPROF_ADD(route_prof_b_bytes,n);cpr_bcache_first=first;cpr_bcache_count=(u32)n/(u32)sizeof(struct CprBase);}else RPROF_INC(route_prof_b_hit);*out=((struct CprBase*)cpr_bcache_w)[id-cpr_bcache_first];return 1;}
 static int route_read_arc(u32 id,struct CprArc*out){if(!routeok||id>=rh.ch_arcs)return 0;u32 per=CPR_ARC_PAGE/(u32)sizeof(struct CprArc),slot=CPR_ARC_SLOTS,oldest=0,oldstamp=0xffffffffu;for(u32 i=0;i<CPR_ARC_SLOTS;i++){if(cpr_acache_count[i]&&id>=cpr_acache_first[i]&&id<cpr_acache_first[i]+cpr_acache_count[i]){RPROF_INC(route_prof_a_hit);cpr_acache_stamp[i]=++cpr_acache_tick;*out=((struct CprArc*)cpr_acache_w[i])[id-cpr_acache_first[i]];return 1;}if(!cpr_acache_count[i]&&slot==CPR_ARC_SLOTS)slot=i;if(cpr_acache_count[i]&&cpr_acache_stamp[i]<oldstamp){oldstamp=cpr_acache_stamp[i];oldest=i;}}if(slot==CPR_ARC_SLOTS)slot=oldest;RPROF_INC(route_prof_a_miss);u32 first=(id/per)*per,count=rh.ch_arcs-first;if(count>per)count=per;s_lseek(routefd,(long)(rh.arc_off+first*sizeof(struct CprArc)),SEEK_SET_);long n=s_read(routefd,cpr_acache_w[slot],count*sizeof(struct CprArc));if(n<=0)return 0;RPROF_ADD(route_prof_a_bytes,n);cpr_acache_first[slot]=first;cpr_acache_count[slot]=(u32)n/(u32)sizeof(struct CprArc);cpr_acache_stamp[slot]=++cpr_acache_tick;*out=((struct CprArc*)cpr_acache_w[slot])[id-first];return 1;}
 static int route_read_ref(int dir,u32 id,u32*out){u32 total=dir==3?rh.src_refs:(dir==2?rh.tile_refs:(dir?rh.upr_count:rh.upf_count)),off=dir==3?rh.src_off:(dir==2?rh.tref_off:(dir?rh.upr_off:rh.upf_off));if((unsigned)dir>=4u||id>=total)return 0;u32 per=CPR_REF_CACHE/4u;if(!(id>=cpr_rcache_first[dir]&&id<cpr_rcache_first[dir]+cpr_rcache_count[dir])){RPROF_INC(route_prof_r_miss[dir]);u32 first=(id/per)*per,count=total-first;if(count>per)count=per;s_lseek(routefd,(long)(off+first*4u),SEEK_SET_);long n=s_read(routefd,cpr_rcache_w[dir],count*4u);if(n<=0)return 0;RPROF_ADD(route_prof_r_bytes[dir],n);cpr_rcache_first[dir]=first;cpr_rcache_count[dir]=(u32)n/4u;}else RPROF_INC(route_prof_r_hit[dir]);*out=cpr_rcache_w[dir][id-cpr_rcache_first[dir]];return 1;}
 static int route_read_upref(int dir,u32 id,u32*out){return route_read_ref(dir,id,out);}
-#define QADJ_CHUNK 256u
-#define QAD2_BLOCK_BYTES 8192u
-#define QAD2_INDEX_PAGE 4096u
-#define QAD2_INDEX_SLOTS 4u
-#define QAD3_GROUP_BYTES 32768u
-#define QAD3_GROUP_SLOTS 4u
-#define QREC_PAGE 1024u
-#define QREC_SLOTS 64u
-#define QREC_PER_PAGE (QREC_PAGE/(u32)sizeof(struct QRec))
-/* QAD4: reconstruction is latency-bound, not bandwidth-bound.  Keep a
- * 256 KiB, 4 KiB-page LRU for locality-renumbered reconstruction records. */
-#define QREC4_PAGE 4096u
-#define QREC4_SLOTS 64u
-#define QREC4_PER_PAGE (QREC4_PAGE/(u32)sizeof(struct QRec4))
-static struct QAdjEntry qadj_buf[QADJ_CHUNK];
-static u32 qadj2_buf_w[QAD2_BLOCK_BYTES/4u];
-static u32 qadj5_buf_w[QAD3_GROUP_BYTES/4u];
-static u32 qadj5_idx_w[QAD2_INDEX_SLOTS][QAD2_INDEX_PAGE/4u];static u32 qadj5_idx_first[QAD2_INDEX_SLOTS]={0},qadj5_idx_count[QAD2_INDEX_SLOTS]={0},qadj5_idx_stamp[QAD2_INDEX_SLOTS]={0},qadj5_idx_tick=1;
-static u32 qadj2_idx_w[QAD2_INDEX_SLOTS][QAD2_INDEX_PAGE/4u];static u32 qadj2_idx_first[QAD2_INDEX_SLOTS]={0},qadj2_idx_count[QAD2_INDEX_SLOTS]={0},qadj2_idx_stamp[QAD2_INDEX_SLOTS]={0},qadj2_idx_tick=1;
-static u32*qadj_index=0;static u32 qadj_index_bytes=0;
-static u32 qadj3_group_w[QAD3_GROUP_SLOTS][QAD3_GROUP_BYTES/4u];static u32 qadj3_group_id[QAD3_GROUP_SLOTS]={0},qadj3_group_len[QAD3_GROUP_SLOTS]={0},qadj3_group_stamp[QAD3_GROUP_SLOTS]={0},qadj3_group_tick=1;
-static struct QRec qrec_cache[QREC_SLOTS][QREC_PER_PAGE];static u32 qrec_first[QREC_SLOTS]={0},qrec_count[QREC_SLOTS]={0},qrec_stamp[QREC_SLOTS]={0},qrec_tick=1;
-static struct QRec4 qrec4_cache[QREC4_SLOTS][QREC4_PER_PAGE];static u32 qrec4_first[QREC4_SLOTS]={0},qrec4_count[QREC4_SLOTS]={0},qrec4_stamp[QREC4_SLOTS]={0},qrec4_tick=1;
-/* Local state/arc IDs and directory offsets belong to one regional file.
- * In particular, a paged QAD7 must never reuse another pack's seed offsets.
- * Callers release the query arena before releasing the older QAD3 directory. */
-static void qadj_reset_caches(void){
- if(qadj_index&&!qadj_map_ok){
-#ifdef HOST_TEST
-  free(qadj_index);
-#else
-  s_brk((long)qadj_index);
-#endif
- }
- qadj_index=0;qadj_index_bytes=0;
- memzero(qadj5_idx_count,sizeof(qadj5_idx_count));memzero(qadj2_idx_count,sizeof(qadj2_idx_count));
- memzero(qadj3_group_len,sizeof(qadj3_group_len));memzero(qrec_count,sizeof(qrec_count));memzero(qrec4_count,sizeof(qrec4_count));
- qadj5_idx_tick=qadj2_idx_tick=qadj3_group_tick=qrec_tick=qrec4_tick=1;
-}
-static int qadj_read_chunk(int dir,u32 first,u32 count,struct QAdjEntry**out){if(qadjmode!=1||!out||!count||count>QADJ_CHUNK)return 0;u32 total=dir?qh.upr_count:qh.upf_count;if(first>=total||count>total-first)return 0;u32 base=dir?qh.rev_off:qh.fwd_off;s_lseek(qadjfd,(long)(base+first*(u32)sizeof(struct QAdjEntry)),SEEK_SET_);u32 bytes=count*(u32)sizeof(struct QAdjEntry);long n=s_read(qadjfd,qadj_buf,bytes);if(n>0){RPROF_INC(route_prof_qadj_reads);RPROF_ADD(route_prof_qadj_bytes,n);}if(n!=(long)bytes)return 0;*out=qadj_buf;return 1;}
-static int qadj2_index_get(u32 idx,u32*out){if(qadjmode!=2||!out||idx>rh.nodes)return 0;u32 per=QAD2_INDEX_PAGE/4u,first=(idx/per)*per,slot=QAD2_INDEX_SLOTS,old=0,oldst=0xffffffffu;for(u32 i=0;i<QAD2_INDEX_SLOTS;i++){if(qadj2_idx_count[i]&&idx>=qadj2_idx_first[i]&&idx<qadj2_idx_first[i]+qadj2_idx_count[i]){qadj2_idx_stamp[i]=++qadj2_idx_tick;*out=qadj2_idx_w[i][idx-qadj2_idx_first[i]];return 1;}if(!qadj2_idx_count[i]&&slot==QAD2_INDEX_SLOTS)slot=i;if(qadj2_idx_count[i]&&qadj2_idx_stamp[i]<oldst){oldst=qadj2_idx_stamp[i];old=i;}}if(slot==QAD2_INDEX_SLOTS)slot=old;u32 total=rh.nodes+1u,count=total-first;if(count>per)count=per;s_lseek(qadjfd,(long)(qh2.index_off+first*4u),SEEK_SET_);long n=s_read(qadjfd,qadj2_idx_w[slot],count*4u);if(n!=(long)(count*4u))return 0;RPROF_ADD(route_prof_qidx_bytes,n);qadj2_idx_first[slot]=first;qadj2_idx_count[slot]=count;qadj2_idx_stamp[slot]=++qadj2_idx_tick;*out=qadj2_idx_w[slot][idx-first];return 1;}
-static int qadj2_read_block(u32 node,u16*fc,u16*rc,struct QAdjEntry**f,struct QAdjEntry**r){u32 a=0,b=0;if(qadjmode!=2||node>=rh.nodes||!fc||!rc||!f||!r||!qadj2_index_get(node,&a)||!qadj2_index_get(node+1u,&b)||b<a||b-a<4u)return 0;u32 bytes=b-a;if(bytes<=QAD2_BLOCK_BYTES){s_lseek(qadjfd,(long)(qh2.data_off+a),SEEK_SET_);long n=s_read(qadjfd,qadj2_buf_w,bytes);if(n>0){RPROF_INC(route_prof_qadj_reads);RPROF_ADD(route_prof_qadj_bytes,n);}if(n!=(long)bytes)return 0;u8*p=(u8*)qadj2_buf_w;*fc=(u16)(p[0]|((u16)p[1]<<8));*rc=(u16)(p[2]|((u16)p[3]<<8));if(4u+((u32)*fc+(u32)*rc)*(u32)sizeof(struct QAdjEntry)!=bytes)return 0;*f=(struct QAdjEntry*)(p+4);*r=*f+*fc;return 1;}u8 h[4];s_lseek(qadjfd,(long)(qh2.data_off+a),SEEK_SET_);long n=s_read(qadjfd,h,4);if(n>0){RPROF_INC(route_prof_qadj_reads);RPROF_ADD(route_prof_qadj_bytes,n);}if(n!=4)return 0;*fc=(u16)(h[0]|((u16)h[1]<<8));*rc=(u16)(h[2]|((u16)h[3]<<8));if(4u+((u32)*fc+(u32)*rc)*(u32)sizeof(struct QAdjEntry)!=bytes)return 0;*f=*r=0;return 2;}
-static int qadj2_read_entries(u32 node,int dir,u16 fc,u16 rc,u32 pos,u32 count,struct QAdjEntry**out){u32 a=0;if(!out||!count||count>QADJ_CHUNK||qadjmode!=2||node>=rh.nodes||!qadj2_index_get(node,&a))return 0;u32 cnt=dir?rc:fc;if(pos>=cnt||count>cnt-pos)return 0;u32 rel=a+4u+(dir?(u32)fc*(u32)sizeof(struct QAdjEntry):0u)+pos*(u32)sizeof(struct QAdjEntry);s_lseek(qadjfd,(long)(qh2.data_off+rel),SEEK_SET_);u32 bytes=count*(u32)sizeof(struct QAdjEntry);long n=s_read(qadjfd,qadj_buf,bytes);if(n>0){RPROF_INC(route_prof_qadj_reads);RPROF_ADD(route_prof_qadj_bytes,n);}if(n!=(long)bytes)return 0;*out=qadj_buf;return 1;}
-static int qadj3_load_index(void){if(qadjmode<3||qadjmode>=5)return 1;if(qadj_index)return 1;u32 bytes=(qh3.group_count+1u)*4u;if(bytes<8u||bytes>2u*1024u*1024u)return 0;
- if(qadj_map_ok){if(qh3.gindex_off>qadj_map_bytes||bytes>qadj_map_bytes-qh3.gindex_off)return 0;qadj_index=(u32*)(qadj_map+qh3.gindex_off);qadj_index_bytes=bytes;}
- else{
-#ifdef HOST_TEST
-  qadj_index=(u32*)malloc(bytes);if(!qadj_index)return 0;
-#else
-  long base=s_brk(0);if(base<=0)return 0;long want=base+(long)((bytes+4095u)&~4095u),got=s_brk(want);if(got<want){s_brk(base);return 0;}qadj_index=(u32*)base;
-#endif
-  qadj_index_bytes=bytes;s_lseek(qadjfd,(long)qh3.gindex_off,SEEK_SET_);long n=s_read(qadjfd,qadj_index,bytes);if(n!=(long)bytes)goto bad;RPROF_ADD(route_prof_qidx_bytes,n);
- }
- if(qadj_index[0]!=0||qadj_index[qh3.group_count]!=qh3.data_bytes)goto bad;for(u32 i=0;i<qh3.group_count;i++)if(qadj_index[i]>qadj_index[i+1]||qadj_index[i+1]>qh3.data_bytes||qadj_index[i+1]-qadj_index[i]>QAD3_GROUP_BYTES)goto bad;return 1;
-bad:
- if(!qadj_map_ok){
-#ifdef HOST_TEST
-  free(qadj_index);
-#else
-  s_brk((long)qadj_index);
-#endif
- }
- qadj_index=0;qadj_index_bytes=0;return 0;}
-static int qadj3_read_block(u32 node,u16*fc,u16*rc,struct QAdjEntry**f,struct QAdjEntry**r){if(qadjmode<3||qadjmode>=5||!qadj_index||node>=rh.nodes||!fc||!rc||!f||!r)return 0;u32 gid=node>>qh3.group_shift;if(gid>=qh3.group_count)return 0;u32 a=qadj_index[gid],b=qadj_index[gid+1u],bytes=b-a;if(!bytes||bytes>QAD3_GROUP_BYTES)return 0;u8*p=0;
- if(qadj_map_ok){if(qh3.data_off+a>qadj_map_bytes||bytes>qadj_map_bytes-(qh3.data_off+a))return 0;p=qadj_map+qh3.data_off+a;RPROF_INC(route_prof_qmap_access);}
- else{u32 slot=QAD3_GROUP_SLOTS,old=0,oldst=0xffffffffu;for(u32 i=0;i<QAD3_GROUP_SLOTS;i++){if(qadj3_group_len[i]&&qadj3_group_id[i]==gid){qadj3_group_stamp[i]=++qadj3_group_tick;slot=i;break;}if(!qadj3_group_len[i]&&slot==QAD3_GROUP_SLOTS)slot=i;if(qadj3_group_len[i]&&qadj3_group_stamp[i]<oldst){oldst=qadj3_group_stamp[i];old=i;}}if(slot==QAD3_GROUP_SLOTS)slot=old;if(!qadj3_group_len[slot]||qadj3_group_id[slot]!=gid){s_lseek(qadjfd,(long)(qh3.data_off+a),SEEK_SET_);long n=s_read(qadjfd,qadj3_group_w[slot],bytes);if(n!=(long)bytes)return 0;RPROF_INC(route_prof_qadj_reads);RPROF_ADD(route_prof_qadj_bytes,n);qadj3_group_id[slot]=gid;qadj3_group_len[slot]=bytes;qadj3_group_stamp[slot]=++qadj3_group_tick;}p=(u8*)qadj3_group_w[slot];}
- u16 nc=(u16)(p[0]|((u16)p[1]<<8));u32 local=node-(gid<<qh3.group_shift);if(local>=nc)return 0;u32 gh=(4u+2u*((u32)nc+1u)+3u)&~3u;if(gh>bytes)return 0;u16 na=(u16)(p[4+local*2u]|((u16)p[5+local*2u]<<8)),nb=(u16)(p[4+(local+1u)*2u]|((u16)p[5+(local+1u)*2u]<<8));if(nb<na||gh+nb>bytes||nb-na<4u)return 0;u8*nptr=p+gh+na;*fc=(u16)(nptr[0]|((u16)nptr[1]<<8));*rc=(u16)(nptr[2]|((u16)nptr[3]<<8));if(4u+((u32)*fc+(u32)*rc)*(u32)sizeof(struct QAdjEntry)!=(u32)(nb-na))return 0;*f=(struct QAdjEntry*)(nptr+4);*r=*f+*fc;return 1;}
-static int qadj5_index_get(u32 node,u32*out){if((qadjmode!=5&&qadjmode!=6&&qadjmode!=7)||!out||node>=rh.nodes)return 0;if(qadj_map_ok){u32 at=qh5.index_off+node*4u;if(at>qadj_map_bytes-4u)return 0;*out=rd32u(qadj_map+at);RPROF_INC(route_prof_qmap_access);return *out<qh5.data_bytes;}
- u32 per=QAD2_INDEX_PAGE/4u,first=(node/per)*per,slot=QAD2_INDEX_SLOTS,old=0,oldst=0xffffffffu;for(u32 i=0;i<QAD2_INDEX_SLOTS;i++){if(qadj5_idx_count[i]&&node>=qadj5_idx_first[i]&&node<qadj5_idx_first[i]+qadj5_idx_count[i]){qadj5_idx_stamp[i]=++qadj5_idx_tick;*out=qadj5_idx_w[i][node-qadj5_idx_first[i]];return *out<qh5.data_bytes;}if(!qadj5_idx_count[i]&&slot==QAD2_INDEX_SLOTS)slot=i;if(qadj5_idx_count[i]&&qadj5_idx_stamp[i]<oldst){oldst=qadj5_idx_stamp[i];old=i;}}if(slot==QAD2_INDEX_SLOTS)slot=old;u32 count=rh.nodes-first;if(count>per)count=per;s_lseek(qadjfd,(long)(qh5.index_off+first*4u),SEEK_SET_);long n=s_read(qadjfd,qadj5_idx_w[slot],count*4u);if(n!=(long)(count*4u))return 0;RPROF_ADD(route_prof_qidx_bytes,n);qadj5_idx_first[slot]=first;qadj5_idx_count[slot]=count;qadj5_idx_stamp[slot]=++qadj5_idx_tick;*out=qadj5_idx_w[slot][node-first];return *out<qh5.data_bytes;}
-static int qadj5_read_block_off(u32 off,u16*fc,u16*rc,struct QAdj5Entry**f,struct QAdj5Entry**r){if((qadjmode!=5&&qadjmode!=6&&qadjmode!=7)||off>=qh5.data_bytes||!fc||!rc||!f||!r)return 0;u8*p=0;if(qadj_map_ok){u32 at=qh5.data_off+off;if(at>qadj_map_bytes-4u)return 0;p=qadj_map+at;RPROF_INC(route_prof_qmap_access);}else{u8 h[4];s_lseek(qadjfd,(long)(qh5.data_off+off),SEEK_SET_);long n=s_read(qadjfd,h,4);if(n!=4)return 0;*fc=rd16(h);*rc=rd16(h+2);u32 bytes=4u+((u32)*fc+(u32)*rc)*(u32)sizeof(struct QAdj5Entry);if(bytes>QAD3_GROUP_BYTES||bytes>qh5.data_bytes-off)return 0;s_lseek(qadjfd,(long)(qh5.data_off+off),SEEK_SET_);n=s_read(qadjfd,qadj5_buf_w,bytes);if(n!=(long)bytes)return 0;RPROF_INC(route_prof_qadj_reads);RPROF_ADD(route_prof_qadj_bytes,n);p=(u8*)qadj5_buf_w;}
- *fc=rd16(p);*rc=rd16(p+2);u32 bytes=4u+((u32)*fc+(u32)*rc)*(u32)sizeof(struct QAdj5Entry);if(bytes>QAD3_GROUP_BYTES||bytes>qh5.data_bytes-off)return 0;*f=(struct QAdj5Entry*)(p+4);*r=*f+*fc;return 1;}
-static int qadj5_read_block_node(u32 node,u32*qoff,u16*fc,u16*rc,struct QAdj5Entry**f,struct QAdj5Entry**r){u32 off=0;if(!qadj5_index_get(node,&off))return 0;if(qoff)*qoff=off;return qadj5_read_block_off(off,fc,rc,f,r);}
-static int qadj3_read_qrec(u32 id,struct QRec*out){if(qadjmode!=3||!out||id>=rh.ch_arcs)return 0;u32 per=QREC_PER_PAGE,slot=QREC_SLOTS,old=0,oldst=0xffffffffu;for(u32 i=0;i<QREC_SLOTS;i++){if(qrec_count[i]&&id>=qrec_first[i]&&id<qrec_first[i]+qrec_count[i]){RPROF_INC(route_prof_qrec_hit);qrec_stamp[i]=++qrec_tick;*out=qrec_cache[i][id-qrec_first[i]];return 1;}if(!qrec_count[i]&&slot==QREC_SLOTS)slot=i;if(qrec_count[i]&&qrec_stamp[i]<oldst){oldst=qrec_stamp[i];old=i;}}if(slot==QREC_SLOTS)slot=old;RPROF_INC(route_prof_qrec_miss);u32 first=(id/per)*per,count=rh.ch_arcs-first;if(count>per)count=per;s_lseek(qadjfd,(long)(qh3.rmeta_off+first*(u32)sizeof(struct QRec)),SEEK_SET_);long n=s_read(qadjfd,qrec_cache[slot],count*sizeof(struct QRec));if(n!=(long)(count*sizeof(struct QRec)))return 0;RPROF_ADD(route_prof_qrec_bytes,n);qrec_first[slot]=first;qrec_count[slot]=count;qrec_stamp[slot]=++qrec_tick;*out=qrec_cache[slot][id-first];return 1;}
-static int qadj4_read_qrec(u32 id,struct QRec4*out){if((qadjmode!=4&&qadjmode!=5&&qadjmode!=6)||!out||id>=rh.ch_arcs)return 0;u32 roff=qadjmode>=5?qh5.rmeta_off:qh3.rmeta_off;if(qadj_map_ok){u32 at=roff+id*(u32)sizeof(struct QRec4);if(at>qadj_map_bytes-(u32)sizeof(struct QRec4))return 0;const u8*p=qadj_map+at;out->from=rd32u(p);out->cost=rd32u(p+4);out->left=rd32u(p+8);out->right_geom=rd32u(p+12);out->to_flags=rd32u(p+16);out->geom_first=rd32u(p+20);out->geom_info=rd32u(p+24);RPROF_INC(route_prof_qrec_hit);RPROF_INC(route_prof_qmap_access);return 1;}u32 per=QREC4_PER_PAGE,slot=QREC4_SLOTS,old=0,oldst=0xffffffffu;for(u32 i=0;i<QREC4_SLOTS;i++){if(qrec4_count[i]&&id>=qrec4_first[i]&&id<qrec4_first[i]+qrec4_count[i]){RPROF_INC(route_prof_qrec_hit);qrec4_stamp[i]=++qrec4_tick;*out=qrec4_cache[i][id-qrec4_first[i]];return 1;}if(!qrec4_count[i]&&slot==QREC4_SLOTS)slot=i;if(qrec4_count[i]&&qrec4_stamp[i]<oldst){oldst=qrec4_stamp[i];old=i;}}if(slot==QREC4_SLOTS)slot=old;RPROF_INC(route_prof_qrec_miss);u32 first=(id/per)*per,count=rh.ch_arcs-first;if(count>per)count=per;s_lseek(qadjfd,(long)(roff+first*(u32)sizeof(struct QRec4)),SEEK_SET_);long n=s_read(qadjfd,qrec4_cache[slot],count*sizeof(struct QRec4));if(n!=(long)(count*sizeof(struct QRec4)))return 0;RPROF_ADD(route_prof_qrec_bytes,n);qrec4_first[slot]=first;qrec4_count[slot]=count;qrec4_stamp[slot]=++qrec4_tick;*out=qrec4_cache[slot][id-first];return 1;}
-static u32 qrec_to(const struct QRec*q){return q->to_flags&0x00ffffffu;}static u8 qrec_flags(const struct QRec*q){return(u8)(q->to_flags>>24);}
-static u32 qrec4_to(const struct QRec4*q){return q->to_flags&0x00ffffffu;}static u8 qrec4_flags(const struct QRec4*q){return(u8)(q->to_flags>>24);}static u16 qrec4_geom_count(const struct QRec4*q){return(u16)(q->geom_info&0xffffu);}static u8 qrec4_base_flags(const struct QRec4*q){return(u8)((q->geom_info>>16)&0xffu);}static u8 qrec4_base_cls(const struct QRec4*q){return(u8)(q->geom_info>>24);}
+#define QAD_INDEX_PAGE 4096u
+#define QAD_INDEX_SLOTS 4u
+#define QAD_BLOCK_BYTES 32768u
+static u32 qadj7_buf_w[QAD_BLOCK_BYTES/4u];
+static u32 qadj7_idx_w[QAD_INDEX_SLOTS][QAD_INDEX_PAGE/4u];static u32 qadj7_idx_first[QAD_INDEX_SLOTS]={0},qadj7_idx_count[QAD_INDEX_SLOTS]={0},qadj7_idx_stamp[QAD_INDEX_SLOTS]={0},qadj7_idx_tick=1;
+/* Seed offsets belong to one regional file, including paged QAD7. */
+static void qadj_reset_caches(void){memzero(qadj7_idx_count,sizeof(qadj7_idx_count));qadj7_idx_tick=1;}
+static int qadj7_index_get(u32 node,u32*out){if(qadjmode!=7||!out||node>=rh.nodes)return 0;if(qadj_map_ok){u32 at=qh7_query.index_off+node*4u;if(at>qadj_map_bytes-4u)return 0;*out=rd32u(qadj_map+at);RPROF_INC(route_prof_qmap_access);return *out<qh7_query.data_bytes;}
+ u32 per=QAD_INDEX_PAGE/4u,first=(node/per)*per,slot=QAD_INDEX_SLOTS,old=0,oldst=0xffffffffu;for(u32 i=0;i<QAD_INDEX_SLOTS;i++){if(qadj7_idx_count[i]&&node>=qadj7_idx_first[i]&&node<qadj7_idx_first[i]+qadj7_idx_count[i]){qadj7_idx_stamp[i]=++qadj7_idx_tick;*out=qadj7_idx_w[i][node-qadj7_idx_first[i]];return *out<qh7_query.data_bytes;}if(!qadj7_idx_count[i]&&slot==QAD_INDEX_SLOTS)slot=i;if(qadj7_idx_count[i]&&qadj7_idx_stamp[i]<oldst){oldst=qadj7_idx_stamp[i];old=i;}}if(slot==QAD_INDEX_SLOTS)slot=old;u32 count=rh.nodes-first;if(count>per)count=per;s_lseek(qadjfd,(long)(qh7_query.index_off+first*4u),SEEK_SET_);long n=s_read(qadjfd,qadj7_idx_w[slot],count*4u);if(n!=(long)(count*4u))return 0;RPROF_ADD(route_prof_qidx_bytes,n);qadj7_idx_first[slot]=first;qadj7_idx_count[slot]=count;qadj7_idx_stamp[slot]=++qadj7_idx_tick;*out=qadj7_idx_w[slot][node-first];return *out<qh7_query.data_bytes;}
+static int qadj7_read_block_off(u32 off,u16*fc,u16*rc,struct QAdj7Entry**f,struct QAdj7Entry**r){if(qadjmode!=7||off>=qh7_query.data_bytes||!fc||!rc||!f||!r)return 0;u8*p=0;if(qadj_map_ok){u32 at=qh7_query.data_off+off;if(at>qadj_map_bytes-4u)return 0;p=qadj_map+at;RPROF_INC(route_prof_qmap_access);}else{u8 h[4];s_lseek(qadjfd,(long)(qh7_query.data_off+off),SEEK_SET_);long n=s_read(qadjfd,h,4);if(n!=4)return 0;*fc=rd16(h);*rc=rd16(h+2);u32 bytes=4u+((u32)*fc+(u32)*rc)*(u32)sizeof(struct QAdj7Entry);if(bytes>QAD_BLOCK_BYTES||bytes>qh7_query.data_bytes-off)return 0;s_lseek(qadjfd,(long)(qh7_query.data_off+off),SEEK_SET_);n=s_read(qadjfd,qadj7_buf_w,bytes);if(n!=(long)bytes)return 0;RPROF_INC(route_prof_qadj_reads);RPROF_ADD(route_prof_qadj_bytes,n);p=(u8*)qadj7_buf_w;}
+ *fc=rd16(p);*rc=rd16(p+2);u32 bytes=4u+((u32)*fc+(u32)*rc)*(u32)sizeof(struct QAdj7Entry);if(bytes>QAD_BLOCK_BYTES||bytes>qh7_query.data_bytes-off)return 0;*f=(struct QAdj7Entry*)(p+4);*r=*f+*fc;return 1;}
 static int qadj7_read_qrec(u32 id,struct QRec7*out){if(qadjmode!=7||!out||id>=rh.ch_arcs)return 0;u32 at=qh7.q.rmeta_off+id*(u32)sizeof(struct QRec7);if(qadj_map_ok){if(at>qadj_map_bytes-(u32)sizeof(struct QRec7))return 0;const u8*p=qadj_map+at;out->from=rd32u(p);out->cost=rd32u(p+4);out->left=rd32u(p+8);out->right_geom=rd32u(p+12);out->to_flags=rd32u(p+16);out->geom_first=rd32u(p+20);out->geom_info=rd32u(p+24);out->packet_off=rd32u(p+28);RPROF_INC(route_prof_qrec_hit);RPROF_INC(route_prof_qmap_access);return 1;}s_lseek(qadjfd,(long)at,SEEK_SET_);long n=s_read(qadjfd,out,sizeof(*out));if(n!=(long)sizeof(*out))return 0;RPROF_INC(route_prof_qrec_miss);RPROF_ADD(route_prof_qrec_bytes,n);return 1;}
 static u32 qrec7_to(const struct QRec7*q){return q->to_flags&0x00ffffffu;}static u8 qrec7_flags(const struct QRec7*q){return(u8)(q->to_flags>>24);}static u16 qrec7_geom_count(const struct QRec7*q){return(u16)(q->geom_info&0xffffu);}static u8 qrec7_base_flags(const struct QRec7*q){return(u8)((q->geom_info>>16)&0xffu);}static u8 qrec7_base_cls(const struct QRec7*q){return(u8)(q->geom_info>>24);}
-static void qrec7_from4(struct QRec7*d,const struct QRec4*s){d->from=s->from;d->cost=s->cost;d->left=s->left;d->right_geom=s->right_geom;d->to_flags=s->to_flags;d->geom_first=s->geom_first;d->geom_info=s->geom_info;d->packet_off=0xffffffffu;}
 static int qadj7_packet_point(const struct QRec7*q,u32 raw,struct CprPoint*out,u32*qf,u32*qr,u16*mf,u16*mr){if(qadjmode!=7||!q||!out||!qf||!qr||!mf||!mr)return 0;u32 gc=qrec7_geom_count(q);if(raw>=gc||q->packet_off==0xffffffffu)return 0;u32 rel=q->packet_off+raw*QAD7_POINT_SIZE;if(rel>qh7.packet_bytes-QAD7_POINT_SIZE)return 0;u32 at=qh7.packet_off+rel;u8 tmp[QAD7_POINT_SIZE];const u8*p=0;if(qadj_map_ok){if(at>qadj_map_bytes-QAD7_POINT_SIZE)return 0;p=qadj_map+at;RPROF_INC(route_prof_qmap_access);}else{s_lseek(qadjfd,(long)at,SEEK_SET_);long n=s_read(qadjfd,tmp,QAD7_POINT_SIZE);if(n!=(long)QAD7_POINT_SIZE)return 0;p=tmp;RPROF_INC(route_prof_qadj_reads);RPROF_ADD(route_prof_qadj_bytes,QAD7_POINT_SIZE);}out->lat=(s32)rd32u(p);out->lon=(s32)rd32u(p+4);u16 fl=rd16(p+16);*qf=(fl&1u)?65536u:(u32)rd16(p+8);*qr=(fl&2u)?65536u:(u32)rd16(p+10);*mf=rd16(p+12);*mr=rd16(p+14);RPROF_INC(route_prof_packet_pts);return 1;}
-static int qadj6_gmeta(u32 raw,u32*qf,u32*qr,u16*mf,u16*mr){if(qadjmode!=6||!qadj_map_ok||raw>=qh6.geom_points||!qf||!qr||!mf||!mr)return 0;u32 at=qh6.gmeta_off+raw*QAD6_GMETA_SIZE;if(at>qadj_map_bytes-QAD6_GMETA_SIZE)return 0;const u8*p=qadj_map+at;u16 fl=rd16(p+8);*qf=(fl&1u)?65536u:(u32)rd16(p);*qr=(fl&2u)?65536u:(u32)rd16(p+2);*mf=rd16(p+4);*mr=rd16(p+6);RPROF_INC(route_prof_gmeta);return 1;}
 static int route_read_srcref(u32 id,u32*out){return route_read_ref(3,id,out);}
 /* Optional v5 flag2 extension; read lossless OSM way IDs without changing
- * legacy BASE records or allocating an identity table in device RAM. */
+ * BASE records or allocating an identity table in device RAM. */
 static int route_read_way(u32 base,u32*lo,u32*hi){if(!routeok||!(rh.flags&2)||base>=rh.base_edges)return 0;u32 at=rh.geom_off+rh.geom_points*8u+base*8u;u8 b[8];if(at>0x7ffffff7u||s_lseek(routefd,(long)at,SEEK_SET_)<0||s_read(routefd,b,8)!=8)return 0;*lo=rd32u(b);*hi=rd32u(b+4);return 1;}
 static int route_read_point(u32 id,struct CprPoint*out){if(!routeok||id>=rh.geom_points||!out)return 0;if(route_geom_map_ok){u32 at=route_geom_map_delta+id*(u32)sizeof(struct CprPoint);if(at>route_geom_map_bytes-(u32)sizeof(struct CprPoint))return 0;const u8*p=route_geom_map+at;out->lat=(s32)rd32u(p);out->lon=(s32)rd32u(p+4);RPROF_INC(route_prof_gmap_access);return 1;}u32 per=CPR_GEOM_PAGE/(u32)sizeof(struct CprPoint),slot=CPR_GEOM_SLOTS,old=0,oldst=0xffffffffu;for(u32 i=0;i<CPR_GEOM_SLOTS;i++){if(cpr_gcache_count[i]&&id>=cpr_gcache_first[i]&&id<cpr_gcache_first[i]+cpr_gcache_count[i]){RPROF_INC(route_prof_g_hit);cpr_gcache_stamp[i]=++cpr_gcache_tick;*out=((struct CprPoint*)cpr_gcache_w[i])[id-cpr_gcache_first[i]];return 1;}if(!cpr_gcache_count[i]&&slot==CPR_GEOM_SLOTS)slot=i;if(cpr_gcache_count[i]&&cpr_gcache_stamp[i]<oldst){oldst=cpr_gcache_stamp[i];old=i;}}if(slot==CPR_GEOM_SLOTS)slot=old;RPROF_INC(route_prof_g_miss);u32 first=(id/per)*per,count=rh.geom_points-first;if(count>per)count=per;s_lseek(routefd,(long)(rh.geom_off+first*sizeof(struct CprPoint)),SEEK_SET_);long n=s_read(routefd,cpr_gcache_w[slot],count*sizeof(struct CprPoint));if(n<=0)return 0;RPROF_ADD(route_prof_g_bytes,n);cpr_gcache_first[slot]=first;cpr_gcache_count[slot]=(u32)n/(u32)sizeof(struct CprPoint);cpr_gcache_stamp[slot]=++cpr_gcache_tick;*out=((struct CprPoint*)cpr_gcache_w[slot])[id-first];return 1;}
 static int route_base_point(const struct CprBase*a,u32 pos,struct CprPoint*out){if(!a||!a->geom_count||pos>=a->geom_count)return 0;u32 raw=(a->flags&CPR_ARC_GEOM_REVERSED)?(a->geom_count-1u-pos):pos;return route_read_point(a->geom_first+raw,out);}
 #define ROUTE_SNAP_D2 22500u
 #define ROUTE_DEST_SNAP_D2 160000u
 #define ROUTE_DEST_CAND_MAX 12
-/* exact edge snapping.  CPR2 v4 still stores compact topology, but a
+/* exact edge snapping.  CPR2 v5 still stores compact topology, but a
  * snap now retains the exact projected position inside a geometry segment.
  * frac_q16 is 0..65536 along geom_seg -> geom_seg+1 in logical arc order.
  * along_u/total_u are metric-proportional polyline units used for exact
@@ -1865,12 +1699,10 @@ static void route_repair_reset(void){
 /* Cooperative route finalisation state.  Search, CH parent tracing, shortcut
  * unpacking and base-geometry reconstruction all advance in small steps so
  * none of them owns the UI thread for an entire long-route build. */
-enum {RB_IDLE=0,RB_TRACE_F,RB_COPY_F,RB_TRACE_B,RB_START_INIT,RB_START_POINTS,RB_UNPACK,RB_PREFETCH,RB_BASE_NEXT,RB_BASE_TOTAL,RB_BASE_OUTPUT,RB_DEST_INIT,RB_DEST_POINTS,RB_REPAIR_SUFFIX,RB_DONE};
+enum {RB_IDLE=0,RB_TRACE_F,RB_COPY_F,RB_TRACE_B,RB_START_INIT,RB_START_POINTS,RB_UNPACK,RB_BASE_NEXT,RB_BASE_TOTAL,RB_BASE_OUTPUT,RB_DEST_INIT,RB_DEST_POINTS,RB_REPAIR_SUFFIX,RB_DONE};
 static int route_build_phase=RB_IDLE,route_build_nf=0,route_build_nb=0,route_build_copy=-1,route_build_arc_idx=0,route_build_sp=0,route_build_after_base=RB_UNPACK;
 static u32 route_build_u=0,route_build_i=0,route_build_total=0,route_build_cum=0,route_build_prev_cost=0;
 static struct QRec7 route_base_meta[ROUTE_PATH_MAX];static int route_base_meta_n=0,route_base_meta_idx=0;
-static u32 route_prefetch_page[ROUTE_PATH_MAX];static int route_prefetch_n=0,route_prefetch_idx=0;
-static u32 route_prefetch_scratch[8192];
 static struct CprArc route_build_arc;static struct CprBase route_build_base;static struct CprPoint route_build_prev_point;
 #define ROUTE_GEOM_TMP_MAX 256u
 static struct CprPoint route_geom_tmp[ROUTE_GEOM_TMP_MAX];static u32 route_geom_cum_tmp[ROUTE_GEOM_TMP_MAX];static int route_build_geom_cached=0;
@@ -2010,9 +1842,9 @@ restart:
 }
 static int route_repair_trace_roots(int*start_idx,int*cand_idx){
   u32 u=route_meet;int guard=0,si=-1,ci=-1;
-  for(;;){if(++guard>ROUTE_PATH_MAX)return 0;struct ChState*x=ch_state(u,0);if(!x)return 0;if(x->pf==ROUTE_NOARC){si=route_repair_start_for_node(u);break;}if(qadjmode==7){struct QRec7 q;if(!qadj7_read_qrec(x->pf,&q))return 0;u=q.from;}else if(qadjmode>=4){struct QRec4 q;if(!qadj4_read_qrec(x->pf,&q))return 0;u=q.from;}else if(qadjmode==3){struct QRec q;if(!qadj3_read_qrec(x->pf,&q))return 0;u=q.from;}else{struct CprArc a;if(!route_read_arc(x->pf,&a))return 0;u=a.from;}}
+  for(;;){if(++guard>ROUTE_PATH_MAX)return 0;struct ChState*x=ch_state(u,0);if(!x)return 0;if(x->pf==ROUTE_NOARC){si=route_repair_start_for_node(u);break;}if(qadjmode==7){struct QRec7 q;if(!qadj7_read_qrec(x->pf,&q))return 0;u=q.from;}else{struct CprArc a;if(!route_read_arc(x->pf,&a))return 0;u=a.from;}}
   u=route_meet;guard=0;
-  for(;;){if(++guard>ROUTE_PATH_MAX)return 0;struct ChState*x=ch_state(u,0);if(!x)return 0;if(x->pb==ROUTE_NOARC){ci=route_repair_candidate_for_node(u);break;}if(qadjmode==7){struct QRec7 q;if(!qadj7_read_qrec(x->pb,&q))return 0;u=qrec7_to(&q);}else if(qadjmode>=4){struct QRec4 q;if(!qadj4_read_qrec(x->pb,&q))return 0;u=qrec4_to(&q);}else if(qadjmode==3){struct QRec q;if(!qadj3_read_qrec(x->pb,&q))return 0;u=qrec_to(&q);}else{struct CprArc a;if(!route_read_arc(x->pb,&a))return 0;u=a.to;}}
+  for(;;){if(++guard>ROUTE_PATH_MAX)return 0;struct ChState*x=ch_state(u,0);if(!x)return 0;if(x->pb==ROUTE_NOARC){ci=route_repair_candidate_for_node(u);break;}if(qadjmode==7){struct QRec7 q;if(!qadj7_read_qrec(x->pb,&q))return 0;u=qrec7_to(&q);}else{struct CprArc a;if(!route_read_arc(x->pb,&a))return 0;u=a.to;}}
   if(si<0||ci<0)return 0;*start_idx=si;*cand_idx=ci;return 1;
 }
 static int route_repair_prepare_finish(void){
@@ -2032,7 +1864,7 @@ static int route_repair_suffix_step(void){
 static int route_repair_reseed_starts(void){
   if(!route_repair_active||route_build_phase!=RB_IDLE||!route_repair_collect_starts(route_dest_comp))return 0;
   chhf_n=0;route_best=route_meet=ROUTE_INF;route_n=0;route_head=0;route_result_cost=0;route_result_m=0;nav_maneuver_reset();route_expanded=0;route_tick=0;chheap_peak=chhb_n;
-  route_emit_arc=route_emit_phys=ROUTE_NOARC;route_build_phase=RB_IDLE;route_build_nf=route_build_nb=route_build_arc_idx=route_build_sp=0;route_build_copy=-1;route_build_after_base=RB_UNPACK;route_base_meta_n=route_base_meta_idx=route_prefetch_n=route_prefetch_idx=0;route_build_u=route_build_i=route_build_total=route_build_cum=route_build_prev_cost=0;route_build_steps=0;
+  route_emit_arc=route_emit_phys=ROUTE_NOARC;route_build_phase=RB_IDLE;route_build_nf=route_build_nb=route_build_arc_idx=route_build_sp=0;route_build_copy=-1;route_build_after_base=RB_UNPACK;route_base_meta_n=route_base_meta_idx=0;route_build_u=route_build_i=route_build_total=route_build_cum=route_build_prev_cost=0;route_build_steps=0;
   for(u32 i=0;i<chst_n;i++){chst[i].df=ROUTE_INF;chst[i].pf=ROUTE_NOARC;chst[i].posf=0;chst[i].sf=0;}
   int ok=0;for(int i=0;i<route_repair_start_n;i++){struct ChState*x=ch_state(route_repair_start[i].node,1);if(!x)return 0;if(route_repair_start_seed[i]<x->df){x->df=route_repair_start_seed[i];x->pf=ROUTE_NOARC;if(!ch_heap_insert(0,x))return 0;}ok=1;ch_update_meet(x);}
   if(ok){route_start_snap=route_repair_start[0];route_mark_query_start();if(pref.debug)debug_log(STATE_LOG,"REPAIR MOVING-START RESEED");}return ok;
@@ -2045,7 +1877,7 @@ static int route_repair_begin(const struct RouteSnapCandidate*nearest){
   route_start_snap=*nearest;route_car_node=nearest->node;route_offroute_checks=0;route_arc_check_tick=0;route_rerouting=1;route_status=R_CALC;route_repair_log_start();return 1;
 }
 
-static void ch_reset(void){if(chbucket&&chbucket_n)memzero(chbucket,chbucket_n*4u);chst_n=chhf_n=chhb_n=0;chheap_peak=0;route_expanded=0;route_best=route_meet=ROUTE_INF;route_n=0;route_head=0;route_result_cost=0;route_result_m=0;route_tick=0;route_arc_check_tick=0;route_offroute_checks=0;route_emit_arc=route_emit_phys=ROUTE_NOARC;route_build_phase=RB_IDLE;route_build_nf=route_build_nb=route_build_arc_idx=route_build_sp=0;route_build_copy=-1;route_build_after_base=RB_UNPACK;route_base_meta_n=route_base_meta_idx=route_prefetch_n=route_prefetch_idx=0;route_sched_slices=route_sched_yields=route_build_steps=0;nav_maneuver_reset();}
+static void ch_reset(void){if(chbucket&&chbucket_n)memzero(chbucket,chbucket_n*4u);chst_n=chhf_n=chhb_n=0;chheap_peak=0;route_expanded=0;route_best=route_meet=ROUTE_INF;route_n=0;route_head=0;route_result_cost=0;route_result_m=0;route_tick=0;route_arc_check_tick=0;route_offroute_checks=0;route_emit_arc=route_emit_phys=ROUTE_NOARC;route_build_phase=RB_IDLE;route_build_nf=route_build_nb=route_build_arc_idx=route_build_sp=0;route_build_copy=-1;route_build_after_base=RB_UNPACK;route_base_meta_n=route_base_meta_idx=0;route_sched_slices=route_sched_yields=route_build_steps=0;nav_maneuver_reset();}
 static void ch_update_meet(struct ChState*s){if(!s||s->df==ROUTE_INF||s->db==ROUTE_INF)return;u32 v=sat_add32(s->df,s->db);if(v<route_best){route_best=v;route_meet=s->node;}}
 static u32 route_exact_from=ROUTE_NOARC,route_exact_to=ROUTE_NOARC;
 static void route_mark_query_start(void){route_query_lat=route_exact_from==ROUTE_NOARC?(atlas_probe?atlas_origin_lat:car_lat()):route_start_snap.snap_lat;route_query_lon=route_exact_from==ROUTE_NOARC?(atlas_probe?atlas_origin_lon:car_lon()):route_start_snap.snap_lon;}
@@ -2055,44 +1887,33 @@ static int ch_begin(const struct RouteSnapCandidate*start,const struct RouteSnap
 static int ch_retarget_start(const struct RouteSnapCandidate*start){if(!chst||!chbucket)return 0;chhf_n=0;route_best=route_meet=ROUTE_INF;route_n=0;route_head=0;route_result_cost=0;route_result_m=0;nav_maneuver_reset();route_expanded=0;route_tick=0;chheap_peak=chhb_n;/* A completed route leaves the cooperative finaliser in RB_DONE.
      * A start-only CH retarget must reset every start/path-build field just as
      * a fresh CH query would. Leaving RB_DONE set after clearing route_n
-     * makes the next routing slice finalise an empty path and raise R_ERROR. */route_emit_arc=route_emit_phys=ROUTE_NOARC;route_build_phase=RB_IDLE;route_build_nf=route_build_nb=route_build_arc_idx=route_build_sp=0;route_build_copy=-1;route_build_after_base=RB_UNPACK;route_base_meta_n=route_base_meta_idx=route_prefetch_n=route_prefetch_idx=0;route_build_u=route_build_i=route_build_total=route_build_cum=route_build_prev_cost=0;route_build_steps=0;for(u32 i=0;i<chst_n;i++){chst[i].df=ROUTE_INF;chst[i].pf=ROUTE_NOARC;chst[i].posf=0;chst[i].sf=0;}struct ChState*a=ch_state(start->node,1);if(!a)return 0;a->df=start->extra;if(!ch_heap_insert(0,a))return 0;route_mark_query_start();ch_update_meet(a);return 1;}
-static int ch_relax_entries(int dir,u32 du,struct QAdjEntry*qe,u32 cnt){
-  for(u32 j=0;j<cnt;j++){
-    u32 v=qe[j].other,aid=qe[j].arc;if(v>=rh.nodes||aid>=rh.ch_arcs)return-1;struct ChState*t=ch_state(v,1);if(!t)return-2;u32 nd=sat_add32(du,qe[j].cost);u32*dist=dir?&t->db:&t->df;
-    if(nd<*dist){*dist=nd;if(dir)t->pb=aid;else t->pf=aid;if(!ch_heap_insert(dir,t))return-2;ch_update_meet(t);}
-  }
-  return 1;
-}
-static int ch_qad5_ensure_off(struct ChState*s){if(!s||(qadjmode!=5&&qadjmode!=6&&qadjmode!=7))return 1;if(s->qoff!=ROUTE_NOARC)return s->qoff<qh5.data_bytes;u32 off=0;if(!qadj5_index_get(s->node,&off))return 0;s->qoff=off;return 1;}
-static int ch_qad5_stall(int dir,u32 du,struct QAdj5Entry*f,u16 fc,struct QAdj5Entry*r,u16 rc){struct QAdj5Entry*e=dir?f:r;u32 n=dir?fc:rc;for(u32 i=0;i<n;i++){if(e[i].other>=rh.nodes)continue;struct ChState*t=ch_state(e[i].other,0);if(!t)continue;u32 d=dir?t->db:t->df;if(d!=ROUTE_INF&&sat_add32(d,e[i].cost)<du)return 1;}return 0;}
-static int ch_relax_entries5(int dir,u32 du,struct QAdj5Entry*qe,u32 cnt){for(u32 j=0;j<cnt;j++){u32 v=qe[j].other,aid=qe[j].arc,off=qe[j].next_off;if(v>=rh.nodes||aid>=rh.ch_arcs||off>=qh5.data_bytes)return-1;struct ChState*t=ch_state(v,1);if(!t)return-2;if(t->qoff==ROUTE_NOARC)t->qoff=off;else if(t->qoff!=off)return-1;u32 nd=sat_add32(du,qe[j].cost);u32*dist=dir?&t->db:&t->df;if(nd<*dist){*dist=nd;if(dir)t->pb=aid;else t->pf=aid;if(!ch_heap_insert(dir,t))return-2;ch_update_meet(t);}}return 1;}
+     * makes the next routing slice finalise an empty path and raise R_ERROR. */route_emit_arc=route_emit_phys=ROUTE_NOARC;route_build_phase=RB_IDLE;route_build_nf=route_build_nb=route_build_arc_idx=route_build_sp=0;route_build_copy=-1;route_build_after_base=RB_UNPACK;route_base_meta_n=route_base_meta_idx=0;route_build_u=route_build_i=route_build_total=route_build_cum=route_build_prev_cost=0;route_build_steps=0;for(u32 i=0;i<chst_n;i++){chst[i].df=ROUTE_INF;chst[i].pf=ROUTE_NOARC;chst[i].posf=0;chst[i].sf=0;}struct ChState*a=ch_state(start->node,1);if(!a)return 0;a->df=start->extra;if(!ch_heap_insert(0,a))return 0;route_mark_query_start();ch_update_meet(a);return 1;}
+static int ch_qad7_ensure_off(struct ChState*s){if(!s||qadjmode!=7)return 1;if(s->qoff!=ROUTE_NOARC)return s->qoff<qh7_query.data_bytes;u32 off=0;if(!qadj7_index_get(s->node,&off))return 0;s->qoff=off;return 1;}
+static int ch_qad7_stall(int dir,u32 du,struct QAdj7Entry*f,u16 fc,struct QAdj7Entry*r,u16 rc){struct QAdj7Entry*e=dir?f:r;u32 n=dir?fc:rc;for(u32 i=0;i<n;i++){if(e[i].other>=rh.nodes)continue;struct ChState*t=ch_state(e[i].other,0);if(!t)continue;u32 d=dir?t->db:t->df;if(d!=ROUTE_INF&&sat_add32(d,e[i].cost)<du)return 1;}return 0;}
+static int ch_relax_entries7(int dir,u32 du,struct QAdj7Entry*qe,u32 cnt){for(u32 j=0;j<cnt;j++){u32 v=qe[j].other,aid=qe[j].arc,off=qe[j].next_off;if(v>=rh.nodes||aid>=rh.ch_arcs||off>=qh7_query.data_bytes)return-1;struct ChState*t=ch_state(v,1);if(!t)return-2;if(t->qoff==ROUTE_NOARC)t->qoff=off;else if(t->qoff!=off)return-1;u32 nd=sat_add32(du,qe[j].cost);u32*dist=dir?&t->db:&t->df;if(nd<*dist){*dist=nd;if(dir)t->pb=aid;else t->pf=aid;if(!ch_heap_insert(dir,t))return-2;ch_update_meet(t);}}return 1;}
 static u32 route_diag_qad7_expanded=0,route_diag_cpr_expanded=0;
 static int ch_expand_one(void){
   u32 mf=ch_heap_min(0),mb=ch_heap_min(1);
   if(route_best!=ROUTE_INF&&mf>=route_best&&mb>=route_best)return 2;
   if(mf==ROUTE_INF&&mb==ROUTE_INF)return route_best==ROUTE_INF?0:2;int dir=(mf>mb);struct ChState*s=ch_heap_pop(dir);if(!s)return 0;if((dir?s->sb:s->sf))return 1;if(dir)s->sb=1;else s->sf=1;ch_update_meet(s);u32 du=dir?s->db:s->df;
-  if(qadjmode>=5){if(qadjmode==7)route_diag_qad7_expanded++;if(!ch_qad5_ensure_off(s))return-1;u16 fc=0,rc=0;struct QAdj5Entry*f=0,*r=0;if(!qadj5_read_block_off(s->qoff,&fc,&rc,&f,&r))return-1;if(ch_qad5_stall(dir,du,f,fc,r,rc)){RPROF_INC(route_prof_stall);return 1;}route_expanded++;u32 cnt=dir?rc:fc;RPROF_ADD(route_prof_relax,cnt);if(!cnt)return 1;return ch_relax_entries5(dir,du,dir?r:f,cnt);}
+  if(qadjmode==7){route_diag_qad7_expanded++;if(!ch_qad7_ensure_off(s))return-1;u16 fc=0,rc=0;struct QAdj7Entry*f=0,*r=0;if(!qadj7_read_block_off(s->qoff,&fc,&rc,&f,&r))return-1;if(ch_qad7_stall(dir,du,f,fc,r,rc)){RPROF_INC(route_prof_stall);return 1;}route_expanded++;u32 cnt=dir?rc:fc;RPROF_ADD(route_prof_relax,cnt);if(!cnt)return 1;return ch_relax_entries7(dir,du,dir?r:f,cnt);}
   route_expanded++;
-  if(qadjmode>=3){u16 fc=0,rc=0;struct QAdjEntry*f=0,*r=0;if(!qadj3_read_block(s->node,&fc,&rc,&f,&r))return-1;u32 cnt=dir?rc:fc;RPROF_ADD(route_prof_relax,cnt);if(!cnt)return 1;return ch_relax_entries(dir,du,dir?r:f,cnt);}
-  if(qadjmode==2){u16 fc=0,rc=0;struct QAdjEntry*f=0,*r=0;int qr=qadj2_read_block(s->node,&fc,&rc,&f,&r);if(!qr)return-1;u32 cnt=dir?rc:fc;RPROF_ADD(route_prof_relax,cnt);if(!cnt)return 1;if(qr==1)return ch_relax_entries(dir,du,dir?r:f,cnt);u32 pos=0;while(pos<cnt){u32 take=cnt-pos;if(take>QADJ_CHUNK)take=QADJ_CHUNK;struct QAdjEntry*qe=0;if(!qadj2_read_entries(s->node,dir,fc,rc,pos,take,&qe))return-1;int z=ch_relax_entries(dir,du,qe,take);if(z<0)return z;pos+=take;}return 1;}
-  if(!qadjmode)route_diag_cpr_expanded++;struct CprNode n;if(!route_read_node(s->node,&n))return-1;u32 first=dir?n.upr_first:n.upf_first;u32 cnt=dir?n.upr_count:n.upf_count;RPROF_ADD(route_prof_relax,cnt);if(qadjmode==1){u32 pos=0;while(pos<cnt){u32 take=cnt-pos;if(take>QADJ_CHUNK)take=QADJ_CHUNK;struct QAdjEntry*qe=0;if(!qadj_read_chunk(dir,first+pos,take,&qe))return-1;int z=ch_relax_entries(dir,du,qe,take);if(z<0)return z;pos+=take;}return 1;}for(u32 i=0;i<cnt;i++){u32 aid;if(!route_read_upref(dir,first+i,&aid))return-1;struct CprArc a;if(!route_read_arc(aid,&a))return-1;u32 v=dir?a.from:a.to;struct ChState*t=ch_state(v,1);if(!t)return-2;u32 nd=sat_add32(du,a.cost);u32*dist=dir?&t->db:&t->df;if(nd<*dist){*dist=nd;if(dir)t->pb=aid;else t->pf=aid;if(!ch_heap_insert(dir,t))return-2;ch_update_meet(t);}}return 1;
+
+
+  if(!qadjmode)route_diag_cpr_expanded++;struct CprNode n;if(!route_read_node(s->node,&n))return-1;u32 first=dir?n.upr_first:n.upf_first;u32 cnt=dir?n.upr_count:n.upf_count;RPROF_ADD(route_prof_relax,cnt);for(u32 i=0;i<cnt;i++){u32 aid;if(!route_read_upref(dir,first+i,&aid))return-1;struct CprArc a;if(!route_read_arc(aid,&a))return-1;u32 v=dir?a.from:a.to;struct ChState*t=ch_state(v,1);if(!t)return-2;u32 nd=sat_add32(du,a.cost);u32*dist=dir?&t->db:&t->df;if(nd<*dist){*dist=nd;if(dir)t->pb=aid;else t->pf=aid;if(!ch_heap_insert(dir,t))return-2;ch_update_meet(t);}}return 1;
 }
 static int route_append_coord_cost_m(s32 lat,s32 lon,u32 node,u32 cost,u32 segm){if(route_n&&route_lat[route_n-1]==lat&&route_lon[route_n-1]==lon){route_seg_cost[route_n-1]=sat_add32(route_seg_cost[route_n-1],cost);if(route_emit_arc!=ROUTE_NOARC){route_seg_arc[route_n-1]=route_emit_arc;route_seg_phys[route_n-1]=route_emit_phys;}if(node!=ROUTE_NOARC)route_node[route_n-1]=node;return 1;}if(route_n>=ROUTE_PATH_MAX)return 0;route_lat[route_n]=lat;route_lon[route_n]=lon;route_node[route_n]=node;route_seg_cost[route_n]=route_n?cost:0;route_seg_m[route_n]=route_n?segm:0;route_seg_arc[route_n]=route_n?route_emit_arc:ROUTE_NOARC;route_seg_phys[route_n]=route_n?route_emit_phys:ROUTE_NOARC;if(route_n)route_result_m=sat_add32(route_result_m,segm);route_n++;return 1;}
 static int route_append_coord_cost(s32 lat,s32 lon,u32 node,u32 cost){u32 m=route_n?geo_seg_m(route_lat[route_n-1],route_lon[route_n-1],lat,lon):0;RPROF_INC(route_prof_div_fallback);return route_append_coord_cost_m(lat,lon,node,cost,m);}
 static int route_append_node_cost(u32 node,u32 cost){struct CprNode n;if(!route_read_node(node,&n))return 0;return route_append_coord_cost(n.lat,n.lon,node,cost);}
-static int ch_finish_begin(void){if(route_best==ROUTE_INF||route_meet==ROUTE_INF)return 0;if(route_prof_on&&!route_prof_build_ms){route_prof_build_ms=s_now_ms();route_prof_build_io=route_prof_io_bytes();}route_build_phase=RB_TRACE_F;route_build_nf=route_build_nb=route_build_arc_idx=route_build_sp=0;route_build_copy=-1;route_build_after_base=RB_UNPACK;route_base_meta_n=route_base_meta_idx=route_prefetch_n=route_prefetch_idx=0;route_build_u=route_meet;route_n=0;route_head=0;route_result_m=0;route_build_steps=0;return 1;}
+static int ch_finish_begin(void){if(route_best==ROUTE_INF||route_meet==ROUTE_INF)return 0;if(route_prof_on&&!route_prof_build_ms){route_prof_build_ms=s_now_ms();route_prof_build_io=route_prof_io_bytes();}route_build_phase=RB_TRACE_F;route_build_nf=route_build_nb=route_build_arc_idx=route_build_sp=0;route_build_copy=-1;route_build_after_base=RB_UNPACK;route_base_meta_n=route_base_meta_idx=0;route_build_u=route_meet;route_n=0;route_head=0;route_result_m=0;route_build_steps=0;return 1;}
 static int route_build_start_init(const struct RouteSnapCandidate*c){if(c->arc==ROUTE_NOARC){route_n=route_head=0;route_result_m=0;route_emit_arc=route_emit_phys=ROUTE_NOARC;return route_append_node_cost(c->node,0);}if(!route_read_base(c->arc,&route_build_base)||route_build_base.geom_count<2||c->geom_seg+1u>=route_build_base.geom_count)return 0;route_n=0;route_head=0;route_result_m=0;route_emit_arc=route_emit_phys=ROUTE_NOARC;if(!route_append_coord_cost(route_query_lat,route_query_lon,ROUTE_NOARC,0))return 0;if(!route_append_coord_cost(c->snap_lat,c->snap_lon,ROUTE_NOARC,0))return 0;route_emit_arc=c->arc;route_emit_phys=route_build_base.geom_first;route_build_i=c->geom_seg+1u;route_build_total=c->total_u>c->along_u?c->total_u-c->along_u:0;route_build_cum=route_build_prev_cost=0;route_build_prev_point.lat=c->snap_lat;route_build_prev_point.lon=c->snap_lon;return 1;}
 static int route_build_start_point(const struct RouteSnapCandidate*c){if(c->arc==ROUTE_NOARC)return 2;if(route_build_i>=route_build_base.geom_count)return 2;struct CprPoint p;if(!route_base_point(&route_build_base,route_build_i,&p))return 0;route_build_cum=sat_add32(route_build_cum,route_geom_seg_units(&route_build_prev_point,&p));u32 cc=(route_build_i+1u==route_build_base.geom_count)?c->extra:route_cost_for_units(c->extra,route_build_cum,route_build_total),cost=cc>=route_build_prev_cost?cc-route_build_prev_cost:0;u32 node=(route_build_i+1u==route_build_base.geom_count)?c->node:ROUTE_NOARC;if(!route_append_coord_cost(p.lat,p.lon,node,cost))return 0;route_build_prev_cost=cc;route_build_prev_point=p;route_build_i++;return route_build_i>=route_build_base.geom_count?2:1;}
 static int route_build_base_begin(u32 aid,const struct CprArc*a){(void)aid;if(!a||a->flags&CPR_ARC_SHORTCUT||a->left>=rh.base_edges||!route_read_base(a->left,&route_build_base)||route_build_base.geom_count<2)return 0;route_emit_arc=a->left;route_emit_phys=route_build_base.geom_first;route_build_arc=*a;route_build_i=1;route_build_total=route_build_cum=route_build_prev_cost=0;route_build_geom_cached=route_build_base.geom_count<=ROUTE_GEOM_TMP_MAX;if(!route_base_point(&route_build_base,0,&route_build_prev_point))return 0;if(route_build_geom_cached){route_geom_tmp[0]=route_build_prev_point;route_geom_cum_tmp[0]=0;}route_build_phase=RB_BASE_TOTAL;return 1;}
 static struct QRec7 route_build_q7;
 static int route_build_base_begin_qrec7(const struct QRec7*q){if(!q||qrec7_flags(q)&CPR_ARC_SHORTCUT||q->left>=rh.base_edges)return 0;u16 gc=qrec7_geom_count(q);if(gc<2||q->packet_off==0xffffffffu)return 0;route_build_q7=*q;memzero(&route_build_base,sizeof(route_build_base));route_build_base.geom_first=q->geom_first;route_build_base.geom_count=gc;route_build_base.flags=qrec7_base_flags(q);route_build_base.cls=qrec7_base_cls(q);route_build_base.to_state=qrec7_to(q);route_emit_arc=q->left;route_emit_phys=q->geom_first;memzero(&route_build_arc,sizeof(route_build_arc));route_build_arc.cost=q->cost;route_build_arc.to=qrec7_to(q);route_build_arc.left=q->left;route_build_i=1;route_build_total=q->right_geom;route_build_cum=route_build_prev_cost=0;route_build_geom_cached=0;u32 raw=(route_build_base.flags&CPR_ARC_GEOM_REVERSED)?gc-1u:0u,qf=0,qr=0;u16 mf=0,mr=0;if(!qadj7_packet_point(q,raw,&route_build_prev_point,&qf,&qr,&mf,&mr))return 0;route_build_phase=RB_BASE_OUTPUT;return 1;}
-static int route_build_base_begin_qrec4(const struct QRec4*q){if(!q||qrec4_flags(q)&CPR_ARC_SHORTCUT||q->left>=rh.base_edges)return 0;u16 gc=qrec4_geom_count(q);if(gc<2)return 0;memzero(&route_build_base,sizeof(route_build_base));route_build_base.geom_first=q->geom_first;route_build_base.geom_count=gc;route_build_base.flags=qrec4_base_flags(q);route_build_base.cls=qrec4_base_cls(q);route_build_base.to_state=qrec4_to(q);route_emit_arc=q->left;route_emit_phys=q->geom_first;memzero(&route_build_arc,sizeof(route_build_arc));route_build_arc.cost=q->cost;route_build_arc.to=qrec4_to(q);route_build_arc.left=q->left;route_build_i=1;route_build_total=q->right_geom;route_build_cum=route_build_prev_cost=0;route_build_geom_cached=0;if(!route_build_total||!route_base_point(&route_build_base,0,&route_build_prev_point))return 0;route_build_phase=RB_BASE_OUTPUT;return 1;}
-static int route_build_base_begin_qrec(const struct QRec*q){if(!q||qrec_flags(q)&CPR_ARC_SHORTCUT||q->left>=rh.base_edges||!route_read_base(q->left,&route_build_base)||route_build_base.geom_count<2)return 0;route_emit_arc=q->left;route_emit_phys=route_build_base.geom_first;memzero(&route_build_arc,sizeof(route_build_arc));route_build_arc.cost=q->cost;route_build_arc.to=qrec_to(q);route_build_arc.left=q->left;route_build_i=1;route_build_total=q->right_geom;route_build_cum=route_build_prev_cost=0;route_build_geom_cached=0;if(!route_base_point(&route_build_base,0,&route_build_prev_point))return 0;/* QAD3 gives the exact builder-computed geometry total, so normal base arcs skip RB_BASE_TOTAL entirely. A zero total falls back to the legacy pass for degenerate geometry. */if(route_build_total){route_build_phase=RB_BASE_OUTPUT;return 1;}return route_build_base_begin(0,&route_build_arc);}
 static int route_build_base_total_step(void){if(route_build_i>=route_build_base.geom_count){route_build_i=1;route_build_cum=route_build_prev_cost=0;if(route_build_geom_cached){route_build_prev_point=route_geom_tmp[0];RPROF_INC(route_prof_geom_reuse_arcs);RPROF_ADD(route_prof_geom_reuse_pts,route_build_base.geom_count);}else if(!route_base_point(&route_build_base,0,&route_build_prev_point))return 0;route_build_phase=RB_BASE_OUTPUT;return 1;}struct CprPoint p;if(!route_base_point(&route_build_base,route_build_i,&p))return 0;route_build_total=sat_add32(route_build_total,route_geom_seg_units(&route_build_prev_point,&p));if(route_build_geom_cached){route_geom_tmp[route_build_i]=p;route_geom_cum_tmp[route_build_i]=route_build_total;}route_build_prev_point=p;route_build_i++;return 1;}
-static void route_prefetch_prepare(void){route_prefetch_n=route_prefetch_idx=0;if(qadjmode==7||qadjmode<5||route_base_meta_n<1)return;u32 file_end=rh.geom_off+rh.geom_points*(u32)sizeof(struct CprPoint);for(int i=0;i<route_base_meta_n;i++){struct QRec4*q=(struct QRec4*)&route_base_meta[i];u32 gc=qrec4_geom_count(q);if(gc<2)continue;u32 a=rh.geom_off+q->geom_first*(u32)sizeof(struct CprPoint),b=a+gc*(u32)sizeof(struct CprPoint)-1u;if(b<a||b>=file_end)continue;u32 pa=a>>12,pb=b>>12;for(u32 pg=pa;pg<=pb;pg++){if(route_prefetch_n>=ROUTE_PATH_MAX){route_prefetch_n=route_prefetch_idx=0;return;}route_prefetch_page[route_prefetch_n++]=pg;}}for(int gap=route_prefetch_n>>1;gap>0;gap>>=1)for(int i=gap;i<route_prefetch_n;i++){u32 v=route_prefetch_page[i];int j=i;while(j>=gap&&route_prefetch_page[j-gap]>v){route_prefetch_page[j]=route_prefetch_page[j-gap];j-=gap;}route_prefetch_page[j]=v;}int w=0;for(int i=0;i<route_prefetch_n;i++)if(!w||route_prefetch_page[i]!=route_prefetch_page[w-1])route_prefetch_page[w++]=route_prefetch_page[i];route_prefetch_n=w;RPROF_ADD(route_prof_prefetch_pages,route_prefetch_n);}
-static int route_prefetch_step(void){if(route_prefetch_idx>=route_prefetch_n)return 2;if(route_geom_map_ok){int n=0;while(route_prefetch_idx<route_prefetch_n&&n<8){u32 pg=route_prefetch_page[route_prefetch_idx++],abs=pg<<12;if(abs>=route_geom_map_fileoff){u32 off=abs-route_geom_map_fileoff;if(off<route_geom_map_bytes){volatile u8 x=route_geom_map[off];(void)x;}}n++;}return route_prefetch_idx>=route_prefetch_n?2:1;}u32 pg=route_prefetch_page[route_prefetch_idx],run=1;while(route_prefetch_idx+(int)run<route_prefetch_n&&run<8u&&route_prefetch_page[route_prefetch_idx+run]==pg+run)run++;u32 abs=pg<<12,file_end=rh.geom_off+rh.geom_points*(u32)sizeof(struct CprPoint);if(abs>=file_end){route_prefetch_idx+=(int)run;return route_prefetch_idx>=route_prefetch_n?2:1;}u32 bytes=run*4096u;if(bytes>file_end-abs)bytes=file_end-abs;s_lseek(routefd,(long)abs,SEEK_SET_);long nr=s_read(routefd,route_prefetch_scratch,bytes);if(nr>0){RPROF_INC(route_prof_prefetch_reads);RPROF_ADD(route_prof_prefetch_bytes,nr);}route_prefetch_idx+=(int)run;return route_prefetch_idx>=route_prefetch_n?2:1;}
 static int route_build_finish_bases(void){if(route_repair_active){if(!route_repair_validate_anchor())return 0;route_repair_suffix_copy=1;route_build_phase=RB_REPAIR_SUFFIX;return 1;}route_build_phase=RB_DEST_INIT;return 1;}
-static int route_build_base_output_step(void){if(route_build_i>=route_build_base.geom_count){route_build_phase=route_build_after_base;return 1;}struct CprPoint p;u32 cc=0,segm=0;int fast=0;if(qadjmode==7){u32 raw=(route_build_base.flags&CPR_ARC_GEOM_REVERSED)?(route_build_base.geom_count-1u-route_build_i):route_build_i,qf=0,qr=0;u16 mf=0,mr=0;if(qadj7_packet_point(&route_build_q7,raw,&p,&qf,&qr,&mf,&mr)){u32 q=(route_build_base.flags&CPR_ARC_GEOM_REVERSED)?qr:qf;segm=(route_build_base.flags&CPR_ARC_GEOM_REVERSED)?mr:mf;cc=(route_build_i+1u==route_build_base.geom_count)?route_build_arc.cost:route_mul_q16(route_build_arc.cost,q);fast=1;}}else{if(!route_base_point(&route_build_base,route_build_i,&p))return 0;if(qadjmode==6&&qadj_map_ok){u32 raw=(route_build_base.flags&CPR_ARC_GEOM_REVERSED)?(route_build_base.geom_count-1u-route_build_i):route_build_i;u32 qf=0,qr=0;u16 mf=0,mr=0;if(qadj6_gmeta(raw,&qf,&qr,&mf,&mr)){u32 q=(route_build_base.flags&CPR_ARC_GEOM_REVERSED)?qr:qf;fast=1;if(route_build_base.flags&CPR_ARC_GEOM_REVERSED){u32 sr=raw+1u,tf=0,tr=0;u16 tmf=0,tmr=0;if(sr<qh6.geom_points&&qadj6_gmeta(sr,&tf,&tr,&tmf,&tmr))segm=tmr;else fast=0;}else segm=mf;if(fast){if(route_build_i+1u==route_build_base.geom_count)cc=route_build_arc.cost;else cc=route_mul_q16(route_build_arc.cost,q);}}}}
+static int route_build_base_output_step(void){if(route_build_i>=route_build_base.geom_count){route_build_phase=route_build_after_base;return 1;}struct CprPoint p;u32 cc=0,segm=0;int fast=0;if(qadjmode==7){u32 raw=(route_build_base.flags&CPR_ARC_GEOM_REVERSED)?(route_build_base.geom_count-1u-route_build_i):route_build_i,qf=0,qr=0;u16 mf=0,mr=0;if(qadj7_packet_point(&route_build_q7,raw,&p,&qf,&qr,&mf,&mr)){u32 q=(route_build_base.flags&CPR_ARC_GEOM_REVERSED)?qr:qf;segm=(route_build_base.flags&CPR_ARC_GEOM_REVERSED)?mr:mf;cc=(route_build_i+1u==route_build_base.geom_count)?route_build_arc.cost:route_mul_q16(route_build_arc.cost,q);fast=1;}}else if(!route_base_point(&route_build_base,route_build_i,&p))return 0;
  if(!fast){if(qadjmode==7){if(!route_base_point(&route_build_base,route_build_i,&p))return 0;}route_build_cum=sat_add32(route_build_cum,route_geom_seg_units(&route_build_prev_point,&p));cc=(route_build_i+1u==route_build_base.geom_count)?route_build_arc.cost:route_cost_for_units(route_build_arc.cost,route_build_cum,route_build_total);segm=geo_seg_m(route_build_prev_point.lat,route_build_prev_point.lon,p.lat,p.lon);RPROF_INC(route_prof_div_fallback);}else{RPROF_INC(route_prof_mfast);}u32 cost=cc>=route_build_prev_cost?cc-route_build_prev_cost:0;u32 node=(route_build_i+1u==route_build_base.geom_count)?route_build_arc.to:ROUTE_NOARC;if(!route_append_coord_cost_m(p.lat,p.lon,node,cost,segm))return 0;route_build_prev_cost=cc;route_build_prev_point=p;route_build_i++;if(route_build_i>=route_build_base.geom_count)route_build_phase=route_build_after_base;return 1;}
 static int route_build_dest_init(const struct RouteSnapCandidate*c){if(c->arc==ROUTE_NOARC){route_emit_arc=route_emit_phys=ROUTE_NOARC;return 1;}if(!route_read_base(c->arc,&route_build_base)||route_build_base.geom_count<2||c->geom_seg+1u>=route_build_base.geom_count)return 0;route_emit_arc=c->arc;route_emit_phys=route_build_base.geom_first;route_build_i=1;route_build_total=c->along_u;route_build_cum=route_build_prev_cost=0;if(!route_base_point(&route_build_base,0,&route_build_prev_point))return 0;return 1;}
 static int route_build_dest_point(const struct RouteSnapCandidate*c){if(c->arc==ROUTE_NOARC)return route_append_node_cost(c->node,0)?2:0;if(route_build_i<=c->geom_seg&&route_build_i<route_build_base.geom_count){struct CprPoint p;if(!route_base_point(&route_build_base,route_build_i,&p))return 0;route_build_cum=sat_add32(route_build_cum,route_geom_seg_units(&route_build_prev_point,&p));u32 cc=route_cost_for_units(c->extra,route_build_cum,route_build_total),cost=cc>=route_build_prev_cost?cc-route_build_prev_cost:0;if(!route_append_coord_cost(p.lat,p.lon,ROUTE_NOARC,cost))return 0;route_build_prev_cost=cc;route_build_prev_point=p;route_build_i++;return 1;}u32 cost=c->extra>=route_build_prev_cost?c->extra-route_build_prev_cost:0;if(!route_append_coord_cost(c->snap_lat,c->snap_lon,ROUTE_NOARC,cost))return 0;return 2;}
@@ -2106,27 +1927,26 @@ case RB_TRACE_F:{
     if(!s)return 0;
     if(s->pf==ROUTE_NOARC){int si=route_repair_start_for_node(route_build_u);if(si<0)return 0;route_repair_chosen_start=si;route_build_copy=route_build_nf-1;route_build_phase=RB_COPY_F;return 1;}
   }else if(route_build_u==start->node){route_build_copy=route_build_nf-1;route_build_phase=RB_COPY_F;return 1;}
-  if(route_build_nf>=ROUTE_PATH_MAX||!s||s->pf==ROUTE_NOARC)return 0;u32 fr=0;if(qadjmode==7){struct QRec7 q;if(!qadj7_read_qrec(s->pf,&q))return 0;fr=q.from;}else if(qadjmode>=4){struct QRec4 q;if(!qadj4_read_qrec(s->pf,&q))return 0;fr=q.from;}else if(qadjmode==3){struct QRec q;if(!qadj3_read_qrec(s->pf,&q))return 0;fr=q.from;}else{struct CprArc a;if(!route_read_arc(s->pf,&a))return 0;fr=a.from;}ch_arc_tmp[route_build_nf++]=s->pf;route_build_u=fr;return 1;}
+  if(route_build_nf>=ROUTE_PATH_MAX||!s||s->pf==ROUTE_NOARC)return 0;u32 fr=0;if(qadjmode==7){struct QRec7 q;if(!qadj7_read_qrec(s->pf,&q))return 0;fr=q.from;}else{struct CprArc a;if(!route_read_arc(s->pf,&a))return 0;fr=a.from;}ch_arc_tmp[route_build_nf++]=s->pf;route_build_u=fr;return 1;}
 case RB_COPY_F:if(route_build_copy<0){route_build_u=route_meet;route_build_phase=RB_TRACE_B;return 1;}if(route_build_nb>=ROUTE_PATH_MAX)return 0;ch_arc_path[route_build_nb++]=ch_arc_tmp[route_build_copy--];return 1;
-case RB_TRACE_B:{struct ChState*s=ch_state(route_build_u,0);if(!s||s->db==ROUTE_INF)return 0;if(s->pb==ROUTE_NOARC){route_build_phase=RB_START_INIT;return 1;}if(route_build_nb>=ROUTE_PATH_MAX)return 0;u32 to=0;if(qadjmode==7){struct QRec7 q;if(!qadj7_read_qrec(s->pb,&q))return 0;to=qrec7_to(&q);}else if(qadjmode>=4){struct QRec4 q;if(!qadj4_read_qrec(s->pb,&q))return 0;to=qrec4_to(&q);}else if(qadjmode==3){struct QRec q;if(!qadj3_read_qrec(s->pb,&q))return 0;to=qrec_to(&q);}else{struct CprArc a;if(!route_read_arc(s->pb,&a))return 0;to=a.to;}ch_arc_path[route_build_nb++]=s->pb;route_build_u=to;}return 1;
+case RB_TRACE_B:{struct ChState*s=ch_state(route_build_u,0);if(!s||s->db==ROUTE_INF)return 0;if(s->pb==ROUTE_NOARC){route_build_phase=RB_START_INIT;return 1;}if(route_build_nb>=ROUTE_PATH_MAX)return 0;u32 to=0;if(qadjmode==7){struct QRec7 q;if(!qadj7_read_qrec(s->pb,&q))return 0;to=qrec7_to(&q);}else{struct CprArc a;if(!route_read_arc(s->pb,&a))return 0;to=a.to;}ch_arc_path[route_build_nb++]=s->pb;route_build_u=to;}return 1;
 case RB_START_INIT:{const struct RouteSnapCandidate*rs=route_repair_active?(route_repair_chosen_start>=0&&route_repair_chosen_start<route_repair_start_n?&route_repair_start[route_repair_chosen_start]:0):start;if(!rs||!route_build_start_init(rs))return 0;route_build_phase=RB_START_POINTS;return 1;}
 case RB_START_POINTS:{const struct RouteSnapCandidate*rs=route_repair_active?&route_repair_start[route_repair_chosen_start]:start;int r=route_build_start_point(rs);if(!r)return 0;if(r==2)route_build_phase=RB_UNPACK;return 1;}
 case RB_UNPACK:
-  if(route_build_sp){u32 x=ch_unpack_stack[--route_build_sp];if(qadjmode==7){struct QRec7 q;if(!qadj7_read_qrec(x,&q))return 0;if(qrec7_flags(&q)&CPR_ARC_SHORTCUT){if(route_build_sp+2>ROUTE_PATH_MAX)return 0;ch_unpack_stack[route_build_sp++]=q.right_geom;ch_unpack_stack[route_build_sp++]=q.left;return 1;}if(route_base_meta_n>=ROUTE_PATH_MAX)return 0;route_base_meta[route_base_meta_n++]=q;return 1;}else if(qadjmode>=4){struct QRec4 q;if(!qadj4_read_qrec(x,&q))return 0;if(qrec4_flags(&q)&CPR_ARC_SHORTCUT){if(route_build_sp+2>ROUTE_PATH_MAX)return 0;ch_unpack_stack[route_build_sp++]=q.right_geom;ch_unpack_stack[route_build_sp++]=q.left;return 1;}if(qadjmode>=5){if(route_base_meta_n>=ROUTE_PATH_MAX)return 0;qrec7_from4(&route_base_meta[route_base_meta_n++],&q);return 1;}route_build_after_base=RB_UNPACK;return route_build_base_begin_qrec4(&q)?1:0;}else if(qadjmode==3){struct QRec q;if(!qadj3_read_qrec(x,&q))return 0;if(qrec_flags(&q)&CPR_ARC_SHORTCUT){if(route_build_sp+2>ROUTE_PATH_MAX)return 0;ch_unpack_stack[route_build_sp++]=q.right_geom;ch_unpack_stack[route_build_sp++]=q.left;return 1;}route_build_after_base=RB_UNPACK;return route_build_base_begin_qrec(&q)?1:0;}else{struct CprArc a;if(!route_read_arc(x,&a))return 0;if(a.flags&CPR_ARC_SHORTCUT){if(route_build_sp+2>ROUTE_PATH_MAX)return 0;ch_unpack_stack[route_build_sp++]=a.right;ch_unpack_stack[route_build_sp++]=a.left;return 1;}route_build_after_base=RB_UNPACK;return route_build_base_begin(x,&a)?1:0;}}
+  if(route_build_sp){u32 x=ch_unpack_stack[--route_build_sp];if(qadjmode==7){struct QRec7 q;if(!qadj7_read_qrec(x,&q))return 0;if(qrec7_flags(&q)&CPR_ARC_SHORTCUT){if(route_build_sp+2>ROUTE_PATH_MAX)return 0;ch_unpack_stack[route_build_sp++]=q.right_geom;ch_unpack_stack[route_build_sp++]=q.left;return 1;}if(route_base_meta_n>=ROUTE_PATH_MAX)return 0;route_base_meta[route_base_meta_n++]=q;return 1;}else{struct CprArc a;if(!route_read_arc(x,&a))return 0;if(a.flags&CPR_ARC_SHORTCUT){if(route_build_sp+2>ROUTE_PATH_MAX)return 0;ch_unpack_stack[route_build_sp++]=a.right;ch_unpack_stack[route_build_sp++]=a.left;return 1;}route_build_after_base=RB_UNPACK;return route_build_base_begin(x,&a)?1:0;}}
   if(route_build_arc_idx<route_build_nb){ch_unpack_stack[route_build_sp++]=ch_arc_path[route_build_arc_idx++];return 1;}
-  if(qadjmode>=5){route_base_meta_idx=0;if(qadjmode==7){route_build_phase=RB_BASE_NEXT;return 1;}route_prefetch_prepare();route_build_phase=route_prefetch_n?RB_PREFETCH:RB_BASE_NEXT;return 1;}
+  if(qadjmode==7){route_base_meta_idx=0;route_build_phase=RB_BASE_NEXT;return 1;}
   return route_build_finish_bases();
-case RB_PREFETCH:{int r=route_prefetch_step();if(!r)return 0;if(r==2)route_build_phase=RB_BASE_NEXT;return 1;}
-case RB_BASE_NEXT:if(route_base_meta_idx<route_base_meta_n){route_build_after_base=RB_BASE_NEXT;if(qadjmode==7)return route_build_base_begin_qrec7(&route_base_meta[route_base_meta_idx++])?1:0;return route_build_base_begin_qrec4((struct QRec4*)&route_base_meta[route_base_meta_idx++])?1:0;}return route_build_finish_bases();
+case RB_BASE_NEXT:if(route_base_meta_idx<route_base_meta_n){route_build_after_base=RB_BASE_NEXT;return route_build_base_begin_qrec7(&route_base_meta[route_base_meta_idx++])?1:0;}return route_build_finish_bases();
 case RB_BASE_TOTAL:return route_build_base_total_step()?1:0;
-case RB_BASE_OUTPUT:{int n=qadjmode==7?16:(qadjmode==6?8:1);while(n--){if(!route_build_base_output_step())return 0;if(route_build_phase!=RB_BASE_OUTPUT)break;}return 1;}
+case RB_BASE_OUTPUT:{int n=qadjmode==7?16:1;while(n--){if(!route_build_base_output_step())return 0;if(route_build_phase!=RB_BASE_OUTPUT)break;}return 1;}
 case RB_DEST_INIT:if(!route_build_dest_init(dest))return 0;route_build_phase=RB_DEST_POINTS;return 1;
 case RB_DEST_POINTS:{int r=route_build_dest_point(dest);if(!r)return 0;if(r==2){route_result_cost=route_best;route_build_phase=RB_DONE;return route_n>0?2:0;}return 1;}
 case RB_REPAIR_SUFFIX:return route_repair_suffix_step();
 case RB_DONE:return route_n>0?2:0;default:return 0;}}
 
 static u32 route_used_bytes(void){return chbucket_n*4u+chst_n*(u32)sizeof(struct ChState)+(chhf_n+chhb_n+2u)*4u;}
-static void route_debug_summary(const char*tag){if(!pref.debug)return;char b[256];b[0]=0;appendstr(b,sizeof(b),tag);appendstr(b,sizeof(b)," ALG=CH4 STATES=");append_int(b,sizeof(b),(int)chst_n);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)chst_cap);appendstr(b,sizeof(b)," EXP=");append_int(b,sizeof(b),(int)route_expanded);appendstr(b,sizeof(b)," HEAP=");append_int(b,sizeof(b),(int)chheap_peak);appendstr(b,sizeof(b)," USEDKB=");append_int(b,sizeof(b),(int)(route_used_bytes()>>10));appendstr(b,sizeof(b)," ARENAKB=");append_int(b,sizeof(b),(int)(route_arena_bytes>>10));appendstr(b,sizeof(b)," AVAILKB=");append_int(b,sizeof(b),(int)route_mem_avail_kb);appendstr(b,sizeof(b)," SLICES=");append_int(b,sizeof(b),(int)route_sched_slices);appendstr(b,sizeof(b)," YIELD=");append_int(b,sizeof(b),(int)route_sched_yields);appendstr(b,sizeof(b)," BUILD=");append_int(b,sizeof(b),(int)route_build_steps);debug_log(STATE_LOG,b);if(!route_prof_on)return;u32 now=s_now_ms(),wall=now-route_prof_start_ms,pre=route_prof_query_ms?route_prof_query_ms-route_prof_start_ms:wall,query=route_prof_query_ms?(route_prof_build_ms?route_prof_build_ms-route_prof_query_ms:now-route_prof_query_ms):0,build=route_prof_build_ms?now-route_prof_build_ms:0,cpu=route_prof_cpu_ms;if(route_prof_slice_ms)cpu+=now-route_prof_slice_ms;u32 io=route_prof_io_bytes(),preio=route_prof_pre_io,qio=route_prof_build_io>=preio?route_prof_build_io-preio:0,bio=io>=route_prof_build_io?io-route_prof_build_io:0;b[0]=0;appendstr(b,sizeof(b),"ROUTE PROF WALLMS=");append_int(b,sizeof(b),(int)wall);appendstr(b,sizeof(b)," PREMS=");append_int(b,sizeof(b),(int)pre);appendstr(b,sizeof(b)," QUERYMS=");append_int(b,sizeof(b),(int)query);appendstr(b,sizeof(b)," BUILDMS=");append_int(b,sizeof(b),(int)build);appendstr(b,sizeof(b)," CPUMS=");append_int(b,sizeof(b),(int)cpu);appendstr(b,sizeof(b)," RELAX=");append_int(b,sizeof(b),(int)route_prof_relax);appendstr(b,sizeof(b)," PATH=");append_int(b,sizeof(b),route_n);appendstr(b,sizeof(b)," PREKB=");append_int(b,sizeof(b),(int)(preio>>10));appendstr(b,sizeof(b)," QKB=");append_int(b,sizeof(b),(int)(qio>>10));appendstr(b,sizeof(b)," BKB=");append_int(b,sizeof(b),(int)(bio>>10));debug_log(STATE_LOG,b);b[0]=0;appendstr(b,sizeof(b),"CPR PROF N=");append_int(b,sizeof(b),(int)route_prof_n_hit);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)route_prof_n_miss);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)(route_prof_n_bytes>>10));appendstr(b,sizeof(b)," B=");append_int(b,sizeof(b),(int)route_prof_b_hit);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)route_prof_b_miss);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)(route_prof_b_bytes>>10));appendstr(b,sizeof(b)," A=");append_int(b,sizeof(b),(int)route_prof_a_hit);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)route_prof_a_miss);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)(route_prof_a_bytes>>10));appendstr(b,sizeof(b)," G=");append_int(b,sizeof(b),(int)route_prof_g_hit);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)route_prof_g_miss);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)(route_prof_g_bytes>>10));appendstr(b,sizeof(b)," T=");append_int(b,sizeof(b),(int)route_prof_tile_reads);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)(route_prof_tile_bytes>>10));debug_log(STATE_LOG,b);b[0]=0;appendstr(b,sizeof(b),"CPR REF F=");for(int i=0;i<4;i++){if(i)appendstr(b,sizeof(b),i==1?" R=":(i==2?" T=":" S="));append_int(b,sizeof(b),(int)route_prof_r_hit[i]);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)route_prof_r_miss[i]);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)(route_prof_r_bytes[i]>>10));}debug_log(STATE_LOG,b);b[0]=0;appendstr(b,sizeof(b),"QADJ PROF MODE=");append_int(b,sizeof(b),qadjmode);appendstr(b,sizeof(b)," READS=");append_int(b,sizeof(b),(int)route_prof_qadj_reads);appendstr(b,sizeof(b)," KB=");append_int(b,sizeof(b),(int)(route_prof_qadj_bytes>>10));appendstr(b,sizeof(b)," IDXKB=");append_int(b,sizeof(b),(int)(qadj_index_bytes>>10));appendstr(b,sizeof(b)," VIDXKB=");append_int(b,sizeof(b),(int)((qadjmode>=5?qh5.index_bytes:0u)>>10));appendstr(b,sizeof(b)," MMAP=");append_int(b,sizeof(b),qadj_map_ok);appendstr(b,sizeof(b)," STALL=");append_int(b,sizeof(b),(int)route_prof_stall);appendstr(b,sizeof(b)," QMAP=");append_int(b,sizeof(b),(int)route_prof_qmap_access);appendstr(b,sizeof(b)," IDXIOKB=");append_int(b,sizeof(b),(int)(route_prof_qidx_bytes>>10));debug_log(STATE_LOG,b);b[0]=0;appendstr(b,sizeof(b),"QREC PROF H=");append_int(b,sizeof(b),(int)route_prof_qrec_hit);appendstr(b,sizeof(b)," M=");append_int(b,sizeof(b),(int)route_prof_qrec_miss);appendstr(b,sizeof(b)," KB=");append_int(b,sizeof(b),(int)(route_prof_qrec_bytes>>10));debug_log(STATE_LOG,b);b[0]=0;appendstr(b,sizeof(b),"BUILD PROF TF=");append_int(b,sizeof(b),(int)route_prof_build_phase_steps[RB_TRACE_F]);appendstr(b,sizeof(b)," TB=");append_int(b,sizeof(b),(int)route_prof_build_phase_steps[RB_TRACE_B]);appendstr(b,sizeof(b)," UNP=");append_int(b,sizeof(b),(int)route_prof_build_phase_steps[RB_UNPACK]);appendstr(b,sizeof(b)," PF=");append_int(b,sizeof(b),(int)route_prof_build_phase_steps[RB_PREFETCH]);appendstr(b,sizeof(b)," BASE=");append_int(b,sizeof(b),route_base_meta_n);appendstr(b,sizeof(b)," GT=");append_int(b,sizeof(b),(int)route_prof_build_phase_steps[RB_BASE_TOTAL]);appendstr(b,sizeof(b)," GO=");append_int(b,sizeof(b),(int)route_prof_build_phase_steps[RB_BASE_OUTPUT]);appendstr(b,sizeof(b)," SP=");append_int(b,sizeof(b),(int)route_prof_build_phase_steps[RB_START_POINTS]);appendstr(b,sizeof(b)," DP=");append_int(b,sizeof(b),(int)route_prof_build_phase_steps[RB_DEST_POINTS]);debug_log(STATE_LOG,b);b[0]=0;appendstr(b,sizeof(b),"BUILD IO MMAPG=");append_int(b,sizeof(b),route_geom_map_ok);appendstr(b,sizeof(b)," GMAP=");append_int(b,sizeof(b),(int)route_prof_gmap_access);appendstr(b,sizeof(b)," PFPAGES=");append_int(b,sizeof(b),(int)route_prof_prefetch_pages);appendstr(b,sizeof(b)," PFREADS=");append_int(b,sizeof(b),(int)route_prof_prefetch_reads);appendstr(b,sizeof(b)," PFKB=");append_int(b,sizeof(b),(int)(route_prof_prefetch_bytes>>10));debug_log(STATE_LOG,b);b[0]=0;appendstr(b,sizeof(b),"BUILD ARITH GMETA=");append_int(b,sizeof(b),(int)route_prof_gmeta);appendstr(b,sizeof(b)," FASTM=");append_int(b,sizeof(b),(int)route_prof_mfast);appendstr(b,sizeof(b)," FALLBACK=");append_int(b,sizeof(b),(int)route_prof_div_fallback);appendstr(b,sizeof(b)," ROUTEM=");append_int(b,sizeof(b),(int)route_result_m);appendstr(b,sizeof(b)," PKTPTS=");append_int(b,sizeof(b),(int)route_prof_packet_pts);debug_log(STATE_LOG,b);}
+static void route_debug_summary(const char*tag){if(!pref.debug)return;char b[256];b[0]=0;appendstr(b,sizeof(b),tag);appendstr(b,sizeof(b)," ALG=CH4 STATES=");append_int(b,sizeof(b),(int)chst_n);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)chst_cap);appendstr(b,sizeof(b)," EXP=");append_int(b,sizeof(b),(int)route_expanded);appendstr(b,sizeof(b)," HEAP=");append_int(b,sizeof(b),(int)chheap_peak);appendstr(b,sizeof(b)," USEDKB=");append_int(b,sizeof(b),(int)(route_used_bytes()>>10));appendstr(b,sizeof(b)," ARENAKB=");append_int(b,sizeof(b),(int)(route_arena_bytes>>10));appendstr(b,sizeof(b)," AVAILKB=");append_int(b,sizeof(b),(int)route_mem_avail_kb);appendstr(b,sizeof(b)," SLICES=");append_int(b,sizeof(b),(int)route_sched_slices);appendstr(b,sizeof(b)," YIELD=");append_int(b,sizeof(b),(int)route_sched_yields);appendstr(b,sizeof(b)," BUILD=");append_int(b,sizeof(b),(int)route_build_steps);debug_log(STATE_LOG,b);if(!route_prof_on)return;u32 now=s_now_ms(),wall=now-route_prof_start_ms,pre=route_prof_query_ms?route_prof_query_ms-route_prof_start_ms:wall,query=route_prof_query_ms?(route_prof_build_ms?route_prof_build_ms-route_prof_query_ms:now-route_prof_query_ms):0,build=route_prof_build_ms?now-route_prof_build_ms:0,cpu=route_prof_cpu_ms;if(route_prof_slice_ms)cpu+=now-route_prof_slice_ms;u32 io=route_prof_io_bytes(),preio=route_prof_pre_io,qio=route_prof_build_io>=preio?route_prof_build_io-preio:0,bio=io>=route_prof_build_io?io-route_prof_build_io:0;b[0]=0;appendstr(b,sizeof(b),"ROUTE PROF WALLMS=");append_int(b,sizeof(b),(int)wall);appendstr(b,sizeof(b)," PREMS=");append_int(b,sizeof(b),(int)pre);appendstr(b,sizeof(b)," QUERYMS=");append_int(b,sizeof(b),(int)query);appendstr(b,sizeof(b)," BUILDMS=");append_int(b,sizeof(b),(int)build);appendstr(b,sizeof(b)," CPUMS=");append_int(b,sizeof(b),(int)cpu);appendstr(b,sizeof(b)," RELAX=");append_int(b,sizeof(b),(int)route_prof_relax);appendstr(b,sizeof(b)," PATH=");append_int(b,sizeof(b),route_n);appendstr(b,sizeof(b)," PREKB=");append_int(b,sizeof(b),(int)(preio>>10));appendstr(b,sizeof(b)," QKB=");append_int(b,sizeof(b),(int)(qio>>10));appendstr(b,sizeof(b)," BKB=");append_int(b,sizeof(b),(int)(bio>>10));debug_log(STATE_LOG,b);b[0]=0;appendstr(b,sizeof(b),"CPR PROF N=");append_int(b,sizeof(b),(int)route_prof_n_hit);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)route_prof_n_miss);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)(route_prof_n_bytes>>10));appendstr(b,sizeof(b)," B=");append_int(b,sizeof(b),(int)route_prof_b_hit);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)route_prof_b_miss);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)(route_prof_b_bytes>>10));appendstr(b,sizeof(b)," A=");append_int(b,sizeof(b),(int)route_prof_a_hit);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)route_prof_a_miss);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)(route_prof_a_bytes>>10));appendstr(b,sizeof(b)," G=");append_int(b,sizeof(b),(int)route_prof_g_hit);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)route_prof_g_miss);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)(route_prof_g_bytes>>10));appendstr(b,sizeof(b)," T=");append_int(b,sizeof(b),(int)route_prof_tile_reads);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)(route_prof_tile_bytes>>10));debug_log(STATE_LOG,b);b[0]=0;appendstr(b,sizeof(b),"CPR REF F=");for(int i=0;i<4;i++){if(i)appendstr(b,sizeof(b),i==1?" R=":(i==2?" T=":" S="));append_int(b,sizeof(b),(int)route_prof_r_hit[i]);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)route_prof_r_miss[i]);appendstr(b,sizeof(b),"/");append_int(b,sizeof(b),(int)(route_prof_r_bytes[i]>>10));}debug_log(STATE_LOG,b);b[0]=0;appendstr(b,sizeof(b),"QADJ PROF MODE=");append_int(b,sizeof(b),qadjmode);appendstr(b,sizeof(b)," READS=");append_int(b,sizeof(b),(int)route_prof_qadj_reads);appendstr(b,sizeof(b)," KB=");append_int(b,sizeof(b),(int)(route_prof_qadj_bytes>>10));appendstr(b,sizeof(b)," VIDXKB=");append_int(b,sizeof(b),(int)((qadjmode==7?qh7_query.index_bytes:0u)>>10));appendstr(b,sizeof(b)," MMAP=");append_int(b,sizeof(b),qadj_map_ok);appendstr(b,sizeof(b)," STALL=");append_int(b,sizeof(b),(int)route_prof_stall);appendstr(b,sizeof(b)," QMAP=");append_int(b,sizeof(b),(int)route_prof_qmap_access);appendstr(b,sizeof(b)," IDXIOKB=");append_int(b,sizeof(b),(int)(route_prof_qidx_bytes>>10));debug_log(STATE_LOG,b);b[0]=0;appendstr(b,sizeof(b),"QREC PROF H=");append_int(b,sizeof(b),(int)route_prof_qrec_hit);appendstr(b,sizeof(b)," M=");append_int(b,sizeof(b),(int)route_prof_qrec_miss);appendstr(b,sizeof(b)," KB=");append_int(b,sizeof(b),(int)(route_prof_qrec_bytes>>10));debug_log(STATE_LOG,b);b[0]=0;appendstr(b,sizeof(b),"BUILD PROF TF=");append_int(b,sizeof(b),(int)route_prof_build_phase_steps[RB_TRACE_F]);appendstr(b,sizeof(b)," TB=");append_int(b,sizeof(b),(int)route_prof_build_phase_steps[RB_TRACE_B]);appendstr(b,sizeof(b)," UNP=");append_int(b,sizeof(b),(int)route_prof_build_phase_steps[RB_UNPACK]);appendstr(b,sizeof(b)," BASE=");append_int(b,sizeof(b),route_base_meta_n);appendstr(b,sizeof(b)," GT=");append_int(b,sizeof(b),(int)route_prof_build_phase_steps[RB_BASE_TOTAL]);appendstr(b,sizeof(b)," GO=");append_int(b,sizeof(b),(int)route_prof_build_phase_steps[RB_BASE_OUTPUT]);appendstr(b,sizeof(b)," SP=");append_int(b,sizeof(b),(int)route_prof_build_phase_steps[RB_START_POINTS]);appendstr(b,sizeof(b)," DP=");append_int(b,sizeof(b),(int)route_prof_build_phase_steps[RB_DEST_POINTS]);debug_log(STATE_LOG,b);b[0]=0;appendstr(b,sizeof(b),"BUILD IO MMAPG=");append_int(b,sizeof(b),route_geom_map_ok);appendstr(b,sizeof(b)," GMAP=");append_int(b,sizeof(b),(int)route_prof_gmap_access);debug_log(STATE_LOG,b);b[0]=0;appendstr(b,sizeof(b),"BUILD ARITH FASTM=");append_int(b,sizeof(b),(int)route_prof_mfast);appendstr(b,sizeof(b)," FALLBACK=");append_int(b,sizeof(b),(int)route_prof_div_fallback);appendstr(b,sizeof(b)," ROUTEM=");append_int(b,sizeof(b),(int)route_result_m);appendstr(b,sizeof(b)," PKTPTS=");append_int(b,sizeof(b),(int)route_prof_packet_pts);debug_log(STATE_LOG,b);}
 static u32 geo_seg_m(s32 la0,s32 lo0,s32 la1,s32 lo1);
 static u32 route_point_d2(s32 lat,s32 lon,s32 qlat,s32 qlon){int cq=coslat_q15(lat);s32 dx=lon_scale(qlon-lon,cq),dy=qlat-lat;return square_distance(dx,dy);}
 static int route_snap_car_component(u32 comp,struct RouteSnapCandidate*out){struct RouteSnapCandidate c[8];int n=route_snap_candidates(car_lat(),car_lon(),ROUTE_SNAP_D2,1,0,c,8);for(int i=0;i<n;i++){struct CprNode rn;if(route_read_node(c[i].node,&rn)&&rn.comp==comp){if(out)*out=c[i];return 1;}}return 0;}
@@ -2522,7 +2342,7 @@ static void draw_map_geometry(int z){npoi=poi_visible=0;nlbox=nltxt=0;fill(0,MAP
   /* Ocean polygons retain close-zoom precision in shared Z0..Z3 tiles.
    * Reuse Z3 at closer zooms to avoid millions of redundant offshore tiles.
    * Finish the ocean before all local areas, strokes and roads. */
-  if(MAP_AREA_FILLS&&mapfmt>=4&&(mh.flags&4)){
+  if(MAP_AREA_FILLS&&(mh.flags&4)){
     int oz=sourcez<3?sourcez:3,a,b,c,d;
     map_visible_tile_bounds(z,oz,&a,&b,&c,&d);
     for(int ty=c;ty<=d;ty++)for(int tx=a;tx<=b;tx++)
@@ -2534,7 +2354,7 @@ static void draw_map_geometry(int z){npoi=poi_visible=0;nlbox=nltxt=0;fill(0,MAP
   /* Finish each layer across ALL tiles before moving to the next: fills,
    * context strokes (including river/coast outlines), then roads. A later
    * tile's water stroke must never paint over an earlier tile's bridge. */
-  int first=mapfmt==1?2:(MAP_AREA_FILLS?0:1);
+  int first=MAP_AREA_FILLS?0:1;
   for(int phase=first;phase<3;phase++){
     if(phase)map_mask_begin(phase==1?0:1);
     for(int ty=ty0;ty<=ty1;ty++)for(int tx=tx0;tx<=tx1;tx++)
@@ -2542,7 +2362,7 @@ static void draw_map_geometry(int z){npoi=poi_visible=0;nlbox=nltxt=0;fill(0,MAP
         phase==0?MAP_DRAW_AREAS:(phase==1?MAP_DRAW_CONTEXT:MAP_DRAW_ROADS));
     if(phase)map_mask_end();
   }
-  if(mapfmt>=2){
+  {
     for(int ty=ty0;ty<=ty1;ty++)for(int tx=tx0;tx<=tx1;tx++)
       if(map_tile_in_pack(sourcez,tx,ty))draw_tile_labels(get_tile((u8)sourcez,tx,ty),z,256,256);
     poi_reserve();
@@ -2583,21 +2403,18 @@ static void menu_reset(u32 now);
 #include "keyboard.h"
 
 /* Trip navigation workspace. The Trip page is a
- * split workspace: left = destination sources, right = ordered itinerary. CPR1
- * still calculates one active leg at a time. For multiple stops this means
+ * split workspace: left = destination sources, right = ordered itinerary. The router
+ * calculates one active leg at a time. For multiple stops this means
  * CAR->STOP1 first; only after arrival/continue do we calculate STOP1->STOP2,
  * then the next leg, until the final destination is reached. */
 #define RECENT_MAX 25
 #define FAVE_MAX 25
-#define TRIP_MAX_TARGETS 5
+#define TRIP_MAX_TARGETS 10
 #define ARRIVAL_RADIUS_M 55u
 #define ARRIVAL_TICKS 20
 struct SavedPlace {s32 lat,lon;char name[161];};
-struct LegacyPlace {s32 lat,lon;char name[32];};
 struct TripTarget {s32 lat,lon;char name[161];};
-struct LegacyTripState {u8 active,count,active_idx,paused;struct LegacyPlace target[TRIP_MAX_TARGETS];};
 struct TripState {u8 active,count,active_idx,paused;struct TripTarget target[TRIP_MAX_TARGETS];};
-struct OldTripState {int active;s32 dest_lat,dest_lon;char dest_name[32];};
 static struct SavedPlace recents[RECENT_MAX],faves[FAVE_MAX];static int nrecents=0,nfaves=0;
 static struct TripState trip;static int trip_need_route=0,trip_route_defer=0,arrival_ticks=0;
 
@@ -2625,7 +2442,17 @@ static void draw_map(void){
  draw_map_background();hud_draw_all(hud_now_ms(),1);
 }
 
-static int read_places(const char*path,struct SavedPlace*a,int cap){long fd=s_open(path,O_RDONLY_,0);if(fd<0)return 0;u32 magic=0,count=0;if(s_read((int)fd,&magic,4)!=4||s_read((int)fd,&count,4)!=4||(magic!=0x31504c43u&&magic!=0x32504c43u)){s_close((int)fd);return 0;}if(count>(u32)cap)count=(u32)cap;int got=0;for(u32 i=0;i<count;i++){if(magic==0x31504c43u){struct LegacyPlace o;if(s_read((int)fd,&o,sizeof(o))!=(long)sizeof(o))break;o.name[31]=0;a[i].lat=o.lat;a[i].lon=o.lon;copystr(a[i].name,sizeof(a[i].name),o.name);}else{if(s_read((int)fd,&a[i],sizeof(a[i]))!=(long)sizeof(a[i]))break;a[i].name[160]=0;char n[161];copystr(n,sizeof(n),a[i].name);copystr(a[i].name,sizeof(a[i].name),n);}got++;}s_close((int)fd);return got;}
+/* CLP2 is the only saved-place layout. Reject unsupported or truncated files. */
+static int read_places(const char*path,struct SavedPlace*a,int cap){
+ long fd=s_open(path,O_RDONLY_,0);if(fd<0)return 0;u32 magic=0,count=0;int got=0;
+ if(s_read((int)fd,&magic,4)==4&&magic==0x32504c43u&&s_read((int)fd,&count,4)==4&&count<=(u32)cap){
+  for(u32 i=0;i<count;i++){
+   if(s_read((int)fd,&a[i],sizeof(a[i]))!=(long)sizeof(a[i])){got=0;break;}
+   a[i].name[160]=0;char n[161];copystr(n,sizeof(n),a[i].name);copystr(a[i].name,sizeof(a[i].name),n);got++;
+  }
+ }
+ s_close((int)fd);return got;
+}
 static void write_places(const char*path,const struct SavedPlace*a,int n){long fd=s_open(path,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd<0)return;u32 magic=0x32504c43u,count=(u32)n;s_write((int)fd,&magic,4);s_write((int)fd,&count,4);if(n>0)s_write((int)fd,a,(unsigned)n*sizeof(*a));s_close((int)fd);}
 static int same_place(const struct SavedPlace*a,s32 lat,s32 lon){return iabs32(a->lat-lat)<=8&&iabs32(a->lon-lon)<=8;}
 static void add_recent(const char*name,s32 lat,s32 lon){int found=-1;for(int i=0;i<nrecents;i++)if(same_place(&recents[i],lat,lon)){found=i;break;}struct SavedPlace p;p.lat=lat;p.lon=lon;copystr(p.name,sizeof(p.name),name&&name[0]?name:"MAP POINT");if(found>=0){for(int i=found;i>0;i--)recents[i]=recents[i-1];recents[0]=p;}else{if(nrecents<RECENT_MAX)nrecents++;for(int i=nrecents-1;i>0;i--)recents[i]=recents[i-1];recents[0]=p;}write_places(RECENT_PATH,recents,nrecents);}
@@ -2655,8 +2482,16 @@ static void phone_destination_clear(void){phone_dest.valid=0;}
 
 static struct TripTarget* trip_current(void){if(!trip.active||trip.count<1||trip.active_idx>=trip.count)return 0;return &trip.target[trip.active_idx];}
 static int trip_current_is_destination(void){return trip.active&&trip.count&&trip.active_idx==trip.count-1;}
-static void save_trip(void){long fd=s_open(TRIP_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd<0)return;u32 magic=0x33525443u;s_write((int)fd,&magic,4);s_write((int)fd,&trip,sizeof(trip));s_close((int)fd);}
-static void load_trip(void){memzero(&trip,sizeof(trip));long fd=s_open(TRIP_PATH,O_RDONLY_,0);if(fd<0)return;u32 magic=0;if(s_read((int)fd,&magic,4)==4){if(magic==0x33525443u){if(s_read((int)fd,&trip,sizeof(trip))!=(long)sizeof(trip))memzero(&trip,sizeof(trip));}else if(magic==0x32525443u){struct LegacyTripState o;memzero(&o,sizeof(o));if(s_read((int)fd,&o,sizeof(o))==(long)sizeof(o)){trip.active=o.active;trip.count=o.count;trip.active_idx=o.active_idx;trip.paused=o.paused;for(int i=0;i<o.count&&i<TRIP_MAX_TARGETS;i++){trip.target[i].lat=o.target[i].lat;trip.target[i].lon=o.target[i].lon;o.target[i].name[31]=0;copystr(trip.target[i].name,sizeof(trip.target[i].name),o.target[i].name);}}}else if(magic==0x31525443u){struct OldTripState o;memzero(&o,sizeof(o));if(s_read((int)fd,&o,sizeof(o))==(long)sizeof(o)&&o.active){trip.active=1;trip.count=1;trip.active_idx=0;trip.target[0].lat=o.dest_lat;trip.target[0].lon=o.dest_lon;copystr(trip.target[0].name,sizeof(trip.target[0].name),o.dest_name[0]?o.dest_name:"MAP POINT");}}}s_close((int)fd);if(trip.count>TRIP_MAX_TARGETS)trip.count=TRIP_MAX_TARGETS;if(!trip.count)trip.active=0;if(trip.active_idx>=trip.count)trip.active_idx=trip.count?trip.count-1:0;for(int i=0;i<trip.count;i++)trip.target[i].name[160]=0;trip.paused=0;}
+/* CTR4 stores up to ten targets. Other file versions are not supported. */
+static void save_trip(void){long fd=s_open(TRIP_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd<0)return;u32 magic=0x34525443u;s_write((int)fd,&magic,4);s_write((int)fd,&trip,sizeof(trip));s_close((int)fd);}
+static void load_trip(void){
+ memzero(&trip,sizeof(trip));long fd=s_open(TRIP_PATH,O_RDONLY_,0);if(fd<0)return;
+ u32 magic=0;struct TripState saved;
+ int ok=s_read((int)fd,&magic,4)==4&&magic==0x34525443u&&s_read((int)fd,&saved,sizeof(saved))==(long)sizeof(saved);
+ s_close((int)fd);
+ if(!ok||saved.count>TRIP_MAX_TARGETS||saved.active>1||saved.paused>1||(!saved.count&&saved.active)||(saved.count&&saved.active_idx>=saved.count))return;
+ trip=saved;for(int i=0;i<trip.count;i++)trip.target[i].name[160]=0;trip.paused=0;
+}
 static void trip_schedule_route(void){arrival_ticks=0;trip_need_route=1;trip_route_defer=1;route_cancel();}
 static void trip_request_route(void){struct TripTarget*t=trip_current();arrival_ticks=0;if(!t||trip.paused){trip_need_route=0;trip_route_defer=0;return;}if(!gps.fix){trip_need_route=1;route_cancel();return;}trip_need_route=0;trip_route_defer=0;route_start(t->lat,t->lon);}
 static void set_destination(const char*name,s32 lat,s32 lon){memzero(&trip,sizeof(trip));trip.active=1;trip.count=1;trip.active_idx=0;trip.target[0].lat=lat;trip.target[0].lon=lon;copystr(trip.target[0].name,sizeof(trip.target[0].name),name&&name[0]?name:"MAP POINT");save_trip();add_recent(trip.target[0].name,lat,lon);trip_schedule_route();notice_success(ui_tr("Route started"));}
@@ -2701,9 +2536,13 @@ static void draw_trip(void){
  for(int row=0;row<rows&&first+row<count;row++){int i=first+row;trip_item(10,panel_y+48+row*20,218,trip_tab?faves[i].name:recents[i].name,trip_pane==0&&trip_focus==i);}
  ui_scrollbar(230,panel_y+45,179,first,rows,count);
  if(trip.active){int rem=trip.count-trip.active_idx;
-  for(int r=0;r<rem;r++)trip_target_row(route_y+r*route_step,trip.active_idx+r,trip_pane==1&&trip_right_focus==r);
-  trip_item(249,route_y+rem*route_step,220,ui_tr("+ Add stop"),trip_pane==1&&trip_right_focus==rem);
-  trip_item(249,route_y+(rem+1)*route_step,220,ui_tr("Cancel route"),trip_pane==1&&trip_right_focus==rem+1);
+  /* Legacy full-screen path also needs a bounded viewport for long trips. */
+  int visible=(232-route_y)/route_step-2;if(visible<1)visible=1;if(visible>rem)visible=rem;
+  int first=trip_right_focus>=visible?trip_right_focus-visible+1:0;if(first+visible>rem)first=rem-visible;
+  for(int r=0;r<visible;r++)trip_target_row(route_y+r*route_step,trip.active_idx+first+r,trip_pane==1&&trip_right_focus==first+r);
+  ui_scrollbar(470,route_y-3,visible*route_step,first,visible,rem);
+  trip_item(249,route_y+visible*route_step,220,ui_tr("+ Add stop"),trip_pane==1&&trip_right_focus==rem);
+  trip_item(249,route_y+(visible+1)*route_step,220,ui_tr("Cancel route"),trip_pane==1&&trip_right_focus==rem+1);
  }else{
   centered(359,110,1,ui_tr("Choose a destination"),C_WHITE);centered(359,132,0,ui_tr("from your saved places"),C_MUTED);
   trip_item(253,198,214,ui_tr("Coordinates"),trip_pane==1);
@@ -3211,7 +3050,7 @@ static void run(void){
  hardware_load_bluetooth();load_prefs();debug_state_write();load_last_fix();seed_boot_theme();if(!pref.debug)remove_stale_logs();load_last_audio();nrecents=read_places(RECENT_PATH,recents,RECENT_MAX);nfaves=read_places(FAVES_PATH,faves,FAVE_MAX);load_trip();apply_brightness();load_map();load_timezones();load_regions();load_cameras();seed_boot_map_view();load_route_data();s_unlink(BT_CMD_PATH);bt_write_small(BT_ACTIVE_PATH,"0\n");bt_active_written=0;bt_name_cache_load();bt_poll_status();if(trip.active){modal=MOD_RESUME_TRIP;modal_choice=0;}open_inputs();
  control_log("CONSOLE READER",0,csw.fd);
  if(vehicle.enabled)for(int i=0;i<9;i++)control_log("VEHICLE STATUS LISTENER",vehicle_ports[i],vehicle.listen[i]);
-  int wdfd=(int)s_open(WD_PATH,O_WRONLY_,0);debug_log(STATE_LOG,"CLIOPLAY GLOBAL " CLIOPLAY_VERSION " START");debug_log(STATE_LOG,qadjmode==7?(qadj_map_ok?"QAD7 PACKET+MMAP QUERY ENABLED":"QAD7 PAGED QUERY ENABLED"):(qadjmode==6?(qadj_map_ok?"QAD6 GEOMMETA+MMAP QUERY ENABLED":"QAD6 PAGED QUERY ENABLED"):(qadjmode==5?(qadj_map_ok?"QAD5 MMAP+STALL QUERY ENABLED":"QAD5 PAGED+STALL QUERY ENABLED"):(qadjmode==4?"QAD4 LOCAL-RECON QUERY ENABLED":(qadjmode==3?"QAD3 GROUP QUERY+RECON ENABLED":(qadjmode==2?"QAD2 NODE-BLOCK QUERY ENABLED (PAGED INDEX)":(qadjmode==1?"QAD1 FAST QUERY ENABLED":"QADJ FAST QUERY FALLBACK CPR2")))))));if(qadjmode==6&&qadj6_legacy_header)debug_log(STATE_LOG,"QAD6 LEGACY HEADER COMPAT ENABLED");{char mb[96];mb[0]=0;appendstr(mb,sizeof(mb),"MMAP QAD=");append_int(mb,sizeof(mb),qadj_map_ok);appendstr(mb,sizeof(mb)," GEOM=");append_int(mb,sizeof(mb),route_geom_map_ok);debug_log(STATE_LOG,mb);}u32 tick=0,next_model=s_now_ms(),next_input=next_model;render_runtime_reset(next_model);
+  int wdfd=(int)s_open(WD_PATH,O_WRONLY_,0);debug_log(STATE_LOG,"CLIOPLAY GLOBAL " CLIOPLAY_VERSION " START");debug_log(STATE_LOG,qadjmode==7?(qadj_map_ok?"QAD7 PACKET+MMAP QUERY ENABLED":"QAD7 PAGED QUERY ENABLED"):"QADJ FAST QUERY FALLBACK CPR2");{char mb[96];mb[0]=0;appendstr(mb,sizeof(mb),"MMAP QAD=");append_int(mb,sizeof(mb),qadj_map_ok);appendstr(mb,sizeof(mb)," GEOM=");append_int(mb,sizeof(mb),route_geom_map_ok);debug_log(STATE_LOG,mb);}u32 tick=0,next_model=s_now_ms(),next_input=next_model;render_runtime_reset(next_model);
   for(;;){
     u32 now=s_now_ms();int model_due=frame_due(now,next_model);
     if(frame_due(now,next_input)){poll_csw();poll_keys();next_input=frame_after(next_input,now,33u);}

@@ -3,7 +3,16 @@
 This history records implemented changes. Entries marked **Unreleased** are prepared locally and have not been published.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
 
-## Version 2.1.7 — Development release
+## Version 2.1.8 — Unreleased
+
+### Changes in this version
+
+- Fixed itinerary connector lines extending towards the Add stop action when additional targets are off-screen. Connections now join visible markers only.
+- Increased trip capacity from five to ten targets in total (nine intermediate stops plus the final destination). Saved trips use CTR4 only; unfinished trips from older formats cannot be resumed.
+- Removed obsolete saved-place, map, routing and bundle-format readers. Current CLP2 places and current navigation packs remain supported; unsupported formats require fresh data.
+- Reduced the size of confirmation dialogs and their action menus while retaining readable labels, existing choices, focus targets and animation behaviour.
+
+## Version 2.1.7 — Development update
 
 ### Changes in this version
 

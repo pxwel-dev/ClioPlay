@@ -59,7 +59,7 @@ int main(int argc,char**argv){
  run_case(2,-1,"0",0,1);run_case(2,-1,"1",1,1);run_case(2,-1,"invalid",1,1);
  run_case(2,1793966400L,"1",0,0);run_case(2,1793966400L,"1",0,-1);
  run_case(8,1793966400L,"1",0,1);
- put(SPLASH_PREF,"version=6\ntheme=2\nbright=50\nhoff=1\nmoff=0\n");spl_load_prefs();
+ put(SPLASH_PREF,"version=8\ntheme=2\nbright=50\nhoff=1\nmoff=0\n");spl_load_prefs();
  assert(spl_day_start==CLIO_DAY_START&&spl_night_start==CLIO_NIGHT_START&&spl_offset==60);
  puts("Native splash passed: soft Day/Night artwork, RAM handoff, antialiased icon, custom AUTO schedule and saved UTC offset, GPS-independent startup, Day/Night overrides, brightness, exact framebuffer write and unchanged saved theme.");
  return 0;

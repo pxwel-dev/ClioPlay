@@ -51,7 +51,7 @@ int main(void){
  assert(clio_boot_night(THEME_AUTO,-1,0,420,1080,0)==0);
  assert(clio_boot_night(THEME_AUTO,-1,0,420,1080,-1)==1);
 
- preferences("version=6\ntheme=2\nbright=60\n");
+ preferences("version=8\ntheme=2\nbright=60\n");
  load_prefs();assert(pref.day_start==420&&pref.night_start==1080&&pref.bright==60);
  pref.day_start=557;pref.night_start=1062;save_prefs();
  pref.day_start=pref.night_start=0;load_prefs();
@@ -88,6 +88,6 @@ int main(void){
 #endif
  // Draw both scrolled schedule rows through the normal page entry point.
  menu_contents(P_SETTINGS,sheet_focus,menu_box(P_SETTINGS),16,hud_now_ms());
- puts("AUTO schedule: every minute, midnight wrap, exact custom boundaries, local offsets, GPS-free boot/time-only input, legacy/corrupt preferences, persistence, schedule controls and manual overrides passed.");
+ puts("AUTO schedule: every minute, midnight wrap, exact custom boundaries, local offsets, GPS-free boot/time-only input, missing/corrupt preferences, persistence, schedule controls and manual overrides passed.");
  return 0;
 }

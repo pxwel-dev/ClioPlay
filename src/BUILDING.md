@@ -144,7 +144,7 @@ python3 tools/verify.py --maps /path/to/existing/UK/clio843/maps
 `verify_unicode.py` links the production shaping engine and tests the actual
 2 MiB allocator under host UBSan. It renders 17 native-script examples plus the
 Trip screen; checks mixed bidirectional text, native phone handoff/persistence,
-old saved-place migration and UTF‑8-safe rename/delete. These are rendered pixels,
+unsupported saved-place rejection and UTF‑8-safe rename/delete. These are rendered pixels,
 not desktop browser text overlays.
 
 `verify_global.py` builds clearly synthetic metric/imperial PBF fixtures through
@@ -252,7 +252,7 @@ timezone/DST updates also affect the schedule through that offset. With no valid
 clock, retain the saved palette, defaulting to Night.
 
 `tests/auto-theme.c` covers exact boundaries, midnight wrap, local offsets,
-legacy/corrupt preferences, persistence, controls and manual overrides.
+missing/corrupt preferences, persistence, controls and manual overrides.
 `tests/splash.c` verifies the schedule against actual splash framebuffer output.
 Both run under UBSan in `tools/verify_ci.py`.
 
@@ -312,9 +312,9 @@ project helpers are included separately; see [source status](docs/source-status.
 `clio843/src/release_version.h` from it and records the version in each binary’s
 build report. The Settings footer and UI/Bluetooth startup logs use that generated value. Bootstrap
 scripts declare the same `CLIOPLAY_VERSION`. Use
-`python3 tools/release_version.py --set 2.1.7` (or the intended new version) to
+`python3 tools/release_version.py --set 2.1.8` (or the intended new version) to
 synchronise the header, bootstrap versions and `bootstrap-SHA256.json`.
-Alternatively, `python3 tools/rebuild_arm.py --version 2.1.7` synchronises and
+Alternatively, `python3 tools/rebuild_arm.py --version 2.1.8` synchronises and
 rebuilds in one command.
 `python3 tools/release_version.py --check` rejects mismatched labels before
 building or publishing. Downloader user agents also read `VERSION`. Map formats,

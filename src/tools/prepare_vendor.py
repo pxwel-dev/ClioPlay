@@ -59,10 +59,6 @@ def obtain_cab(cache=None):
         raise ValueError(f'Automatic Navcore download failed: {error}. Check your internet connection and run the installer again.') from error
 
 
-def prompt_cab():
-    """Compatibility hook for installers already waiting for navigation to finish."""
-    return obtain_cab()
-
 def extract(cab, output):
     """Verify everything in temporary storage before creating the output."""
     cab, output = Path(cab).expanduser().resolve(), Path(output).resolve()

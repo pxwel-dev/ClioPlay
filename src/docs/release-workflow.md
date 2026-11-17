@@ -25,6 +25,9 @@ publication refresh is needed to compile and run these local checks.** You do
 not need to change the version, commit or push anything for a personal rebuild.
 A rebuilt executable is not automatically deployed to a head unit or SD card.
 For installation and runtime requirements, see the [user guide](../README.md).
+Existing current-format navigation packs can be reused; only obsolete packs
+need rebuilding. See the [navigation builder](../navigation-builder/README.md)
+for the supported formats.
 
 Stop at the first failed command and resolve the error before proceeding.
 Commands below use `src/` as their working directory unless otherwise stated.
