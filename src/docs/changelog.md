@@ -3,7 +3,7 @@
 This history records implemented changes. Entries marked **Unreleased** are prepared locally and have not been published.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
 
-## Version 2.1.8 — Unreleased
+## Version 2.1.8 — Release
 
 ### Changes in this version
 
@@ -12,7 +12,7 @@ Release dates are added when a version is published; older versions are not reco
 - Removed obsolete saved-place, map, routing and bundle-format readers. Current CLP2 places and current navigation packs remain supported; unsupported formats require fresh data.
 - Reduced the size of confirmation dialogs and their action menus while retaining readable labels, existing choices, focus targets and animation behaviour.
 
-## Version 2.1.7 — Development update
+## Version 2.1.7 — Release
 
 ### Changes in this version
 
@@ -21,7 +21,7 @@ Release dates are added when a version is published; older versions are not reco
 - **Next** validates both fields and opens optional naming; invalid entries stay editable. Soft-right still cycles latitude/longitude and soft-left deletes.
 - Updated directional/rotary navigation, regression checks and demo capture scripts.
 
-## Version 2.1.6 - Development release
+## Version 2.1.6 — Release
 
 ### Changes in this version
 
@@ -32,7 +32,7 @@ Release dates are added when a version is published; older versions are not reco
    - Speed pill in left / Direction pill on right (DEFAULT VALUE), Speed pill on right / Direction pill on left
 4) If hw_bluetooth = 0, hide all bluetooth-related functionality in the UI.
 
-## Version 2.1.5 - Development release
+## Version 2.1.5 — Release
 
 ### Changes in this version
 
