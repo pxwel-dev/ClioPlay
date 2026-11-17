@@ -14,13 +14,12 @@ tool capable of ARM ELF (LLVM `llvm-ar` on macOS). On macOS:
 
 ```sh
 brew install python llvm lld
-python3 tools/build_ui.py
-cp build/clio040 build/cliospl build/clioa2dp clio843/
+python3 tools/rebuild_arm.py
 ```
 
-This builds `clio040`, `cliospl` and `clioa2dp` and copies them into
-`clio843/`. If no preview inputs changed, `--install` also installs them into
-`clio843/`, where the clean installer reads them. Flags/compiler/input hashes and ELF checks are written to
+This verifies and installs the three ARM executables into `clio843/` without
+refreshing publication or deploying to an SD card. Flags/compiler/input hashes
+and ELF checks are written to
 `build/*.build.json`. Supply `--clang` / `--linker` if required.
 
 The build also regenerates the splash icon's 8×8 coverage masks from
@@ -30,7 +29,7 @@ unit composites the small masks directly without a supersampled framebuffer.
 This `src/` directory is the canonical development tree inside
 `CLIOPLAY-LATEST-VERSION/`. A successful `--install` build also refreshes the
 parent folder’s clean-install publication. When UI sources change, use the
-build/copy sequence above, then regenerate the README previews before running
+rebuild command above, then regenerate the README previews before running
 `python3 tools/refresh_latest.py`. The publication check compares the preview
 source and executable hashes with the current build.
 Documentation/packaging changes need `python3 tools/refresh_latest.py`; use
@@ -155,7 +154,7 @@ To regenerate the short GIFs embedded in the main README, install Pillow and
 use an existing UK map bundle covering Newcastle:
 
 ```sh
-python3 tools/render_previews.py --maps /path/to/clio843/maps
+python3 tools/regenerate_gifs.py --maps /path/to/clio843/maps
 ```
 
 The tool writes the README GIFs and a provenance manifest to `docs/demo/`.
@@ -308,8 +307,11 @@ project helpers are included separately; see [source status](docs/source-status.
 `VERSION` is the release identity. `tools/build_ui.py` generates
 `clio843/src/release_version.h` from it and records the version in each binary’s
 build report. The Settings footer and UI/Bluetooth startup logs use that generated value. Bootstrap
-scripts declare the same `CLIOPLAY_VERSION`; update their declaration when
-changing `VERSION`, then refresh their entries in `bootstrap-SHA256.json`.
+scripts declare the same `CLIOPLAY_VERSION`. Use
+`python3 tools/release_version.py --set 2.1.7` (or the intended new version) to
+synchronise the header, bootstrap versions and `bootstrap-SHA256.json`.
+Alternatively, `python3 tools/rebuild_arm.py --version 2.1.7` synchronises and
+rebuilds in one command.
 `python3 tools/release_version.py --check` rejects mismatched labels before
 building or publishing. Downloader user agents also read `VERSION`. Map formats,
 protocol identifiers and third-party dependency versions are separate.

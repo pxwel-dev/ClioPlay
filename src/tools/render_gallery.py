@@ -110,7 +110,7 @@ POPUPS_LAYOUT_SAMPLES = sorted({at+step for at,_ in POPUPS_LAYOUT_EVENTS for ste
 
 
 # ClioPlay 2.1.6 compact-screen and HUD customization animations.
-V216_COORDINATES_EVENTS = ((0, 'clear_trip();menu_open(P_TRIP,0,hud_now_ms());'), (800, 'key_handle(K_ENTER);assert(sheet_page==P_COORD);'), (1400, 'coordinates.focus=4;key_handle(K_ENTER);'), (1650, 'coordinates.focus=3;key_handle(K_ENTER);'), (1900, 'coordinates.focus=11;key_handle(K_ENTER);'), (2150, 'coordinates.focus=8;key_handle(K_ENTER);'), (2400, 'coordinates.focus=6;key_handle(K_ENTER);'), (3000, 'key_handle(K_SR);assert(coordinates.step==COORD_LON);'), (3600, 'coordinates.focus=9;key_handle(K_ENTER);'), (3800, 'coordinates.focus=0;key_handle(K_ENTER);'), (4000, 'coordinates.focus=11;key_handle(K_ENTER);'), (4200, 'coordinates.focus=5;key_handle(K_ENTER);'), (4600, 'key_handle(K_ESC);assert(streq(coordinates.value[1],"-1."));'), (5100, 'key_handle(K_BACK);assert(coordinates.error&&coordinates.step==COORD_LON);'), (6500, 'coordinates.focus=5;key_handle(K_ENTER);'), (7100, 'key_handle(K_SR);assert(coordinates.step==COORD_LAT);'), (7900, 'key_handle(K_BACK);assert(sheet_page==P_NAME);'), (9600, 'pk_focus=PK_SAVE;key_handle(K_ENTER);assert(sheet_page==P_REVIEW);'))
+V216_COORDINATES_EVENTS = ((0, 'clear_trip();menu_open(P_TRIP,0,hud_now_ms());'), (800, 'key_handle(K_ENTER);assert(sheet_page==P_COORD);'), (1400, 'coordinates.focus=4;key_handle(K_ENTER);'), (1650, 'coordinates.focus=3;key_handle(K_ENTER);'), (1900, 'coordinates.focus=COORD_DOT;key_handle(K_ENTER);'), (2150, 'coordinates.focus=8;key_handle(K_ENTER);'), (2400, 'coordinates.focus=6;key_handle(K_ENTER);'), (3000, 'key_handle(K_SR);assert(coordinates.step==COORD_LON);'), (3600, 'coordinates.focus=COORD_SIGN;key_handle(K_ENTER);'), (3800, 'coordinates.focus=0;key_handle(K_ENTER);'), (4000, 'coordinates.focus=COORD_DOT;key_handle(K_ENTER);'), (4200, 'coordinates.focus=5;key_handle(K_ENTER);'), (4600, 'key_handle(K_ESC);assert(streq(coordinates.value[1],"-1."));'), (5100, 'coordinates.focus=COORD_NEXT;key_handle(K_ENTER);assert(coordinates.error&&coordinates.step==COORD_LON);'), (6500, 'coordinates.focus=5;key_handle(K_ENTER);'), (7100, 'key_handle(K_SR);assert(coordinates.step==COORD_LAT);'), (7900, 'coordinates.focus=COORD_NEXT;key_handle(K_ENTER);assert(sheet_page==P_NAME);'), (9600, 'pk_focus=PK_SAVE;key_handle(K_ENTER);assert(sheet_page==P_REVIEW);'))
 V216_COORDINATES_SAMPLES = sorted({at+step for at,_ in V216_COORDINATES_EVENTS for step in TWEEN_STEPS} | {11100})
 V216_HUD_SETTINGS_EVENTS = ((0, 'menu_open(P_SETTINGS,10,hud_now_ms());'), (1700, 'key_handle(K_RIGHT);assert(pref.top_swap);'), (3600, 'key_handle(K_DOWN);assert(sheet_focus==11);'), (4200, 'key_handle(K_RIGHT);assert(pref.bottom_swap);'), (6100, 'key_handle(K_MAP);assert(sheet_page==P_CLOSED);'), (8200, 'menu_open(P_SETTINGS,11,hud_now_ms());'))
 V216_HUD_SETTINGS_SAMPLES = sorted({at+step for at,_ in V216_HUD_SETTINGS_EVENTS for step in TWEEN_STEPS} | {9900})
@@ -350,7 +350,7 @@ def catalog(sender_receipts=None):
     motion('Offline routing','map-point-ready','Calculated map-point route',
            map_start+'preview_finish_route();',((0,''),),ROUTE_READY_SAMPLES)
     add('Coordinates','coordinates-invalid-latitude','Invalid latitude remains editable',
-        'coordinate_preview("entry");coordinate_digits("90.00001");key_handle(K_BACK);',check='assert(coordinates.error&&coordinates.step==COORD_LAT&&!trip.active);')
+        'coordinate_preview("entry");coordinate_digits("90.00001");coordinates.focus=COORD_NEXT;key_handle(K_ENTER);',check='assert(coordinates.error&&coordinates.step==COORD_LAT&&!trip.active);')
     add('Coordinates','coordinates-review-long-name','Long Unicode destination in review',
         'coordinate_preview("review");copystr(coordinates.name,sizeof(coordinates.name),"東京駅 丸の内中央口 · Newcastle Central Station");')
     add('Coordinates','coordinates-latitude-german','Translated numeric entry with valid clock and status',
@@ -632,7 +632,7 @@ def modern_menus():
            'settle();', TRIPS_EMPTY_EVENTS, TRIPS_EMPTY_SAMPLES)
     motion('Compact Trips', 'preview-popups-layout', 'Confirmations and expanded typing keyboard with compact picker',
            'settle();', POPUPS_LAYOUT_EVENTS, POPUPS_LAYOUT_SAMPLES)
-    motion('Version 2.1.6', 'preview-v216-coordinates', 'Soft keys cycle axis/delete, Back validates, then name and review',
+    motion('Version 2.1.7', 'preview-v216-coordinates', 'Soft keys cycle axis/delete, Next validates, then name and review',
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_COORDINATES_EVENTS, V216_COORDINATES_SAMPLES)
     motion('Version 2.1.6', 'preview-v216-hud-settings', 'Top and bottom HUD card side preferences',
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_HUD_SETTINGS_EVENTS, V216_HUD_SETTINGS_SAMPLES)
@@ -662,7 +662,7 @@ static void restore_route(void){route_n=saved_n;route_head=0;route_result_m=save
  memcpy(route_lat,saved_lat,sizeof(saved_lat));memcpy(route_lon,saved_lon,sizeof(saved_lon));memcpy(route_node,saved_node,sizeof(saved_node));memcpy(route_seg_arc,saved_arc,sizeof(saved_arc));memcpy(route_seg_phys,saved_phys,sizeof(saved_phys));memcpy(route_seg_m,saved_seg_m,sizeof(saved_seg_m));memcpy(route_seg_cost,saved_seg_cost,sizeof(saved_seg_cost));}
 static void explore(void){enter_freecam();explore_sample(500);}
 static void name_keyboard(void){screen=SCR_KEY;keyboard_open_fave_name(5497370,-161331);}
-static void coordinate_digits(const char*s){while(*s){char c=*s++;coordinates.focus=c=='-'?9:c=='.'?11:c=='0'?10:c-'1';key_handle(K_ENTER);}}
+static void coordinate_digits(const char*s){while(*s){char c=*s++;coordinates.focus=c=='-'?COORD_SIGN:c=='.'?COORD_DOT:c=='0'?COORD_ZERO:c-'1';key_handle(K_ENTER);}}
 static void coordinate_preview(const char*stage){
  clear_trip();menu_open(P_TRIP,0,hud_now_ms());key_handle(K_ENTER);
  assert(screen==SCR_COORDINATES&&coordinates_active&&sheet_page==P_COORD);
@@ -672,8 +672,8 @@ static void coordinate_preview(const char*stage){
  key_handle(K_SR);assert(coordinates.step==COORD_LON);
  coordinate_digits("-1.64050");
  coordinates.focus=0;if(streq(stage,"longitude"))return;
- /* Since 2.1.6, soft-right switches axes; Back validates both coordinates. */
- key_handle(K_BACK);assert(screen==SCR_KEY&&sheet_page==P_NAME);
+ /* Soft-right switches axes; the keypad Next validates both coordinates. */
+ coordinates.focus=COORD_NEXT;key_handle(K_ENTER);assert(screen==SCR_KEY&&sheet_page==P_NAME);
  const char*name="QUAYSIDE";
  while(*name)keyboard_type((unsigned char)*name++);
  pk_focus=PK_SAVE;if(streq(stage,"name"))return;

@@ -1,4 +1,4 @@
-# ClioPlay version 2.1.6
+# ClioPlay version 2.1.7
 
 ## Set up a card
 
@@ -25,8 +25,9 @@ Install Python 3.11+, osmium-tool, a C++17 compiler, and cabextract or 7-Zip. Ru
    stay in place. Failed commits attempt rollback, including atlas selectors.
 
 The installer accepts an SD-card root or a local folder for inspecting the
-complete installation. Rebuild with `python3 tools/build_ui.py --install` after
-changing native code. Current programs live in `clio843/`; `card-template/`
+complete installation. Rebuild with `python3 tools/rebuild_arm.py` after
+changing native code, then regenerate the previews and refresh the publication as
+described in [BUILDING.md](BUILDING.md). Current programs live in `clio843/`; `card-template/`
 contains only default startup scripts, preferences and the legacy helpers. The
 custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
 
@@ -47,7 +48,9 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
 - **Menus:** each page title shares the top row with the clock and temporary
   audio or connection notices. In Bluetooth control mode, Left and Right skip
   tracks, and OK toggles playback. The selected control briefly highlights.
-- **Bluetooth audio:** selecting another audio source suspends decoding while
+- **Bluetooth audio:** on units with `hw_bluetooth=0`, the Bluetooth menu, phone
+  audio, phone destinations and related controls are unavailable. On equipped units,
+  selecting another audio source suspends decoding while
   keeping the phone connection, controls and destination reception available.
   If a media stream stalls without suspending its transport, playback closes
   after queued audio has had time to drain and restarts when packets return.
@@ -133,7 +136,7 @@ uses its normal vehicle configuration to supply physical console events.
 | DEST | Open Trip directly, unless a confirmation is awaiting a decision. |
 | MAP | The existing Auto/manual zoom, Explore and return-to-map behaviour. |
 | Joystick | The existing arrow actions, including Explore panning. |
-| Knob rotation | Zoom the map; previous/next track in BT CTRL; scroll menus; select dialog choices; traverse keyboard characters and coordinate fields. |
+| Knob rotation | Zoom the map; previous/next track in BT CTRL; scroll menus; select dialog choices; traverse keyboard and coordinate keypad keys. |
 | Knob press | OK/confirm; play/pause in BT CTRL. |
 
 Duplicate evdev knob events are ignored only after a valid console FIFO record
@@ -252,8 +255,8 @@ calculation uses the existing five-frame-per-second cap. Declining keeps Explore
   **Up / Down** selects the action. **OK** confirms; **BACK** returns to the list.
 
 All these pages are animated frosted-glass sheets over the live map. Menu,
-Settings and Bluetooth retain the lower driving pills when there is enough room;
-Trip, coordinates and naming use a taller sheet. An unusually tall status notice
+Settings, Bluetooth, Trip, coordinates and review use compact sheets between
+the persistent HUD pills. Only the naming keyboard expands into the lower HUD area. An unusually tall status notice
 can temporarily hide the lower pills to make room for a compact page. The top
 clock and status pill keep their position and notice timers across page changes.
 
@@ -267,12 +270,13 @@ Use **Up / Down** to highlight a row. The available actions depend on the settin
 | Theme | Cycle Day, Night and Auto. | |
 | Units | Cycle Auto, Metric and Imperial. | |
 | Auto zoom | Toggle on or off. | |
-| Camera alerts | Cycle Off, Visual and Phone audio. | |
+| Camera alerts | Cycle Off, Visual and Phone audio (Off/Visual only if Bluetooth hardware is absent). | |
 | Clock | Set a manual UTC offset in 15-minute steps. | Toggle automatic and manual time. |
 | Debug log | Toggle on or off. | |
 | Language | Cycle backwards or forwards. | Open the language chooser. |
 | Day starts / Night starts | Adjust the highlighted hour or minute. | Switch between editing hours and minutes. |
-| Switch top pills to the left/right | Switch bottom pills to the left/right | |
+| Top pill order | Toggle Status left / Clock left (status and time/temperature swap sides). | |
+| Bottom pill order | Toggle Speed left / Direction left. | |
 
 The release version is shown at the bottom of Settings.
 
@@ -449,16 +453,25 @@ navigation and menus. Console input uses the independent reader described in the
 
 ### Decimal-degree destinations
 
-**Trip → Itinerary → Coordinates** opens latitude, longitude, optional name,
-and review. **Add stop** and **Change destination** expose the same Coordinates
-source. Arrow keys move around the numeric keypad; OK presses a key. **±** toggles
-the sign, **.** adds the decimal separator, **Delete** removes the last character,
-and **Clear** clears the current field. The left soft key deletes; the right soft
-key advances a numeric field. On the name keyboard, the right soft key inserts a
-space, and **Next** opens review. The existing keyboard-language selector works
-for destination names. BACK keeps entered values while going back; MAP/MENU leave
-without saving. Review offers the route/stop action, Edit coordinates, Rename
-and Cancel. No saved places or itinerary targets change until confirmation.
+**Trip → Itinerary → Coordinates** opens a single keypad sheet with latitude
+and longitude fields. **Add stop** and **Change destination** expose the same
+Coordinates source. Arrow keys or console knob rotation select among 13 keys;
+**OK** presses the highlighted key. The bottom-left column contains two half-width
+keys: **±** toggles the sign and **.** inserts the decimal separator. **0** is in
+the middle and **Next** is at bottom right.
+
+The left soft key deletes the last character; the right soft key cycles between
+latitude and longitude, wrapping in both directions. Select **Next** to validate
+both fields and open optional naming. An invalid or empty field is selected and
+its warning shown above the keypad; nothing is saved. **BACK** returns to the
+previous page (Itinerary, source selector or Review when editing) without applying
+the draft. Reopening a new coordinate entry starts with empty fields.
+
+On the name keyboard, the right soft key inserts a space and **Next** opens
+Review. BACK from naming returns to the coordinate sheet with the draft name
+retained. Review offers the route/stop action, Edit coordinates, Edit name and
+Cancel; backing out of Edit coordinates restores the prior review values. MAP/MENU
+leave without saving. No saved places or itinerary targets change until confirmation.
 
 Latitude accepts −90…90, longitude −180…180; minus means south/west. Decimal
 points use `.` in every interface language. Up to seven fractional digits can be

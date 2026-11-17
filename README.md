@@ -1,6 +1,6 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
-<h1 align="center">ClioPlay 2.1.6</h1>
+<h1 align="center">ClioPlay 2.1.7</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
 <p align="center">
   Created and maintained by <a href="https://github.com/pxwel-dev">Pawel (pxwel-dev)</a>.
@@ -9,20 +9,20 @@
 
 <p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases/tag/Release">Download latest release</a> · <a href="#install">Install instructions</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-## Version 2.1.6 - Latest development release
+## Version 2.1.7 — Development update
 
 ### Changes in this version
 
-1) Simplify coordinate page. Only keypad. Soft right will cycle between lat/long and wrap back around to the other side, while soft left is delete. 
-2) Vertically recentre the trip symbols (circle & squares) within the selection window
-3) Add further customisability in settings:
-   - Status pill on left / Time & temp pill on right (DEFAULT VALUE), Status pill on right / Time & temp pill on left
-   - Speed pill in left / Direction pill on right (DEFAULT VALUE), Speed pill on right / Direction pill on left
-4) If hw_bluetooth = 0, hide all bluetooth-related functionality in the UI. 
+- Restored **BACK** to return to the previous page without advancing or applying a coordinate draft.
+- Added a full-width **Next** key at the bottom right of the coordinate keypad. The **±** and **.** keys share the bottom-left column; **0** remains in the middle.
+- **Next** validates both fields and opens optional naming; invalid entries stay editable. Soft-right still cycles latitude/longitude and soft-left deletes.
+- Updated directional/rotary navigation, regression checks and demo capture scripts.
 
 See [version history](CHANGELOG.md) for implemented changes by version.
 
 ## UI previews
+
+See the [full preview index](src/docs/demo/README.md) for all animations.
 
 | Driving and camera alerts | Dynamically-resizing, animated frosted-glass menu |
 | --- | --- |
@@ -113,7 +113,7 @@ BT CTRL also requires a connected phone. Unavailable radio/volume readings stay 
 - Day/Night themes with custom daily switch times in Auto, automatic units and time zones, and 18 interface languages.
 - Mapped speed limits and camera alerts where the bundled country policy allows them.
 
-For new stops/destinations, enter **Coordinates** on the head unit or use the separate [ClioPlay Send website](https://pxwel-dev.github.io/ClioPlay-Send/) to send the new route to ClioPlay from your phone via Bluetooth. For ease of use, add the website to your Home Screen as a web app.
+For new stops/destinations, enter **Coordinates** on the head unit, choose **Next** on the keypad to validate both fields and proceed to naming, or use the separate [ClioPlay Send website](https://pxwel-dev.github.io/ClioPlay-Send/) to send the new route to ClioPlay from your phone via Bluetooth. For ease of use, add the website to your Home Screen as a web app.
 
 ## Install
 
@@ -152,7 +152,7 @@ upper-right console buttons act as the remote's soft keys.
 | **Up / Down** | **Joystick up / down** | Enter map browsing and pan, or move through menu rows. |
 | **Left / Right** | **Joystick left / right** | Enter map browsing and pan, change tabs/options/settings, or select dialog choices. In **BT CTRL**, previous/next track. |
 | **Left soft key** | **Upper-left button** | Zoom out; previous Trip tab; delete a character in coordinate/name entry. |
-| **Right soft key** | **Upper-right button** | Zoom in; next Trip tab; pair a phone from Bluetooth; advance a coordinate field; insert a space in a name. |
+| **Right soft key** | **Upper-right button** | Zoom in; next Trip tab; pair a phone from Bluetooth; cycle latitude/longitude; insert a space in a name. |
 
 Turning the console knob also zooms the map, skips tracks in **BT CTRL**, scrolls
 lists and moves through keyboard/keypad buttons or dialog choices. In Settings,

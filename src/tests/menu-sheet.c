@@ -40,7 +40,10 @@ static void saved_places(void){
  key_handle(K_ENTER);assert(trip.count==2&&sheet_page==P_TRIP&&trip.target[0].lat==5498000);
  /* Draft cancellation does not modify trip; back preserves the source. */
  menu_open(P_TRIP,trip.count,hud_now_ms());key_handle(K_ENTER);choose(1);key_handle(K_ENTER);
- assert(sheet_page==P_REVIEW);key_handle(K_BACK);assert(sheet_page==P_PLACES);
+ assert(sheet_page==P_REVIEW&&review_from_place);choose(1);assert(sheet_page==P_COORD);
+ key_handle(K_ESC);key_handle(K_BACK);assert(sheet_page==P_REVIEW&&review_from_place&&coordinates_active);
+ assert(streq(coordinates.value[0],"54.98000")&&streq(coordinates.name,"Renamed"));
+ key_handle(K_BACK);assert(sheet_page==P_PLACES);
  key_handle(K_BACK);assert(sheet_page==P_SOURCE);key_handle(K_BACK);assert(sheet_page==P_TRIP&&trip.count==2);
 }
 static void itinerary(void){

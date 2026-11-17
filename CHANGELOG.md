@@ -3,7 +3,16 @@
 This history records implemented changes. Entries marked **Unreleased** are prepared locally and have not been published.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
 
-## Version 2.1.6 - Latest development release
+## Version 2.1.7 — Development release
+
+### Changes in this version
+
+- Restored **BACK** to return to the previous page without advancing or applying a coordinate draft.
+- Added a full-width **Next** key at the bottom right of the coordinate keypad. The **±** and **.** keys share the bottom-left column; **0** remains in the middle.
+- **Next** validates both fields and opens optional naming; invalid entries stay editable. Soft-right still cycles latitude/longitude and soft-left deletes.
+- Updated directional/rotary navigation, regression checks and demo capture scripts.
+
+## Version 2.1.6 - Development release
 
 ### Changes in this version
 
@@ -14,7 +23,7 @@ Release dates are added when a version is published; older versions are not reco
    - Speed pill in left / Direction pill on right (DEFAULT VALUE), Speed pill on right / Direction pill on left
 4) If hw_bluetooth = 0, hide all bluetooth-related functionality in the UI.
 
-## Version 2.1.5 - Latest development release
+## Version 2.1.5 - Development release
 
 ### Changes in this version
 

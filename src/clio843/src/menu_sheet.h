@@ -4,9 +4,10 @@ enum {P_CLOSED,P_HOME,P_SETTINGS,P_TRIP,P_PLACES,P_STOP,P_DEST,P_PLACE,
  P_NAME,P_COORD,P_REVIEW,P_LANG,P_PHONE,P_PHONE_ACTIONS,P_PAIR,P_CONFIRM,P_SOURCE};
 static int sheet_page,sheet_focus,sheet_old_page,sheet_old_focus,sheet_stack_page[12],sheet_stack_focus[12],sheet_depth;
 static int places_tab,place_index,stop_index,flow_action,language_keyboard,trip_tab_focus[3];
-static int keyboard_origin,phone_index,confirm_kind,coord_nav_y=-1;
+static int keyboard_origin,phone_index,confirm_kind;
 static char phone_addr[18];
 static int places_picker,review_from_place,source_action;
+static struct CoordinateDraft coord_before_edit;
 static char context_name[161];
 static int menu_pending;
 static u32 menu_at,focus_at,bottom_at,menu_presented_at,menu_interaction_at;
@@ -59,7 +60,6 @@ static void menu_change(int next,int selected,u32 now){
  sheet_page=next;sheet_focus=selected;sheet_to_box=menu_box(next);menu_at=focus_at=menu_interaction_at=now;screen=menu_screen(next);
  if(next==P_PLACES){int count=places_tab?nfaves:nrecents;if(sheet_focus>=count)sheet_focus=count?count-1:0;}
  if(next==P_TRIP||next==P_HOME||next==P_CLOSED){places_picker=review_from_place=0;flow_action=DEST_PICK_NONE;}
- if(next!=P_COORD||sheet_old_page!=P_COORD)coord_nav_y=-1;
  if(!sheet_old_page){sheet_from_box=sheet_to_box;sheet_from_box.x+=6;sheet_from_box.y+=6;sheet_from_box.w-=12;sheet_from_box.h-=12;sheet_from_box.a=0;}
  if(!next){sheet_to_box=sheet_from_box;sheet_to_box.x+=6;sheet_to_box.y+=6;sheet_to_box.w-=12;sheet_to_box.h-=12;sheet_to_box.a=0;}
 }
@@ -102,21 +102,11 @@ static void menu_pair(u32 now){
 static void setting_adjust(int code,u32 now){
  (void)now;set_focus=sheet_focus;settings_key(code);
 }
-/* The coordinate page is a twelve-key keypad. Both directional and rotary
- * navigation wrap cleanly, with no off-grid action column. */
-static void coord_move(int code){
- int f=coordinates.focus%12,row=f/3,col=f%3;
- if(code==K_LEFT)col=(col+2)%3;
- if(code==K_RIGHT)col=(col+1)%3;
- if(code==K_UP)row=(row+3)%4;
- if(code==K_DOWN)row=(row+1)%4;
- coordinates.focus=row*3+col;
-}
 static void menu_key(int code,u32 now){
  if(code==K_ROTCW||code==K_ROTCCW){
   int d=code==K_ROTCW?1:-1;
   if(sheet_page==P_NAME){pk_prepare();pk_rotate(d);return;}
-  if(sheet_page==P_COORD){coordinates.focus=(coordinates.focus+d+12)%12;coord_nav_y=-1;return;}
+  if(sheet_page==P_COORD){coordinate_move(code);return;}
   code=d>0?K_DOWN:K_UP;
  }
  if(code==K_MAP){menu_close(now);recenter_map();return;}
@@ -132,7 +122,10 @@ static void menu_key(int code,u32 now){
   int save=code==K_ENTER&&pk_focus==PK_SAVE;
   if(code==K_ENTER)pk_press();else keyboard_handle(code);
   if(kbd_picker){language_keyboard=1;menu_push(P_LANG,kbd_pick,now);}
-  else if(save&&keyboard_origin==KBD_NAME_COORDINATES&&coordinates.step==COORD_REVIEW)menu_change(P_REVIEW,0,now);
+  else if(save&&keyboard_origin==KBD_NAME_COORDINATES&&coordinates.step==COORD_REVIEW){
+   if(sheet_depth&&sheet_stack_page[sheet_depth-1]==P_REVIEW)sheet_depth--;
+   review_from_place=0;menu_change(P_REVIEW,0,now);
+  }
   else if(save&&keyboard_origin!=KBD_NAME_COORDINATES&&kbd_text[0]){sheet_depth=0;places_tab=1;place_index=fave_contains(kbd_place_lat,kbd_place_lon);menu_change(P_PLACES,place_index>=0?place_index:0,now);}
   screen=menu_screen(sheet_page);return;
  }
@@ -150,10 +143,10 @@ static void menu_key(int code,u32 now){
   }return;
  }
  if(sheet_page==P_COORD){
-  if(code==K_LEFT||code==K_RIGHT||code==K_UP||code==K_DOWN){coord_move(code);return;}
-  coord_nav_y=-1;
-  if(code==K_BACK&& !coordinates.value[0][0]&&!coordinates.value[1][0]){
-   coordinates_active=0;menu_back(now);return;
+  if(code==K_BACK){
+   if(sheet_depth&&sheet_stack_page[sheet_depth-1]==P_REVIEW){coordinates=coord_before_edit;menu_back(now);}
+   else{coordinates_active=0;menu_back(now);}
+   return;
   }
   screen=SCR_COORDINATES;coordinates_handle(code);
   if(screen==SCR_KEY){keyboard_origin=KBD_NAME_COORDINATES;pk_reset();pk_prepare();menu_change(P_NAME,0,now);}
@@ -220,7 +213,7 @@ static void menu_key(int code,u32 now){
   else if(sheet_focus==1){int index=trip.count-1;if(trip_add_stop(point.name,point.lat,point.lon)){add_recent(point.name,point.lat,point.lon);menu_return_trip(index,now);}else notice_fail(ui_tr(trip.active?"Trip full - stop not added":"No active route"));}return;
  }
  if(sheet_page==P_REVIEW){
-  if(sheet_focus==1){review_from_place=0;coordinates.step=COORD_LAT;coordinates.focus=0;menu_change(P_COORD,0,now);}
+  if(sheet_focus==1){if(sheet_depth>=12)return;coord_before_edit=coordinates;coordinates.step=COORD_LAT;coordinates.focus=0;coordinates.error=0;menu_push(P_COORD,0,now);}
   else if(sheet_focus==2){review_from_place=0;coordinates_open_name();keyboard_origin=KBD_NAME_COORDINATES;pk_reset();pk_prepare();menu_change(P_NAME,0,now);}
   else if(sheet_focus==3){coordinates_active=0;menu_return_trip(0,now);}
   else{int action=coordinates.action,index=trip.count-1;coordinates_submit();
@@ -361,12 +354,12 @@ static void coord_content(struct HudBox b,int opacity){
  }
  int start=b.y+76,step=(b.h-83)/4,cw=(b.w-28)/3;
  if(step<14)step=14;
- for(int i=0;i<12;i++){
-  int x=b.x+14+(i%3)*cw,y=start+(i/3)*step;
-  menu_tile(x,y,cw-5,step-3,coordinates.focus==i,opacity);
-  char t[8]={0};if(i==9)copystr(t,sizeof(t),"±");else{t[0]=i==10?'0':i==11?'.':'1'+i;}
-  hud_ink_alpha=opacity;
-  box_text(x,y,cw-5,step-3,1,t,coordinates.focus==i?C_ACTIVE_TEXT:C_WHITE);
+ for(int i=0;i<COORD_KEY_COUNT;i++){
+  int x,w,y=start+(i<COORD_SIGN?i/3:3)*step;
+  coordinate_key_bounds(i,cw,5,&x,&w);x+=b.x+14;
+  menu_tile(x,y,w,step-3,coordinates.focus==i,opacity);
+  char t[2];hud_ink_alpha=opacity;
+  box_text(x,y,w,step-3,1,coordinate_key_label(i,t),coordinates.focus==i?C_ACTIVE_TEXT:C_WHITE);
  }
 }
 static void review_content(struct HudBox b,int selected,int opacity){

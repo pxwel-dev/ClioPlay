@@ -2961,7 +2961,7 @@ static int control_key(int code){
   if(next>=0&&next<48){kbd_focus=next;kbd_column=keyboard_col(next);render_background_dirty=1;}return 0;
  }
  if(screen==SCR_COORDINATES&&coordinates.step!=COORD_REVIEW){
-  int next=coordinates.focus+(forward?1:-1);if(next>=0&&next<=14){coordinates.focus=next;render_background_dirty=1;}return 0;
+  coordinate_move(code);render_background_dirty=1;return 0;
  }
  if(screen==SCR_MAP)return bt_control_mode?(forward?K_RIGHT:K_LEFT):(forward?K_SR:K_ESC);
  if(screen==SCR_BT&&(bt_page_dialog>=0||(bt_connected_idx()>=0&&bt_page_focus==0)))return forward?K_RIGHT:K_LEFT;

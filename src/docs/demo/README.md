@@ -13,10 +13,15 @@
 | [Speeding warning](speed-warning.gif) | The speed pill pulses red above a confirmed 30 mph limit and eases back when the car slows down. |
 | [Map browsing](map-browsing.gif) | Manual zoom is temporary; MAP restores Auto before entering Explore. Explore appears once on entry, stays silent during later pan/zoom, and returns to Auto with one notice. |
 | [Roundabout and ETA](roundabout-eta.gif) | The turn pill shows the third exit. OK displays the estimated time and remaining distance. |
-| [Coordinate route](coordinate-route.gif) | Choose Coordinates, enter latitude/longitude and a name, review, calculate a real route, return to driving and find the destination in Recents. |
+| [Coordinate route](coordinate-route.gif) | Choose Coordinates, enter latitude/longitude, press keypad Next, enter a name, review, calculate a real route, return to driving and find the destination in Recents. |
 | [Map-point route](map-point-route.gif) | Enter Explore with MAP, pan to a point, press OK, confirm and calculate a real route back in the driving view. |
-| [Coordinates](coordinates.gif) | Enter decimal latitude/longitude, name and review a destination, then confirm it into the route and Recents. |
+| [Coordinates](coordinates.gif) | Enter decimal latitude/longitude, use Next, name and review a destination, then confirm it into the route and Recents. |
 | [Add a stop](add-stop.gif) | Trip chooses a favourite, reviews it, then inserts it before the original destination. |
+| [Coordinate keypad (2.1.7)](v216-coordinates.gif) | Split sign/decimal keys, soft-key field toggle/delete, Next validation and optional naming. The existing filename is retained for compatibility. |
+| [Trip layout](trips-layout.gif) | Compact Itinerary, Recents, Favourites, and destination-source review. |
+| [Empty trip layout](trips-empty-layout.gif) | Open Coordinates from an empty itinerary and return using Back. |
+| [Popup layout](popups-layout.gif) | Compact confirmation and language picker; expanded name keyboard. |
+| [Itinerary](v216-itinerary.gif) | Scroll compact itinerary rows with centred symbols. |
 | [Bluetooth hidden](v216-bluetooth-hidden.gif) | Able to use ClioPlay, even if hw_bluetooth=0 |
 | [Hud Customisability](v216-hud-settings.gif) | Change top and bottom bar pill positions in settings |
 
@@ -66,9 +71,13 @@ Build and copy the current executables as described in [BUILDING.md](../../BUILD
 With Pillow and a host C/C++ compiler, run from `src/`:
 
 ```sh
-python3 tools/render_previews.py --maps /path/to/clio843/maps
+python3 tools/regenerate_gifs.py --maps /path/to/clio843/maps
 python3 tools/refresh_latest.py
 ```
+
+Without maps, `python3 tools/regenerate_gifs.py` produces only seven quick
+mapless previews. Use the full map-backed command above before publication;
+it refreshes all GIFs and the provenance manifest.
 
 The [manifest](manifest.json) records preview, source and executable hashes.
 The map bundle is read in place. Captured PNGs, raw framebuffers and host
