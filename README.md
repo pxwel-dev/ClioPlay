@@ -28,10 +28,6 @@ See [intelligent navigation](src/docs/intelligent-navigation.md) for configurati
 
 See the [full preview index](src/docs/demo/README.md) for all animations.
 
-| Destination prediction | Intelligent diversions |
-| --- | --- |
-| ![Learned destination in Trip](src/docs/demo/v220-destination-prediction.gif) | ![Historical traffic and alternative route selection, controlled fixture](src/docs/demo/v220-intelligent-diversions.gif) |
-
 | Driving and camera alerts | Dynamically-resizing, animated frosted-glass menu |
 | --- | --- |
 | ![Driving with a temporary road name and a camera warning](src/docs/demo/driving.gif) | ![Animated on-map menus, Itinerary, Recents, Favourites, Bluetooth actions and Settings](src/docs/demo/menus.gif) |
@@ -55,6 +51,10 @@ See the [full preview index](src/docs/demo/README.md) for all animations.
 | HUD Customisability | Song and radio updates |
 | --- | --- |
 | ![Change top and bottom bar pill positions in settings](src/docs/demo/v216-hud-settings.gif) | ![A new song appears, updates inside Bluetooth control, then radio tuning changes the frequency](src/docs/demo/metadata-updates.gif) |
+
+| Destination prediction | Intelligent diversions |
+| --- | --- |
+| ![Learned destination in Trip](src/docs/demo/v220-destination-prediction.gif) | ![Historical traffic and alternative route selection, controlled fixture](src/docs/demo/v220-intelligent-diversions.gif) |
 
 
 <table align="center">
