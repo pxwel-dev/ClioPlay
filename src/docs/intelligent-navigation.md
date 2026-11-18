@@ -30,7 +30,9 @@ an arrival. They are hidden while an itinerary is active.
 During guidance, **Likely traffic ahead** means historical evidence suggests
 a delay, not that a real-time traffic incident was detected. Where the local
 search finds a sufficiently beneficial alternative, the original route stays
-magenta and the alternative is shown in a muted contrasting shade. Open
+magenta outside the bypassed section, which is gold/yellow. The proposed
+alternative is aqua/teal. After accepting it, the selected route returns to
+the normal magenta colour. Open
 Trip → Itinerary → **Diversion** and confirm Yes to take it. No dismisses
 the offer for the current route revision. Normal off-route rerouting remains
 available; an offer expires if the driver passes the divergence point or

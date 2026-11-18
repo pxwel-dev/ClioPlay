@@ -20,6 +20,10 @@ int main(int argc,char**argv){assert(argc==3&&load_font()&&cliou_load(argv[1]));
    }
   }
   assert(width(bt_source_label(),0)<=52);assert(width(bt_label(),3)<=440);assert(streq(bt_source_label(),"BT"));assert(streq(bt_label(),lang?ui_tr("Phone connection"):"Bluetooth"));assert(width(ui_tr("Phone audio"),1)<=180);
+  char settings_text[96];pref.top_swap=1;assert(streq(setting_value(10,settings_text),ui_tr("Clock left")));pref.top_swap=0;assert(streq(setting_value(10,settings_text),ui_tr("Status left")));
+  pref.bottom_swap=1;assert(streq(setting_value(11,settings_text),ui_tr("Direction left")));pref.bottom_swap=0;assert(streq(setting_value(11,settings_text),ui_tr("Speed left")));
+  assert(starts(setting_value(15,settings_text),ui_tr("Journeys: ")));
+  assert(streq(place_display_name("MAP POINT"),ui_tr("Map point"))&&streq(place_display_name("PHONE DESTINATION"),ui_tr("Phone destination"))&&streq(place_display_name("Settings"),"Settings"));
   copystr(btui.status,sizeof(btui.status),"BT DAEMON ERROR");pref.debug=0;assert(streq(bt_status_text(),lang?ui_tr("Phone connection unavailable"):"Bluetooth unavailable"));btui.status[0]=0;
   for(unsigned i=0;i<sizeof(locale_cases)/sizeof(locale_cases[0]);i++){assert(streq(ui_tr(locale_cases[i][0]),locale_cases[i][lang]));whole_utf8(locale_cases[i][lang]);assert(cliou_width(locale_cases[i][lang],1)>0);}
   kbd_language=lang;kbd_page=0;for(int i=36;i<40;i++){if(!keyboard_valid_focus(i))continue;char b[16];const char*key=key_label(i,b);int limit=101;if(width(key,0)>limit)fprintf(stderr,"Key overflow %s %d: %s (%d)\n",ui_language_codes[lang],i,key,width(key,0));assert(width(key,0)<=limit);}

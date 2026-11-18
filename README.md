@@ -15,8 +15,10 @@
 
 - Introduced optional, offline driving-history learning. Fresh GPS observations are recorded independently of active navigation and only successful Barcelona power-off sessions train the model.
 - Added contextual destination suggestions to an empty Itinerary using the last saved GPS position, raw GPS time/day patterns and early trajectory evidence, with nearby Favourites/Recents matching.
-- Added directional historical road-time profiles, traffic-adjusted ETAs and an explicit local Diversion choice with a contrasting route shade.
+- Added directional historical road-time profiles, traffic-adjusted ETAs and an explicit local Diversion choice with gold/yellow bypassed geometry and an aqua/teal alternative.
 - Added history, destination suggestion and diversion controls in Settings, including a confirmed clear-history action. 
+- Fixed Bluetooth phone names and connected-state identity when switching between saved devices; both remain keyed by hardware address.
+- Completed the new navigation and HUD translations across all 18 interface languages, and added missing-key regression checks.
 - Added native regression cases and two controlled preview storyboards. Historical traffic is not live traffic.
 - Added a software-only update mode with verified staged copies, a dated software backup and rollback; existing maps, settings and personal history remain untouched.
 
@@ -27,6 +29,10 @@ See [intelligent navigation](src/docs/intelligent-navigation.md) for configurati
 ## UI previews
 
 See the [full preview index](src/docs/demo/README.md) for all animations.
+
+| Destination prediction | Intelligent diversions |
+| --- | --- |
+| ![Learned destination in Trip](src/docs/demo/v220-destination-prediction.gif) | ![Historical traffic and alternative route selection, controlled fixture](src/docs/demo/v220-intelligent-diversions.gif) |
 
 | Driving and camera alerts | Dynamically-resizing, animated frosted-glass menu |
 | --- | --- |
@@ -51,10 +57,6 @@ See the [full preview index](src/docs/demo/README.md) for all animations.
 | HUD Customisability | Song and radio updates |
 | --- | --- |
 | ![Change top and bottom bar pill positions in settings](src/docs/demo/v216-hud-settings.gif) | ![A new song appears, updates inside Bluetooth control, then radio tuning changes the frequency](src/docs/demo/metadata-updates.gif) |
-
-| Destination prediction | Intelligent diversions |
-| --- | --- |
-| ![Learned destination in Trip](src/docs/demo/v220-destination-prediction.gif) | ![Historical traffic and alternative route selection, controlled fixture](src/docs/demo/v220-intelligent-diversions.gif) |
 
 
 <table align="center">

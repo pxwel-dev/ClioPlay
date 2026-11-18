@@ -273,6 +273,7 @@ static u16 C_CYAN=0x64ff,C_WHITE=0xf7bf,C_BLUE=0x3c97,C_MUTED=0x9d76;
 static u16 C_DIM=0x63af,C_WARN=0xf524,C_ROAD=0x326c,C_WATER=0x1a4c,C_GREEN=0x2b4a;
 static u16 C_HEADER=0x08c3,C_ACTIVE=0x1a2b,C_ACTIVE_TEXT=0xf7ff,C_ACCENT=0x46b9,C_SHADOW=0x0041,C_HILITE=0x21a7;
 static u16 C_CAR=0xf4e8; /* Vehicle body follows the map theme. */
+static u16 C_ROUTE_SKIPPED=0xf64b,C_ROUTE_DIVERSION=0x66d8;
 static u16 C_ROUTE=0xfb36; /* Day raspberry / night bright pink; separate from roads and vehicle. */
 /* Map road colours are independent of text, focus and HUD accent colours.
  * Low-to-high coverage slots preserve the existing six-plane junction blend. */
@@ -293,14 +294,14 @@ static int theme_resolved=1; /* 0 DAY, 1 NIGHT */
 static void apply_palette(int night){
   int next=night?1:0,changed=(next!=theme_resolved);theme_resolved=next;
   if(night){
-    C_CAR=0xf4e8;C_ROUTE=0xfb36;
+    C_CAR=0xf4e8;C_ROUTE=0xfb36;C_ROUTE_SKIPPED=0xf64b;C_ROUTE_DIVERSION=0x66d8;
     /* NIGHT: deep charcoal-blue surfaces with a restrained teal focus colour. */
     C_BG=0x0082; C_PANEL=0x1105; C_PANEL2=0x1146; C_BORDER=0x2a09;
     C_CYAN=0x46b9; C_WHITE=0xf7bf; C_BLUE=0x3c97; C_MUTED=0x9d76;
     C_DIM=0x63af; C_WARN=0xf524; C_ROAD=0x326c; C_WATER=0x1a4c; C_GREEN=0x2b4a;
     C_HEADER=0x08c3; C_PANEL=0x10e4; C_PANEL2=0x1926; C_BORDER=0x39e9; C_CYAN=0x64ff; C_ACTIVE=0x1a2b; C_ACTIVE_TEXT=0xffff; C_ACCENT=0x64ff; C_SHADOW=0x0041; C_HILITE=0x21a7;
   }else{
-    C_CAR=0xeb83;C_ROUTE=0xe150;
+    C_CAR=0xeb83;C_ROUTE=0xe150;C_ROUTE_SKIPPED=0xb4a0;C_ROUTE_DIVERSION=0x0bf0;
     /* DAY: warm/cool automotive greys rather than plain white inversion. */
     C_BG=0xef7d; C_PANEL=0xf7be; C_PANEL2=0xdf3c; C_BORDER=0xb618;
     C_CYAN=0x03f1; C_WHITE=0x1146; C_BLUE=0x33f3; C_MUTED=0x534e;
@@ -455,6 +456,8 @@ static void hardware_load_bluetooth(void){
  }
 }
 #include "ui_translations.h"
+/* Internal unnamed-place sentinels are translated only at presentation. */
+static const char*place_display_name(const char*s){if(!s)return "";if(streq(s,"MAP POINT"))return ui_tr("Map point");if(streq(s,"PHONE DESTINATION"))return ui_tr("Phone destination");return s;}
 /* The source badge is BT in every language. Page titles and status messages
  * retain their translated phone wording outside English. */
 static const char*bt_label(void){return pref.language==0?"Bluetooth":ui_tr("Phone connection");}
@@ -742,7 +745,7 @@ static void poll_car(void){
 enum {SCR_MAP=0,SCR_MENU=1,SCR_TRIP=2,SCR_BT=3,SCR_SET=4,SCR_KEY=5,SCR_COORDINATES=6};static int screen=SCR_MAP;
 enum {MENU_BODY_Y=42};
 struct BtUi {
-  char status[28],device[33],title[193],artist[161],album[161];
+  char status[28],device[33],device_addr[18],title[193],artist[161],album[161];
   int paired,connected,playing,pos,dur;
 };
 struct BtDeviceUi {char addr[18],name[33];int connected;};
@@ -832,6 +835,7 @@ static int bt_media_seconds(const char*s){
  return (int)value;
 }
 static void bt_parse_meta_line(char*ln){
+  if(starts(ln,"DEVICE_ADDR=")){bt_copy_value(btui.device_addr,sizeof(btui.device_addr),ln+12);return;}
   if(starts(ln,"DEVICE=")){bt_copy_value(btui.device,sizeof(btui.device),ln+7);return;}
   if(starts(ln,"TITLE=")){bt_copy_value(btui.title,sizeof(btui.title),ln+6);return;}
   if(starts(ln,"ARTIST=")){bt_copy_value(btui.artist,sizeof(btui.artist),ln+7);return;}
@@ -842,7 +846,47 @@ static void bt_parse_meta_line(char*ln){
   if(starts(ln,"POS=")){btui.pos=bt_media_seconds(ln+4);return;}
   if(starts(ln,"DUR=")){btui.dur=bt_media_seconds(ln+4);if(btui.dur<0)btui.dur=0;return;}
 }
-static int bt_poll_devices(void){nbtdev=0;char b[1280];long fd=s_open(BT_DEVLIST_PATH,O_RDONLY_,0);if(fd<0)return 0;long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n<=0)return 0;int complete=b[n-1]=='\n';b[n]=0;char*ln=b;for(long i=0;i<=n&&nbtdev<BT_UI_MAX_DEVICES;i++){if(b[i]=='\r'||b[i]=='\n'||b[i]==0){char save=b[i];b[i]=0;if(starts(ln,"DEV=")){char*p=ln+4,*a=p,*c=0,*nm=0;while(*p&&*p!='|')p++;if(*p=='|'){*p=0;c=p+1;p=c;while(*p&&*p!='|')p++;if(*p=='|'){*p=0;nm=p+1;bt_copy_value(btdev[nbtdev].addr,sizeof(btdev[nbtdev].addr),a);btdev[nbtdev].connected=atoi0(c)?1:0;bt_copy_value(btdev[nbtdev].name,sizeof(btdev[nbtdev].name),nm);if(bt_name_unknown(btdev[nbtdev].name)){const char*cn=bt_name_cache_get(btdev[nbtdev].addr);if(cn)copystr(btdev[nbtdev].name,sizeof(btdev[nbtdev].name),cn);else if(btdev[nbtdev].connected&&!bt_name_unknown(btui.device)){copystr(btdev[nbtdev].name,sizeof(btdev[nbtdev].name),btui.device);bt_name_cache_remember(btdev[nbtdev].addr,btui.device);}}else bt_name_cache_remember(btdev[nbtdev].addr,btdev[nbtdev].name);if(!btdev[nbtdev].name[0])copystr(btdev[nbtdev].name,sizeof(btdev[nbtdev].name),"UNKNOWN DEVICE");nbtdev++;}}}if(!save)break;ln=b+i+1;}}return complete&&starts(b,"COUNT=")&&atoi0(b+6)==nbtdev;}
+static int bt_meta_matches(const char*addr){
+ return btui.connected&&addr&&addr[0]&&streq(addr,btui.device_addr)&&!bt_name_unknown(btui.device);
+}
+static int bt_device_address(char*a){
+ if(slen(a)!=17)return 0;
+ for(int i=0;i<17;i++){
+  if(i%3==2){if(a[i]!=':')return 0;}
+  else{a[i]=upc(a[i]);if(!((a[i]>='0'&&a[i]<='9')||(a[i]>='A'&&a[i]<='F')))return 0;}
+ }return 1;
+}
+static int bt_poll_devices(void){
+ char b[1280];long fd=s_open(BT_DEVLIST_PATH,O_RDONLY_,0);if(fd<0)return 0;
+ long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);
+ if(n<=0||b[n-1]!='\n')return 0;b[n]=0;
+ struct BtDeviceUi next[BT_UI_MAX_DEVICES];int count=0,expected=-1,connected=0;char*line=b;
+ for(long i=0;i<n;i++)if(b[i]=='\n'){
+  b[i]=0;if(i>0&&b[i-1]=='\r')b[i-1]=0;
+  if(expected<0){
+   if(!starts(line,"COUNT=")||!line[6])return 0;expected=0;
+   for(char*p=line+6;*p;p++){if(*p<'0'||*p>'9')return 0;expected=expected*10+*p-'0';if(expected>BT_UI_MAX_DEVICES)return 0;}
+  }else{
+   if(!starts(line,"DEV=")||count>=expected)return 0;
+   char*a=line+4,*state=a;while(*state&&*state!='|')state++;if(!*state)return 0;*state++=0;
+   char*name=state;while(*name&&*name!='|')name++;if(!*name)return 0;*name++=0;
+   if(!bt_device_address(a)||!(streq(state,"0")||streq(state,"1")))return 0;
+   for(int j=0;j<count;j++)if(streq(next[j].addr,a))return 0;
+   struct BtDeviceUi*row=&next[count++];copystr(row->addr,sizeof(row->addr),a);row->connected=streq(state,"1");
+   if(row->connected&&++connected>1)return 0;copystr(row->name,sizeof(row->name),name);
+  }
+  line=b+i+1;
+ }
+ if(expected!=count)return 0;
+ /* A name can only be cached against the address in its own DEV record. */
+ for(int i=0;i<count;i++){
+  struct BtDeviceUi*row=&next[i];
+  if(bt_name_unknown(row->name)){const char*cached=bt_name_cache_get(row->addr);copystr(row->name,sizeof(row->name),cached?cached:"UNKNOWN DEVICE");}
+  else bt_name_cache_remember(row->addr,row->name);
+  if(!btui.connected)row->connected=0;
+ }
+ for(int i=0;i<count;i++)btdev[i]=next[i];nbtdev=count;return 1;
+}
 static int bt_connected_idx(void){for(int i=0;i<nbtdev;i++)if(btdev[i].connected)return i;return-1;}
 static int bt_saved_count(void){int c=0;for(int i=0;i<nbtdev;i++)if(!btdev[i].connected)c++;return c;}
 static int bt_saved_idx(int ord){for(int i=0;i<nbtdev;i++)if(!btdev[i].connected){if(!ord)return i;ord--;}return-1;}
@@ -858,7 +902,7 @@ static void bt_hud_status(const char*before,u32 now,int devices_complete){
   }
   bt_hud_link=1;
   if(peer[0])copystr(bt_hud_peer,sizeof(bt_hud_peer),peer);
-  const char*name=idx>=0&&!bt_name_unknown(btdev[idx].name)?btdev[idx].name:btui.device;
+  const char*name=idx>=0?(!bt_name_unknown(btdev[idx].name)?btdev[idx].name:bt_meta_matches(btdev[idx].addr)?btui.device:""):btui.device;
   if(!bt_name_unknown(name)){
    if(bt_hud_reported<2){
     copystr(hud_connected_name,sizeof(hud_connected_name),name);
@@ -903,7 +947,7 @@ static void bt_poll_status(void){
   }else copystr(btui.status,sizeof(btui.status),"BT DAEMON OFFLINE");
   if(fd<0||!reading_present(btui.status)||streq(btui.status,"BT DISCONNECTED")){
    btui.connected=0;btui.playing=0;bt_playback_request=-1;
-   btui.device[0]=btui.title[0]=btui.artist[0]=btui.album[0]=0;btui.pos=btui.dur=0;
+   btui.device_addr[0]=btui.device[0]=btui.title[0]=btui.artist[0]=btui.album[0]=0;btui.pos=btui.dur=0;
    for(int i=0;i<nbtdev;i++)btdev[i].connected=0;
    bt_hud_link=0;bt_hud_peer[0]=0;hud_connection.kind=hud_bt_feedback.kind=HUD_NONE;
    if(fd>=0&&was_connected&&streq(btui.status,"BT DISCONNECTED"))hud_bt_notice(ui_tr("Disconnected"));
@@ -916,7 +960,7 @@ static void bt_poll_status(void){
   if(fd>=0){
    long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);
    if(n>0){
-    b[n]=0;char*line=b;
+    b[n]=0;btui.device_addr[0]=0;char*line=b;
     for(long i=0;i<=n;i++)if(b[i]=='\r'||b[i]=='\n'||b[i]==0){
      char end=b[i];b[i]=0;
      if(line[0])bt_parse_meta_line(line);
@@ -926,7 +970,7 @@ static void bt_poll_status(void){
    }
   }
   int devices_complete=bt_poll_devices();
-  if(!btui.connected)btui.device[0]=0;
+  if(!btui.connected)btui.device_addr[0]=btui.device[0]=0;
   u32 now=hud_now_ms();
   /* Hold the requested icon through stale reports, then trust the phone again. */
   if(!btui.connected||now-bt_playback_requested_at>=BT_PLAYBACK_REPLY_MS||
@@ -2140,28 +2184,41 @@ static void append_miles(char*b,unsigned cap,u32 m){if(!display_imperial()){appe
 static void append_eta(char*b,unsigned cap,u32 ds){u32 min=udiv32(ds+300u,600u);if(min>=60u){append_int(b,cap,(int)(min/60u));appendstr(b,cap,"h ");append_int(b,cap,(int)(min%60u));appendstr(b,cap,"min");}else{append_int(b,cap,(int)min);appendstr(b,cap," min");}}
 static void append_arrival_clock(char*b,unsigned cap,u32 ds){int mt=local_clock_minutes();if(mt<0){appendstr(b,cap,"--:--");return;}u32 add=udiv32(ds+300u,600u);mt=(mt+(int)(add%1440u))%1440;char t[6];t[0]=(char)('0'+mt/600);t[1]=(char)('0'+(mt/60)%10);t[2]=':';t[3]=(char)('0'+(mt%60)/10);t[4]=(char)('0'+mt%10);t[5]=0;appendstr(b,cap,t);}
 static void route_draw_window(int*ps,int*pe){int first=route_head+1,last=route_n-1;if(first>last){*ps=1;*pe=0;return;}if(last-first+1<=ROUTE_DRAW_MAX_SEGMENTS){*ps=first;*pe=last;return;}if(!freecam){*ps=first;*pe=first+ROUTE_DRAW_MAX_SEGMENTS-1;if(*pe>last)*pe=last;return;}s32 vl=view_lat(),vo=view_lon();int cq=coslat_q15(vl),best=first;u32 bd=0xffffffffu;for(int i=first;i<=last;i+=64){s32 dx=lon_scale(route_lon[i]-vo,cq),dy=route_lat[i]-vl;u32 d=square_distance(dx,dy);if(d<bd){bd=d;best=i;}}{s32 dx=lon_scale(route_lon[last]-vo,cq),dy=route_lat[last]-vl;u32 d=square_distance(dx,dy);if(d<bd)best=last;}int half=ROUTE_DRAW_MAX_SEGMENTS/2,s=best-half;if(s<first)s=first;int e=s+ROUTE_DRAW_MAX_SEGMENTS-1;if(e>last){e=last;s=e-ROUTE_DRAW_MAX_SEGMENTS+1;if(s<first)s=first;}*ps=s;*pe=e;}
+/* Segment i runs from vertex i-1 to i. Highlight only the bypassed interval. */
+static int route_overlay_slot(int i,int offered){return offered&&i>traffic_begin_idx&&i<=traffic_join_idx?1:0;}
 static void draw_route_overlay(int z){
- if(route_status!=R_READY||route_n-route_head<2)return;int s,e;route_draw_window(&s,&e);if(s>e)return;
- if(traffic_offer_valid()){
-  int ax[255],ay[255],an=0;map_mask_begin(2);
-  for(int i=0;i<traffic_offer_n;i++){
-   if(!(i&31))render_checkpoint();
-   map_project_q8(traffic_path[i].lat,traffic_path[i].lon,z,&ax[an],&ay[an]);
-   if(++an==255){map_stroke_polyline(ax,ay,an,theme_resolved?0x9253:0xbb76,2);ax[0]=ax[an-1];ay[0]=ay[an-1];an=1;}
-  }if(an>1)map_stroke_polyline(ax,ay,an,theme_resolved?0x9253:0xbb76,2);map_mask_end();
- }
- int x[255],y[255],n=1;if(s==route_head+1)map_project_q8(car_lat(),car_lon(),z,&x[0],&y[0]);else map_project_q8(route_lat[s-1],route_lon[s-1],z,&x[0],&y[0]);
- map_mask_begin(2);
+ if(route_status!=R_READY||route_n-route_head<2)return;
+ int s,e;route_draw_window(&s,&e);if(s>e)return;
+ int offered=traffic_offer_valid(),slot=route_overlay_slot(s,offered);
+ int x[255],y[255],n=1;
+ if(s==route_head+1)map_project_q8(car_lat(),car_lon(),z,&x[0],&y[0]);
+ else map_project_q8(route_lat[s-1],route_lon[s-1],z,&x[0],&y[0]);
+ map_mask_begin(2);map_mask_select(slot);
  for(int i=s;i<=e;i++){
   if(!(i&31))render_checkpoint();
+  int next=route_overlay_slot(i,offered);
+  if(next!=slot){
+   if(n>1)map_stroke_polyline(x,y,n,slot?C_ROUTE_SKIPPED:C_ROUTE,3);
+   x[0]=x[n-1];y[0]=y[n-1];n=1;slot=next;map_mask_select(slot);
+  }
   map_project_q8(route_lat[i],route_lon[i],z,&x[n],&y[n]);
   int visible=!((x[n-1]<-20*256&&x[n]<-20*256)||(x[n-1]>(W+20)*256&&x[n]>(W+20)*256)||(y[n-1]<(MAP_TOP-3)*256&&y[n]<(MAP_TOP-3)*256)||(y[n-1]>(MAP_BOTTOM+3)*256&&y[n]>(MAP_BOTTOM+3)*256));
   if(visible&&!freecam&&ndrive_route_segs<DRIVE_ROUTE_SEGS&&x[n-1]>-2048*256&&x[n-1]<2048*256&&y[n-1]>-2048*256&&y[n-1]<2048*256&&x[n]>-2048*256&&x[n]<2048*256&&y[n]>-2048*256&&y[n]<2048*256){
    struct DriveRouteSeg*r=&drive_route_segs[ndrive_route_segs++];r->x0=(s16)(x[n-1]>>8);r->y0=(s16)(y[n-1]>>8);r->x1=(s16)(x[n]>>8);r->y1=(s16)(y[n]>>8);
   }
-  n++;if(n==255){map_stroke_polyline(x,y,n,C_ROUTE,3);x[0]=x[n-1];y[0]=y[n-1];n=1;}
+  n++;if(n==255){map_stroke_polyline(x,y,n,slot?C_ROUTE_SKIPPED:C_ROUTE,3);x[0]=x[n-1];y[0]=y[n-1];n=1;}
  }
- if(n>1)map_stroke_polyline(x,y,n,C_ROUTE,3);map_mask_end();
+ if(n>1)map_stroke_polyline(x,y,n,slot?C_ROUTE_SKIPPED:C_ROUTE,3);
+ if(offered){
+  int an=0;map_mask_select(2);
+  for(int i=0;i<traffic_offer_n;i++){
+   if(!(i&31))render_checkpoint();
+   map_project_q8(traffic_path[i].lat,traffic_path[i].lon,z,&x[an],&y[an]);
+   if(++an==255){map_stroke_polyline(x,y,an,C_ROUTE_DIVERSION,3);x[0]=x[an-1];y[0]=y[an-1];an=1;}
+  }
+  if(an>1)map_stroke_polyline(x,y,an,C_ROUTE_DIVERSION,3);
+ }
+ map_mask_end();
 }
 /* Labels remain a *screen-space overlay* over the perspective road drawing;
  * unlike map geometry the bitmap font is never stretched or rotated. */
@@ -2594,7 +2651,7 @@ static const char* active_route_word(void){if(route_status==R_READY)return ui_tr
 static void trip_target_row(int y,int idx,int selected){
  ui_choice(249,y-3,220,20,selected);label(256,y-1,0,idx==trip.count-1?"D":"S",selected?C_ACTIVE_TEXT:C_MUTED,12);
  const char*st=idx<trip.active_idx?ui_tr("Done"):(idx==trip.active_idx?active_route_word():ui_tr("Wait"));int sw=width(st,0);if(sw<44)sw=44;if(sw>104)sw=104;int sx=462-sw;
- char name[161];copystr_limit(name,sizeof(name),trip.target[idx].name[0]?trip.target[idx].name:ui_tr("Map point"),40);compact_fit(272,y-2,sx-282,1,name,ui_choice_text(selected));
+ char name[161];copystr_limit(name,sizeof(name),trip.target[idx].name[0]?place_display_name(trip.target[idx].name):ui_tr("Map point"),40);compact_fit(272,y-2,sx-282,1,name,ui_choice_text(selected));
  u16 sc=selected?C_ACTIVE_TEXT:(idx==trip.active_idx?(route_status==R_READY?C_CYAN:C_WARN):C_MUTED);compact_fit(sx,y,sw,0,st,sc);
 }
 static void draw_trip(void){
@@ -2609,7 +2666,7 @@ static void draw_trip(void){
  int count=trip_tab?nfaves:nrecents,first=trip_focus>=rows?trip_focus-rows+1:0;
  if(first+rows>count)first=count>rows?count-rows:0;
  if(!count)centered(119,122,1,trip_tab?ui_tr("No favourites yet"):ui_tr("No recent places"),C_MUTED);
- for(int row=0;row<rows&&first+row<count;row++){int i=first+row;trip_item(10,panel_y+48+row*20,218,trip_tab?faves[i].name:recents[i].name,trip_pane==0&&trip_focus==i);}
+ for(int row=0;row<rows&&first+row<count;row++){int i=first+row;trip_item(10,panel_y+48+row*20,218,place_display_name(trip_tab?faves[i].name:recents[i].name),trip_pane==0&&trip_focus==i);}
  ui_scrollbar(230,panel_y+45,179,first,rows,count);
  if(trip.active){int rem=trip.count-trip.active_idx;
   /* Legacy full-screen path also needs a bounded viewport for long trips. */
@@ -2634,7 +2691,7 @@ static const char* bt_display_name(int idx);
 static void bt_page_button(int x,int y,int w,const char*l,int f){ui_choice(x,y,w,22,f);compact_center(x+w/2,y+4,w-12,0,l,ui_choice_text(f));}
 static int bt_page_total(void){int ci=bt_connected_idx();return(ci>=0?1:0)+bt_saved_count()+1;}
 static void bt_page_clamp(void){int t=bt_page_total();if(t<1)t=1;if(bt_page_focus<0)bt_page_focus=0;if(bt_page_focus>=t)bt_page_focus=t-1;}
-static const char* bt_display_name(int idx){if(idx<0||idx>=nbtdev)return ui_tr("Unknown phone");if(bt_name_unknown(btdev[idx].name)){const char*cn=bt_name_cache_get(btdev[idx].addr);if(cn)return cn;if(btdev[idx].connected&&!bt_name_unknown(btui.device))return btui.device;return ui_tr("Unknown phone");}return btdev[idx].name;}
+static const char* bt_display_name(int idx){if(idx<0||idx>=nbtdev)return ui_tr("Unknown phone");if(bt_name_unknown(btdev[idx].name)){const char*cn=bt_name_cache_get(btdev[idx].addr);if(cn)return cn;if(btdev[idx].connected&&bt_meta_matches(btdev[idx].addr))return btui.device;return ui_tr("Unknown phone");}return btdev[idx].name;}
 static const char*bt_status_text(void){if(pref.debug&&reading_present(btui.status))return btui.status;if(starts(btui.status,"BT DAEMON")||starts(btui.status,"BT L2CAP")||starts(btui.status,"BT AUDIO ERR"))return bt_unavailable_label();if(starts(btui.status,"BT PAIR"))return ui_tr("Pairing phone");if(starts(btui.status,"BT WAIT"))return ui_tr("Waiting for phone");return ui_tr("Ready to connect");}
 static void draw_bluetooth(void){
   fill(0,0,W,H,C_BG);bt_page_clamp();
@@ -2682,12 +2739,12 @@ static const char* setting_value(int row,char b[96]){
   append_int(b,96,mins%60);if(ui_language_rtl())appendstr(b,96,"\xe2\x81\xa9");return b;
  }
  case 6:return ui_tr(pref.debug?"On":"Off");
- case 10:return pref.top_swap?"Clock left":"Status left";
- case 11:return pref.bottom_swap?"Direction left":"Speed left";
+ case 10:return ui_tr(pref.top_swap?"Clock left":"Status left");
+ case 11:return ui_tr(pref.bottom_swap?"Direction left":"Speed left");
   case 12:return ui_tr(pref.learn_history?"On":"Off");
   case 13:return ui_tr(pref.destination_predictions?"On":"Off");
   case 14:return ui_tr(pref.diversions?"On":"Off");
-  case 15:b[0]=0;append_int(b,96,(int)mob.n);appendstr(b,96,ui_tr(" journeys"));return b;
+  case 15:copystr(b,96,ui_tr("Journeys: "));append_int(b,96,(int)mob.n);return b;
  case 8:case 9:{
   int minute=row==8?pref.day_start:pref.night_start;
   b[0]='0'+minute/60/10;b[1]='0'+minute/60%10;b[2]=':';

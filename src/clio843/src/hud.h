@@ -111,7 +111,7 @@ static const char* hud_track(void){
 }
 static void hud_heading_text(char*b,unsigned cap,int heading){
  static const char*n[8]={"N","NE","E","SE","S","SW","W","NW"};
- b[0]=0;appendstr(b,cap,n[((heading+22)/45)&7]);appendstr(b,cap," ");
+ b[0]=0;appendstr(b,cap,ui_tr(n[((heading+22)/45)&7]));appendstr(b,cap," ");
  append_int(b,cap,heading);appendstr(b,cap,"°");
 }
 static void hud_source_text(char*b,unsigned cap){

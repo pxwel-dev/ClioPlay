@@ -126,4 +126,18 @@ static void joins(void){
  for(unsigned i=0;i<sizeof(map_coverage)/sizeof(map_coverage[0]);i++)assert(!map_coverage[i]);
  puts("Thin/route joins: duplicate drawing and 120-way line subdivision are pixel-identical; sharp turns, hairpin, repeated points and reversed traversal stay within a constant-width stroke; coverage clears fully.");
 }
-int main(void){strokes();thin_roads();minor_roads();polygons();joins();return 0;}
+static void diversion_colours(void){
+ traffic_begin_idx=2;traffic_join_idx=5;
+ assert(route_overlay_slot(2,1)==0&&route_overlay_slot(3,1)==1);
+ assert(route_overlay_slot(5,1)==1&&route_overlay_slot(6,1)==0&&route_overlay_slot(3,0)==0);
+ for(int night=0;night<2;night++){
+  apply_palette(night);assert(C_ROUTE!=C_ROUTE_SKIPPED&&C_ROUTE!=C_ROUTE_DIVERSION&&C_ROUTE_SKIPPED!=C_ROUTE_DIVERSION);
+  clear();map_mask_begin(2);
+  map_mask_select(0);map_line_q8(30*256,70*256,120*256,70*256,C_ROUTE,3);
+  map_mask_select(1);map_line_q8(30*256,100*256,120*256,100*256,C_ROUTE_SKIPPED,3);
+  map_mask_select(2);map_line_q8(30*256,130*256,120*256,130*256,C_ROUTE_DIVERSION,3);
+  map_mask_end();
+  assert(fb[70*W+75]==C_ROUTE&&fb[100*W+75]==C_ROUTE_SKIPPED&&fb[130*W+75]==C_ROUTE_DIVERSION);
+ }
+}
+int main(void){strokes();thin_roads();minor_roads();polygons();joins();diversion_colours();return 0;}

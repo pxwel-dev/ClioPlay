@@ -219,6 +219,27 @@ static void test_menu_states(void){
  hud_prepare(0,hud_capture_ms,0);assert(hud_kind==HUD_SYSTEM);
 }
 
+static void test_bluetooth_peer_identity(void){
+ nbtdev=nbtname_cache=0;memzero(&btui,sizeof(btui));btui.connected=1;
+ copystr(btui.device,sizeof(btui.device),"First phone");copystr(btui.device_addr,sizeof(btui.device_addr),"00:11:22:33:44:01");
+ write_fixture(BT_DEVLIST_PATH,"COUNT=2\nDEV=00:11:22:33:44:01|1|First phone\nDEV=00:11:22:33:44:02|0|Second phone\n");
+ assert(bt_poll_devices()&&nbtdev==2&&bt_connected_idx()==0);
+ assert(streq(bt_display_name(0),"First phone")&&streq(bt_display_name(1),"Second phone"));
+ write_fixture(BT_DEVLIST_PATH,"COUNT=2\nDEV=00:11:22:33:44:01|0|First phone\nDEV=00:11:22:33:44:02|1|UNKNOWN DEVICE\n");
+ assert(bt_poll_devices()&&bt_connected_idx()==1&&streq(bt_display_name(1),"Second phone"));
+ nbtname_cache=0;assert(bt_poll_devices()&&streq(bt_display_name(1),ui_tr("Unknown phone")));
+ assert(!bt_name_cache_get("00:11:22:33:44:02"));
+ copystr(btui.device_addr,sizeof(btui.device_addr),"00:11:22:33:44:02");copystr(btui.device,sizeof(btui.device),"Second phone");
+ assert(streq(bt_display_name(1),"Second phone")&&!bt_name_cache_get("00:11:22:33:44:02"));
+ write_fixture(BT_DEVLIST_PATH,"COUNT=2\nDEV=00:11:22:33:44:01|1|Changed\n");
+ assert(!bt_poll_devices()&&nbtdev==2&&streq(bt_display_name(0),"First phone"));
+ write_fixture(BT_DEVLIST_PATH,"COUNT=2\nDEV=00:11:22:33:44:01|0|Changed\nDEV=00:11:22:33:44:01|1|Changed\n");
+ assert(!bt_poll_devices()&&nbtdev==2&&!streq(btdev[0].addr,btdev[1].addr));
+ write_fixture(BT_DEVLIST_PATH,"COUNT=2\nDEV=00:11:22:33:44:01|0|Same name\nDEV=00:11:22:33:44:02|1|Same name\n");
+ assert(bt_poll_devices()&&nbtdev==2&&streq(bt_display_name(0),bt_display_name(1))&&!streq(btdev[0].addr,btdev[1].addr));
+ write_fixture(BT_DEVLIST_PATH,"COUNT=0\n");assert(bt_poll_devices()&&nbtdev==0);
+ nbtname_cache=0;memzero(&btui,sizeof(btui));s_unlink(BT_DEVLIST_PATH);
+}
 static void test_bluetooth_feedback(void){
  hud_capture_ms=50000;screen=SCR_BT;
  gps.hour=12;car_read_temperature("temp=--");
@@ -228,7 +249,7 @@ static void test_bluetooth_feedback(void){
  write_fixture(BT_META_PATH,"DEVICE=PHONE\nCONNECTED=1\n");
  write_fixture(BT_DEVLIST_PATH,"COUNT=1\nDEV=00:11:22:33:44:55|1|UNKNOWN DEVICE\n");
  bt_poll_status();assert(!hud_connection.kind);
- hud_capture_ms+=500;write_fixture(BT_META_PATH,"DEVICE=Pawel's phone\nCONNECTED=1\n");
+ hud_capture_ms+=500;write_fixture(BT_META_PATH,"DEVICE_ADDR=00:11:22:33:44:55\nDEVICE=Pawel's phone\nCONNECTED=1\n");
  bt_poll_status();assert(streq(hud_connected_name,"Pawel's phone"));
  struct HudTween*status=&hud_tween[HC_STATUS];
  header();assert(streq(status->target.title,"Connected to Pawel's phone")&&!status->target.detail[0]);
@@ -421,7 +442,7 @@ int main(void){
  camera_current.kind=3;camera_strip_text(text,sizeof(text));assert(streq(text,"Average check / 30  200 yd"));
  camera_average=1;camera_average_speed=48;camera_strip_text(text,sizeof(text));assert(starts(text,"Avg 30 mph / 30"));
  camera_average=0;camera_current.kind=2;pref.units=1;camera_strip_text(text,sizeof(text));assert(streq(text,"Red light  180 m"));
- test_ui_coverage();test_speed_limit_glass();test_clock_temperature();test_clock_page_changes();test_menu_states();test_bluetooth_feedback();test_missing_readings();
+ test_ui_coverage();test_speed_limit_glass();test_clock_temperature();test_clock_page_changes();test_menu_states();test_bluetooth_feedback();test_bluetooth_peer_identity();test_missing_readings();
  test_status_motion();
  puts("Glass and status animation, independent road/camera states, speed alerts, temperature validation, menu header bounds and Bluetooth feedback passed.");return 0;
 }
