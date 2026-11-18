@@ -81,12 +81,12 @@ The primary supported configuration is:
 - Non-live Carminat TomTom head unit
 - Bluetooth remote control (Clio 3), or a physical console (Scénic 3, Mégane 3)
 
-Physical console input and alternate temperature source are detected
-from incoming runtime events alongside the Bluetooth remote and Focus readings.
+Physical console input and alternate temperature source (Scénic 3, Mégane 3) are detected
+from incoming runtime events alongside the Bluetooth remote and Focus readings (Clio 3).
 Both sources are available automatically. Existing
 Focus temperature readings take priority when valid. See the
 [console setup and controls](src/README.md#physical-console-and-temperature-sources).
-The hardware protocol was contributed from a tested Scénic III.
+The hardware protocol was contributed from a tested Scénic 3.
 
 ClioPlay automatically discovers Bluetooth hardware on the Carminat; for Bluetooth, the Carminat must have: (`hw_bluetooth=1`). If no Bluetooth hardware is discovered, ClioPlay hides all Bluetooth-related UI features (Bluetooth audio and sending destinations by phone via <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>). 
 
