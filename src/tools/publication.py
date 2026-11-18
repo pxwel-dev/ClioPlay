@@ -5,9 +5,13 @@ import json
 SOURCE_ROOTS = ('clio843/src', 'navigation-builder', 'tools', 'tests', 'repository',
                 'fonts', 'locales', 'third_party')
 EXCLUDED_PARTS = {'.git', '.venv', '.cache', '.build', '__pycache__', 'node_modules'}
-EXCLUDED_NAMES = {'.DS_Store', 'build_qadj', 'build_uk.command',
-                  'bond.dat', 'faves.dat', 'recent.dat', 'trip.dat', 'audlast.dat',
-                  'ui_translations 2.h', 'history.dat', 'history.prev.dat', 'mobility.dat', 'mobility.tmp', 'gpslast.dat'}
+EXCLUDED_NAMES = {
+    '.DS_Store', 'build_qadj', 'build_uk.command',
+    'bond.dat', 'faves.dat', 'recent.dat', 'trip.dat',
+    'audlast.dat', 'ui_translations 2.h', 'history.dat',
+    'history.prev.dat', 'mobility.dat', 'mobility.tmp',
+    'gpslast.dat', 'prepare_minimal_release.py'
+}
 PREVIEW_GIFS = ('boot-day.gif', 'boot-night.gif', 'popups.gif', 'driving.gif', 'menus.gif', 'bluetooth.gif', 'phone-destination.gif',
                 'speed-warning.gif', 'map-browsing.gif', 'roundabout-eta.gif', 'add-stop.gif', 'status-notifications.gif', 'metadata-updates.gif', 'coordinates.gif', 'coordinate-route.gif', 'map-point-route.gif',
                 'v216-coordinates.gif', 'v216-hud-settings.gif', 'v216-bluetooth-hidden.gif', 'v216-itinerary.gif',

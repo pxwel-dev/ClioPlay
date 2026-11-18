@@ -1,6 +1,6 @@
 {
   "format": "clioplay-latest-1",
-  "updated_at": "2026-11-18T22:39:04+00:00",
+  "updated_at": "2026-11-18T22:48:13+00:00",
   "edition": "Global",
   "version": "2.2.0",
   "payload": "Source package, current binaries, legacy bootstrap, fresh-install and software-update tools; no vendor firmware, navigation packs or companion website",
@@ -1096,10 +1096,9 @@
     "tools/install_windows.ps1": "f5f940323edd81f8560d482b620e72a55f58c75bdc73362750952be032e2dcfd",
     "tools/mobility_stories.py": "44c77e0ae9fba9e5dbc09b4aa954aeec080c16d553cd4508be2fa2ff8001fe28",
     "tools/prepare_card.py": "255fce1b39fe7aee2236c93cd9f6a93d6b0151eb75584faf51112e6893b54cbf",
-    "tools/prepare_minimal_release.py": "5cfc949d238767ff6b36ea318ebb2cf469d1db298492e3f4f144dea7c883928e",
     "tools/prepare_vendor.py": "06fd0f8b978e7a33ca4702d310e0d6de2ee9b0fae7dc4efe4344eccdea636078",
     "tools/profile_boot.py": "9de488c69bd32ba2063f783dc48fc0c8095761bd3b80b2a0fc3e5c67f00c9fb1",
-    "tools/publication.py": "23b37190b0b3dc5b8f8bb798c41f0dc30f6b505a9e44b3bef6ec36b883fd8f07",
+    "tools/publication.py": "9a4560f3e648fda3fdbd67c84c5649efd3c49a821c9e406de6f4e29b92f5296d",
     "tools/publication_install.py": "14e5d6c44bb909a5f23beb655dcfbe23aabe54ced7169e859c13ce06e1bab429",
     "tools/rebuild_arm.py": "c9486ce954b5a477f7cc6147a380e8e8c304af345a5aba641151a570f8ff7e60",
     "tools/refresh_latest.py": "8061af3f752e3dc81a2aec2bdc731d13de1b44b576c66ef80079957a161feef3",
@@ -2566,10 +2565,9 @@
     "src/tools/install_windows.ps1": "f5f940323edd81f8560d482b620e72a55f58c75bdc73362750952be032e2dcfd",
     "src/tools/mobility_stories.py": "44c77e0ae9fba9e5dbc09b4aa954aeec080c16d553cd4508be2fa2ff8001fe28",
     "src/tools/prepare_card.py": "255fce1b39fe7aee2236c93cd9f6a93d6b0151eb75584faf51112e6893b54cbf",
-    "src/tools/prepare_minimal_release.py": "5cfc949d238767ff6b36ea318ebb2cf469d1db298492e3f4f144dea7c883928e",
     "src/tools/prepare_vendor.py": "06fd0f8b978e7a33ca4702d310e0d6de2ee9b0fae7dc4efe4344eccdea636078",
     "src/tools/profile_boot.py": "9de488c69bd32ba2063f783dc48fc0c8095761bd3b80b2a0fc3e5c67f00c9fb1",
-    "src/tools/publication.py": "23b37190b0b3dc5b8f8bb798c41f0dc30f6b505a9e44b3bef6ec36b883fd8f07",
+    "src/tools/publication.py": "9a4560f3e648fda3fdbd67c84c5649efd3c49a821c9e406de6f4e29b92f5296d",
     "src/tools/publication_install.py": "14e5d6c44bb909a5f23beb655dcfbe23aabe54ced7169e859c13ce06e1bab429",
     "src/tools/rebuild_arm.py": "c9486ce954b5a477f7cc6147a380e8e8c304af345a5aba641151a570f8ff7e60",
     "src/tools/refresh_latest.py": "8061af3f752e3dc81a2aec2bdc731d13de1b44b576c66ef80079957a161feef3",
@@ -2606,11 +2604,11 @@
     "src/tools/verify_splash.py": "b4070f1f9dde63797bdaeb8f250bfddcfad8880fc11b2fa7f28736e52e1a2a5a",
     "src/tools/verify_text_cache.py": "aa5cad2c209ae1e03e8cf28b60e4b2d5888a484b6a25475d2c2efd4d90b1f80a",
     "src/tools/verify_unicode.py": "ee9416a59d936efa7a266a46b79622d1950a198fe4f7afb8ef922430159fda52",
-    "SHA256SUMS": "2de38e1a9561a9133268d7a42061dd001065e900de14b5a8234d9bc54efda568"
+    "SHA256SUMS": "9ca7c4dff338d604680b62c47790bad13db2cdc40a39a067ff1c2ac669761633"
   },
   "checks": {
     "publication": {
-      "source_files": 1289,
+      "source_files": 1288,
       "text_and_links": {
         "credential_patterns": "no high-confidence matches; not an exhaustive secret audit",
         "owned_documentation_links": "verified local targets"
