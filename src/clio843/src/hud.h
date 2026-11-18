@@ -96,7 +96,7 @@ static const char* hud_route_error(void){
 static void hud_journey_text(char*b,unsigned cap){
  b[0]=0;
  appendstr(b,cap,"~");
- u32 minutes=udiv32(sat_add32(sat_add32(route_result_cost,atlas_future_cost),300u),600u);
+ u32 minutes=udiv32(sat_add32(sat_add32(traffic_remaining_cost(),atlas_future_cost),300u),600u);
  if(minutes>=60u){append_int(b,cap,minutes/60u);appendstr(b,cap,"h ");minutes%=60u;}
  append_int(b,cap,minutes);appendstr(b,cap," min  /  ");
  unsigned distance=slen(b);

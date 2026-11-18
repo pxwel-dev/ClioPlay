@@ -1,13 +1,23 @@
 #!/usr/bin/env python3
-"""Sequential clean installation of ClioPlay Global onto a card or local folder."""
+"""Install ClioPlay Global, or update the software on an existing card."""
 from pathlib import Path
 import argparse,os,subprocess,sys,tempfile
 ROOT=Path(__file__).resolve().parent
 BUILDER=ROOT/'navigation-builder'
 def main(argv=None):
  parser=argparse.ArgumentParser(description=__doc__)
+ parser.add_argument('--update',type=Path,metavar='SD_ROOT',help='update existing software without rebuilding maps or downloading firmware')
+ parser.add_argument('--dry-run',action='store_true',help='validate and list an update without changing the card')
  parser.add_argument('--speed-import',type=Path,help='optional source-attributed missing speed-limit corrections')
  args=parser.parse_args(argv)
+ if args.update is not None:
+  if args.speed_import:parser.error("--speed-import requires a fresh navigation build, not --update")
+  sys.path.insert(0,str(ROOT/'tools'))
+  from update_card import run_update
+  try:run_update(args.update,args.dry_run)
+  except (OSError,ValueError,RuntimeError) as error:parser.exit(1,f"{error}\n")
+  return
+ if args.dry_run:parser.error("--dry-run requires --update")
  if args.speed_import and not args.speed_import.expanduser().is_file():parser.error('Speed import not found')
  if not sys.stdin.isatty():raise SystemExit('Run interactively in a terminal; build_navigation.py supports unattended builds.')
  print('ClioPlay Global · clean installation')

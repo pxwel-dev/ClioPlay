@@ -5,6 +5,10 @@ Use **Install.cmd**. It runs the same guided ClioPlay installer through
 Python, macOS and a separate ARM cross-compiler are not needed to install the
 included programs. This is a WSL-based Windows path, not a native Windows builder.
 
+## Updating an existing card
+
+For an existing ClioPlay installation, use the [software-only update guide](src/docs/updating.md). It supports native Windows Python 3.11+ and does not require WSL or map-building tools. The remaining instructions are for a fresh install.
+
 ## One-time setup
 
 On Windows 11, or Windows 10 version 2004/build 19041 or newer, open PowerShell

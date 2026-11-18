@@ -11,6 +11,8 @@ For the complete maintainer release sequence, including version bumps, ARM
 rebuilds, GIFs, publication checks and Git, see the
 [release workflow](docs/release-workflow.md).
 
+The [intelligent navigation guide](docs/intelligent-navigation.md) describes the bounded native learning model, private files, local history inspector and new mobility regression. No new navigation format or map rebuild is needed for current packs.
+
 ## ARM programs
 
 Requires Python **3.12+**, Clang with the ARM backend, LLD ELF linker and an archive
@@ -49,7 +51,7 @@ vendored LLVM compiler-rt for ARM7TDMI. HarfBuzz and SheenBidi are vendored too.
 Executables are freestanding static ARMv4T ELF32, EABI5 soft float, legacy Linux
 OABI syscalls, image base 0x10000 and 64 KiB segment alignment. Build checks reject
 dynamic loaders, missing entry points and unresolved symbols. The main executable
-has about 10.9 MiB BSS, including the bounded 2 MiB shaping arena and existing map/
+previously had about 10.9 MiB BSS (2.1.8; use the current build report for the new size), including the bounded 2 MiB shaping arena and existing map/
 route caches. Native font tables are mapped on demand; glyph bitmaps stay on the
 card, with a bounded RAM cache. Actual total memory/performance needs hardware
 measurement. `--no-map-antialias` is a build-time rendering fallback.
@@ -312,9 +314,9 @@ project helpers are included separately; see [source status](docs/source-status.
 `clio843/src/release_version.h` from it and records the version in each binary’s
 build report. The Settings footer and UI/Bluetooth startup logs use that generated value. Bootstrap
 scripts declare the same `CLIOPLAY_VERSION`. Use
-`python3 tools/release_version.py --set 2.1.8` (or the intended new version) to
+`python3 tools/release_version.py --set 2.2.0` (or the intended new version) to
 synchronise the header, bootstrap versions and `bootstrap-SHA256.json`.
-Alternatively, `python3 tools/rebuild_arm.py --version 2.1.8` synchronises and
+Alternatively, `python3 tools/rebuild_arm.py --version 2.2.0` synchronises and
 rebuilds in one command.
 `python3 tools/release_version.py --check` rejects mismatched labels before
 building or publishing. Downloader user agents also read `VERSION`. Map formats,

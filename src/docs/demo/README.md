@@ -2,6 +2,8 @@
 
 | Preview | What it shows |
 | --- | --- |
+| [Destination prediction](v220-destination-prediction.gif) | Controlled completed-journey model, a matched Favourite and explicit navigation selection. |
+| [Intelligent diversions](v220-intelligent-diversions.gif) | Historical traffic warning, real map-backed alternative route, estimated time saving and explicit diversion confirmation. Traffic observations are controlled examples. |
 | [Day boot](boot-day.gif) / [Night boot](boot-night.gif) | Logo and wordmark on a soft theme-aware background, followed by the production half-second cross-fade into the live UI. The initial hold is illustrative, not a boot-time measurement. |
 | [Popups](popups.gif) | Compact route confirmation, destination-source choices, saved-phone actions and the keyboard language picker share glass entrance, exit, text and focus transitions. |
 | [Song and radio updates](metadata-updates.gif) | New song titles animate in, including during BT CTRL. Radio tuning updates even when the station name stays the same. |

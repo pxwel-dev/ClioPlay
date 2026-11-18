@@ -23,7 +23,7 @@ regression checks without requiring a current publication package.
 **No specific map build, map download, vendor firmware, GIF regeneration or
 publication refresh is needed to compile and run these local checks.** You do
 not need to change the version, commit or push anything for a personal rebuild.
-A rebuilt executable is not automatically deployed to a head unit or SD card.
+A rebuilt executable is not automatically deployed to a head unit or SD card. To deploy current programs to an existing compatible card, use `python3 install.py --update /path/to/card` from the repository root; see the [software update guide](updating.md).
 For installation and runtime requirements, see the [user guide](../README.md).
 Existing current-format navigation packs can be reused; only obsolete packs
 need rebuilding. See the [navigation builder](../navigation-builder/README.md)
@@ -40,7 +40,7 @@ Commands below use `src/` as their working directory unless otherwise stated.
   review `git status` first and preserve any existing local changes.
 - Apply source changes while preserving their relative paths. Edit canonical
   source and documentation files in `src/`, not generated root copies.
-- Keep private firmware, map data, credentials, local captures and downloaded
+- Keep private firmware, GPS driving histories and learned models, map data, credentials, local captures and downloaded
   change archives outside the published repository payload.
 
 On macOS, the build guide recommends Homebrew:
@@ -64,6 +64,8 @@ python3 -m pip install Pillow
 ```
 
 Use that same environment for subsequent commands.
+
+The 2.2.0 intelligent navigation previews use controlled fixtures. Both are included automatically by the existing full GIF regeneration command. See [intelligent navigation](intelligent-navigation.md) for testing and privacy requirements.
 
 ## 2. Check the version and rebuild
 

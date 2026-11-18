@@ -19,6 +19,8 @@ from PIL import Image, ImageDraw, ImageFont
 from verify import decode
 from text_engine import build as build_text
 
+from mobility_stories import DESTINATION_EVENTS, MAP_DIVERSION_EVENTS
+
 ROOT = Path(__file__).resolve().parents[1]
 SCENES = []
 ANIMATION_SAMPLE_MS = 67  # Match FRAME_UI_MS: approximately 15 Hz.
@@ -96,6 +98,12 @@ TRIPS_EMPTY_EVENTS = (
     (4200, 'key_handle(K_BACK);assert(sheet_page==P_TRIP);'),
 )
 TRIPS_EMPTY_SAMPLES = sorted({at+step for at,_ in TRIPS_EMPTY_EVENTS for step in TWEEN_STEPS}|{5900})
+V220_DESTINATION_SAMPLES = sorted({at+step for at,_ in DESTINATION_EVENTS for step in TWEEN_STEPS}|{6000})
+V220_DIVERSION_SAMPLES = sorted({
+    at+step
+    for at, _ in MAP_DIVERSION_EVENTS
+    for step in TWEEN_STEPS
+} | {6500})
 POPUPS_LAYOUT_EVENTS = (
     (0, 'menu_open(P_TRIP,0,hud_now_ms());'),
     (900, 'confirm_kind=0;menu_change(P_CONFIRM,0,hud_now_ms());'),
@@ -646,6 +654,16 @@ def modern_menus():
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_BLUETOOTH_HIDDEN_EVENTS, V216_BLUETOOTH_HIDDEN_SAMPLES)
     motion('Version 2.1.8', 'preview-v216-itinerary', 'Scroll ten targets, with connectors bounded to the visible list',
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_ITINERARY_EVENTS, V216_ITINERARY_SAMPLES)
+    motion('Version 2.2.0', 'preview-v220-destination-prediction', 'Learned destination and selection',
+           'settle();', DESTINATION_EVENTS, V220_DESTINATION_SAMPLES)
+    motion(
+        'Version 2.2.0',
+        'preview-v220-intelligent-diversions',
+        'Historical traffic warning and real map-backed diversion',
+        'settle();',
+        MAP_DIVERSION_EVENTS,
+        V220_DIVERSION_SAMPLES
+    )
     add('Menu sheets','empty-receive','Empty itinerary receives phone destinations automatically','trip.active=trip.count=0;menu_open(P_TRIP,0,hud_now_ms());')
     add_stop='key_handle(K_MENU);key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_DOWN);'
     source=add_stop+'key_handle(K_ENTER);key_handle(K_DOWN);'
@@ -666,6 +684,280 @@ static void save_route(void){saved_n=route_n;saved_m=route_result_m;saved_cost=r
  memcpy(saved_lat,route_lat,sizeof(saved_lat));memcpy(saved_lon,route_lon,sizeof(saved_lon));memcpy(saved_node,route_node,sizeof(saved_node));memcpy(saved_arc,route_seg_arc,sizeof(saved_arc));memcpy(saved_phys,route_seg_phys,sizeof(saved_phys));memcpy(saved_seg_m,route_seg_m,sizeof(saved_seg_m));memcpy(saved_seg_cost,route_seg_cost,sizeof(saved_seg_cost));}
 static void restore_route(void){route_n=saved_n;route_head=0;route_result_m=saved_m;route_result_cost=saved_cost;route_status=R_READY;
  memcpy(route_lat,saved_lat,sizeof(saved_lat));memcpy(route_lon,saved_lon,sizeof(saved_lon));memcpy(route_node,saved_node,sizeof(saved_node));memcpy(route_seg_arc,saved_arc,sizeof(saved_arc));memcpy(route_seg_phys,saved_phys,sizeof(saved_phys));memcpy(route_seg_m,saved_seg_m,sizeof(saved_seg_m));memcpy(route_seg_cost,saved_seg_cost,sizeof(saved_seg_cost));}
+
+/* Real map-backed diversion preview.
+ *
+ * Keep the calculated Newcastle route and use controlled historical
+ * observations to create congestion on part of that route.
+ * The production traffic search must discover a legal alternative.
+ *
+ * Cache the resulting candidate because every animation frame starts
+ * from a freshly restored baseline route.
+ */
+
+static int demo_div_n, demo_div_a, demo_div_b;
+static u32 demo_div_saving;
+static struct TrafficPoint demo_div_path[TRAFFIC_PATH_MAX];
+
+static void preview_map_traffic_profile(int a, int b, u32 now)
+{
+    const u32 epoch = mob_epoch(2026, 10, 21, 12, 35, 0);
+
+    mob_model_reset();
+    mob.serial = 20;
+    mob_current_epoch = epoch;
+    mob_clock_ms = now;
+
+    /* Twenty controlled observations of congestion on each directed
+     * road in the selected section. Leave static graph costs intact.
+     */
+    for (int i = a + 1; i <= b;) {
+        u32 arc = route_seg_arc[i];
+        u32 full = 0;
+        u32 key = traffic_key_for_arc(arc, &full);
+
+        if (key && full && full <= 36000u) {
+            struct MobRoad *r =
+                mob_road_find(key, mob_bucket(epoch), 1);
+
+            if (r) {
+                r->count = 20;
+                r->stamp = mob.serial;
+                r->mean_ds = full * 5u;
+            }
+        }
+
+        while (i <= b && route_seg_arc[i] == arc)
+            i++;
+    }
+
+    u32 elapsed = 0;
+    u32 delay = 0;
+
+    for (int i = route_head + 1; i <= b;) {
+        u32 arc = route_seg_arc[i];
+        u32 base = 0;
+
+        while (i <= b && route_seg_arc[i] == arc) {
+            base = sat_add32(base, route_seg_cost[i]);
+            i++;
+        }
+
+        u32 adjusted = traffic_adjust(
+            arc, epoch + elapsed / 10u, base, 0, 0
+        );
+
+        if (adjusted > base)
+            delay = sat_add32(delay, adjusted - base);
+
+        elapsed = sat_add32(elapsed, adjusted);
+    }
+
+    traffic_eta_ds = delay;
+    traffic_eta_head = route_head;
+    traffic_eta_revision = traffic_route_revision;
+    traffic_slow_end = b;
+    traffic_warn = delay >= 600u;
+}
+
+static int preview_find_map_diversion(u32 now)
+{
+    const u32 distances[] = {400u, 700u, 1000u, 1300u};
+    u32 approach = 0;
+    u32 last_attempt = 0;
+
+    /* Try several nearby divergence and rejoin points on the real
+     * route. Use actual turn-state nodes, not arbitrary vertices.
+     */
+    for (int a = route_head + 1; a < route_n - 2; a++) {
+        approach = sat_add32(approach, route_seg_m[a]);
+
+        if (approach > 1000u)
+            break;
+
+        if (route_node[a] == ROUTE_NOARC)
+            continue;
+
+        if (last_attempt && approach < last_attempt + 60u)
+            continue;
+
+        last_attempt = approach;
+
+        struct CprNode node;
+
+        if (!route_read_node(route_node[a], &node))
+            continue;
+
+        route_dest_comp = node.comp;
+
+        for (unsigned d = 0;
+             d < sizeof(distances) / sizeof(distances[0]); d++) {
+
+            u32 distance = 0;
+            u32 raw = 0;
+            int b = -1;
+
+            for (int i = a + 1; i < route_n; i++) {
+                distance = sat_add32(distance, route_seg_m[i]);
+                raw = sat_add32(raw, route_seg_cost[i]);
+
+                if (distance >= distances[d] &&
+                    route_node[i] != ROUTE_NOARC) {
+                    b = i;
+                    break;
+                }
+            }
+
+            if (b <= a + 1 || !raw ||
+                raw > TRAFFIC_LOOKAHEAD_DS)
+                continue;
+
+            /* Try blocking either the initial or an interior arc. */
+            u32 blocks[] = {
+                route_seg_arc[a + 1],
+                route_seg_arc[a + (b - a) / 2]
+            };
+
+            for (unsigned k = 0; k < 2; k++) {
+                if (blocks[k] == ROUTE_NOARC ||
+                    blocks[k] == route_seg_arc[b])
+                    continue;
+
+                if (k && blocks[k] == blocks[0])
+                    continue;
+
+                traffic_invalidate();
+                preview_map_traffic_profile(a, b, now);
+
+                if (!traffic_warn)
+                    continue;
+
+                if (!traffic_search_start(
+                        a, b, blocks[k], raw, 0, now))
+                    continue;
+
+                /* Fixed preview time makes capture deterministic.
+                 * The production search retains its state limit.
+                 */
+                for (int step = 0;
+                     traffic_searching && step < 1024; step++)
+                    traffic_search_step(now);
+
+                traffic_search_cancel();
+
+                if (!traffic_offer_valid())
+                    continue;
+
+                demo_div_a = a;
+                demo_div_b = b;
+                demo_div_n = traffic_offer_n;
+                demo_div_saving = traffic_saving;
+
+                memcpy(
+                    demo_div_path,
+                    traffic_path,
+                    sizeof(struct TrafficPoint) * demo_div_n
+                );
+
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+static void preview_map_diversion_seed(void)
+{
+    assert(mapok && routeok);
+    assert(route_status == R_READY && route_n > 2);
+
+    pref.learn_history = 1;
+    pref.diversions = 1;
+    gps.fix = 1;
+
+    u32 now = hud_now_ms();
+
+    if (!demo_div_n) {
+        if (!preview_find_map_diversion(now)) {
+            fprintf(stderr,
+                "No legal map-backed preview diversion found "
+                "on the Newcastle baseline route.\n");
+            assert(demo_div_n > 1);
+        }
+    }
+
+    traffic_invalidate();
+
+    /* Restore the learned context for this animation frame. */
+    preview_map_traffic_profile(demo_div_a, demo_div_b, now);
+
+    traffic_begin_idx = demo_div_a;
+    traffic_join_idx = demo_div_b;
+    traffic_offer_n = demo_div_n;
+    traffic_saving = demo_div_saving;
+    traffic_region = atlas_route_region;
+    traffic_offer_revision = traffic_route_revision;
+
+    memcpy(
+        traffic_path,
+        demo_div_path,
+        sizeof(struct TrafficPoint) * demo_div_n
+    );
+
+    /* Position the simulated vehicle immediately before the
+     * divergence, using coordinates from the actual route.
+     */
+    int p = demo_div_a - 1;
+
+    if (p > route_head)
+        route_trim_prefix(p);
+
+    gps.lat = track_lat = route_lat[route_head];
+    gps.lon = track_lon = route_lon[route_head];
+    track_valid = 1;
+
+    int heading = nav_heading10(
+        route_lat[route_head],
+        route_lon[route_head],
+        route_lat[demo_div_a],
+        route_lon[demo_div_a]
+    );
+
+    if (heading >= 0 && heading < 360)
+        gps.course = track_course = display_course = heading;
+
+    display_course_valid = 1;
+
+    /* A wider driving view keeps the divergence visible. */
+    pref.autozoom = 0;
+    manual_zoom = 3;
+    zoom_override = -1;
+
+    trip.active = 1;
+    trip.paused = 0;
+    trip.count = 1;
+    trip.active_idx = 0;
+
+    trip.target[0].lat = route_target_lat = 5497370;
+    trip.target[0].lon = route_target_lon = -161331;
+
+    copystr(
+        trip.target[0].name,
+        sizeof(trip.target[0].name),
+        "Work"
+    );
+
+    struct CprNode node;
+    assert(route_read_node(route_node[demo_div_a], &node));
+    route_dest_comp = node.comp;
+
+    traffic_eta_head = route_head;
+    nav_maneuver_find();
+    render_background_dirty = 1;
+
+    assert(mapok && traffic_warn && traffic_offer_valid());
+}
 static void explore(void){enter_freecam();explore_sample(500);}
 static void name_keyboard(void){screen=SCR_KEY;keyboard_open_fave_name(5497370,-161331);}
 static void coordinate_digits(const char*s){while(*s){char c=*s++;coordinates.focus=c=='-'?COORD_SIGN:c=='.'?COORD_DOT:c=='0'?COORD_ZERO:c-'1';key_handle(K_ENTER);}}

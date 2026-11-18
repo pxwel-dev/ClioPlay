@@ -1,6 +1,8 @@
-# ClioPlay version 2.1.8
+# ClioPlay version 2.2.0
 
 ## Set up a card
+
+Already installed? Use the [software-only update guide](docs/updating.md) to update without rebuilding maps or downloading firmware. The steps below are for a fresh installation.
 
 Current prebuilt programs are included in this source/publication folder.
 To change and rebuild the runtime, follow [BUILDING.md](BUILDING.md).
@@ -264,6 +266,10 @@ the persistent HUD pills. Only the naming keyboard expands into the lower HUD ar
 can temporarily hide the lower pills to make room for a compact page. The top
 clock and status pill keep their position and notice timers across page changes.
 
+### Intelligent navigation
+
+Optional offline learning uses completed Barcelona power-off driving sessions, even without an active route. Enable **Learn driving history** in Settings. A suggested destination appears in an empty Itinerary when enough evidence exists; select it to navigate. During guidance, a historical traffic warning may appear and a **Diversion** action is available in Trip if a beneficial legal local alternative is found. No live traffic, arrival prompts or automatic route selection are used. Destination suggestions and diversions can be enabled separately; **Clear driving history** removes the private learned data after confirmation. Raw GPS time is independent of the UI clock adjustment. See [intelligent navigation](docs/intelligent-navigation.md) for the complete behavior and limitations.
+
 ### Settings
 
 Use **Up / Down** to highlight a row. The available actions depend on the setting.
@@ -281,6 +287,10 @@ Use **Up / Down** to highlight a row. The available actions depend on the settin
 | Day starts / Night starts | Adjust the highlighted hour or minute. | Switch between editing hours and minutes. |
 | Top pill order | Toggle Status left / Clock left (status and time/temperature swap sides). | |
 | Bottom pill order | Toggle Speed left / Direction left. | |
+| Learn driving history | Toggle recording and learning. | Toggle. |
+| Destination suggestions | Toggle learned suggestions. | Toggle. |
+| Intelligent diversions | Toggle historical traffic and diversion offers. | Toggle. |
+| Clear driving history | | Open deletion confirmation. |
 
 The release version is shown at the bottom of Settings.
 

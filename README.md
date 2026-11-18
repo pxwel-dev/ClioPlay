@@ -1,28 +1,36 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
-<h1 align="center">ClioPlay 2.1.8</h1>
+<h1 align="center">ClioPlay 2.2.0</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
 <p align="center">
   Created and maintained by <a href="https://github.com/pxwel-dev">Pawel (pxwel-dev)</a>.
 </p>
 
 
-<p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases/tag/Release">Download latest release</a> · <a href="#install">Install instructions</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
+<p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases/tag/Release">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-## Version 2.1.8 — Release
+## Version 2.2.0 — Release
 
 ### Changes in this version
 
-- Fixed itinerary connector lines extending towards the Add stop action when additional targets are off-screen. Connections now join visible markers only.
-- Increased trip capacity from five to ten targets in total (nine intermediate stops plus the final destination). Saved trips use CTR4 only; unfinished trips from older formats cannot be resumed.
-- Removed obsolete saved-place, map, routing and bundle-format readers. Current CLP2 places and current navigation packs remain supported; unsupported formats require fresh data.
-- Reduced the size of confirmation dialogs and their action menus while retaining readable labels, existing choices, focus targets and animation behaviour.
+- Introduced optional, offline driving-history learning. Fresh GPS observations are recorded independently of active navigation and only successful Barcelona power-off sessions train the model.
+- Added contextual destination suggestions to an empty Itinerary using the last saved GPS position, raw GPS time/day patterns and early trajectory evidence, with nearby Favourites/Recents matching.
+- Added directional historical road-time profiles, traffic-adjusted ETAs and an explicit local Diversion choice with a contrasting route shade.
+- Added history, destination suggestion and diversion controls in Settings, including a confirmed clear-history action. 
+- Added native regression cases and two controlled preview storyboards. Historical traffic is not live traffic.
+- Added a software-only update mode with verified staged copies, a dated software backup and rollback; existing maps, settings and personal history remain untouched.
 
 See [version history](CHANGELOG.md) for implemented changes by version.
+
+See [intelligent navigation](src/docs/intelligent-navigation.md) for configuration, model behaviour and privacy.
 
 ## UI previews
 
 See the [full preview index](src/docs/demo/README.md) for all animations.
+
+| Destination prediction | Intelligent diversions |
+| --- | --- |
+| ![Learned destination in Trip](src/docs/demo/v220-destination-prediction.gif) | ![Historical traffic and alternative route selection, controlled fixture](src/docs/demo/v220-intelligent-diversions.gif) |
 
 | Driving and camera alerts | Dynamically-resizing, animated frosted-glass menu |
 | --- | --- |
@@ -107,6 +115,7 @@ BT CTRL also requires a connected phone. Unavailable radio/volume readings stay 
 - Offline OpenStreetMap navigation, routing and rerouting.
 - Browse the map and route to a selected point, send destination from a connected phone, or manually enter named decimal-degree lat/long coordinates
 - Manage stops, recents and favourites.
+- Optional offline destination learning, historical traffic-aware ETAs and local diversions based on personal GPS history.
 - Bluetooth phone audio with track information and remote playback controls.
 - Vehicle audio controls remain responsible for physical volume and mute.
 - Full-screen maps with animated, semi-transparent frosted glass notices for road names, camera alerts, route progress and audio changes.
@@ -116,6 +125,10 @@ BT CTRL also requires a connected phone. Unavailable radio/volume readings stay 
 For new stops/destinations, enter **Coordinates** on the head unit, choose **Next** on the keypad to validate both fields and proceed to naming, or use the separate [ClioPlay Send website](https://pxwel-dev.github.io/ClioPlay-Send/) to send the new route to ClioPlay from your phone via Bluetooth. For ease of use, add the website to your Home Screen as a web app.
 
 ## Install
+
+**Already using ClioPlay?** Follow the [software update guide](src/docs/updating.md) to retain your maps, settings, saved places, pairings and driving history without rebuilding navigation or downloading firmware.
+
+The instructions below are for fresh installations or new navigation data.
 
 You need a FAT32-formatted SD card (SDHC, minimum 2GB, recommended 8GB, theoretical max 32GB) for the head unit and an `.osm.pbf` map extract covering your journeys.
 
@@ -134,7 +147,7 @@ Get the map extract from [Geofabrik Downloads](https://download.geofabrik.de/) b
 
 The installer downloads and checks the required official TomTom firmware.
 It does not format the card. Replaced files are backed up. Any existing ClioPlay preferences,
-pairings and saved places are preserved. No previous ClioPlay install is needed.
+pairings and saved places are preserved. Personal driving history stays on the SD card; do not include it in a release. No previous ClioPlay install is needed.
 Map building can take substantial time for large extracts.
 
 ## Use your remote or console

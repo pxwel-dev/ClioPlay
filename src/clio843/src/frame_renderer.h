@@ -76,7 +76,7 @@ static void render_present(void){
  /* Read the presentation clock after restoring the backdrop. */
  u32 now=hud_now_ms();render_prepare(now);renderer.present_at=now;
  hud_glass_frame_begin();menu_draw(now);
- draw_modal();hud_glass_frame_end();boot_fade_apply(now);fb_flush();
+ draw_traffic_notice();draw_modal();hud_glass_frame_end();boot_fade_apply(now);fb_flush();
  clip_x=ox;clip_y=oy;clip_right=orr;clip_bottom=ob;hud_ink_alpha=oa;
  renderer.pending=renderer.model_pending=menu_pending=0;render_stats.presents++;
  u32 elapsed=hud_now_ms()-begin;if(elapsed>render_stats.max_present_ms)render_stats.max_present_ms=elapsed;
