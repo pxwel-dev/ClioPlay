@@ -77,9 +77,9 @@ See the [full preview index](src/docs/demo/README.md) for all animations.
 
 The primary supported configuration is:
 
-- Non-Bluetooth radio with a CD player (other radio units may work, but likely with no audio source / volume information available)
+- Non-Bluetooth radio with a CD player (other radios will work, but likely with no live radio audio source info and volume info available)
 - Non-live Carminat TomTom head unit
-- Bluetooth remote control, or a supported Scénic III / Mégane physical console
+- Bluetooth remote control (Clio 3), or a physical console (Scénic 3, Mégane 3)
 
 Physical console input and alternate temperature source are detected
 from incoming runtime events alongside the Bluetooth remote and Focus readings.
