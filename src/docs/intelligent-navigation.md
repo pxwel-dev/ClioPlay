@@ -73,6 +73,8 @@ starts a journey or adds evidence to the prediction model. Accepting it makes
 future suggestions easier to recognise through a named Favourite; it does not
 artificially increase their statistical confidence.
 
+### Route diversions
+
 During guidance, **Likely traffic ahead** means historical evidence suggests
 a delay, not that a real-time traffic incident was detected. Once a beneficial
 alternative is found, the animated glass status pill reads **Faster route
