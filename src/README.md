@@ -1,6 +1,8 @@
-# ClioPlay version 2.1.8
+# ClioPlay version 2.2.0
 
 ## Set up a card
+
+Already installed? Use the [software-only update guide](docs/updating.md) to update without rebuilding maps or downloading firmware. The steps below are for a fresh installation.
 
 Current prebuilt programs are included in this source/publication folder.
 To change and rebuild the runtime, follow [BUILDING.md](BUILDING.md).
@@ -95,16 +97,16 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
   retain visual alerts; FM interruption is not implemented. Physical playback
   timing still needs vehicle verification.
 - **Clock:** offline automatic timezone and DST from GPS, with a manual fallback.
-  Settings → Clock: Enter toggles Auto/manual; Left/Right selects a manual offset
+  Settings → System → Clock: Enter toggles Auto/manual; Left/Right selects a manual offset
   in 15-minute steps. Rules span 2020–2060 and retain the last offset at boot.
-- **Auto theme:** a custom daily schedule using local time. In Settings, choose
+- **Auto theme:** a custom daily schedule using local time. In Settings → Display, choose
   Auto under Theme, then set **Day starts** and **Night starts**. Defaults are
   07:00 and 18:00. Scroll down to the schedule rows, use **OK** to select hours
   or minutes, and **Left / Right** to adjust the highlighted part. The times are
   saved and also apply to the boot splash. Day/Night overrides remain available.
   The unit clock and saved UTC offset provide the schedule before GPS is ready.
   With no valid clock, Auto retains the last theme, defaulting to Night.
-- **Language:** 18 options in Settings, including Arabic, Simplified Chinese,
+- **Language:** 18 options in Settings → System, including Arabic, Simplified Chinese,
   Japanese, Korean, Hindi, Hebrew, Greek and Cyrillic languages. See
   [the complete language list](locales/README.md). Native destination and
   street names remain unchanged. Received UTF-8 names, Arabic/Indic shaping and
@@ -229,7 +231,7 @@ also appears when a route calculation or reroute finishes.
 
 Explore shows one entry notice. Zooming and panning within Explore neither replay
 that notice nor extend it. Leaving Explore shows **Auto zoom**, or **Manual zoom**
-when Auto zoom is disabled in Settings. These mode notices share the usual glass
+when Auto zoom is disabled in Settings → Navigation. These mode notices share the usual glass
 styling, transitions and temporary display time.
 
 Confirming a point selected in Explore returns directly to the driving map with
@@ -264,23 +266,31 @@ the persistent HUD pills. Only the naming keyboard expands into the lower HUD ar
 can temporarily hide the lower pills to make room for a compact page. The top
 clock and status pill keep their position and notice timers across page changes.
 
+### Intelligent navigation
+
+Optional offline learning uses completed Barcelona power-off driving sessions, even without an active route. Enable **Learn driving history** in Settings → Driving history. The empty Itinerary retains the original destination-entry layout. With no active trip and sufficient evidence, the map status pill displays a green Suggested destination and blue OK to review (BACK to review during BT CTRL). OK opens a default-Yes confirmation; No suppresses that destination for the recording session, Back leaves it eligible, and ignoring it never changes the route. On a later stationary startup, five completed visits across three distinct dates in the last 90 days can prompt Add to favourites? for the current place. No is the safe default. Yes opens the existing Favourite naming keyboard with an editable inferred name (or an empty field); only Save adds the Favourite and returns to the map. The prompt is shown at most once per place until driving history is cleared, and never starts navigation. The predictor reconciles the stored starting point with live GPS, combines day/time, recency and early trajectory evidence, and resolves destinations via named Favourites/Recents, nearby offline map names or coordinates. During guidance, a historical traffic warning may appear and a **Diversion** action is available in Trip if a beneficial legal local alternative is found. Shared geometry stays solid magenta, bypassed geometry is yellow/gold and the distinct proposed diversion is dashed aqua/teal. The glass status pill continuously displays a single line with the success-green Faster route available announcement and blue OK to review (BACK to review when BT CTRL is active). A centred, anti-aliased frosted-glass badge near the actual decision point shows the approximate saving when space permits. The invitation disappears at the decision point if ignored. Press OK twice from the driving map to accept; with BT CTRL active, press Back first. Normal zoom and Bluetooth controls are preserved. The confirmation opens on Yes; declining it keeps the original route, warning and adjusted ETA, and only suppresses alternative offers overlapping that section. Later independent diversions remain eligible. No live traffic or automatic route selection is used. Learning still relies only on completed power-off sessions, not arrival prompts. Destination suggestions and diversions can be enabled separately; **Clear driving history** removes the private learned data after confirmation. Raw GPS time is independent of the UI clock adjustment. See [intelligent navigation](docs/intelligent-navigation.md) for the complete behavior and limitations.
+
 ### Settings
 
-Use **Up / Down** to highlight a row. The available actions depend on the setting.
+Use **Up / Down** to highlight a category and **OK** to open it. Use the same controls within each page to highlight a setting; **Back** returns to its category. The available actions depend on the setting.
 
-| Setting | Left / Right | Centre / OK |
-| --- | --- | --- |
-| Brightness | Adjust in 10-point steps. | |
-| Theme | Cycle Day, Night and Auto. | |
-| Units | Cycle Auto, Metric and Imperial. | |
-| Auto zoom | Toggle on or off. | |
-| Camera alerts | Cycle Off, Visual and Phone audio (Off/Visual only if Bluetooth hardware is absent). | |
-| Clock | Set a manual UTC offset in 15-minute steps. | Toggle automatic and manual time. |
-| Debug log | Toggle on or off. | |
-| Language | Cycle backwards or forwards. | Open the language chooser. |
-| Day starts / Night starts | Adjust the highlighted hour or minute. | Switch between editing hours and minutes. |
-| Top pill order | Toggle Status left / Clock left (status and time/temperature swap sides). | |
-| Bottom pill order | Toggle Speed left / Direction left. | |
+| Category | Setting | Left / Right | Centre / OK |
+| --- | --- | --- | --- |
+| Display | Brightness | Adjust in 10-point steps. | |
+| Display | Theme | Cycle Day, Night and Auto. | |
+| Display | Day starts / Night starts | Adjust the highlighted hour or minute. | Switch between editing hours and minutes. |
+| HUD layout | Top pill order | Toggle Status left / Clock left (status and time/temperature swap sides). | |
+| HUD layout | Bottom pill order | Toggle Speed left / Direction left. | |
+| Navigation | Units | Cycle Auto, Metric and Imperial. | |
+| Navigation | Auto zoom | Toggle on or off. | |
+| Navigation | Camera alerts | Cycle Off, Visual and Phone audio (Off/Visual only if Bluetooth hardware is absent). | |
+| Driving history | Learn driving history | Toggle recording and learning. | Toggle. |
+| Driving history | Destination suggestions | Toggle learned suggestions. | Toggle. |
+| Driving history | Intelligent diversions | Toggle historical traffic and diversion offers. | Toggle. |
+| Driving history | Clear driving history | | Open deletion confirmation. |
+| System | Language | Cycle backwards or forwards. | Open the language chooser. |
+| System | Clock | Set a manual UTC offset in 15-minute steps. | Toggle automatic and manual time. |
+| System | Debug log | Toggle on or off. | |
 
 The release version is shown at the bottom of Settings.
 

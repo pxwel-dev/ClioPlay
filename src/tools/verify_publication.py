@@ -60,7 +60,7 @@ def verify_text_and_links(folder, paths):
                 raise ValueError(name+' pattern in publication: '+str(path.relative_to(folder)))
     docs = ('README.md', 'CONTRIBUTING.md', 'src/README.md',
             'src/BUILDING.md', 'src/docs/changelog.md', 'src/docs/release-workflow.md',
-            'src/docs/demo/README.md', 'WINDOWS.md')
+            'src/docs/demo/README.md', 'src/docs/intelligent-navigation.md', 'src/docs/updating.md', 'WINDOWS.md')
     if (folder/'SECURITY.md').is_file():docs += ('SECURITY.md',)
     for name in docs:
         path = folder/name
@@ -131,7 +131,7 @@ def verify_tree(folder):
                 raise ValueError('Unsafe publication path: '+name)
     paths = [folder / name for name in managed] if managed else [p for p in folder.rglob('*') if p.is_file()]
     vendor_hashes = {digest for _, digest in VENDOR.values()}
-    forbidden = {'bond.dat', 'recent.dat', 'trip.dat', 'faves.dat', 'audlast.dat',
+    forbidden = {'history.dat', 'history.prev.dat', 'mobility.dat', 'mobility.tmp', 'mobility-places.dat', 'mobility-places.tmp', 'gpslast.dat', 'bond.dat', 'recent.dat', 'trip.dat', 'faves.dat', 'audlast.dat',
                  'ttsystem', 'PNDNavigator', 'vehicledaemon'}
     for path in paths:
         cursor=folder

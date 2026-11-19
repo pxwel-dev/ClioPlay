@@ -31,7 +31,7 @@ def main():
     if not args.maps:
         if args.phone_capture:
             parser.error('--phone-capture needs --maps')
-        print('No maps supplied: regenerating seven live C-rendered Trips/HUD/coordinate GIFs.')
+        print('No maps supplied: regenerating live C-rendered Trips/HUD/coordinate and intelligent-navigation GIFs.')
         command = [sys.executable, str(ROOT/'tools/render_mapless_gifs.py'), '--output', str(ROOT/'docs/demo')]
     else:
         path = args.maps.expanduser().resolve()

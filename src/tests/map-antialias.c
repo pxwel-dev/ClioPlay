@@ -126,4 +126,56 @@ static void joins(void){
  for(unsigned i=0;i<sizeof(map_coverage)/sizeof(map_coverage[0]);i++)assert(!map_coverage[i]);
  puts("Thin/route joins: duplicate drawing and 120-way line subdivision are pixel-identical; sharp turns, hairpin, repeated points and reversed traversal stay within a constant-width stroke; coverage clears fully.");
 }
-int main(void){strokes();thin_roads();minor_roads();polygons();joins();return 0;}
+static void diversion_colours(void){
+ traffic_begin_idx=2;traffic_join_idx=5;
+ assert(route_overlay_slot(2,1)==0&&route_overlay_slot(3,1)==1);
+ assert(route_overlay_slot(5,1)==1&&route_overlay_slot(6,1)==0&&route_overlay_slot(3,0)==0);
+ for(int night=0;night<2;night++){
+  apply_palette(night);assert(C_ROUTE!=C_ROUTE_SKIPPED&&C_ROUTE!=C_ROUTE_DIVERSION&&C_ROUTE_SKIPPED!=C_ROUTE_DIVERSION);
+  clear();map_mask_begin(2);
+  map_mask_select(0);map_line_q8(30*256,70*256,120*256,70*256,C_ROUTE,3);
+  map_mask_select(1);map_line_q8(30*256,100*256,120*256,100*256,C_ROUTE_SKIPPED,3);
+  map_mask_select(2);map_line_q8(30*256,130*256,120*256,130*256,C_ROUTE_DIVERSION,3);
+  map_mask_end();
+  assert(fb[70*W+75]==C_ROUTE&&fb[100*W+75]==C_ROUTE_SKIPPED&&fb[130*W+75]==C_ROUTE_DIVERSION);
+  clear();map_mask_begin(2);map_mask_select(2);int phase=0;
+  map_dash_segment(30*256,130*256,55*256,130*256,C_ROUTE_DIVERSION,&phase);
+  map_dash_segment(55*256,130*256,120*256,130*256,C_ROUTE_DIVERSION,&phase);map_mask_end();
+  assert(fb[130*W+35]==C_ROUTE_DIVERSION&&fb[130*W+44]==0&&fb[130*W+50]==C_ROUTE_DIVERSION);
+  assert(phase==(90*256)%(17*256));
+ }
+}
+static void diversion_badge(void){
+ traffic_invalidate();pref.learn_history=pref.diversions=gps.fix=1;
+ route_status=R_READY;route_head=0;route_n=4;traffic_begin_idx=1;traffic_join_idx=3;
+ traffic_offer_revision=traffic_route_revision;traffic_region=atlas_route_region;traffic_offer_n=3;
+ freecam=1;cam_lat=cam_lon=0;map_tilt_q8=0;freecam_course=0;freecam_course_valid=1;
+ for(int i=1;i<4;i++){
+  route_node[i]=(u32)i;route_lat[i]=0;route_lon[i]=(i-2)*100;
+  traffic_path[i-1]=(struct TrafficPoint){route_lat[i],route_lon[i],route_node[i],100,0,0,100};
+ }
+ traffic_path[1].lat=100;traffic_shared_alt[1]=traffic_shared_alt[2]=0;
+ assert(traffic_offer_valid());
+ for(int night=0;night<2;night++){
+  apply_palette(night);clear();
+  for(int i=0;i<3;i+=2){int x,y;map_project_q8(traffic_path[i].lat,traffic_path[i].lon,5,&x,&y);
+   assert(x>=6*256&&x<=(W-6)*256&&y>=6*256&&y<=(H-6)*256);
+   map_dot_q8(x,y,C_ROUTE_DIVERSION,5);map_dot_q8(x,y,C_MAP_BG,3);
+  }
+  memcpy(saved,fb,sizeof(fb));
+  nlbox=0;nav_card_w=0;traffic_saving=1200;
+  char amount[112];diversion_saving_text(amount,sizeof(amount));assert(streq(amount,"Save ~2 min"));
+  struct HudBox badge;assert(diversion_saving_box(5,width(amount,0)+18,&badge));
+  /* The badge is the same glass renderer as the main HUD, with exact
+   * glyph-ink centring. Compare the production map pass to that reference. */
+  hud_ink_alpha=16;hud_glass(badge,0);box_text(badge.x+6,badge.y,badge.w-12,badge.h,0,amount,hud_status_colour(HUD_SUCCESS,C_WHITE));
+  memcpy(saved,fb,sizeof(fb));
+  nlbox=0;clear();draw_diversion_markers(5);assert(!memcmp(saved,fb,sizeof(fb)));
+  memcpy(saved,fb,sizeof(fb));nlbox=0;clear();traffic_saving=6000;draw_diversion_markers(5);assert(memcmp(saved,fb,sizeof(fb)));
+  diversion_saving_text(amount,sizeof(amount));assert(streq(amount,"Save ~10 min"));
+  /* A covering label forces the badge to stay hidden, not overlap. */
+  nlbox=1;lbox[0]=(struct LBox){0,0,W,H};assert(!diversion_saving_box(5,width(amount,0)+18,&badge));nlbox=0;
+ }
+ traffic_invalidate();freecam=0;clear();memcpy(saved,fb,sizeof(fb));draw_diversion_markers(5);assert(!memcmp(saved,fb,sizeof(fb)));
+}
+int main(void){strokes();thin_roads();minor_roads();polygons();joins();diversion_colours();diversion_badge();return 0;}

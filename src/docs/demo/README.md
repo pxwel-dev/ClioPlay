@@ -2,12 +2,15 @@
 
 | Preview | What it shows |
 | --- | --- |
+| [Frequent-place favourites](v220-frequent-place.gif) | Controlled stationary startup after five visits, name-free prompt, editable name prefilled from a Recent, then explicit Save and return to the map. |
+| [Destination prediction](v220-destination-prediction.gif) | Controlled completed-journey model, a matched Favourite, green/blue map invitation in BT CTRL and normal driving, and explicit Yes/No confirmation. |
+| [Intelligent diversions](v220-intelligent-diversions.gif) | Historical traffic warning, solid shared route, yellow bypass, dashed teal real-map alternative, a frosted-glass approximate saving badge beside the decision point, single-line green announcement and blue review hint, and animated BT CTRL → Back → OK → Yes confirmation. Traffic observations are controlled examples. |
 | [Day boot](boot-day.gif) / [Night boot](boot-night.gif) | Logo and wordmark on a soft theme-aware background, followed by the production half-second cross-fade into the live UI. The initial hold is illustrative, not a boot-time measurement. |
 | [Popups](popups.gif) | Compact route confirmation, destination-source choices, saved-phone actions and the keyboard language picker share glass entrance, exit, text and focus transitions. |
 | [Song and radio updates](metadata-updates.gif) | New song titles animate in, including during BT CTRL. Radio tuning updates even when the station name stays the same. |
 | [Status notifications](status-notifications.gif) | GPS acquisition and recovery, phone connection, volume and no-active-route messages share one animated pill. |
 | [Driving](driving.gif) | A new road name appears. A camera alert joins the same pill and remains after the name fades. |
-| [Menus](menus.gif) | A glass panel opens over the map while the clock and current volume notice persist. Itinerary, Recents and Favourites, saved-phone actions, compact Settings and return to driving use the production controller. |
+| [Menus](menus.gif) | A glass panel opens over the map while the clock and current volume notice persist. Itinerary, Recents and Favourites, saved-phone actions, categorised Settings and return to driving use the production controller. |
 | [Bluetooth](bluetooth.gif) | The volume notice expands to show controls and a thin track progress bar. A reported seek eases forward, and pause highlights when pressed. |
 | [Phone destination](phone-destination.gif) | The real ClioPlay Send website beside the native head-unit UI: send, route progress and the received destination. No receive option is required; Bluetooth transport is simulated. |
 | [Speeding warning](speed-warning.gif) | The speed pill pulses red above a confirmed 30 mph limit and eases back when the car slows down. |
@@ -23,7 +26,7 @@
 | [Popup layout](popups-layout.gif) | Smaller confirmation cards, dynamic action menus and compact language picker; expanded name keyboard. |
 | [Itinerary](v216-itinerary.gif) | Scroll all ten targets (nine stops and destination), with centred symbols and connectors ending at the last visible row; Add stop is unavailable when full. |
 | [Bluetooth hidden](v216-bluetooth-hidden.gif) | Able to use ClioPlay, even if hw_bluetooth=0 |
-| [Hud Customisability](v216-hud-settings.gif) | Change top and bottom bar pill positions in settings |
+| [Hud Customisability](v216-hud-settings.gif) | Change top and bottom bar pill positions in Settings → HUD layout |
 
 Native UI frames are 480 × 272 from the production C renderer. The phone-destination loop combines those unchanged frames with a captured browser panel on a 936 × 510 canvas. Website sources and capture tooling remain private. On regeneration, pass --phone-capture to supply new browser screenshots, or the existing GIF browser panel is reused while native UI frames are refreshed.
 The boot previews use the production splash and cross-fade blend, with a cached

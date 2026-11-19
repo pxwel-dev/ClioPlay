@@ -22,7 +22,7 @@ static void popup_text(struct PopupView*v,int x,int y,int w,int face,const char*
 }
 static void popup_option(struct PopupView*v,int x,int y,int w,const char*s,int choice){
  if(choice==modal_choice)v->selected=v->count;
- popup_text(v,x,y,w,1,s,C_WHITE,1);
+ popup_text(v,x,y,w,CONFIRMATION_FACE,s,C_WHITE,1);
 }
 static void popup_build(struct PopupView*v,int key){
  memzero(v,sizeof(*v));v->key=key;v->selected=-1;
@@ -68,7 +68,7 @@ static void popup_build(struct PopupView*v,int key){
  const char*title=key==MOD_ROUTE_POINT?(pending_point_stop?"Add point as stop?":"Route to point?"):
   key==MOD_CANCEL_ROUTE?"Cancel current route?":key==MOD_REMOVE_STOP?"Remove stop?":key==MOD_RESUME_TRIP?"Resume saved trip?":
   key==MOD_RECENT?"Recent trip":key==MOD_FAVE?"Favourite":"Manage target";
- popup_text(v,x+12,y+10,w-24,1,ui_tr(title),C_WHITE,0);
+ popup_text(v,x+12,y+10,w-24,yes_no?CONFIRMATION_FACE:1,ui_tr(title),C_WHITE,0);
  if(yes_no){
   int bw=(w-40)/2;popup_option(v,x+14,y+38,bw,ui_tr("Yes"),0);popup_option(v,x+26+bw,y+38,bw,ui_tr("No"),1);return;
  }

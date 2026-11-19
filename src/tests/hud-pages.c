@@ -28,7 +28,7 @@ int main(void){
  assert(!sheet_page&&!menu_animating(13100)&&clock->position_at==clock_at&&hud_audio.until==term);
  /* A multi-row legal status resizes the sheet rather than covering it. */
  hud_capture_ms=14000;route_status=R_CALC;set_volume(18);hud_bt_notice(ui_tr("Pairing phone"));
- menu_open(P_SETTINGS,8,14000);prepare(14000);prepare(14400);
+ menu_open_setting(8,14000);prepare(14000);prepare(14400);
  assert(hud_tween[HC_STATUS].target.box.h<=96&&sheet_to_box.y>=hud_tween[HC_STATUS].target.box.y+hud_tween[HC_STATUS].target.box.h+8);
  assert(hud_menu_animating(14400));
  puts("Map menu HUD: persistent clock/status across entry, subpages and exit, unchanged notice timers, expanded-notice clearance and live calculation passed.");

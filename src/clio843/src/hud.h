@@ -96,7 +96,7 @@ static const char* hud_route_error(void){
 static void hud_journey_text(char*b,unsigned cap){
  b[0]=0;
  appendstr(b,cap,"~");
- u32 minutes=udiv32(sat_add32(sat_add32(route_result_cost,atlas_future_cost),300u),600u);
+ u32 minutes=udiv32(sat_add32(sat_add32(traffic_remaining_cost(),atlas_future_cost),300u),600u);
  if(minutes>=60u){append_int(b,cap,minutes/60u);appendstr(b,cap,"h ");minutes%=60u;}
  append_int(b,cap,minutes);appendstr(b,cap," min  /  ");
  unsigned distance=slen(b);
@@ -111,7 +111,7 @@ static const char* hud_track(void){
 }
 static void hud_heading_text(char*b,unsigned cap,int heading){
  static const char*n[8]={"N","NE","E","SE","S","SW","W","NW"};
- b[0]=0;appendstr(b,cap,n[((heading+22)/45)&7]);appendstr(b,cap," ");
+ b[0]=0;appendstr(b,cap,ui_tr(n[((heading+22)/45)&7]));appendstr(b,cap," ");
  append_int(b,cap,heading);appendstr(b,cap,"°");
 }
 static void hud_source_text(char*b,unsigned cap){
@@ -126,7 +126,7 @@ static void hud_source_text(char*b,unsigned cap){
 
 enum {HUD_KEYS=1, HUD_PROGRESS=2, HUD_PLAYBACK=8};
 enum {HUD_STATUS_TITLE,HUD_STATUS_BODY,HUD_STATUS_DETAIL,HUD_STATUS_CONNECTION,
- HUD_STATUS_FEEDBACK,HUD_STATUS_TRANSPORT,HUD_STATUS_LAYOUT_COUNT};
+ HUD_STATUS_FEEDBACK,HUD_STATUS_TRANSPORT,HUD_STATUS_TRAFFIC_TITLE,HUD_STATUS_TRAFFIC_DETAIL,HUD_STATUS_LAYOUT_COUNT};
 static struct {
  int from[HUD_STATUS_LAYOUT_COUNT],to[HUD_STATUS_LAYOUT_COUNT];
  u32 at;
@@ -139,7 +139,8 @@ static int hud_status_offset(int row,int q){
 static void hud_prepare_status_layout(const struct HudCard*c,u32 now,int was_visible){
  if(!c->box.a)return;
  const int to[]={5,25,c->detail[0]?16:0,
-  c->connection[0]?14:0,c->feedback[0]?14:0,c->flags&HUD_KEYS?17:0};
+  c->connection[0]?14:0,c->feedback[0]?14:0,c->flags&HUD_KEYS?17:0,
+  c->traffic_title[0]?15:0,c->traffic_detail[0]?14:0};
  int changed=0;
  for(int i=0;i<HUD_STATUS_LAYOUT_COUNT;i++)changed|=hud_status_layout.to[i]!=to[i];
  if(was_visible&&!changed)return;
@@ -190,6 +191,68 @@ static void hud_nav_text(struct HudCard*c,int z,int kind,int tag){
  case HUD_HEADING:
   if(gps.fix)hud_heading_text(c->title,sizeof(c->title),map_course());break;
  }
+}
+/* An OK shortcut is armed only by a drawn invitation for this exact
+ * offer. A stale/fading card, Explore or BT CTRL can never steal OK. */
+static u32 hud_diversion_invited,hud_suggestion_invited;
+static struct SavedPlace hud_suggestion_place;
+static int suggestion_same(const struct SavedPlace*a,const struct SavedPlace*b){return a->lat==b->lat&&a->lon==b->lon&&streq(a->name,b->name);}
+static void hud_suggestion_title(char*out,unsigned cap,const struct SavedPlace*p){
+ copystr(out,cap,ui_tr("Suggested: "));appendstr(out,cap,place_display_name(p->name));
+}
+static int hud_suggestion_shortcut_ready(void){
+ struct SavedPlace p;
+ return screen==SCR_MAP&&!freecam&&modal==MOD_NONE&&!(bt_control_mode&&bt_controls_available())&&hud_suggestion_invited&&
+  hud_suggestion_invited==mob_suggest_serial&&suggested_place(&p)&&suggestion_same(&p,&hud_suggestion_place);
+}
+/* The invitation is always one row. Measure the two independently shaped
+ * phrases so the green announcement and blue control hint share a baseline. */
+#define HUD_DIVERSION_GAP 6
+static int hud_diversion_line_width(const char*title,const char*hint){
+ return width(title,0)+HUD_DIVERSION_GAP+width(hint,0);
+}
+static void hud_draw_invitation_line(int x,int y,int w,const char*title,int media,int suggestion){
+ const char*hint=ui_tr(media?"BACK to review":"OK to review");
+ int tw=width(title,0),hw=width(hint,0);
+ /* During the normal entrance tween the full actionable line may not yet
+  * fit. Never arm OK until both phrases are visibly present. */
+ if(tw+HUD_DIVERSION_GAP+hw>w){
+  /* For a long destination, reserve the complete control hint and ellipsise
+   * only the destination/title, never hide the actionable affordance. */
+  int room=w-HUD_DIVERSION_GAP-hw;
+  if(!suggestion||room<width(ui_tr("Suggested: "),0)+width("…",0)){compact_fit(x,y,w,0,title,hud_status_colour(HUD_SUCCESS,C_WHITE));return;}
+  tw=room;
+ }
+ int rtl=ui_language_rtl();
+ compact_fit(x+(rtl?hw+HUD_DIVERSION_GAP:0),y,tw,0,title,hud_status_colour(HUD_SUCCESS,C_WHITE));
+ compact_fit(x+(rtl?0:tw+HUD_DIVERSION_GAP),y,hw,0,hint,C_ACCENT);
+ if(hud_ink_alpha>=8&&!media){
+  if(suggestion){struct SavedPlace p;if(suggested_place(&p)){hud_suggestion_place=p;hud_suggestion_invited=mob_suggest_serial;}}
+  else hud_diversion_invited=traffic_offer_serial;
+ }
+}
+static int hud_diversion_shortcut_ready(void){
+ return screen==SCR_MAP&&!freecam&&modal==MOD_NONE&&!(bt_control_mode&&bt_controls_available())&&traffic_offer_valid()&&
+  hud_diversion_invited&&hud_diversion_invited==traffic_offer_serial;
+}
+static void hud_traffic_compose(struct HudCard*c,int map,int media){
+ if(!map||screen!=SCR_MAP||freecam||modal!=MOD_NONE||!pref.learn_history||!pref.diversions||route_status!=R_READY)return;
+ int offered=traffic_offer_valid();if(!offered&&!traffic_warn)return;
+ const char*title=ui_tr(offered?"Faster route available":"Likely traffic ahead");
+ if(!c->kind){c->kind=HUD_TRAFFIC;copystr(c->title,sizeof(c->title),title);c->ink|=offered?HUD_SUCCESS:HUD_WARNING;}
+ else copystr(c->traffic_title,sizeof(c->traffic_title),title);
+ if(offered){
+  copystr(c->traffic_hint,sizeof(c->traffic_hint),ui_tr(media?"BACK to review":"OK to review"));c->traffic_serial=traffic_offer_serial;
+ }else copystr(c->traffic_detail,sizeof(c->traffic_detail),ui_tr("Based on driving history"));
+}
+static void hud_suggestion_compose(struct HudCard*c,int map,int media){
+ struct SavedPlace p;
+ if(!map||screen!=SCR_MAP||freecam||modal!=MOD_NONE||!suggested_place(&p))return;
+ char*title=c->kind?c->traffic_title:c->title;
+ hud_suggestion_title(title,193,&p);
+ if(!c->kind){c->kind=HUD_TRAFFIC;c->ink|=HUD_SUCCESS;}
+ copystr(c->traffic_hint,sizeof(c->traffic_hint),ui_tr(media?"BACK to review":"OK to review"));
+ c->suggestion_serial=mob_suggest_serial;
 }
 static void hud_prepare(int z,u32 now,int map){
  struct HudCard c={0};
@@ -266,17 +329,24 @@ static void hud_prepare(int z,u32 now,int map){
  }
  hud_status_observe(map,now);
  hud_status_compose(&c,now);
+ hud_traffic_compose(&c,map,media);
+ if(!c.traffic_serial&&!c.traffic_title[0]&&c.kind!=HUD_TRAFFIC)hud_suggestion_compose(&c,map,media);
+ if(!c.suggestion_serial||media||hud_suggestion_invited!=c.suggestion_serial)hud_suggestion_invited=0;
+ if(!c.traffic_serial||media||hud_diversion_invited!=c.traffic_serial)hud_diversion_invited=0;
  if(!c.tag[0]&&!c.title[0]&&!c.badge[0]&&!c.flags)c.kind=HUD_NONE;
  hud_kind=c.kind;
  if(c.kind){
   int y=8,h=27+(c.detail[0]?16:0)+(c.connection[0]?14:0)+(c.feedback[0]?14:0)+
-   (c.flags&HUD_KEYS?17:0)+(c.flags&HUD_PROGRESS?7:0);
-  int w=20+width(c.title,1)+(c.tag[0]?width(c.tag,0)+12:0)+(c.badge[0]?width(c.badge,0)+18:0);
+   (c.flags&HUD_KEYS?17:0)+(c.flags&HUD_PROGRESS?7:0)+
+   (c.traffic_title[0]?15:0)+(c.traffic_detail[0]?14:0);
+  int w=20+width(c.title,c.kind==HUD_TRAFFIC&&(c.traffic_serial||c.suggestion_serial)?0:1)+(c.tag[0]?width(c.tag,0)+12:0)+(c.badge[0]?width(c.badge,0)+18:0);
   int detail_w=width(c.detail,0)+20;
   int connection_w=width(c.connection,0)+20,feedback_w=width(c.feedback,0)+20;
   int minw=c.flags&HUD_KEYS?282:c.flags&HUD_PROGRESS?174:c.kind==HUD_VOLUME?128:62;
   if(w<detail_w)w=detail_w;if(w<minw)w=minw;
   if(w<connection_w)w=connection_w;if(w<feedback_w)w=feedback_w;
+  int tw=width(c.traffic_title,0)+20;if(w<tw)w=tw;tw=width(c.traffic_detail,0)+20;if(w<tw)w=tw;
+  if(c.traffic_serial||c.suggestion_serial){tw=hud_diversion_line_width(c.kind==HUD_TRAFFIC?c.title:c.traffic_title,c.traffic_hint)+20;if(w<tw)w=tw;}
   int x=8;
   if(pref.top_swap){
    int clock_right=hud_tween[HC_CLOCK].target.box.a?
@@ -459,7 +529,16 @@ static void hud_draw_status(struct HudBox b,const struct HudCard*c,u32 now){
   compact_fit(tx,small_y,tw,0,c->tag,C_CYAN);tx+=tw;
   if(c->title[0]){hud_rect_ink(tx+5,small_y+1,1,11,C_BORDER);tx+=12;}
  }
- compact_fit(tx,title_y,end-tx,1,c->title,hud_status_colour(c->ink&3,c->flags&HUD_PROGRESS?C_CYAN:C_WHITE));
+ int media=bt_control_mode&&bt_controls_available();
+ int live=next->traffic_serial&&next->traffic_serial==traffic_offer_serial&&traffic_offer_valid()&&screen==SCR_MAP&&!freecam&&modal==MOD_NONE;
+ int current=live&&c->traffic_serial==next->traffic_serial;
+ struct SavedPlace suggested;
+ int suggestion_live=next->suggestion_serial&&next->suggestion_serial==mob_suggest_serial&&suggested_place(&suggested)&&screen==SCR_MAP&&!freecam&&modal==MOD_NONE;
+ int suggestion_current=suggestion_live&&c->suggestion_serial==next->suggestion_serial;
+ if(suggestion_current){char title[193];hud_suggestion_title(title,sizeof(title),&suggested);suggestion_current=streq(c->kind==HUD_TRAFFIC?c->title:c->traffic_title,title);}
+ if(c->kind==HUD_TRAFFIC&&(c->traffic_serial||c->suggestion_serial)){
+  if(current||suggestion_current)hud_draw_invitation_line(tx,small_y,end-tx,c->title,media,suggestion_current);
+ }else compact_fit(tx,title_y,end-tx,1,c->title,hud_status_colour(c->ink&3,c->flags&HUD_PROGRESS?C_CYAN:C_WHITE));
  if(badge){
   hud_ink_alpha=streq(old->badge,next->badge)?full:fade;
   int right=x+w-8;
@@ -497,6 +576,23 @@ static void hud_draw_status(struct HudBox b,const struct HudCard*c,u32 now){
   }
  }
  row+=layout[HUD_STATUS_TRANSPORT];
+ /* The offered route takes one row below any media/status content.
+  * A passive historical warning retains its explanatory second row. */
+ const char*traffic_lines[]={c->traffic_title,c->traffic_detail};
+ const char*traffic_old[]={old->traffic_title,old->traffic_detail};
+ const char*traffic_next[]={next->traffic_title,next->traffic_detail};
+ for(int i=0;i<2;i++){
+  int height=layout[HUD_STATUS_TRAFFIC_TITLE+i],room=bottom-row-12;
+  if(room>height-11)room=height-11;
+  if(traffic_lines[i][0]&&(!c->traffic_serial||current)&&(!c->suggestion_serial||suggestion_current)){
+   hud_ink_alpha=hud_status_row_ink(streq(traffic_old[i],traffic_next[i])?full:fade,room);
+   if(hud_ink_alpha){
+    if(i==0&&(current||suggestion_current))hud_draw_invitation_line(x+10,row-2,w-20,traffic_lines[i],media,suggestion_current);
+    else compact_fit(x+10,row-2,w-20,0,traffic_lines[i],i==0?C_WARN:C_MUTED);
+   }
+  }
+  row+=height;
+ }
  if(c->flags&HUD_PROGRESS){
   int track=w-20,travel=track-28;if(travel<1)return;
   hud_ink_alpha=hud_status_row_ink(changed_flags&HUD_PROGRESS?fade:full,bottom-row-5);
@@ -560,6 +656,7 @@ static struct HudClockLayout hud_clock_content_layout(struct HudBox b){
  };
 }
 static void hud_draw_card(int id,u32 now){
+ if(id==HC_STATUS)hud_diversion_invited=hud_suggestion_invited=0;
  struct HudTween*t=&hud_tween[id];if(!t->seen)return;
  struct HudBox b=id==HC_STATUS?hud_status_pose(now):hud_pose(t,now);if(b.a<=0)return;
  int alpha,shift;
@@ -659,7 +756,7 @@ static void hud_reset_animations(void){
  menu_reset(hud_now_ms());popup_reset();
  memzero(hud_tween,sizeof(hud_tween));hud_last_road[0]=0;hud_road_at=0;hud_road_live=0;
  hud_status_reset();hud_playback_reset();
- hud_speed_over=hud_speed_from=0;hud_speed_at=0;hud_status_map=hud_status_page=-1;hud_status_frame_at=0;
+ hud_speed_over=hud_speed_from=0;hud_speed_at=0;hud_status_map=hud_status_page=-1;hud_status_frame_at=0;hud_diversion_invited=hud_suggestion_invited=0;
  bt_transport_press.kind=0;bt_playback_request=-1;
 }
 static void hud_settle_for_capture(u32 now){

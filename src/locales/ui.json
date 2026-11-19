@@ -775,6 +775,190 @@
     "Connect": [
       "Connecter",
       "Conectar"
+    ],
+    "Likely traffic ahead": [
+      "Ralentissements probables",
+      "Tráfico probable"
+    ],
+    "Based on driving history": [
+      "Selon vos trajets",
+      "Según tus trayectos"
+    ],
+    "Journeys: ": [
+      "Trajets : ",
+      "Trayectos: "
+    ],
+    "History cleared": [
+      "Historique effacé",
+      "Historial borrado"
+    ],
+    "Diversion selected": [
+      "Déviation sélectionnée",
+      "Desvío seleccionado"
+    ],
+    "Suggested: ": [
+      "Suggestion : ",
+      "Sugerido: "
+    ],
+    "Browse Recents/Favourites": [
+      "Parcourir Récents/Favoris",
+      "Ver Recientes/Favoritos"
+    ],
+    "Save approximately ": [
+      "Gain d'environ ",
+      "Ahorrar unos "
+    ],
+    "Diversion unavailable": [
+      "Déviation indisponible",
+      "Desvío no disponible"
+    ],
+    "Delete learned journeys and traffic": [
+      "Effacer trajets et trafic appris",
+      "Borrar trayectos y tráfico aprendidos"
+    ],
+    "Take diversion?": [
+      "Prendre la déviation ?",
+      "¿Tomar el desvío?"
+    ],
+    "Clear driving history?": [
+      "Effacer l'historique de conduite ?",
+      "¿Borrar historial de conducción?"
+    ],
+    "Diversion": [
+      "Déviation",
+      "Desvío"
+    ],
+    "Top pill order": [
+      "Ordre des panneaux du haut",
+      "Orden de paneles superiores"
+    ],
+    "Bottom pill order": [
+      "Ordre des panneaux du bas",
+      "Orden de paneles inferiores"
+    ],
+    "Learn driving history": [
+      "Apprendre les trajets",
+      "Aprender trayectos"
+    ],
+    "Destination suggestions": [
+      "Suggestions de destination",
+      "Sugerencias de destino"
+    ],
+    "Intelligent diversions": [
+      "Déviations intelligentes",
+      "Desvíos inteligentes"
+    ],
+    "Clear driving history": [
+      "Effacer l'historique de conduite",
+      "Borrar historial de conducción"
+    ],
+    "Clock left": [
+      "Horloge à gauche",
+      "Reloj a la izquierda"
+    ],
+    "Status left": [
+      "État à gauche",
+      "Estado a la izquierda"
+    ],
+    "Direction left": [
+      "Direction à gauche",
+      "Dirección a la izquierda"
+    ],
+    "Speed left": [
+      "Vitesse à gauche",
+      "Velocidad a la izquierda"
+    ],
+    "Phone destination": [
+      "Destination du téléphone",
+      "Destino del móvil"
+    ],
+    "N": [
+      "N",
+      "N"
+    ],
+    "NE": [
+      "NE",
+      "NE"
+    ],
+    "E": [
+      "E",
+      "E"
+    ],
+    "SE": [
+      "SE",
+      "SE"
+    ],
+    "S": [
+      "S",
+      "S"
+    ],
+    "SW": [
+      "SO",
+      "SO"
+    ],
+    "W": [
+      "O",
+      "O"
+    ],
+    "NW": [
+      "NO",
+      "NO"
+    ],
+    "Faster route available": [
+      "Trajet plus rapide",
+      "Ruta más rápida disponible"
+    ],
+    "Save ~": [
+      "Gain ~",
+      "Ahorra ~"
+    ],
+    "Decision: ": [
+      "Décision : ",
+      "Decisión: "
+    ],
+    "BACK to review": [
+      "Retour pour voir",
+      "Atrás para ver"
+    ],
+    "OK to review": [
+      "OK pour voir",
+      "OK para ver"
+    ],
+    "Display": [
+      "Affichage",
+      "Pantalla"
+    ],
+    "HUD layout": [
+      "Disposition du HUD",
+      "Diseño del HUD"
+    ],
+    "Navigation": [
+      "Navigation",
+      "Navegación"
+    ],
+    "Driving history": [
+      "Historique de conduite",
+      "Historial de conducción"
+    ],
+    "System": [
+      "Système",
+      "Sistema"
+    ],
+    "Start suggested trip?": [
+      "Démarrer le trajet suggéré ?",
+      "¿Iniciar viaje sugerido?"
+    ],
+    "Suggestion unavailable": [
+      "Suggestion indisponible",
+      "Sugerencia no disponible"
+    ],
+    "You come here often": [
+      "Vous venez souvent ici",
+      "Vienes aquí a menudo"
+    ],
+    "Add to favourites?": [
+      "Ajouter aux favoris ?",
+      "¿Añadir a favoritos?"
     ]
   },
   "language_names": {

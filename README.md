@@ -1,28 +1,47 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
-<h1 align="center">ClioPlay 2.1.8</h1>
+<h1 align="center">ClioPlay 2.2.0</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
 <p align="center">
   Created and maintained by <a href="https://github.com/pxwel-dev">Pawel (pxwel-dev)</a>.
 </p>
 
 
-<p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases/tag/Release">Download latest release</a> · <a href="#install">Install instructions</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
+<p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases/tag/Release">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-## Version 2.1.8 — Release
+## Version 2.2.0 — Release
 
 ### Changes in this version
 
-- Fixed itinerary connector lines extending towards the Add stop action when additional targets are off-screen. Connections now join visible markers only.
-- Increased trip capacity from five to ten targets in total (nine intermediate stops plus the final destination). Saved trips use CTR4 only; unfinished trips from older formats cannot be resumed.
-- Removed obsolete saved-place, map, routing and bundle-format readers. Current CLP2 places and current navigation packs remain supported; unsupported formats require fresh data.
-- Reduced the size of confirmation dialogs and their action menus while retaining readable labels, existing choices, focus targets and animation behaviour.
+- Introduced optional, offline driving-history learning. Fresh GPS observations are recorded independently of active navigation and only successful Barcelona power-off sessions train the model.
+- Added contextual suggested trips in the map status pill, with provisional startup GPS reconciliation, adaptive day/time and recency scoring, ordered early-trajectory evidence, confidence hysteresis and offline destination naming. OK opens an explicit Yes/No confirmation; BT CTRL retains playback priority and displays BACK to review. No suppresses that destination for the current recording session. The empty Itinerary retains the original destination-entry layout.
+- Added an optional stationary-startup frequent-place favourite prompt after five completed visits across three dates within 90 days. It never repeats for the same place unless history is cleared; Yes opens the existing Favourite keyboard with a suggested name when available; only Save adds the favourite, without starting navigation or changing prediction confidence.
+- Added directional historical road-time profiles, traffic-adjusted ETAs and an explicit local Diversion choice with gold/yellow bypassed geometry and an aqua/teal alternative.
+- Shared route geometry remains magenta; dashed teal alternatives, yellow bypasses and junction markers distinguish proposed changes. A small frosted-glass map badge shows the approximate saving near the decision point; the glass HUD announces the offer with context-sensitive Back/OK instructions; direct map confirmation preserves Bluetooth controls and driving zoom.
+- Diversion invitations use a persistent single line with the established success green announcement and blue context-sensitive review instruction, until acceptance, rejection or expiry.
+- Declining a diversion suppresses only its bypassed section; later independent offers remain available, and diversion confirmation initially selects Yes.
+- Grouped Settings into Display, HUD layout, Navigation, Driving history and System pages.
+- Added history, destination suggestion and diversion controls in Settings → Driving history, including a confirmed clear-history action.
+- Fixed Bluetooth phone names and connected-state identity when switching between saved devices; both remain keyed by hardware address.
+- Completed the new navigation and HUD translations across all 18 interface languages, and added missing-key regression checks.
+- Added native regression cases and two controlled preview storyboards. Historical traffic is not live traffic.
+- Added a software-only update mode with verified staged copies, a dated software backup and rollback; existing maps, settings and personal history remain untouched.
 
 See [version history](CHANGELOG.md) for implemented changes by version.
+
+See [intelligent navigation](src/docs/intelligent-navigation.md) for configuration, model behaviour and privacy.
 
 ## UI previews
 
 See the [full preview index](src/docs/demo/README.md) for all animations.
+
+| Destination prediction | Intelligent diversions |
+| --- | --- |
+| ![Learned destination in the driving HUD with explicit review](src/docs/demo/v220-destination-prediction.gif) | ![Historical traffic and alternative route selection, controlled fixture](src/docs/demo/v220-intelligent-diversions.gif) |
+
+| Frequent-place suggestion | Send a destination with [ClioPlay Send](https://pxwel-dev.github.io/ClioPlay-Send/) |
+| --- | --- |
+| <img src="src/docs/demo/v220-frequent-place.gif" width="391"> | <img src="src/docs/demo/phone-destination.gif" width="391"> |
 
 | Driving and camera alerts | Dynamically-resizing, animated frosted-glass menu |
 | --- | --- |
@@ -48,31 +67,6 @@ See the [full preview index](src/docs/demo/README.md) for all animations.
 | --- | --- |
 | ![Change top and bottom bar pill positions in settings](src/docs/demo/v216-hud-settings.gif) | ![A new song appears, updates inside Bluetooth control, then radio tuning changes the frequency](src/docs/demo/metadata-updates.gif) |
 
-
-<table align="center">
-  <thead>
-    <tr>
-      <th>
-        Send a destination with
-        <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>
-      </th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td align="center">
-        <img
-          src="src/docs/demo/phone-destination.gif"
-          alt="ClioPlay Send and the head unit receiving a destination side by side"
-          width="480"
-        >
-      </td>
-    </tr>
-  </tbody>
-</table>
-
-
-
 ## Compatibility
 
 The primary supported configuration is:
@@ -88,7 +82,7 @@ Focus temperature readings take priority when valid. See the
 [console setup and controls](src/README.md#physical-console-and-temperature-sources).
 The hardware protocol was contributed from a tested Scénic 3.
 
-ClioPlay automatically discovers Bluetooth hardware on the Carminat; for Bluetooth, the Carminat must have: (`hw_bluetooth=1`). If no Bluetooth hardware is discovered, ClioPlay hides all Bluetooth-related UI features (Bluetooth audio and sending destinations by phone via <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>). 
+ClioPlay automatically discovers Bluetooth hardware on the Carminat; for Bluetooth, the Carminat must have: (`hw_bluetooth=1`). If no Bluetooth hardware is discovered, ClioPlay hides all Bluetooth-related UI features (Bluetooth audio and sending destinations by phone via <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>).
 
 ClioPlay handles the audio source as follows:
 
@@ -107,6 +101,7 @@ BT CTRL also requires a connected phone. Unavailable radio/volume readings stay 
 - Offline OpenStreetMap navigation, routing and rerouting.
 - Browse the map and route to a selected point, send destination from a connected phone, or manually enter named decimal-degree lat/long coordinates
 - Manage stops, recents and favourites.
+- Optional offline destination learning, historical traffic-aware ETAs and local diversions based on personal GPS history.
 - Bluetooth phone audio with track information and remote playback controls.
 - Vehicle audio controls remain responsible for physical volume and mute.
 - Full-screen maps with animated, semi-transparent frosted glass notices for road names, camera alerts, route progress and audio changes.
@@ -116,6 +111,10 @@ BT CTRL also requires a connected phone. Unavailable radio/volume readings stay 
 For new stops/destinations, enter **Coordinates** on the head unit, choose **Next** on the keypad to validate both fields and proceed to naming, or use the separate [ClioPlay Send website](https://pxwel-dev.github.io/ClioPlay-Send/) to send the new route to ClioPlay from your phone via Bluetooth. For ease of use, add the website to your Home Screen as a web app.
 
 ## Install
+
+**Already using ClioPlay?** Follow the [software update guide](src/docs/updating.md) to retain your maps, settings, saved places, pairings and driving history without rebuilding navigation or downloading firmware.
+
+The instructions below are for fresh installations or new navigation data.
 
 You need a FAT32-formatted SD card (SDHC, minimum 2GB, recommended 8GB, theoretical max 32GB) for the head unit and an `.osm.pbf` map extract covering your journeys.
 
@@ -134,7 +133,7 @@ Get the map extract from [Geofabrik Downloads](https://download.geofabrik.de/) b
 
 The installer downloads and checks the required official TomTom firmware.
 It does not format the card. Replaced files are backed up. Any existing ClioPlay preferences,
-pairings and saved places are preserved. No previous ClioPlay install is needed.
+pairings and saved places are preserved. Personal driving history stays on the SD card; do not include it in a release. No previous ClioPlay install is needed.
 Map building can take substantial time for large extracts.
 
 ## Use your remote or console
@@ -156,8 +155,9 @@ upper-right console buttons act as the remote's soft keys.
 
 Turning the console knob also zooms the map, skips tracks in **BT CTRL**, scrolls
 lists and moves through keyboard/keypad buttons or dialog choices. In Settings,
-turn it to choose a row, use the joystick left/right to change its value, and
-press it for the row's OK action.
+turn it to choose a category and press to open it. Within a category, turn to
+choose a row, use the joystick left/right to change its value, and press for
+the row's OK action. Back returns to the category list.
 
 Console shortcuts: **DEST** opens Trip; **LIGHT** cycles Day/Night/Auto;
 **INFO** and **REPEAT** show the journey overview on the map (heading without a
@@ -216,4 +216,4 @@ Original ClioPlay development includes:
 
 Third-party software and dependencies retain their respective licences and attribution notices, as documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-<sub>Release files refreshed 18 November 2026 (Europe/London).</sub>
+<sub>Release files refreshed 19 November 2026 (Europe/London).</sub>

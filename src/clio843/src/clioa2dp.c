@@ -248,6 +248,7 @@ static void sbc_pcm_interleave(u8*out,const struct SbcFrame*f){
  *   /tmp/clbtcmd    monotonically sequenced commands from clio040
  * ------------------------------------------------------------------------- */
 #define BT_META_PATH "/tmp/clbtmeta"
+#define BT_META_TMP_PATH "/tmp/clbtmeta.tmp"
 #define BT_NAV_PATH "/tmp/clnav"
 #define BT_NAV_TMP_PATH "/tmp/clnav.tmp"
 #define BT_CMD_PATH "/tmp/clbtcmd"
@@ -259,6 +260,7 @@ static void sbc_pcm_interleave(u8*out,const struct SbcFrame*f){
 #define BT_BONDS_PATH "./clio843/btbonds.dat"
 #define BT_NAMES_PATH "./clio843/btnames.dat"
 #define BT_DEVLIST_PATH "/tmp/clbtdevices"
+#define BT_DEVLIST_TMP_PATH "/tmp/clbtdevices.tmp"
 #define HCID_KEY_DB "/etc/bluetooth/link_key"
 
 static long s_unlink(const char*p){return sc1(10,(long)p);}
@@ -266,7 +268,7 @@ static long s_fcntl(int fd,int cmd,long arg){return sc3(55,fd,cmd,arg);}
 
 static char status_last[28];
 static int meta_dirty=1,meta_paired=0,meta_connected=0,meta_playing=0,meta_pos=0,meta_dur=0;
-static char meta_device[33],meta_title[193],meta_artist[161],meta_album[161];
+static char meta_device[33],meta_device_addr[18],meta_title[193],meta_artist[161],meta_album[161];
 static int hcifd=-1;static u8 live_peer[6];static int live_peer_valid=0;
 static u32 command_seq_seen=0;
 
@@ -304,7 +306,13 @@ static void meta_clear_track(void){meta_title[0]=meta_artist[0]=meta_album[0]=0;
  * title is transport plumbing, not user media, so never publish it to clio040. */
 static int nav_sender_fallback_meta(void){return streq(meta_title,"ClioPlay Send");}
 static void meta_hide_track(void){meta_title[0]=meta_artist[0]=meta_album[0]=0;meta_pos=meta_dur=0;meta_dirty=1;}
-static void meta_write(void){char b[1024];b[0]=0;append_str(b,sizeof(b),"DEVICE=");append_str(b,sizeof(b),meta_device);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"TITLE=");append_str(b,sizeof(b),meta_title);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"ARTIST=");append_str(b,sizeof(b),meta_artist);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"ALBUM=");append_str(b,sizeof(b),meta_album);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"PAIRED=");append_char(b,sizeof(b),meta_paired?'1':'0');append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"CONNECTED=");append_char(b,sizeof(b),meta_connected?'1':'0');append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"PLAYING=");append_char(b,sizeof(b),meta_playing?'1':'0');append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"POS=");append_sint(b,sizeof(b),meta_pos);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"DUR=");append_uint(b,sizeof(b),(u32)(meta_dur<0?0:meta_dur));append_char(b,sizeof(b),'\n');file_write(BT_META_PATH,b);meta_dirty=0;}
+/* Publish complete IPC snapshots, never partially rewritten records. */
+static int bt_publish_snapshot(const char*path,const char*tmp,const char*data){
+ long fd=s_open(tmp,O_WRONLY_|O_CREAT_|O_TRUNC_,0600);if(fd<0)return 0;
+ u32 n=slen(data);long wrote=s_write((int)fd,data,n);long closed=s_close((int)fd);
+ if(wrote!=(long)n||closed<0||s_rename(tmp,path)<0){s_unlink(tmp);return 0;}return 1;
+}
+static void meta_write(void){char b[1024];b[0]=0;append_str(b,sizeof(b),"DEVICE_ADDR=");append_str(b,sizeof(b),meta_device_addr);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"DEVICE=");append_str(b,sizeof(b),meta_device);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"TITLE=");append_str(b,sizeof(b),meta_title);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"ARTIST=");append_str(b,sizeof(b),meta_artist);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"ALBUM=");append_str(b,sizeof(b),meta_album);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"PAIRED=");append_char(b,sizeof(b),meta_paired?'1':'0');append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"CONNECTED=");append_char(b,sizeof(b),meta_connected?'1':'0');append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"PLAYING=");append_char(b,sizeof(b),meta_playing?'1':'0');append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"POS=");append_sint(b,sizeof(b),meta_pos);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"DUR=");append_uint(b,sizeof(b),(u32)(meta_dur<0?0:meta_dur));append_char(b,sizeof(b),'\n');if(bt_publish_snapshot(BT_META_PATH,BT_META_TMP_PATH,b))meta_dirty=0;}
 
 /* Bluetooth addresses are stored in kernel byte order; display is reversed. */
 static const char HX[]="0123456789ABCDEF";
@@ -324,11 +332,11 @@ static void devnames_write(struct DevNameRec r[MAX_DEVICES],int c){char b[768];b
 static int device_name_find(const u8 addr[6],char*out,u32 cap){struct DevNameRec r[MAX_DEVICES];int c=devnames_read(r);for(int i=0;i<c;i++)if(addr_eq(r[i].addr,addr)){if(out&&cap)copystr(out,cap,r[i].name);return 1;}return 0;}
 static void device_name_store(const u8 addr[6],const char*name){if(name_is_unknown(name))return;struct DevNameRec r[MAX_DEVICES];int c=devnames_read(r),at=-1;for(int i=0;i<c;i++)if(addr_eq(r[i].addr,addr)){at=i;break;}if(at<0){if(c<MAX_DEVICES)at=c++;else{for(int i=1;i<MAX_DEVICES;i++)r[i-1]=r[i];at=MAX_DEVICES-1;}memcopy(r[at].addr,addr,6);}copystr(r[at].name,sizeof(r[at].name),name);devnames_write(r,c);}
 static void device_name_remove(const u8 addr[6]){struct DevNameRec r[MAX_DEVICES],o[MAX_DEVICES];int c=devnames_read(r),n=0;for(int i=0;i<c;i++)if(!addr_eq(r[i].addr,addr))o[n++]=r[i];devnames_write(o,n);}
-static void meta_device_set_addr(const u8 a[6]){char n[33];if(device_name_find(a,n,sizeof(n))&&!name_is_unknown(n))copystr(meta_device,sizeof(meta_device),n);else copystr(meta_device,sizeof(meta_device),"PHONE");meta_dirty=1;}
+static void meta_device_set_addr(const u8 a[6]){char n[33];addr_text(a,meta_device_addr);if(device_name_find(a,n,sizeof(n))&&!name_is_unknown(n))copystr(meta_device,sizeof(meta_device),n);else copystr(meta_device,sizeof(meta_device),"PHONE");meta_dirty=1;}
 static u8 saved_peer[6];static int saved_peer_valid=0;
-static void peer_save(const u8 a[6]){char s[24];addr_text(a,s);append_char(s,sizeof(s),'\n');file_write(BT_PHONE_PATH,s);memcopy(saved_peer,a,6);saved_peer_valid=1;meta_paired=1;meta_device_set_addr(a);device_list_write();}
+static void peer_save(const u8 a[6]){char s[24];addr_text(a,s);append_char(s,sizeof(s),'\n');file_write(BT_PHONE_PATH,s);memcopy(saved_peer,a,6);saved_peer_valid=1;meta_paired=1;meta_device_set_addr(live_peer_valid?live_peer:a);device_list_write();}
 static void peer_load(void){char b[24]={0};long fd=s_open(BT_PHONE_PATH,O_RDONLY_,0);if(fd<0)return;long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n<=0)return;b[n]=0;if(addr_parse(b,saved_peer)){saved_peer_valid=1;meta_paired=1;meta_device_set_addr(saved_peer);}}
-static void peer_clear(void){memzero(saved_peer,6);saved_peer_valid=0;meta_paired=0;meta_device[0]=0;s_unlink(BT_PHONE_PATH);meta_clear_track();meta_dirty=1;}
+static void peer_clear(void){memzero(saved_peer,6);saved_peer_valid=0;meta_paired=0;if(live_peer_valid)meta_device_set_addr(live_peer);else meta_device_addr[0]=meta_device[0]=0;s_unlink(BT_PHONE_PATH);meta_clear_track();meta_dirty=1;}
 
 /* ---------------- Persistent phone bond store ----------------------------
  * This TomTom image uses pre-2.16 BlueZ.  Its /etc/bluetooth/link_key is a
@@ -351,15 +359,10 @@ static void hcid_db_update(const u8 remote[6],const u8 key[16],u8 type,int add){
 static int hcid_db_find(const u8 remote[6],u8 key[16],u8*type){if(!local_bdaddr_valid)return 0;u8 in[HCID_REC_SIZE*16];long fd=s_open(HCID_KEY_DB,O_RDONLY_,0);if(fd<0)return 0;long nr=s_read((int)fd,in,sizeof(in));s_close((int)fd);if(nr<=0)return 0;int rc=(int)(nr/HCID_REC_SIZE);for(int i=0;i<rc;i++){u8*p=in+i*HCID_REC_SIZE;if(addr_eq(p,local_bdaddr)&&addr_eq(p+6,remote)){memcopy(key,p+12,16);if(type)*type=p[28];return 1;}}return 0;}
 static int bond_restore_hcid(const u8 addr[6]){u8 key[16],type=0;if(!bond_find(addr,key,&type)){if(!hcid_db_find(addr,key,&type))return 0;bond_store(addr,key,type);hci_log("PHONE BOND IMPORTED FROM HCID",addr,-1);}hcid_db_update(addr,key,type,1);hci_store_link_key(addr,key);hci_log("PHONE BOND RESTORED TO HCID",addr,-1);return 1;}
 static void bond_capture(const u8*p){/* HCI Link Key Notification payload: addr6,key16,type1 */if(!p)return;bond_store(p,p+6,p[22]);hci_store_link_key(p,p+6);hci_log("PHONE BOND KEY STORED",p,-1);device_list_write();}
-/* Persist the best live identity before a session can clear live_peer_valid.
- * meta_device is intentionally retained across an ordinary disconnect, so it
- * is also a safe recovery source for the currently selected remembered peer. */
-static void remember_live_name(void){if(live_peer_valid&&!name_is_unknown(meta_device))device_name_store(live_peer,meta_device);}
+/* Device names belong to the HCI address, not to global playback metadata. */
 static int device_list_known=0,device_list_connected=0,device_list_live=0,device_list_saved=0;
 static u8 device_list_live_addr[6],device_list_saved_addr[6];static char device_list_name[33];
-static void device_list_write(void){u8 r[MAX_BONDS][BOND_REC_SIZE];int c=bond_read(r);char b[1280];b[0]=0;append_str(b,sizeof(b),"COUNT=");append_uint(b,sizeof(b),(u32)c);append_char(b,sizeof(b),'\n');for(int i=0;i<c;i++){char a[18],n[33];int live=(meta_connected&&live_peer_valid&&addr_eq(r[i],live_peer));int saved=(saved_peer_valid&&addr_eq(r[i],saved_peer));addr_text(r[i],a);if(!device_name_find(r[i],n,sizeof(n)))copystr(n,sizeof(n),"UNKNOWN DEVICE");/* A resolved device name can outlive the transport connection.  Recover it
- * for either the live peer or the currently remembered peer, and immediately
- * write it back so subsequent boots no longer depend on transient metadata. */if((live||saved)&&name_is_unknown(n)&&!name_is_unknown(meta_device)){copystr(n,sizeof(n),meta_device);device_name_store(r[i],n);}append_str(b,sizeof(b),"DEV=");append_str(b,sizeof(b),a);append_char(b,sizeof(b),'|');append_char(b,sizeof(b),live?'1':'0');append_char(b,sizeof(b),'|');append_str(b,sizeof(b),n);append_char(b,sizeof(b),'\n');}file_write(BT_DEVLIST_PATH,b);
+static void device_list_write(void){u8 r[MAX_BONDS][BOND_REC_SIZE];int c=bond_read(r);char b[1280];b[0]=0;append_str(b,sizeof(b),"COUNT=");append_uint(b,sizeof(b),(u32)c);append_char(b,sizeof(b),'\n');for(int i=0;i<c;i++){char a[18],n[33];int live=(meta_connected&&live_peer_valid&&addr_eq(r[i],live_peer));addr_text(r[i],a);if(!device_name_find(r[i],n,sizeof(n)))copystr(n,sizeof(n),"UNKNOWN DEVICE");append_str(b,sizeof(b),"DEV=");append_str(b,sizeof(b),a);append_char(b,sizeof(b),'|');append_char(b,sizeof(b),live?'1':'0');append_char(b,sizeof(b),'|');append_str(b,sizeof(b),n);append_char(b,sizeof(b),'\n');}if(!bt_publish_snapshot(BT_DEVLIST_PATH,BT_DEVLIST_TMP_PATH,b))return;
  device_list_connected=meta_connected;device_list_live=live_peer_valid;device_list_saved=saved_peer_valid;
  memcopy(device_list_live_addr,live_peer,6);memcopy(device_list_saved_addr,saved_peer,6);
  copystr(device_list_name,sizeof(device_list_name),meta_device);device_list_known=1;
@@ -370,7 +373,7 @@ static void device_list_service(void){
     !addr_eq(device_list_saved_addr,saved_peer)||!streq(device_list_name,meta_device))device_list_write();
 }
 static void hci_remote_name_request(const u8 addr[6]){if(hcifd<0||!addr)return;u8 b[14];memzero(b,sizeof(b));b[0]=0x01;b[1]=0x19;b[2]=0x04;b[3]=10;memcopy(b+4,addr,6);b[10]=0x02;long n=s_write(hcifd,b,sizeof(b));hci_log(n==(long)sizeof(b)?"HCI REMOTE NAME REQUEST":"HCI REMOTE NAME REQUEST FAIL",addr,n==(long)sizeof(b)?-1:1);}
-static void remote_name_store(const u8 addr[6],const u8*src,u32 n){char d[33],known[33];u32 j=0;for(u32 i=0;i<n&&j+1<sizeof(d);i++){u8 c=src[i];if(!c)break;if(c>=32&&c<127&&c!='|')d[j++]=(char)c;else if(c>=128){if(!j||d[j-1]!=' ')d[j++]=' ';}}while(j&&d[j-1]==' ')j--;d[j]=0;int target=(live_peer_valid&&addr_eq(addr,live_peer))||(saved_peer_valid&&addr_eq(addr,saved_peer));if(name_is_unknown(d)){/* A transient/blank Remote Name result is not new identity information. Preserve the last resolved name instead of exposing UNKNOWN DEVICE. */if(device_name_find(addr,known,sizeof(known))&&!name_is_unknown(known))copystr(d,sizeof(d),known);else if(target&&!name_is_unknown(meta_device))copystr(d,sizeof(d),meta_device);else copystr(d,sizeof(d),"PHONE");}else device_name_store(addr,d);if(target&&!name_is_unknown(d))copystr(meta_device,sizeof(meta_device),d);meta_dirty=1;device_list_write();char l[96];l[0]=0;append_str(l,sizeof(l),"PHONE NAME ");append_str(l,sizeof(l),d);append_char(l,sizeof(l),'\n');bt_log_append(l);}
+static void remote_name_store(const u8 addr[6],const u8*src,u32 n){char d[33],known[33];u32 j=0;for(u32 i=0;i<n&&j+1<sizeof(d);i++){u8 c=src[i];if(!c)break;if(c>=32&&c<127&&c!='|')d[j++]=(char)c;else if(c>=128){if(!j||d[j-1]!=' ')d[j++]=' ';}}while(j&&d[j-1]==' ')j--;d[j]=0;int target=live_peer_valid?addr_eq(addr,live_peer):(saved_peer_valid&&addr_eq(addr,saved_peer));if(name_is_unknown(d)){/* A transient/blank Remote Name result is not new identity information. Preserve the last resolved name instead of exposing UNKNOWN DEVICE. */if(device_name_find(addr,known,sizeof(known))&&!name_is_unknown(known))copystr(d,sizeof(d),known);else copystr(d,sizeof(d),"PHONE");}else device_name_store(addr,d);if(target)meta_device_set_addr(addr);meta_dirty=1;device_list_write();char l[96];l[0]=0;append_str(l,sizeof(l),"PHONE NAME ");append_str(l,sizeof(l),d);append_char(l,sizeof(l),'\n');bt_log_append(l);}
 static void hci_request(const char*verb,const u8*a){char b[64];b[0]=0;append_str(b,sizeof(b),verb);if(a){char t[18];addr_text(a,t);append_char(b,sizeof(b),' ');append_str(b,sizeof(b),t);}append_char(b,sizeof(b),'\n');file_write(BT_HCI_PATH,b);}
 
 /* ---------------- Carminat continuous PCM ring -------------------------- */
@@ -672,7 +675,7 @@ static int avrcpfd=-1,avrcp_state=0;/*0 none,1 connecting,2 ready*/static u8 avr
 static u16 be16(const u8*p){return(u16)(((u16)p[0]<<8)|p[1]);}static u32 be32(const u8*p){return((u32)p[0]<<24)|((u32)p[1]<<16)|((u32)p[2]<<8)|p[3];}
 static void put_be32(u8*p,u32 v){p[0]=(u8)(v>>24);p[1]=(u8)(v>>16);p[2]=(u8)(v>>8);p[3]=(u8)v;}
 static void avrcp_close(void){if(avrcpfd>=0)s_close(avrcpfd);avrcpfd=-1;avrcp_state=0;}
-static void reconnect_profile_ready(const u8*peer){if(reconnect_wait_ticks<0)return;if(peer){memcopy(live_peer,peer,6);live_peer_valid=1;}meta_connected=1;meta_dirty=1;reconnect_wait_ticks=-1;reconnect_profile_ticks=-1;status_set("BT CONNECTED");hci_log("PHONE RECONNECT PROFILE READY",peer,-1);}
+static void reconnect_profile_ready(const u8*peer){if(reconnect_wait_ticks<0)return;if(peer){memcopy(live_peer,peer,6);live_peer_valid=1;meta_device_set_addr(live_peer);}meta_connected=1;meta_dirty=1;reconnect_wait_ticks=-1;reconnect_profile_ticks=-1;status_set("BT CONNECTED");hci_log("PHONE RECONNECT PROFILE READY",peer,-1);}
 static void avrcp_open(u32 tick){if(avrcp_state||manual_block||tick<avrcp_retry_at)return;const u8*peer=live_peer_valid?live_peer:(saved_peer_valid?saved_peer:0);if(!peer)return;hci_log("AVRCP CONNECT TRY",peer,-1);int fd=bt_socket();if(fd<0){hci_log("AVRCP SOCKET FAIL",peer,(int)(-fd));avrcp_retry_at=tick+50;return;}/* ACL is already authenticated/encrypted by A2DP.  Do not trigger a second legacy security negotiation here. */int r=bt_connect_nb(fd,PSM_AVRCP,peer);if(r==0){avrcpfd=fd;avrcp_state=2;avrcp_retry_at=tick+50;hci_log("AVRCP CONNECTED",peer,-1);reconnect_profile_ready(peer);return;}/* EINPROGRESS/EALREADY on old Linux. */if(r==-115||r==-114||r==-11){avrcpfd=fd;avrcp_state=1;hci_log("AVRCP CONNECT PENDING",peer,(int)(-r));return;}hci_log("AVRCP CONNECT IMMEDIATE FAIL",peer,(int)(-r));s_close(fd);avrcp_retry_at=tick+50;}
 static void avrcp_connect_finish(u32 tick){if(avrcp_state!=1||avrcpfd<0)return;int e=bt_so_error(avrcpfd);const u8*peer=live_peer_valid?live_peer:(saved_peer_valid?saved_peer:0);if(e==0){avrcp_state=2;avrcp_retry_at=tick+50;hci_log("AVRCP CONNECTED",peer,-1);reconnect_profile_ready(peer);}else if(e==11||e==114||e==115){return;}else{hci_log("AVRCP CONNECT FAIL",peer,e<0?-e:e);avrcp_close();avrcp_retry_at=tick+50;if(reconnect_wait_ticks>=0)reconnect_profile_ticks=20;}}
 static int avrcp_write(const u8*b,u32 n){return avrcp_state==2&&avrcpfd>=0&&s_write(avrcpfd,b,n)==(long)n;}
@@ -747,13 +750,13 @@ static void auto_boot_service(u32 tick){
   status_set("BT RECONNECTING");
   hci_log(auto_attempts==1?"AUTO RECONNECT PROFILE-FIRST":"AUTO RECONNECT SECOND TRY",saved_peer,-1);
 }
-static void session_close(int keep_status){remember_live_name();snd_close();avrcp_close();avrcp_delay_ticks=-1;reconnect_profile_ticks=-1;reconnect_wait_ticks=-1;if(mediafd>=0)s_close(mediafd);if(sigfd>=0)s_close(sigfd);mediafd=sigfd=-1;av_reset_stream();live_peer_valid=0;meta_connected=0;meta_playing=0;meta_dirty=1;if(!keep_status)status_set(meta_paired?"BT WAIT PHONE":"BT WAIT PHONE");}
+static void session_close(int keep_status){snd_close();avrcp_close();avrcp_delay_ticks=-1;reconnect_profile_ticks=-1;reconnect_wait_ticks=-1;if(mediafd>=0)s_close(mediafd);if(sigfd>=0)s_close(sigfd);mediafd=sigfd=-1;av_reset_stream();live_peer_valid=0;meta_connected=0;meta_playing=0;if(saved_peer_valid)meta_device_set_addr(saved_peer);else meta_device_addr[0]=meta_device[0]=0;meta_dirty=1;if(!keep_status)status_set(meta_paired?"BT WAIT PHONE":"BT WAIT PHONE");}
 
 /* clio040 command file is a single latest-command record; sequence prevents repeats. */
 static void process_command(void){char b[96]={0};long fd=s_open(BT_CMD_PATH,O_RDONLY_,0);if(fd<0)return;long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n<=0)return;b[n]=0;u32 seq=0;if(!parse_uint0(b,&seq)||seq==command_seq_seen)return;command_seq_seen=seq;char*p=b;while(*p>='0'&&*p<='9')p++;while(*p==' '||*p=='\t')p++;
   if(starts0(p,"PLAY")){avrcp_passthrough(0x44);return;}if(starts0(p,"PAUSE")){avrcp_passthrough(0x46);return;}if(starts0(p,"NEXT")){avrcp_passthrough(0x4b);return;}if(starts0(p,"PREV")){avrcp_passthrough(0x4c);return;}
   if(starts0(p,"PAIR")){auto_boot_preempt();if(hci_pair_armed){pair_pin_status();return;}manual_block=0;pair_pin_prepare();hci_pair_armed=1;hci_pair_ticks=600;hci_pin_peer_valid=0;{char l[40];l[0]=0;append_str(l,sizeof(l),"HCI PAIR ARMED 60S PIN ");append_str(l,sizeof(l),pair_pin);hci_log(l,0,-1);}if(pairing_policy_set(1)){hci_request("PAIR",0);}else{pair_policy_fallback=1;pair_policy_on=1;hci_request("PAIR_FALLBACK",0);}pair_pin_status();return;}
-  if(starts0(p,"CONNECT")){auto_boot_preempt();u8 target[6];const u8*t=0;char*q=p+7;while(*q==' '||*q=='\t')q++;if(addr_parse(q,target))t=target;else if(saved_peer_valid)t=saved_peer;manual_block=0;if(!t){status_set("BT NO SAVED DEVICE");return;}if(hci_pair_armed){hci_pair_armed=0;hci_pair_ticks=0;pairing_policy_finish();}hci_pin_peer_valid=0;if(!bond_restore_hcid(t)){status_set("BT REPAIR REQUIRED");hci_log("PHONE RECONNECT NO SAVED KEY",t,-1);return;}peer_save(t);hci_remote_name_request(t);avrcp_close();reconnect_profile_ticks=0;reconnect_wait_ticks=250;avrcp_retry_at=0;hci_log("PHONE RECONNECT PROFILE-FIRST+BOND",t,-1);status_set("BT RECONNECTING");return;}
+  if(starts0(p,"CONNECT")){auto_boot_preempt();u8 target[6];const u8*t=0;char*q=p+7;while(*q==' '||*q=='\t')q++;if(addr_parse(q,target))t=target;else if(saved_peer_valid)t=saved_peer;manual_block=0;if(!t){status_set("BT NO SAVED DEVICE");return;}if(hci_pair_armed){hci_pair_armed=0;hci_pair_ticks=0;pairing_policy_finish();}hci_pin_peer_valid=0;if(!bond_restore_hcid(t)){status_set("BT REPAIR REQUIRED");hci_log("PHONE RECONNECT NO SAVED KEY",t,-1);return;}if(live_peer_valid&&!addr_eq(t,live_peer)){hci_request("DISCONNECT",live_peer);session_close(1);}peer_save(t);hci_remote_name_request(t);avrcp_close();reconnect_profile_ticks=0;reconnect_wait_ticks=250;avrcp_retry_at=0;hci_log("PHONE RECONNECT PROFILE-FIRST+BOND",t,-1);status_set("BT RECONNECTING");return;}
   if(starts0(p,"DISCONNECT")){auto_boot_preempt();u8 target[6];const u8*t=live_peer_valid?live_peer:(saved_peer_valid?saved_peer:0);char*q=p+10;while(*q==' '||*q=='\t')q++;if(addr_parse(q,target))t=target;manual_block=1;if(hci_pair_armed){hci_pair_armed=0;hci_pair_ticks=0;pairing_policy_finish();}if(t)hci_request("DISCONNECT",t);if(!t||(live_peer_valid&&addr_eq(t,live_peer)))session_close(1);status_set("BT DISCONNECTED");device_list_write();return;}
   if(starts0(p,"UNPAIR")){auto_boot_preempt();u8 target[6];const u8*t=saved_peer_valid?saved_peer:0;char*q=p+6;while(*q==' '||*q=='\t')q++;if(addr_parse(q,target))t=target;manual_block=1;if(hci_pair_armed){hci_pair_armed=0;hci_pair_ticks=0;pairing_policy_finish();}if(t){u8 oldpeer[6];memcopy(oldpeer,t,6);bond_remove(oldpeer);device_name_remove(oldpeer);hcid_db_update(oldpeer,0,0,0);hci_request("UNPAIR",oldpeer);if(live_peer_valid&&addr_eq(oldpeer,live_peer))session_close(1);if(saved_peer_valid&&addr_eq(oldpeer,saved_peer)){u8 r[MAX_BONDS][BOND_REC_SIZE];int c=bond_read(r);if(c>0)peer_save(r[0]);else peer_clear();}}device_list_write();status_set("BT DEVICE FORGOTTEN");return;}
 }

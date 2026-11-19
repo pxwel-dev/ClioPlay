@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish/check the ClioPlay clean-install source package."""
+"""Publish/check the ClioPlay fresh-install and software-update source package."""
 import argparse,hashlib,json,os,shutil,tempfile
 from publication import source_files,gitignore,source_gitignore
 from datetime import datetime
@@ -107,7 +107,7 @@ def refresh(output=DEFAULT,check=False):
   tests['publication']=verify_tree(stage)
   hashes={str(p.relative_to(stage)):sha(p) for p in sorted(stage.rglob('*')) if p.is_file()}
   checksum=''.join(digest+'  '+name+'\n' for name,digest in hashes.items());(stage/'SHA256SUMS').write_text(checksum);hashes['SHA256SUMS']=sha(stage/'SHA256SUMS')
-  manifest={'format':'clioplay-latest-1','updated_at':updated,'edition':'Global','version':(ROOT/'VERSION').read_text().strip(),'payload':'Clean-install source package, current binaries, legacy bootstrap, CAB-based installer; no vendor firmware, navigation packs or companion website','executables':{name:reports[name]['sha256'] for name in PROGRAMS},'source_sha256':source,'files':hashes,'checks':tests}
+  manifest={'format':'clioplay-latest-1','updated_at':updated,'edition':'Global','version':(ROOT/'VERSION').read_text().strip(),'payload':'Source package, current binaries, legacy bootstrap, fresh-install and software-update tools; no vendor firmware, navigation packs or companion website','executables':{name:reports[name]['sha256'] for name in PROGRAMS},'source_sha256':source,'files':hashes,'checks':tests}
   for name in [*hashes,'latest.json',*(previous or {}).get('files',{})]:safe_target(output,name)
   output.mkdir(parents=True,exist_ok=True)
   for name in hashes:

@@ -1,10 +1,11 @@
 # Interface languages
 
 Fixed notifications, turn instructions, camera labels and route states use sentence
-case. Acronyms such as GPS, ETA and BT retain their normal spelling.
+case. System acronyms such as GPS, ETA, BT, AUX and FM, units and brand names retain their normal spelling. Compass headings use local direction abbreviations.
 
 The language setting changes interface text only. Road/destination names are kept
-as received. GPS country profiles independently select Auto units, driving side
+as received, except for the reserved internal unnamed-place markers MAP POINT
+and PHONE DESTINATION, whose display labels are translated. GPS country profiles independently select Auto units, driving side
 and camera policy; changing the interface language cannot change those policies.
 The naming keyboard has independent language layouts. The phone can still
 send destinations in native scripts.
@@ -22,7 +23,8 @@ are existing card preferences and must remain English/French/Spanish.
 Run `python3 tools/build_translations.py` from `src/` to regenerate
 the native header. Normal `tools/build_ui.py` does this automatically and hashes
 all locale JSON files. Missing/extra keys, empty strings, overlong UTF-8 strings
-and missing numeric-prefix spaces fail validation.
+and missing numeric-prefix spaces fail validation. The host CI also checks literal
+translation calls, indirect menu/setting keys and the generated native table.
 
 Run `python3 tools/verify_locales.py` for native UBSan checks: all dictionary
 entries/glyphs, saved preferences, remote cycling/wrap, bounded labels/statuses,
