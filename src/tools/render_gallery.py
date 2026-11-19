@@ -762,7 +762,7 @@ static void preview_map_traffic_profile(int a, int b, u32 now)
 
 static int preview_find_map_diversion(u32 now)
 {
-    const u32 distances[] = {400u, 700u, 1000u, 1300u};
+    const u32 distances[] = {150u, 250u, 350u, 400u, 700u, 1000u, 1300u};
     u32 approach = 0;
     u32 last_attempt = 0;
 
@@ -929,9 +929,9 @@ static void preview_map_diversion_seed(void)
 
     display_course_valid = 1;
 
-    /* A wider driving view keeps the divergence visible. */
+    /* Match the normal gallery driving zoom, without auto-zoom changes. */
     pref.autozoom = 0;
-    manual_zoom = 3;
+    manual_zoom = 5;
     zoom_override = -1;
 
     trip.active = 1;

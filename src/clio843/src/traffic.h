@@ -15,7 +15,19 @@ static int traffic_region=-2;
 static u32 traffic_offer_revision,traffic_saving,traffic_scan_ms,traffic_eta_ds,traffic_eta_revision;
 static u32 traffic_block_arc,traffic_base_ds;
 static int traffic_eta_head,traffic_slow_end;
-static u32 traffic_search_started,traffic_dismiss_revision=0xffffffffu;
+static u32 traffic_search_started;
+/* A route-local bit per incoming geometry segment. Declining one bypass
+ * must not silence congestion elsewhere on this leg. Point indices stay
+ * stable as route_head advances; a genuine route rebuild clears the bits. */
+static u8 traffic_declined[(ROUTE_PATH_MAX+7)/8];
+static int traffic_segment_declined(int i){return (traffic_declined[i>>3]>>(i&7))&1;}
+static void traffic_set_declined(int i,int declined){
+ u8 bit=(u8)(1u<<(i&7));if(declined)traffic_declined[i>>3]|=bit;else traffic_declined[i>>3]&=(u8)~bit;
+}
+static int traffic_range_declined(int from,int to){
+ for(int i=from+1;i<=to;i++)if(traffic_segment_declined(i))return 1;
+ return 0;
+}
 struct TrafficPoint {s32 lat,lon;u32 node,cost,arc,phys,m;};
 static struct TrafficPoint traffic_path[TRAFFIC_PATH_MAX];
 struct TrafficState {u32 node,cost,arc;int next,done;};
@@ -24,9 +36,12 @@ static unsigned traffic_state_n;
 static int traffic_expand=-1;
 static u32 traffic_in_first,traffic_in_left;
 static int traffic_warn;
-static void traffic_invalidate(void){
+static void traffic_reset_offer(void){
  traffic_offer_n=traffic_searching=traffic_warn=0;traffic_begin_idx=traffic_join_idx=-1;
  traffic_scan_ms=0;traffic_eta_revision=0xffffffffu;traffic_saving=0;traffic_route_revision++;
+}
+static void traffic_invalidate(void){
+ traffic_reset_offer();memzero(traffic_declined,sizeof(traffic_declined));
 }
 static int traffic_offer_valid(void){
  return pref.learn_history&&pref.diversions&&gps.fix&&traffic_offer_n>1&&route_status==R_READY&&traffic_offer_revision==traffic_route_revision&&traffic_region==atlas_route_region&&
@@ -34,6 +49,15 @@ static int traffic_offer_valid(void){
   route_node[traffic_begin_idx]==traffic_path[0].node&&route_node[traffic_join_idx]==traffic_path[traffic_offer_n-1].node&&
   route_lat[traffic_begin_idx]==traffic_path[0].lat&&route_lon[traffic_begin_idx]==traffic_path[0].lon&&
   route_lat[traffic_join_idx]==traffic_path[traffic_offer_n-1].lat&&route_lon[traffic_join_idx]==traffic_path[traffic_offer_n-1].lon;
+}
+/* Keep the historical ETA/warning, but decline this particular section.
+ * Leave all other sections eligible and rescan on the next service tick. */
+static void traffic_reject(void){
+ if(traffic_offer_valid()){
+  for(int i=traffic_begin_idx+1;i<=traffic_join_idx;i++)traffic_set_declined(i,1);
+  traffic_scan_ms=0;
+ }
+ traffic_offer_n=0;traffic_saving=0;render_background_dirty=1;
 }
 static u32 traffic_key(u32 id,const struct CprBase*b){
  struct CprPoint p[3];u32 way[2];
@@ -117,7 +141,7 @@ static u32 traffic_remaining_cost(void){
 static void traffic_search_cancel(void){traffic_searching=0;traffic_expand=-1;traffic_state_n=0;}
 static int traffic_state_find(u32 node){for(unsigned i=0;i<traffic_state_n;i++)if(traffic_states[i].node==node)return (int)i;return -1;}
 static int traffic_search_start(int from,int join,u32 block,u32 raw,u32 before,u32 now){
- if(from<=route_head||join<=from||join>=route_n||route_node[from]==ROUTE_NOARC||route_node[join]==ROUTE_NOARC)return 0;
+ if(from<=route_head||join<=from||join>=route_n||route_node[from]==ROUTE_NOARC||route_node[join]==ROUTE_NOARC||traffic_range_declined(from,join))return 0;
  traffic_begin_idx=from;traffic_join_idx=join;traffic_block_arc=block;traffic_base_ds=raw;
  (void)before;traffic_search_started=now;
  traffic_region=atlas_route_region;traffic_offer_revision=traffic_route_revision;
@@ -203,34 +227,42 @@ static void traffic_search_step(u32 now){
   else if(!traffic_states[at].done&&dist<traffic_states[at].cost){traffic_states[at].cost=dist;traffic_states[at].arc=id;traffic_states[at].next=traffic_expand;}
  }
 }
+/* A candidate must rejoin at a legal turn state beyond the slow arc, with
+ * at least 200 m of additional route. Never cross a declined interval.
+ * Searching the bounded lookahead here lets a smaller independent delay
+ * win when the largest delay has no eligible splice. */
+static int traffic_find_join(int from,int bad,u32 arc,int end,u32*raw){
+ u32 m=0,cost=0;
+ for(int i=from+1;i<=end;i++){
+  if(traffic_segment_declined(i))return -1;
+  cost=sat_add32(cost,route_seg_cost[i]);if(cost>TRAFFIC_LOOKAHEAD_DS)return -1;
+  if(i>bad&&route_seg_arc[i]!=arc)m=sat_add32(m,route_seg_m[i]);
+  if(i>bad&&m>=200u&&route_node[i]!=ROUTE_NOARC&&cost){*raw=cost;return i;}
+ }
+ return -1;
+}
 static void traffic_scan(u32 now){
  u32 epoch=mob_time(now);if(epoch==MOB_UNKNOWN){traffic_warn=traffic_offer_n=0;return;}
- u32 sum=0,stat=0,delay=0,bad_arc=ROUTE_NOARC;int bad=-1,begin=-1,join=-1,anchor=-1,last_slow=-1;
- /* Work on at most the next 30 minutes / 1024 geometry points. Group
-  * identical arcs to avoid repeatedly reading the same geometry key. */
+ u32 sum=0,stat=0,delay=0,bad_arc=ROUTE_NOARC,raw=0;int begin=-1,join=-1,anchor=-1,last_slow=-1;
+ /* Keep the warning/ETA for every slow arc, including rejected sections.
+  * Search only independently eligible intervals in the same lookahead. */
  int end=route_head+1024;if(end>=route_n)end=route_n-1;
+ int offered=traffic_offer_valid();
  for(int i=route_head+1;i<=end&&stat<TRAFFIC_LOOKAHEAD_DS;){
   int first=i;u32 arc=route_seg_arc[i],base=0;
   while(i<=end&&route_seg_arc[i]==arc){base=sat_add32(base,route_seg_cost[i]);i++;}
   int known=0;u32 adjusted=traffic_adjust(arc,epoch+sum/10u,base,0,&known);
   if(known&&adjusted>base)last_slow=i-1;
-  if(known&&adjusted>base&&adjusted-base>delay&&anchor>route_head){delay=adjusted-base;bad=first;bad_arc=arc;begin=anchor;}
+  if(!offered&&known&&adjusted>base&&adjusted-base>=600u&&adjusted-base>delay&&anchor>route_head&&!traffic_range_declined(anchor,i-1)){
+   u32 candidate_raw=0;int candidate_join=traffic_find_join(anchor,first,arc,end,&candidate_raw);
+   if(candidate_join>=0){delay=adjusted-base;bad_arc=arc;begin=anchor;join=candidate_join;raw=candidate_raw;}
+  }
   stat=sat_add32(stat,base);sum=sat_add32(sum,adjusted);
   if(route_node[i-1]!=ROUTE_NOARC)anchor=i-1;
  }
  traffic_eta_ds=sum>stat?sum-stat:0;traffic_slow_end=last_slow;traffic_eta_head=route_head;
  traffic_eta_revision=traffic_route_revision;traffic_warn=traffic_eta_ds>=600u;
- if(bad<0||delay<600u||traffic_dismiss_revision==traffic_route_revision||traffic_offer_valid())return;
- /* Choose a turn-state rejoin beyond the slow arc and at least 200 m
-  * farther along the original route. Reuse the unaffected prefix/suffix. */
- u32 m=0,raw=0,prior=0;
- for(int i=route_head+1;i<route_n&&i<=end;i++){
-  if(i<=begin)prior=sat_add32(prior,route_seg_cost[i]);
-  else raw=sat_add32(raw,route_seg_cost[i]);
-  if(i>bad&&route_seg_arc[i]!=bad_arc)m=sat_add32(m,route_seg_m[i]);
-  if(i>bad&&m>=200u&&route_node[i]!=ROUTE_NOARC){join=i;break;}
- }
- if(join>begin&&raw&&raw<=TRAFFIC_LOOKAHEAD_DS)(void)traffic_search_start(begin,join,bad_arc,raw,prior,now);
+ if(!offered&&join>begin&&begin>route_head)(void)traffic_search_start(begin,join,bad_arc,raw,0,now);
 }
 static void traffic_service(u32 now){
  if(!pref.diversions||!pref.learn_history||mob.n<5||!gps.fix||mob_time(now)==MOB_UNKNOWN||!routeok||route_status!=R_READY||atlas_probe||
@@ -250,16 +282,18 @@ static int traffic_accept(void){
  if(route_n+delta>ROUTE_PATH_MAX)return 0;
  u32 oldcost=0,oldm=0,newcost=0,newm=0;
  for(int i=a+1;i<=b;i++){oldcost=sat_add32(oldcost,route_seg_cost[i]);oldm=sat_add32(oldm,route_seg_m[i]);}
- if(delta>0){for(int i=route_n-1;i>b;i--)traffic_copy_point(i+delta,i);}
- else if(delta<0){for(int i=b+1;i<route_n;i++)traffic_copy_point(i+delta,i);}
+ /* Keep declined flags on the unaffected suffix when the splice moves
+  * indices. The newly accepted section is settled until it is passed. */
+ if(delta>0){for(int i=route_n-1;i>b;i--){traffic_copy_point(i+delta,i);traffic_set_declined(i+delta,traffic_segment_declined(i));}}
+ else if(delta<0){for(int i=b+1;i<route_n;i++){traffic_copy_point(i+delta,i);traffic_set_declined(i+delta,traffic_segment_declined(i));}}
  for(int i=1;i<n;i++){
   struct TrafficPoint*p=&traffic_path[i];int k=a+i;
-  route_lat[k]=p->lat;route_lon[k]=p->lon;route_node[k]=p->node;route_seg_cost[k]=p->cost;route_seg_arc[k]=p->arc;route_seg_phys[k]=p->phys;route_seg_m[k]=p->m;
+  traffic_set_declined(k,1);route_lat[k]=p->lat;route_lon[k]=p->lon;route_node[k]=p->node;route_seg_cost[k]=p->cost;route_seg_arc[k]=p->arc;route_seg_phys[k]=p->phys;route_seg_m[k]=p->m;
   newcost=sat_add32(newcost,p->cost);newm=sat_add32(newm,p->m);
  }
  route_n+=delta;route_result_cost=sat_add32(route_result_cost>oldcost?route_result_cost-oldcost:0,newcost);
  route_result_m=sat_add32(route_result_m>oldm?route_result_m-oldm:0,newm);
- route_offroute_checks=route_arc_check_tick=0;nav_maneuver_find();traffic_invalidate();traffic_dismiss_revision=traffic_route_revision;
+ route_offroute_checks=route_arc_check_tick=0;nav_maneuver_find();traffic_reset_offer();render_background_dirty=1;
  return 1;
 }
 #endif

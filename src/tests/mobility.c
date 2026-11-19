@@ -103,10 +103,70 @@ static void tiny_graph(void){
  assert(traffic_search_start(1,2,1,1000,100,100));
  for(unsigned i=0;i<30&&traffic_searching;i++)traffic_search_step(100+i*50);
  assert(traffic_offer_valid()&&traffic_offer_n==3&&traffic_path[1].node==4&&traffic_saving>=1200);
- /* Original route is unchanged before acceptance. */
- assert(route_n==4&&route_node[2]==2);
+ /* Original route is unchanged before acceptance. A settled suffix
+  * remains settled even if the accepted splice inserts points. */
+ assert(route_n==4&&route_node[2]==2);traffic_set_declined(3,1);
  assert(traffic_accept()&&route_n==5&&route_node[2]==4&&route_node[3]==2&&route_node[4]==3);
- assert(route_result_cost==700&&!traffic_offer_valid());
+ assert(route_result_cost==700&&!traffic_offer_valid()&&traffic_segment_declined(4));
  fclose(f);routefd=-1;routeok=0;mob_clear();
 }
-int main(void){learner();tiny_graph();puts("Mobility recording, date, prediction, road profiles and exact-state diversion regression passed.");return 0;}
+
+/* Two non-overlapping slow stretches, each with a genuinely legal bypass. */
+struct TwoGraph {
+ struct CprNode node[9];u32 edge[10];struct CprBase base[10];
+ struct CprArc arc[10];struct CprPoint geom[20];u32 ways[20];
+};
+static void two_diversions(void){
+ struct TwoGraph g={0};
+ const struct CprPoint p[9]={{5497000,-161000},{5497100,-161000},{5497500,-161000},{5497750,-161000},
+  {5497300,-160800},{5498000,-161000},{5498400,-161000},{5498650,-161000},{5498200,-160800}};
+ const u32 from[]={0,1,2,1,4,3,5,6,5,8},to[]={1,2,3,4,2,5,6,7,8,6};
+ const u32 cost[]={100,1600,100,250,250,100,1200,100,250,250};
+ const u32 path[]={0,1,2,3,5,6,7},arcs[]={0,1,2,5,6,7};
+ for(int i=0;i<9;i++){g.node[i].lat=p[i].lat;g.node[i].lon=p[i].lon;g.node[i].comp=1;}
+ for(int i=0;i<10;i++){
+  g.base[i].cost=cost[i];g.base[i].geom_first=2*i;g.base[i].geom_count=2;
+  g.arc[i]=(struct CprArc){from[i],to[i],cost[i],(u32)i,ROUTE_NOARC,0,0,0};
+  g.geom[2*i]=p[from[i]];g.geom[2*i+1]=p[to[i]];g.ways[2*i]=100+i;
+ }
+ int n=0;for(int v=0;v<9;v++){g.node[v].first_edge=n;for(int i=0;i<10;i++)if(to[i]==(u32)v)g.edge[n++]=i;g.node[v].edge_count=n-g.node[v].first_edge;}
+ FILE*f=tmpfile();assert(f&&fwrite(&g,sizeof(g),1,f)==1&&!fflush(f));routefd=fileno(f);
+ memzero(&rh,sizeof(rh));routeok=1;rh.flags=2;rh.nodes=9;rh.route_edges=rh.base_edges=rh.ch_arcs=10;rh.geom_points=20;
+ rh.node_off=offsetof(struct TwoGraph,node);rh.edge_off=offsetof(struct TwoGraph,edge);rh.base_off=offsetof(struct TwoGraph,base);rh.arc_off=offsetof(struct TwoGraph,arc);rh.geom_off=offsetof(struct TwoGraph,geom);
+ route_geom_map_ok=0;cpr_bcache_count=0;memzero(cpr_acache_count,sizeof(cpr_acache_count));memzero(cpr_gcache_count,sizeof(cpr_gcache_count));
+ pref.learn_history=pref.diversions=1;gps.fix=1;atlas_ready=atlas_probe=0;route_dest_comp=1;
+ traffic_invalidate();route_status=R_READY;route_head=0;route_n=7;route_result_cost=route_result_m=0;
+ for(int i=0;i<7;i++){
+  u32 v=path[i];route_lat[i]=p[v].lat;route_lon[i]=p[v].lon;route_node[i]=v;
+  route_seg_arc[i]=i?arcs[i-1]:ROUTE_NOARC;route_seg_cost[i]=i?cost[arcs[i-1]]:0;
+  route_seg_m[i]=i?geo_seg_m(p[path[i-1]].lat,p[path[i-1]].lon,p[v].lat,p[v].lon):0;
+  route_seg_phys[i]=i?2*arcs[i-1]:ROUTE_NOARC;
+  route_result_cost+=route_seg_cost[i];route_result_m+=route_seg_m[i];
+ }
+ mob_model_reset();mob.serial=20;mob_current_epoch=epoch;mob_clock_ms=100;
+ for(int i=1;i<=6;i+=5){u32 k=traffic_key_for_arc(i,0);assert(k);struct MobRoad*r=mob_road_find(k,mob_bucket(epoch),1);assert(r);r->count=20;r->stamp=20;r->mean_ds=cost[i]*5u;}
+ traffic_scan(100);assert(traffic_searching&&traffic_block_arc==1&&traffic_begin_idx==1&&traffic_join_idx==3);
+ for(int i=0;i<100&&traffic_searching;i++)traffic_search_step(100+i*10);
+ assert(traffic_offer_valid());u32 eta=traffic_remaining_cost();assert(eta>route_result_cost);
+ trip.active=trip.count=1;trip.active_idx=0;hud_capture_clock=1;hud_capture_ms=1000;
+ menu_reset(hud_now_ms());menu_open(P_TRIP,trip.count+2,hud_now_ms());key_handle(K_ENTER);
+ assert(sheet_page==P_CONFIRM&&confirm_kind==3&&sheet_focus==0);
+ key_handle(K_RIGHT);assert(sheet_focus==1);key_handle(K_ENTER);
+ assert(sheet_page==P_TRIP&&!traffic_offer_valid()&&route_n==7&&route_node[2]==2);
+ assert(traffic_segment_declined(2)&&traffic_segment_declined(3)&&!traffic_segment_declined(5));
+ assert(traffic_warn&&traffic_remaining_cost()==eta&&!traffic_scan_ms);
+ traffic_scan(1100);assert(traffic_searching&&traffic_block_arc==6&&traffic_begin_idx==4&&traffic_join_idx==6);
+ for(int i=0;i<100&&traffic_searching;i++)traffic_search_step(1100+i*10);
+ assert(traffic_offer_valid()&&traffic_path[1].node==8);
+ menu_open(P_TRIP,trip.count+2,hud_now_ms());key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&sheet_focus==0);
+ /* Simulate an obsolete dialog identity; declining it must not clear the current offer. */
+ confirm_diversion_revision--;key_handle(K_RIGHT);key_handle(K_ENTER);
+ assert(sheet_page==P_TRIP&&traffic_offer_valid()&&!traffic_segment_declined(5));
+ menu_open(P_TRIP,trip.count+2,hud_now_ms());key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&sheet_focus==0);
+ key_handle(K_ENTER);assert(!traffic_offer_valid()&&route_n==8&&route_node[5]==8);
+ assert(traffic_segment_declined(2)&&traffic_segment_declined(3)&&traffic_segment_declined(5));
+ traffic_scan(1200);assert(!traffic_searching&&!traffic_offer_valid());
+ traffic_invalidate();assert(!traffic_segment_declined(2)&&!traffic_segment_declined(5));
+ fclose(f);routefd=-1;routeok=0;mob_clear();
+}
+int main(void){learner();tiny_graph();two_diversions();puts("Mobility recording, date, prediction, road profiles, exact-state diversion, section-local dismissal and default-Yes regression passed.");return 0;}

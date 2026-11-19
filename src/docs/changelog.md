@@ -10,6 +10,7 @@ Release dates are added when a version is published; older versions are not reco
 - Introduced optional, offline driving-history learning. Fresh GPS observations are recorded independently of active navigation and only successful Barcelona power-off sessions train the model.
 - Added contextual destination suggestions to an empty Itinerary using the last saved GPS position, raw GPS time/day patterns and early trajectory evidence, with nearby Favourites/Recents matching.
 - Added directional historical road-time profiles, traffic-adjusted ETAs and an explicit local Diversion choice with gold/yellow bypassed geometry and an aqua/teal alternative. Existing map formats and static CH/QAD7 shortcut weights remain unchanged.
+- Declining a diversion suppresses only its bypassed section; later independent offers remain available, and diversion confirmation initially selects Yes. Restored the original empty-Itinerary instructions alongside learned destinations.
 - Added history, destination suggestion and diversion controls in Settings, including a confirmed clear-history action. Private data is excluded from the publication.
 - Fixed Bluetooth phone names and connected-state identity when switching between saved devices; both remain keyed by hardware address.
 - Completed the new navigation and HUD translations across all 18 interface languages, and added missing-key regression checks.

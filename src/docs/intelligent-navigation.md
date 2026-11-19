@@ -20,7 +20,8 @@ Use Left/Right or OK to toggle the first three settings. OK on Clear driving
 history opens a confirmation. To stop learning after clearing, also turn off
 Learn driving history.
 
-The empty **Trip → Itinerary** page shows a second row, **Suggested: …**, when
+The empty **Trip → Itinerary** page retains its original destination prompt
+and shows a second row, **Suggested: …**, when
 the model has sufficient evidence. Highlight it and press OK to start the normal
 route to that place. A saved Favourite within 100 m is preferred to a nearby
 Recent; otherwise the predicted latitude and longitude are displayed.
@@ -33,8 +34,12 @@ search finds a sufficiently beneficial alternative, the original route stays
 magenta outside the bypassed section, which is gold/yellow. The proposed
 alternative is aqua/teal. After accepting it, the selected route returns to
 the normal magenta colour. Open
-Trip → Itinerary → **Diversion** and confirm Yes to take it. No dismisses
-the offer for the current route revision. Normal off-route rerouting remains
+Trip → Itinerary → **Diversion** and confirm Yes (initially selected) to take it.
+No retains the active route and suppresses repeat offers overlapping the
+rejected section, while independent diversions elsewhere on the same route
+remain eligible. Historical warnings and ETA adjustments remain active.
+Accepted sections are also settled until passed; a full route recalculation
+clears these route-local decisions. Normal off-route rerouting remains
 available; an offer expires if the driver passes the divergence point or
 the route changes. No automatic switching is performed. Verify road signs
 and local conditions; historical travel times cannot predict incidents,

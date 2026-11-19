@@ -12,8 +12,7 @@ DESTINATION_EVENTS = (
 DIVERSION_EVENTS = (
     (0, 'preview_diversion_seed();'),
     (1400, 'menu_open(P_TRIP,trip.count+2,hud_now_ms());assert(traffic_offer_valid());'),
-    (2600, 'key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&confirm_kind==3);'),
-    (4000, 'key_handle(K_LEFT);assert(sheet_focus==0);'),
+    (2600, 'key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&confirm_kind==3&&sheet_focus==0);'),
     (4700, 'key_handle(K_ENTER);assert(route_n==6&&!traffic_offer_valid());'),
 )
 
@@ -21,8 +20,7 @@ DIVERSION_EVENTS = (
 MAP_DIVERSION_EVENTS = (
     (0, 'preview_map_diversion_seed();assert(mapok&&traffic_offer_valid());'),
     (1400, 'menu_open(P_TRIP,trip.count+2,hud_now_ms());assert(traffic_offer_valid());'),
-    (2600, 'key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&confirm_kind==3);'),
-    (4000, 'key_handle(K_LEFT);assert(sheet_focus==0);'),
+    (2600, 'key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&confirm_kind==3&&sheet_focus==0);'),
     (4700,
      'int expected_n=route_n+traffic_offer_n-1-'
      '(traffic_join_idx-traffic_begin_idx);'
