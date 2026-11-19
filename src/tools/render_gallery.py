@@ -662,7 +662,7 @@ def modern_menus():
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_BLUETOOTH_HIDDEN_EVENTS, V216_BLUETOOTH_HIDDEN_SAMPLES)
     motion('Version 2.1.8', 'preview-v216-itinerary', 'Scroll ten targets, with connectors bounded to the visible list',
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_ITINERARY_EVENTS, V216_ITINERARY_SAMPLES)
-    motion('Version 2.2.0', 'preview-v220-destination-prediction', 'Learned destination and selection',
+    motion('Version 2.2.0', 'preview-v220-destination-prediction', 'Learned destination: BT CTRL, map invitation and confirmation',
            'settle();', DESTINATION_EVENTS, V220_DESTINATION_SAMPLES)
     motion(
         'Version 2.2.0',

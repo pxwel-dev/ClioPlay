@@ -229,5 +229,9 @@
   "HUD layout": "HUD düzeni",
   "Navigation": "Navigasyon",
   "Driving history": "Sürüş geçmişi",
-  "System": "Sistem"
+  "System": "Sistem",
+  "Start suggested trip?": "Önerilen yolculuk başlatılsın mı?",
+  "Suggestion unavailable": "Öneri kullanılamıyor",
+  "You come here often": "Buraya sık geliyorsunuz",
+  "Add to favourites?": "Favorilere eklensin mi?"
 }

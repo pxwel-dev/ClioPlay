@@ -23,6 +23,8 @@
 **/history.prev.dat
 **/mobility.dat
 **/mobility.tmp
+**/mobility-places.dat
+**/mobility-places.tmp
 **/cswmap.ini
 /csw
 /vstat

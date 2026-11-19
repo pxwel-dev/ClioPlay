@@ -2,7 +2,7 @@
 
 | Preview | What it shows |
 | --- | --- |
-| [Destination prediction](v220-destination-prediction.gif) | Controlled completed-journey model, a matched Favourite and explicit navigation selection. |
+| [Destination prediction](v220-destination-prediction.gif) | Controlled completed-journey model, a matched Favourite, green/blue map invitation in BT CTRL and normal driving, and explicit Yes/No confirmation. |
 | [Intelligent diversions](v220-intelligent-diversions.gif) | Historical traffic warning, solid shared route, yellow bypass, dashed teal real-map alternative, a frosted-glass approximate saving badge beside the decision point, single-line green announcement and blue review hint, and animated BT CTRL → Back → OK → Yes confirmation. Traffic observations are controlled examples. |
 | [Day boot](boot-day.gif) / [Night boot](boot-night.gif) | Logo and wordmark on a soft theme-aware background, followed by the production half-second cross-fade into the live UI. The initial hold is illustrative, not a boot-time measurement. |
 | [Popups](popups.gif) | Compact route confirmation, destination-source choices, saved-phone actions and the keyboard language picker share glass entrance, exit, text and focus transitions. |

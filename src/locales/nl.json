@@ -229,5 +229,9 @@
   "HUD layout": "HUD-indeling",
   "Navigation": "Navigatie",
   "Driving history": "Rijgeschiedenis",
-  "System": "Systeem"
+  "System": "Systeem",
+  "Start suggested trip?": "Voorgestelde rit starten?",
+  "Suggestion unavailable": "Suggestie niet beschikbaar",
+  "You come here often": "Je komt hier vaak",
+  "Add to favourites?": "Aan favorieten toevoegen?"
 }

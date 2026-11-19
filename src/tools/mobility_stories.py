@@ -2,10 +2,10 @@
 """Controlled native capture sequences for the 2.2.0 preview GIFs."""
 
 DESTINATION_EVENTS = (
-    (0, 'preview_prediction_seed();menu_open(P_TRIP,0,hud_now_ms());'),
-    (1000, 'key_handle(K_DOWN);assert(sheet_focus==1);'),
-    (2800, 'key_handle(K_ENTER);assert(trip.active&&streq(trip.target[0].name,"Work"));'),
-    (4500, 'menu_open(P_TRIP,0,hud_now_ms());'),
+    (0, 'preview_prediction_seed();bt_control_mode=0;key_handle(K_BACK);assert(bt_control_mode);'),
+    (1400, 'key_handle(K_BACK);assert(!bt_control_mode);'),
+    (2600, 'settle();assert(hud_suggestion_shortcut_ready());key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&confirm_kind==4&&sheet_focus==0);'),
+    (4400, 'key_handle(K_ENTER);assert(trip.active&&streq(trip.target[0].name,"Work")&&!mob_suggest_valid);'),
 )
 
 # Synthetic fixture for rendering without installed map assets.

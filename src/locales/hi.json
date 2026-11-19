@@ -229,5 +229,9 @@
   "HUD layout": "HUD का लेआउट",
   "Navigation": "नेविगेशन",
   "Driving history": "ड्राइविंग इतिहास",
-  "System": "सिस्टम"
+  "System": "सिस्टम",
+  "Start suggested trip?": "सुझाई गई यात्रा शुरू करें?",
+  "Suggestion unavailable": "सुझाव उपलब्ध नहीं है",
+  "You come here often": "आप यहाँ अक्सर आते हैं",
+  "Add to favourites?": "पसंदीदा में जोड़ें?"
 }

@@ -229,5 +229,9 @@
   "HUD layout": "פריסת HUD",
   "Navigation": "ניווט",
   "Driving history": "היסטוריית נהיגה",
-  "System": "מערכת"
+  "System": "מערכת",
+  "Start suggested trip?": "להתחיל נסיעה מוצעת?",
+  "Suggestion unavailable": "ההצעה אינה זמינה",
+  "You come here often": "אתם מגיעים לכאן לעיתים קרובות",
+  "Add to favourites?": "להוסיף למועדפים?"
 }

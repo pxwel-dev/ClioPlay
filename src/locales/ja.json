@@ -229,5 +229,9 @@
   "HUD layout": "HUD の配置",
   "Navigation": "ナビゲーション",
   "Driving history": "走行履歴",
-  "System": "システム"
+  "System": "システム",
+  "Start suggested trip?": "提案されたルートを開始？",
+  "Suggestion unavailable": "提案は利用できません",
+  "You come here often": "よくここに来ています",
+  "Add to favourites?": "お気に入りに追加しますか？"
 }

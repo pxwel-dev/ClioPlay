@@ -57,6 +57,161 @@ static void learner(void){
  mob_clear();assert(!mob.n&&!mob_suggest_valid);
 }
 
+/* Controlled varied histories, with no private data. Each record represents a
+ * separate completed session. This is a policy/algorithm regression, not a
+ * measured forecast accuracy claim. */
+static const struct MobPoint pred_origin={5497000,-161000},pred_north={5498800,-161000},pred_south={5495200,-161000};
+static void prediction_fixture(u32 now,u32 e){
+ mob_stop_recording();mob_model_reset();mob_current_epoch=MOB_UNKNOWN;
+ mob_session_begin(now,1,pred_origin.lat,pred_origin.lon);
+ if(e!=MOB_UNKNOWN)sample(now+1000,e,0,0,0,0,0);
+}
+static void prediction_visit(struct MobPoint dest,u32 e,int north){
+ assert(mob.n<MOB_JOURNEYS);struct MobJourney*j=&mob.journey[mob.head];memzero(j,sizeof(*j));
+ j->origin=pred_origin;j->dest=dest;j->depart=e;j->serial=++mob.serial;j->distance=2200;j->duration=360;
+ j->trace_n=12;for(unsigned i=0;i<j->trace_n;i++)j->trace[i]=(struct MobPoint){pred_origin.lat+(north?1:-1)*(s32)i*100,pred_origin.lon};
+ mob.n++;mob.head=(mob.head+1u)%MOB_JOURNEYS;
+}
+static void predictor_quality(void){
+ u32 e=mob_epoch(2026,10,19,7,30,0),now=100000;
+ prediction_fixture(now,MOB_UNKNOWN);
+ for(int i=0;i<5;i++)prediction_visit(pred_north,e-(i+1)*7u*86400u,1);
+ assert(!mob_predict(now)); /* no trustworthy clock or live origin */
+ sample(now+1000,e,0,0,0,0,0);assert(mob_predict(now+1000)&&mob_suggest_point.lat==pred_north.lat);
+ u32 serial=mob_suggest_serial;assert(mob_predict(now+1100)&&mob_suggest_serial==serial);
+ sample(now+2000,e+1,1,pred_origin.lat+5000,pred_origin.lon,0,0);
+ assert(mob_origin_confirmed&&mob_live.origin.lat==pred_origin.lat+5000&&!mob_suggest_valid&&!mob_predict(now+2000));
+ /* A repeated but conflicting calendar routine disambiguates the destination. */
+ prediction_fixture(now,e);
+ for(int i=0;i<5;i++){prediction_visit(pred_north,e-(i+1)*7u*86400u,1);prediction_visit(pred_south,e-(i+1)*7u*86400u+86400u,0);}
+ assert(mob_predict(now+1000)&&mob_suggest_point.lat==pred_north.lat);
+ mob_reject_suggestion();assert(!mob_predict(now+1000)&&mob_declined_n==1);
+ assert(mob.n==10&&mob.serial==10); /* rejection isn't a training record */
+ sample(now+2000,e+86400u,0,0,0,0,0);
+ assert(mob_predict(now+2000)&&mob_suggest_point.lat==pred_south.lat);
+ /* Same-time ambiguity is neither a suggestion nor a forced choice. Early
+  * ordered GPS geometry separates even otherwise identical contexts. */
+ prediction_fixture(now,e);
+ for(int i=0;i<4;i++){prediction_visit(pred_north,e-(i+1)*7u*86400u,1);prediction_visit(pred_south,e-(i+1)*7u*86400u,0);}
+ assert(!mob_predict(now+1000));
+ sample(now+2000,e+1,1,pred_origin.lat,pred_origin.lon,0,0);
+ mob_started=1;mob_live.depart=e;mob_live.trace_n=7;mob_live.distance=700;
+ for(unsigned i=0;i<7;i++)mob_live.trace[i]=(struct MobPoint){pred_origin.lat+(s32)i*100,pred_origin.lon};
+ mob_last=mob_live.trace[6];assert(mob_predict(now+2000)&&mob_suggest_point.lat==pred_north.lat);
+ /* GPS loss withdraws after a bounded stale interval. A physically reached
+  * destination and a substantially longer different journey aren't offered. */
+ assert(!mob_predict(now+18000));mob_last_ms=now+18000;
+ mob_last=pred_north;assert(!mob_predict(now+18000));
+ mob_last=mob_live.trace[6];mob_live.distance=5000;assert(!mob_predict(now+18000));
+ /* Entry/retention hysteresis: a modest decrease in the leading evidence
+  * doesn't flicker a displayed candidate. A fresh offer still needs 70%. */
+ prediction_fixture(now,e);
+ for(int i=0;i<6;i++)prediction_visit(pred_north,e-7u*86400u,1);
+ for(int i=0;i<2;i++)prediction_visit(pred_south,e-7u*86400u,0);
+ assert(mob_predict(now+1000)&&mob_suggest_point.lat==pred_north.lat);serial=mob_suggest_serial;
+ for(int i=0;i<2;i++)prediction_visit(pred_south,e-7u*86400u,0);
+ assert(mob_predict(now+1000)&&mob_suggest_serial==serial&&mob_suggest_score<70);
+ mob_suggest_valid=0;assert(!mob_predict(now+1000));
+ /* Missing time with a live fix requires stronger independent support. */
+ prediction_fixture(now,MOB_UNKNOWN);sample(now+1000,MOB_UNKNOWN,1,pred_origin.lat,pred_origin.lon,0,0);
+ for(int i=0;i<3;i++)prediction_visit(pred_north,MOB_UNKNOWN,1);
+ assert(!mob_predict(now+1000));for(int i=0;i<2;i++)prediction_visit(pred_north,MOB_UNKNOWN,1);
+ assert(mob_predict(now+1000));
+ /* Rejecting a suggestion is scoped to the recording session. */
+ mob_reject_suggestion();assert(!mob_predict(now+1000));mob_session_begin(now+2000,1,pred_origin.lat,pred_origin.lon);
+ sample(now+3000,MOB_UNKNOWN,1,pred_origin.lat,pred_origin.lon,0,0);assert(mob_predict(now+3000));
+ /* Ring wrap: newest actual endpoint anchors the deterministic cluster. */
+ prediction_fixture(now,e);mob.n=MOB_JOURNEYS;mob.head=2;mob.serial=MOB_JOURNEYS;
+ for(unsigned i=0;i<MOB_JOURNEYS;i++){
+  struct MobJourney*j=&mob.journey[i];j->origin=(struct MobPoint){pred_origin.lat+5000,pred_origin.lon};j->dest=pred_south;
+  j->depart=e-7u*86400u;j->serial=i+1;
+ }
+ unsigned indices[]={MOB_JOURNEYS-1u,0,1};
+ for(unsigned i=0;i<3;i++){struct MobJourney*j=&mob.journey[indices[i]];j->origin=pred_origin;j->dest=pred_north;j->dest.lat+=(s32)i*3;j->serial=MOB_JOURNEYS-2u+i;}
+ assert(mob_predict(now+1000)&&mob_suggest_point.lat==pred_north.lat+6);
+ mob_clear();
+}
+static void prediction_draw(void){
+ hud_capture_ms+=600u;hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
+}
+static void prediction_ui(void){
+ u32 e=mob_epoch(2026,10,19,7,30,0);hud_capture_clock=1;hud_capture_ms=300000;
+ prediction_fixture(hud_capture_ms,e);
+ for(int i=0;i<5;i++)prediction_visit(pred_north,e-7u*(i+1)*86400u,1);
+ assert(mob_predict(hud_capture_ms+1000));
+ pref.learn_history=pref.destination_predictions=1;trip.active=trip.count=0;route_status=R_IDLE;mapok=0;
+ screen=SCR_MAP;modal=MOD_NONE;freecam=0;gps.fix=1;gps.lat=track_lat=pred_origin.lat;gps.lon=track_lon=pred_origin.lon;track_valid=1;
+ nfaves=1;nrecents=0;faves[0].lat=pred_north.lat;faves[0].lon=pred_north.lon;copystr(faves[0].name,sizeof(faves[0].name),"Work");
+ hw_bluetooth_enabled=btui.connected=1;set_band("CD");btui.playing=1;bt_control_mode=1;hud_reset_animations();
+ assert(!hud_suggestion_shortcut_ready());prediction_draw();
+ assert(streq(hud_tween[HC_STATUS].target.traffic_hint,"BACK to review"));assert(!hud_suggestion_shortcut_ready());
+ key_handle(K_ENTER);assert(bt_transport_press.kind==BT_TRANSPORT_PLAY_PAUSE&&screen==SCR_MAP&&!trip.active);
+ key_handle(K_BACK);assert(!bt_control_mode);prediction_draw();assert(hud_suggestion_shortcut_ready());
+ key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&confirm_kind==4&&sheet_focus==0&&menu_suggestion_current());
+ key_handle(K_BACK);assert(screen==SCR_MAP&&mob_suggest_valid&&!mob_declined_n&&!trip.active);
+ prediction_draw();assert(hud_suggestion_shortcut_ready());key_handle(K_ENTER);
+ /* Renamed saved place or replacement candidate cannot be accepted from a
+  * stale popup, even if the underlying raw endpoint did not change. */
+ copystr(faves[0].name,sizeof(faves[0].name),"New work name");assert(!menu_suggestion_current());key_handle(K_ENTER);assert(!trip.active&&screen==SCR_MAP);
+ prediction_draw();assert(hud_suggestion_shortcut_ready());key_handle(K_ENTER);key_handle(K_RIGHT);key_handle(K_ENTER);
+ assert(!trip.active&&mob_declined_destination(pred_north)&&!mob_suggest_valid&&screen==SCR_MAP);
+ assert(!mob_predict(hud_capture_ms));
+ mob_declined_n=0;assert(mob_predict(hud_capture_ms));prediction_draw();
+ menu_open(P_TRIP,0,hud_now_ms());assert(menu_count(P_TRIP)==1);key_handle(K_DOWN);assert(sheet_focus==0);key_handle(K_BACK);key_handle(K_MAP);assert(screen==SCR_MAP);
+ prediction_draw();assert(hud_suggestion_shortcut_ready());key_handle(K_ENTER);mob_suggest_serial++;
+ key_handle(K_ENTER);assert(!trip.active&&screen==SCR_MAP);prediction_draw();
+ assert(hud_suggestion_shortcut_ready());key_handle(K_ENTER);assert(sheet_focus==0);key_handle(K_ENTER);
+ assert(trip.active&&trip.count==1&&streq(trip.target[0].name,"New work name")&&trip.target[0].lat==pred_north.lat&&!mob_suggest_valid);
+ assert(mob.n==5&&mob.serial==5);clear_trip();mob_clear();hud_reset_animations();
+}
+static void prediction_names(void){
+ /* Test an actual CPM label record, including malformed-length rejection. */
+ static struct Tile tile;memzero(&tile,sizeof(tile));tile.lvl=5;tile.tx=tile_div(pred_north.lon,5);tile.ty=tile_div(pred_north.lat,5);
+ tile.data[2]=1;tile.data[8]=5;tile.data[14]=4;tile.len=20;
+ unsigned span=span_for_level(5),lx=(unsigned)(pred_north.lon-tile.tx*(s32)span)*4095u/span,ly=(unsigned)(pred_north.lat-tile.ty*(s32)span)*4095u/span;
+ tile.data[10]=(u8)lx;tile.data[11]=(u8)(lx>>8);tile.data[12]=(u8)ly;tile.data[13]=(u8)(ly>>8);
+ copystr((char*)tile.data+16,5,"Town");char name[32]="";u32 best=1501;
+ suggested_settlement_tile(&tile,pred_north,&best,name,sizeof(name));assert(streq(name,"Town")&&best<10);
+ tile.len=19;best=1501;name[0]=0;suggested_settlement_tile(&tile,pred_north,&best,name,sizeof(name));assert(!name[0]);
+}
+
+static void frequent_fixture(u32 now,u32 epoch,int distinct){
+ mob_clear();mob_session_begin(now,1,pred_north.lat,pred_north.lon);frequent_arm_startup();
+ for(unsigned i=0;i<5;i++)prediction_visit(pred_north,epoch-(distinct?i+1:1)*86400u,1);
+ pref.learn_history=pref.destination_predictions=1;screen=SCR_MAP;modal=MOD_NONE;freecam=bt_control_mode=0;
+ mapok=0;gps.fix=1;trip.active=trip.count=0;nfaves=nrecents=0;route_status=R_IDLE;hud_capture_clock=1;hud_capture_ms=now;hud_reset_animations();
+}
+static void frequent_tick(u32 now,u32 epoch,int speed){
+ hud_capture_ms=now;mob_rmc(now,epoch,1,pred_north.lat,pred_north.lon,speed,0);
+ int fresh=mob_sample(now);frequent_startup_service(now,fresh);
+}
+static void frequent_wait(u32 now,u32 e){for(unsigned i=1;i<=5;i++)frequent_tick(now+i*1000u,e+i,0);}
+static void frequent_places(void){
+ u32 e=mob_epoch(2026,10,19,8,0,0),now=600000u;struct MobPoint out;
+ frequent_fixture(now,e,0);assert(!mob_frequent_destination(e,pred_north,&out));frequent_wait(now,e);assert(sheet_page==P_CLOSED);
+ frequent_fixture(now,e,1);assert(mob_frequent_destination(e,pred_north,&out)&&out.lat==pred_north.lat);
+ assert(!mob_frequent_destination(e,pred_origin,&out));assert(!mob_frequent_destination(e+91u*86400u,pred_north,&out));
+ assert(!mob_frequent_destination(MOB_UNKNOWN,pred_north,&out));
+ mob.journey[0].depart=MOB_UNKNOWN;assert(!mob_frequent_destination(e,pred_north,&out));mob.journey[0].depart=e-86400u;
+ for(unsigned i=1;i<=5;i++)frequent_tick(now+i*1000,e+i,50);assert(sheet_page==P_CLOSED&&!mob_fave_prompted(pred_north));
+ frequent_fixture(now,e,1);nfaves=1;faves[0].lat=pred_north.lat+10;faves[0].lon=pred_north.lon;
+ frequent_wait(now,e);assert(sheet_page==P_CLOSED&&!mob_fave_prompted(pred_north));
+ frequent_fixture(now,e,1);bt_control_mode=1;frequent_wait(now,e);assert(sheet_page==P_CLOSED&&!mob_fave_prompted(pred_north));
+ bt_control_mode=0;frequent_tick(now+6000,e+6,0);assert(sheet_page==P_CONFIRM&&confirm_kind==5&&sheet_focus==1);
+ key_handle(K_ENTER);assert(screen==SCR_MAP&&nfaves==0&&mob_fave_prompted(pred_north)&&mob.n==5&&mob.serial==5&&!trip.active);
+ mob_fave_reset();assert(!mob_fave_prompted(pred_north));mob_fave_load();assert(mob_fave_prompted(pred_north));
+ mob_session_begin(now+10000,1,pred_north.lat,pred_north.lon);frequent_arm_startup();frequent_wait(now+10000,e+10);assert(sheet_page==P_CLOSED);
+ frequent_fixture(now,e,1);nrecents=1;recents[0].lat=pred_north.lat+20;recents[0].lon=pred_north.lon;copystr(recents[0].name,sizeof(recents[0].name),"Work");
+ frequent_wait(now,e);assert(sheet_page==P_CONFIRM&&confirm_kind==5&&confirm_frequent_named&&sheet_focus==1);
+ key_handle(K_LEFT);key_handle(K_ENTER);assert(screen==SCR_MAP&&nfaves==1&&streq(faves[0].name,"Work")&&faves[0].lat==pred_north.lat&&!trip.active&&mob.n==5);
+ frequent_fixture(now,e,1);frequent_wait(now,e);assert(sheet_page==P_CONFIRM&&!confirm_frequent_named);
+ key_handle(K_LEFT);key_handle(K_ENTER);assert(sheet_page==P_NAME&&kbd_place_lat==pred_north.lat&&nfaves==0);
+ key_handle(K_BACK);assert(screen==SCR_MAP&&nfaves==0&&mob_fave_prompted(pred_north));
+ frequent_fixture(now,e,1);frequent_wait(now,e);assert(sheet_page==P_CONFIRM);
+ frequent_tick(now+6000,e+6,50);menu_sync(hud_now_ms());assert(sheet_page==P_CLOSED&&nfaves==0);
+ mob_clear();mob_fave_load();assert(!mob_fave_prompted(pred_north));hud_reset_animations();frequent_boot_pending=0;gps.mph10=0;
+}
+
 /* Four road states plus a distinct detour state. A blocked edge between
  * state 1 and state 2 is replaced by 1 -> 4 -> 2. Exact incoming lists
  * include only legal directed transitions (no reverse or invented turn). */
@@ -230,4 +385,4 @@ static void shared_geometry(void){
  route_head=1;assert(traffic_offer_valid());route_head=2;assert(!traffic_offer_valid());
  traffic_invalidate();route_head=0;
 }
-int main(void){learner();shared_geometry();tiny_graph();two_diversions();puts("Mobility recording, date, prediction, road profiles, exact-state diversion, section-local dismissal, single-line HUD and default-Yes regression passed.");return 0;}
+int main(void){(void)load_font();learner();predictor_quality();prediction_names();prediction_ui();frequent_places();shared_geometry();tiny_graph();two_diversions();puts("Mobility recording, contextual predictor, session dismissal, startup and trajectory evidence, map confirmation, offline names, frequent-place prompts and persistence, road profiles and diversion regressions passed.");return 0;}

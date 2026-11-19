@@ -84,7 +84,7 @@ The original software files are copied into a dated
 - `clio843/maps/` and map build manifests.
 - `clio843/prefs.ini` and any custom console configuration.
 - `bond.dat`, `faves.dat`, `recent.dat`, `trip.dat`, `audlast.dat` and `gpslast.dat`.
-- `history.dat`, `history.prev.dat`, `mobility.dat` and other learned data.
+- `history.dat`, `history.prev.dat`, `mobility.dat`, `mobility-places.dat` and other learned data.
 - Navcore firmware, other files and folders on the SD card.
 
 The existing `clio843/card-runtime.json`, if present, remains the record of the

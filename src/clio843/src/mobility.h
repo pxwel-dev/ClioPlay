@@ -15,11 +15,15 @@
 #define MOB_PREV CLIO_HOST_ROOT "history.prev.dat"
 #define MOB_MODEL CLIO_HOST_ROOT "mobility.dat"
 #define MOB_TEMP CLIO_HOST_ROOT "mobility.tmp"
+#define MOB_FAVE_FILE CLIO_HOST_ROOT "mobility-places.dat"
+#define MOB_FAVE_TEMP CLIO_HOST_ROOT "mobility-places.tmp"
 #else
 #define MOB_HISTORY "./clio843/history.dat"
 #define MOB_PREV "./clio843/history.prev.dat"
 #define MOB_MODEL "./clio843/mobility.dat"
 #define MOB_TEMP "./clio843/mobility.tmp"
+#define MOB_FAVE_FILE "./clio843/mobility-places.dat"
+#define MOB_FAVE_TEMP "./clio843/mobility-places.tmp"
 #endif
 struct MobPoint {s32 lat,lon;};
 struct MobJourney {
@@ -62,12 +66,20 @@ static int mob_rmc_fix,mob_rmc_speed,mob_rmc_heading;
 static u32 mob_rmc_ms,mob_rmc_epoch;
 static int mob_suggest_valid;
 static struct MobPoint mob_suggest_point;
-static u32 mob_suggest_score,mob_predict_ms;
+static u32 mob_suggest_score,mob_predict_ms,mob_suggest_serial;
+#define MOB_DEST_RADIUS 100u
+/* Session-only decisions. Keep the entire bounded history capacity: a declined
+ * destination cannot reappear just because a later prediction replaced it. */
+static struct MobPoint mob_declined[MOB_JOURNEYS];
+static unsigned mob_declined_n;
+static int mob_origin_confirmed;
+static u32 mob_session_generation;
+static int mob_declined_destination(struct MobPoint p);
 static u32 geo_seg_m(s32,s32,s32,s32);
 static int mob_point_ok(struct MobPoint p){return p.lat>=-9000000&&p.lat<=9000000&&p.lon>=-18000000&&p.lon<=18000000;}
 static u32 mob_dist(struct MobPoint a,struct MobPoint b){
  /* Reject remote points before using the local distance approximation. */
- if(iabs32(a.lat-b.lat)>1000000||iabs32(a.lon-b.lon)>1000000)return 1000000u;
+ if(iabs32(a.lat-b.lat)>1000000||iabs32(lon_delta(a.lon-b.lon))>1000000)return 1000000u;
  return geo_seg_m(a.lat,a.lon,b.lat,b.lon);
 }
 static u32 mob_hash(u32 h,const void*p,unsigned n){
@@ -112,6 +124,44 @@ static int mob_save(void){
  u32 check=mob_hash(2166136261u,&mob,sizeof(mob));long fd=s_open(MOB_TEMP,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd<0)return 0;
  int ok=mob_write_all((int)fd,&mob,sizeof(mob))&&mob_write_all((int)fd,&check,4);s_close((int)fd);if(ok){s_sync();ok=s_rename(MOB_TEMP,MOB_MODEL)>=0;}if(!ok)s_unlink(MOB_TEMP);return ok;
 }
+/* Separate checksummed prompt dispositions: no change to the learned model
+ * format. Mark only when a stationary startup review is actually opened. */
+struct MobFavePrompts {u32 magic,count;struct MobPoint point[MOB_JOURNEYS];};
+static struct MobFavePrompts mob_fave_prompts;
+static void mob_fave_reset(void){memzero(&mob_fave_prompts,sizeof(mob_fave_prompts));mob_fave_prompts.magic=0x3150464du;}
+static void mob_fave_load(void){
+ mob_fave_reset();long fd=s_open(MOB_FAVE_FILE,O_RDONLY_,0);if(fd<0)return;
+ u32 check=0;u8 extra;int ok=mob_read_all((int)fd,&mob_fave_prompts,sizeof(mob_fave_prompts))&&mob_read_all((int)fd,&check,4)&&s_read((int)fd,&extra,1)==0;s_close((int)fd);
+ if(!ok||mob_fave_prompts.magic!=0x3150464du||mob_fave_prompts.count>MOB_JOURNEYS||check!=mob_hash(2166136261u,&mob_fave_prompts,sizeof(mob_fave_prompts))){mob_fave_reset();return;}
+ for(unsigned i=0;i<mob_fave_prompts.count;i++)if(!mob_point_ok(mob_fave_prompts.point[i])){mob_fave_reset();return;}
+}
+static int mob_fave_prompted(struct MobPoint p){
+ for(unsigned i=0;i<mob_fave_prompts.count;i++)if(mob_dist(p,mob_fave_prompts.point[i])<=MOB_DEST_RADIUS)return 1;
+ return 0;
+}
+static int mob_fave_mark(struct MobPoint p){
+ if(mob_fave_prompted(p)||mob_fave_prompts.count>=MOB_JOURNEYS)return 0;
+ if(mob_fave_prompts.magic!=0x3150464du)mob_fave_reset();
+ unsigned n=mob_fave_prompts.count;mob_fave_prompts.point[n]=p;mob_fave_prompts.count=n+1;
+ u32 check=mob_hash(2166136261u,&mob_fave_prompts,sizeof(mob_fave_prompts));long fd=s_open(MOB_FAVE_TEMP,O_WRONLY_|O_CREAT_|O_TRUNC_,0600);int ok=0;
+ if(fd>=0){ok=mob_write_all((int)fd,&mob_fave_prompts,sizeof(mob_fave_prompts))&&mob_write_all((int)fd,&check,4);s_close((int)fd);if(ok){s_sync();ok=s_rename(MOB_FAVE_TEMP,MOB_FAVE_FILE)>=0;}}
+ if(!ok){mob_fave_prompts.count=n;memzero(&mob_fave_prompts.point[n],sizeof(p));s_unlink(MOB_FAVE_TEMP);}return ok;
+}
+/* Only the most recent completed shutdown destination is eligible. Count
+ * independent sessions with known arrival dates, never raw GPS samples. */
+static int mob_frequent_destination(u32 epoch,struct MobPoint here,struct MobPoint*out){
+ if(epoch==MOB_UNKNOWN||mob.n<5||mob_fave_prompts.count>=MOB_JOURNEYS)return 0;
+ const struct MobJourney*last=&mob.journey[(mob.head+MOB_JOURNEYS-1u)%MOB_JOURNEYS];
+ if(last->depart==MOB_UNKNOWN||last->depart>epoch||last->duration>epoch-last->depart||epoch-last->depart-last->duration>90u*86400u||mob_dist(last->dest,here)>MOB_DEST_RADIUS||mob_fave_prompted(last->dest))return 0;
+ unsigned visits=0,nd=0;u32 days[3];
+ for(unsigned i=0;i<mob.n;i++){
+  const struct MobJourney*j=&mob.journey[i];
+  if(j->depart==MOB_UNKNOWN||j->depart>epoch||j->duration>epoch-j->depart||epoch-j->depart-j->duration>90u*86400u||mob_dist(j->dest,last->dest)>MOB_DEST_RADIUS)continue;
+  visits++;u32 day=(j->depart+j->duration)/86400u;int seen=0;for(unsigned k=0;k<nd;k++)if(days[k]==day)seen=1;
+  if(!seen&&nd<3)days[nd++]=day;
+ }
+ if(visits<5||nd<3)return 0;*out=last->dest;return 1;
+}
 static void mob_raw_close(void){if(mob_raw_fd>=0)s_close(mob_raw_fd);mob_raw_fd=-1;mob_raw_n=0;mob_raw_ok=0;}
 static int mob_raw_flush(void){
  if(!mob_raw_n)return mob_raw_ok;
@@ -142,13 +192,13 @@ static void mob_session_begin(u32 now,int have,s32 lat,s32 lon){
  mob_raw_close();memzero(&mob_live,sizeof(mob_live));mob_live.depart=MOB_UNKNOWN;
  mob_stage_n=0;mob_begin_ms=now;mob_depart_ms=mob_motion_ms=mob_last_ms=0;
  mob_motion_epoch=mob_last_epoch=MOB_UNKNOWN;mob_motion_n=0;
- mob_started=mob_have_sample=mob_suggest_valid=0;mob_origin_valid=have;
+ mob_started=mob_have_sample=mob_suggest_valid=0;mob_origin_valid=have&&mob_point_ok((struct MobPoint){lat,lon});mob_origin_confirmed=0;mob_declined_n=0;mob_session_generation++;
  mob_live.origin=(struct MobPoint){lat,lon};mob_recording=1;mob_predict_ms=0;
  mob_seen_generation=mob_rmc_generation;mob_raw_open();
  mob_raw_record(MOB_BEGIN,MOB_UNKNOWN,now,mob_live.origin,0,0);
 }
 static void mob_stop_recording(void){mob_raw_close();mob_recording=mob_started=mob_origin_valid=mob_suggest_valid=0;mob_stage_n=0;}
-static void mob_clear(void){mob_stop_recording();mob_model_reset();s_unlink(MOB_HISTORY);s_unlink(MOB_PREV);s_unlink(MOB_MODEL);s_unlink(MOB_TEMP);}
+static void mob_clear(void){mob_stop_recording();mob_declined_n=0;mob_model_reset();s_unlink(MOB_HISTORY);s_unlink(MOB_PREV);s_unlink(MOB_MODEL);s_unlink(MOB_TEMP);mob_fave_reset();s_unlink(MOB_FAVE_FILE);s_unlink(MOB_FAVE_TEMP);}
 /* Called exactly once per RMC sentence, even if its position is invalid.
  * A valid RMC time may arrive before satellite position lock. */
 static void mob_rmc(u32 now,u32 epoch,int fix,s32 lat,s32 lon,int speed,int heading){
@@ -174,7 +224,12 @@ static int mob_sample(u32 now){
  if(!mob_rmc_fix||now-mob_rmc_ms>2500u){mob_motion_n=0;return 0;}
  if(mob_have_sample&&mob_rmc_ms-mob_last_ms<850u)return 0;
  struct MobPoint p=mob_rmc_point;
- if(!mob_origin_valid){mob_live.origin=p;mob_origin_valid=1;}
+ /* The stored last fix is only provisional. On the first trustworthy
+  * position replace it if the vehicle was moved while the unit was off. */
+ if(!mob_origin_valid||(!mob_origin_confirmed&&mob_dist(mob_live.origin,p)>100u)){
+  mob_live.origin=p;mob_origin_valid=1;mob_suggest_valid=0;mob_predict_ms=0;
+ }
+ if(!mob_origin_confirmed){mob_origin_confirmed=1;mob_predict_ms=0;}
  u32 gap=mob_have_sample?mob_rmc_ms-mob_last_ms:0,dist=mob_have_sample?mob_dist(mob_last,p):0;
  /* Missing fixes may not contribute to travelled distance or road time. */
  int continuous=mob_have_sample&&gap<=3000u&&dist<=200u;
@@ -260,40 +315,127 @@ static int mob_finish(u32 now){
  }
  mob_stop_recording();return ok;
 }
+/* Destination prediction is deliberately independent of route calculation:
+ * no private record is trained by accepting or rejecting an invitation.
+ * Scores are heuristic evidence, not calibrated probabilities. */
 struct MobCandidate {struct MobPoint p;u32 weight,visits;};
 static struct MobCandidate mob_candidates[MOB_JOURNEYS];
+static int mob_declined_destination(struct MobPoint p){
+ for(unsigned i=0;i<mob_declined_n;i++)if(mob_dist(mob_declined[i],p)<=MOB_DEST_RADIUS)return 1;
+ return 0;
+}
+static void mob_reject_destination(struct MobPoint p){
+ if(!mob_declined_destination(p)&&mob_declined_n<MOB_JOURNEYS)mob_declined[mob_declined_n++]=p;
+}
+static void mob_reject_suggestion(void){
+ if(mob_suggest_valid)mob_reject_destination(mob_suggest_point);
+ mob_suggest_valid=0;mob_suggest_score=0;mob_predict_ms=0;
+}
+/* Match the ordered early trajectory against the stored early trajectory.
+ * A point must progress monotonically through the historical samples, with
+ * a tolerance for GPS jitter and differing sample spacing. Once beyond the
+ * recorded prefix, do not pretend to know the remainder of the old route. */
 static u32 mob_trace_weight(const struct MobJourney*j){
- unsigned n=mob_live.trace_n;if(n<3||j->trace_n<3)return 100;
- unsigned match=0,last=0,shown=0,first=n>6?n-6:1;
- for(unsigned i=first;i<n;i++){u32 best=140;unsigned at=last;
-  for(unsigned k=last;k<j->trace_n;k++){u32 d=mob_dist(mob_live.trace[i],j->trace[k]);if(d<best){best=d;at=k;}}
-  shown++;if(best<140){match++;last=at;}
+ unsigned n=mob_live.trace_n;if(n<2)return 100;if(j->trace_n<2)return 65;
+ unsigned cursor=0,matched=0,shown=0,miss=0;
+ /* A bounded, forward-only segment match is less sensitive to the exact
+  * sample positions than nearest-point matching. Never match a nearby road
+  * later in a loop by skipping across the whole historical prefix. */
+ for(unsigned i=1;i<n;i++){
+  struct MobPoint p=mob_live.trace[i];int cq=coslat_q15(p.lat);
+  u32 tolerance=i<4?18225u:10000u,best=tolerance;unsigned at=cursor;
+  unsigned end=cursor+7u;if(end>=j->trace_n-1u)end=j->trace_n-2u;
+  for(unsigned k=cursor;k<=end;k++){
+   struct MobPoint a=j->trace[k],b=j->trace[k+1];
+   if(iabs32(a.lat-p.lat)>1000||iabs32(lon_delta(a.lon-p.lon))>2000)continue;
+   u32 d=seg_dist2(lon_scale(a.lon-p.lon,cq),a.lat-p.lat,lon_scale(b.lon-p.lon,cq),b.lat-p.lat);
+   if(d<best){best=d;at=k;}
+  }
+  if(best<tolerance){matched++;shown++;cursor=at;miss=0;}
+  else{
+   /* Only a genuinely matched terminal sample permits us to stop judging
+    * the unknown remainder of a historical route. */
+   if(cursor+2u==j->trace_n&&i>1&&mob_dist(mob_live.trace[i-1],j->trace[j->trace_n-1u])<=100u)break;
+   shown++;miss++;
+   if(miss>=2&&matched*2u<shown)return 0;
+  }
  }
- return shown?25u+75u*match/shown:100u;
+ if(!shown)return 100;
+ if(miss>=2||matched*2u<shown)return 0;
+ return 15u+85u*matched/shown;
+}
+/* A confirmed live position cannot be trusted indefinitely through a loss
+ * of GPS. Startup may use the saved position, but only with a fresh clock. */
+static int mob_prediction_context_valid(u32 now){
+ if(!mob_origin_valid)return 0;
+ if(mob_origin_confirmed)return mob_have_sample&&now-mob_last_ms<=15000u;
+ return mob_time(now)!=MOB_UNKNOWN;
+}
+static u32 mob_journey_weight(const struct MobJourney*j,u32 epoch,unsigned day_support){
+ u32 d=mob_dist(mob_live.origin,j->origin);
+ if(d>300u||mob_dist(mob_live.origin,j->dest)<100u)return 0;
+ /* Don't propose an arrival we have already reached, or a completed-length
+  * trip which has taken us substantially farther away from its endpoint. */
+ if(mob_started){
+  u32 remaining=mob_dist(mob_last,j->dest);
+  if(remaining<100u)return 0;
+  if(j->distance&&remaining>300u){
+   u32 baseline=mob_dist(j->origin,j->dest);if(baseline<j->distance)baseline=j->distance;
+   u32 lower_bound=sat_add32(mob_live.distance,remaining);
+   if(lower_bound>sat_add32(baseline,baseline/2u+500u))return 0;
+  }
+ }
+ u32 w=(301u-d)*10u;
+ if(epoch!=MOB_UNKNOWN&&j->depart!=MOB_UNKNOWN){
+  unsigned delta=mob_hour_diff(epoch,j->depart);if(delta>240u)return 0;
+  /* Narrow peak at the habitual departure time; a soft tail tolerates
+   * irregular schedules. Pool all day indices, favour matching days. */
+  unsigned t=241u-delta;w=w*t/241u;w=w*t/241u;
+  /* A well-observed exact-day schedule is more informative than a
+   * pooled pattern. With sparse day evidence, fall back gracefully to
+   * other days rather than treating a single weekday visit as a rule. */
+  if(mob_day(epoch)!=mob_day(j->depart))w=w*(day_support>=3u?30u:65u)/100u;
+  if(epoch>=j->depart){u32 days=(epoch-j->depart)/86400u;if(days>730u)days=730u;w=w*180u/(180u+days);}
+ }else if(epoch!=MOB_UNKNOWN)w/=3u;
+ unsigned age=mob.serial-j->serial;w=w*128u/(128u+(age>1024u?1024u:age));
+ if(mob_started)w=w*mob_trace_weight(j)/100u;
+ return w;
 }
 static int mob_predict(u32 now){
- mob_suggest_valid=0;
- if(!mob_origin_valid||mob.n<3)return 0;
- unsigned nc=0;u32 total=0,epoch=mob_started?mob_live.depart:mob_time(now);
- for(unsigned i=0;i<mob.n;i++){
-  const struct MobJourney*j=&mob.journey[i];u32 d=mob_dist(mob_live.origin,j->origin);
-  if(d>300u||mob_dist(mob_live.origin,j->dest)<100u)continue;
-  if(mob_started&&mob_dist(mob_last,j->dest)<100u)continue;
-  u32 w=(301u-d)*10u;
-  if(epoch!=MOB_UNKNOWN&&j->depart!=MOB_UNKNOWN){
-   unsigned delta=mob_hour_diff(epoch,j->depart);if(delta>240u)continue;
-   w=w*(241u-delta)/241u;
-   if(mob_day(epoch)!=mob_day(j->depart))w=(w+1u)/3u;
-  }
-  unsigned age=mob.serial-j->serial;w=w*128u/(128u+(age>1024u?1024u:age));
-  if(mob_started)w=w*mob_trace_weight(j)/100u;
-  if(!w)continue;
-  unsigned k=0;for(;k<nc;k++)if(mob_dist(mob_candidates[k].p,j->dest)<=100u)break;
-  if(k==nc){mob_candidates[nc++]=(struct MobCandidate){j->dest,0,0};}
-  struct MobCandidate*c=&mob_candidates[k];c->weight+=w;c->visits++;total+=w;
+ int previous=mob_suggest_valid;struct MobPoint previous_point=mob_suggest_point;
+ mob_suggest_valid=0;mob_suggest_score=0;
+ if(!mob_prediction_context_valid(now)||mob.n<3)return 0;
+ u32 epoch=mob_started?mob_live.depart:mob_time(now);
+ /* Before the first live fix a fresh RMC date/time is necessary to use
+  * the saved position. A stale or missing clock alone must not guess. */
+ unsigned nc=0,day_support=0;u32 total=0;
+ if(epoch!=MOB_UNKNOWN)for(unsigned i=0;i<mob.n;i++){
+  const struct MobJourney*j=&mob.journey[i];
+  if(j->depart!=MOB_UNKNOWN&&mob_day(epoch)==mob_day(j->depart)&&mob_hour_diff(epoch,j->depart)<=120u&&mob_dist(mob_live.origin,j->origin)<=300u)day_support++;
  }
+ /* Process newest first, independent of the ring's physical wrap. A
+  * cluster representative is a real, recently visited endpoint. */
+ for(unsigned k=0;k<mob.n;k++){
+  unsigned i=(mob.head+MOB_JOURNEYS-1u-k)%MOB_JOURNEYS;
+  const struct MobJourney*j=&mob.journey[i];u32 w=mob_journey_weight(j,epoch,day_support);if(!w)continue;
+  unsigned at=nc;u32 best=MOB_DEST_RADIUS+1u;
+  for(unsigned c=0;c<nc;c++){u32 d=mob_dist(mob_candidates[c].p,j->dest);if(d<best){at=c;best=d;}}
+  if(at==nc)mob_candidates[nc++]=(struct MobCandidate){j->dest,0,0};
+  struct MobCandidate*c=&mob_candidates[at];c->weight+=w;if(w>=200u)c->visits++;total+=w;
+ }
+ if(!nc||!total)return 0;
  unsigned best=0;for(unsigned i=1;i<nc;i++)if(mob_candidates[i].weight>mob_candidates[best].weight)best=i;
- if(!nc||!total||mob_candidates[best].visits<3||mob_candidates[best].weight<1800u||mob_candidates[best].weight*100u/total<65u)return 0;
- mob_suggest_point=mob_candidates[best].p;mob_suggest_score=mob_candidates[best].weight*100u/total;mob_suggest_valid=1;return 1;
+ unsigned minimum=epoch==MOB_UNKNOWN?5u:3u,enter=epoch==MOB_UNKNOWN?80u:70u;
+ /* Require stronger evidence before admitting a new candidate than retaining
+  * an existing one. A new winner must cross the higher threshold; a
+  * trajectory mismatch can withdraw the old offer immediately.
+  * Rejection is applied AFTER ranking, never artificially inflating another
+  * destination's confidence by removing the rejected destination's votes. */
+ struct MobCandidate*c=&mob_candidates[best];u32 score=c->weight*100u/total;
+ int same=previous&&mob_dist(c->p,previous_point)<=MOB_DEST_RADIUS;
+ if(c->visits<minimum||c->weight<1800u||score<(same?(epoch==MOB_UNKNOWN?70u:55u):enter)||mob_declined_destination(c->p)||(same&&mob_declined_destination(previous_point)))return 0;
+ mob_suggest_point=same?previous_point:c->p;mob_suggest_score=score;mob_suggest_valid=1;
+ if(!same){if(!++mob_suggest_serial)mob_suggest_serial++;}
+ return 1;
 }
 #endif

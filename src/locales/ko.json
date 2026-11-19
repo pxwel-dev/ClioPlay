@@ -229,5 +229,9 @@
   "HUD layout": "HUD 배치",
   "Navigation": "내비게이션",
   "Driving history": "주행 기록",
-  "System": "시스템"
+  "System": "시스템",
+  "Start suggested trip?": "추천 여정을 시작할까요?",
+  "Suggestion unavailable": "추천을 사용할 수 없음",
+  "You come here often": "이곳에 자주 오시는군요",
+  "Add to favourites?": "즐겨찾기에 추가할까요?"
 }

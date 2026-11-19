@@ -229,5 +229,9 @@
   "HUD layout": "Розташування HUD",
   "Navigation": "Навігація",
   "Driving history": "Історія поїздок",
-  "System": "Система"
+  "System": "Система",
+  "Start suggested trip?": "Почати запропоновану поїздку?",
+  "Suggestion unavailable": "Пропозиція недоступна",
+  "You come here often": "Ви часто буваєте тут",
+  "Add to favourites?": "Додати до обраного?"
 }

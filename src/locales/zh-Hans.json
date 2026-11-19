@@ -229,5 +229,9 @@
   "HUD layout": "HUD 布局",
   "Navigation": "导航",
   "Driving history": "驾驶历史",
-  "System": "系统"
+  "System": "系统",
+  "Start suggested trip?": "开始建议的行程？",
+  "Suggestion unavailable": "建议不可用",
+  "You come here often": "您经常来这里",
+  "Add to favourites?": "添加到收藏？"
 }

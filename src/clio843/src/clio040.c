@@ -1456,7 +1456,8 @@ static int road_trace_pick(const struct RoadGeomRef*cur,int exit_side,const stru
   if(best<0||(second>=0&&best-second<ROAD_TRACE_AMBIG))return 0;*out=br;if(enter_side)*enter_side=benter;return 1;}
 static int road_trace_dir(const struct RoadGeomRef*start,int side,char*out,unsigned cap,u32*found_m){u32 used=road_initial_side_m(start,side);if(used>ROAD_TRACE_MAX_M)return 0;struct RoadGeomRef cur=*start,visited[ROAD_TRACE_MAX_STEPS+1];int nvis=0;visited[nvis++]=cur;int exit_side=side;for(int step=0;step<ROAD_TRACE_MAX_STEPS&&used<=ROAD_TRACE_MAX_M;step++){struct RoadGeomRef nx;int enter=0;if(!road_trace_pick(&cur,exit_side,visited,nvis,&nx,&enter))return 0;struct Tile*t=get_tile(6,nx.tx,nx.ty);struct RoadCtx nr;memzero(&nr,sizeof(nr));if(t&&read_road_meta(t,nx.mi,&nr)&&nr.street[0]){copystr(out,cap,nr.street);if(found_m)*found_m=used;return 1;}u32 add=road_feature_length_m(&nx);if(!add||add==0xffffffffu||used+add>ROAD_TRACE_MAX_M)return 0;used+=add;cur=nx;if(nvis<ROAD_TRACE_MAX_STEPS+1)visited[nvis++]=cur;exit_side=enter?0:1;}return 0;}
 static int road_trace_name(const struct RoadGeomRef*r,char*out,unsigned cap){char a[29],b[29];a[0]=b[0]=0;u32 am=0xffffffffu,bm=0xffffffffu;int ha=road_trace_dir(r,0,a,sizeof(a),&am),hb=road_trace_dir(r,1,b,sizeof(b),&bm);if(!ha&&!hb)return 0;if(ha&&hb&&!streq(a,b)){u32 dif=am>bm?am-bm:bm-am;if(dif<30u)return 0;}const char*s=ha&&(!hb||am<=bm)?a:b;copystr(out,cap,s);return out[0]!=0;}
-static void scan_road_tile(struct Tile*t,s32 plat,s32 plon,u32*best,struct RoadGeomRef*winner){if(!t||t->lvl!=6||t->len<8)return;const u8*p=t->data,*end=t->data+t->len;u16 ng=rd16(p);p+=8;int span=256,cq=coslat_q15(plat);for(u16 g=0;g<ng&&p+4<=end;g++){int layer=p[0],cls=p[1],np=p[2],mi=p[3];p+=4;if(p+(unsigned)np*4>end)return;if(layer==0&&mi!=255&&np>=2){int lx=rd16(p),ly=rd16(p+2);s32 alon=(s32)t->tx*span+map_tile_offset(lx,(u32)span),alat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);s32 ax=lon_scale(alon-plon,cq),ay=alat-plat;const u8*q=p+4;for(int i=1;i<np;i++,q+=4){lx=rd16(q);ly=rd16(q+2);s32 blon=(s32)t->tx*span+map_tile_offset(lx,(u32)span),blat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);s32 bx=lon_scale(blon-plon,cq),by=blat-plat;u32 d=seg_dist2(ax,ay,bx,by);if(gps.mph10>=20){int k=((shown_course()+5)/10)%36;int hx=SIN36[k],hy=COS36[k];s32 vx=bx-ax,vy=by-ay;u32 norm=(u32)(iabs32(vx)+iabs32(vy));if(norm){s32 dp=vx*hx+vy*hy;u32 ad=(u32)(dp<0?-dp:dp);u32 lo=norm*12000u,mid=norm*22000u;if(ad<lo)d+=900;else if(ad<mid)d+=225;}}if(d<*best){*best=d;road_ref_fill(t,g,cls,mi,p,np,i-1,winner);}ax=bx;ay=by;}}p+=(unsigned)np*4;}}
+static void scan_road_tile_mode(struct Tile*t,s32 plat,s32 plon,u32*best,struct RoadGeomRef*winner,int use_heading){if(!t||t->lvl!=6||t->len<8)return;const u8*p=t->data,*end=t->data+t->len;u16 ng=rd16(p);p+=8;int span=256,cq=coslat_q15(plat);for(u16 g=0;g<ng&&p+4<=end;g++){int layer=p[0],cls=p[1],np=p[2],mi=p[3];p+=4;if(p+(unsigned)np*4>end)return;if(layer==0&&mi!=255&&np>=2){int lx=rd16(p),ly=rd16(p+2);s32 alon=(s32)t->tx*span+map_tile_offset(lx,(u32)span),alat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);s32 ax=lon_scale(alon-plon,cq),ay=alat-plat;const u8*q=p+4;for(int i=1;i<np;i++,q+=4){lx=rd16(q);ly=rd16(q+2);s32 blon=(s32)t->tx*span+map_tile_offset(lx,(u32)span),blat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);s32 bx=lon_scale(blon-plon,cq),by=blat-plat;u32 d=seg_dist2(ax,ay,bx,by);if(use_heading&&gps.mph10>=20){int k=((shown_course()+5)/10)%36;int hx=SIN36[k],hy=COS36[k];s32 vx=bx-ax,vy=by-ay;u32 norm=(u32)(iabs32(vx)+iabs32(vy));if(norm){s32 dp=vx*hx+vy*hy;u32 ad=(u32)(dp<0?-dp:dp);u32 lo=norm*12000u,mid=norm*22000u;if(ad<lo)d+=900;else if(ad<mid)d+=225;}}if(d<*best){*best=d;road_ref_fill(t,g,cls,mi,p,np,i-1,winner);}ax=bx;ay=by;}}p+=(unsigned)np*4;}}
+static void scan_road_tile(struct Tile*t,s32 plat,s32 plon,u32*best,struct RoadGeomRef*winner){scan_road_tile_mode(t,plat,plon,best,winner,1);}
 static void roadname_cache_set(const char*s,const struct RoadGeomRef*r){if(!r||!r->valid){roadname_cache.key_valid=roadname_cache.name_valid=0;return;}roadname_cache.key_valid=1;roadname_cache.last=*r;roadname_cache.name_valid=s&&s[0]?1:0;roadname_cache.name[0]=0;if(roadname_cache.name_valid)copystr(roadname_cache.name,sizeof(roadname_cache.name),s);}
 static void road_direction_select(struct Tile*t,const struct RoadGeomRef*r){int n=0;const u8*p=road_feature_points(t,r->gi,0,0,&n);if(!p||r->seg<0||r->seg+1>=n)return;s32 la,lo,lb,lob;road_raw_point(t,p+r->seg*4,&la,&lo);road_raw_point(t,p+(r->seg+1)*4,&lb,&lob);int k=((shown_course()+5)/10)%36;long long dot=(long long)lon_scale(lob-lo,coslat_q15(gps.lat))*SIN36[k]+(long long)(lb-la)*COS36[k];if(gps.mph10<30){if(roadctx.speed!=roadctx.reverse_speed||roadctx.speed_flags!=roadctx.reverse_flags){roadctx.speed=0;roadctx.speed_flags=0;}}else if(dot<0){roadctx.speed=roadctx.reverse_speed;roadctx.speed_flags=roadctx.reverse_flags;}}
 static void road_estimate_missing(const struct RoadGeomRef*r);
@@ -2513,6 +2514,7 @@ static u32 arrival_modal_deadline=0;
 #define NOTICE_MS 1800u
 static char notice_text[40]; /* Latest action, also used by native checks. */
 
+static int suggested_place(struct SavedPlace*out);
 #include "hud.h"
 
 /* A single anti-aliased saving badge belongs beside the real decision
@@ -2633,17 +2635,83 @@ static void mobility_append_coord(char*b,unsigned cap,s32 value){
  if(value<0){appendstr(b,cap,"-");value=-value;}append_int(b,cap,value/100000);appendstr(b,cap,".");
  char digits[6];for(int i=4;i>=0;i--){digits[i]=(char)('0'+value%10);value/=10;}digits[5]=0;appendstr(b,cap,digits);
 }
-static int suggested_place(struct SavedPlace*out){
- if(!pref.learn_history||!pref.destination_predictions||!mob_suggest_valid||trip.active)return 0;
- struct MobPoint p=mob_suggest_point;u32 best=101;const struct SavedPlace*chosen=0;
- for(int i=0;i<nfaves;i++){u32 d=mob_dist(p,(struct MobPoint){faves[i].lat,faves[i].lon});if(d<best){best=d;chosen=&faves[i];}}
- if(!chosen)for(int i=0;i<nrecents;i++){u32 d=mob_dist(p,(struct MobPoint){recents[i].lat,recents[i].lon});if(d<best){best=d;chosen=&recents[i];}}
- if(chosen)*out=*chosen;
- else{memzero(out,sizeof(*out));out->lat=p.lat;out->lon=p.lon;mobility_append_coord(out->name,sizeof(out->name),p.lat);appendstr(out->name,sizeof(out->name),", ");mobility_append_coord(out->name,sizeof(out->name),p.lon);}
- return 1;
+/* Cache the bounded remote tile lookup per destination. Do not change the
+ * car's road context, course, map centre, or any persistent data. */
+static void suggested_settlement_tile(struct Tile*t,struct MobPoint p,u32*best,char*out,unsigned cap){
+ if(!t||t->len<8)return;
+ const u8*q=t->data,*end=q+t->len;unsigned ng=rd16(q),nl=rd16(q+2);q+=8;
+ for(unsigned i=0;i<ng;i++){if(end-q<4)return;unsigned n=q[2];q+=4;if((unsigned)(end-q)<n*4u)return;q+=n*4u;}
+ int span=span_for_level(t->lvl);
+ for(unsigned i=0;i<nl;i++){
+  if(end-q<8)return;unsigned kind=q[0],n=q[6];
+  struct MobPoint loc={(s32)t->ty*span+map_tile_offset(rd16(q+4),(u32)span),(s32)t->tx*span+map_tile_offset(rd16(q+2),(u32)span)};
+  q+=8;if((unsigned)(end-q)<n)return;
+  if(kind>=3&&kind<=5&&n&&n<113){
+   u32 d=mob_dist(p,loc);if(d<*best&&d<=(kind==5?1000u:1500u)){
+    *best=d;char text[113];for(unsigned k=0;k<n;k++)text[k]=(char)q[k];text[n]=0;copystr(out,cap,text);
+   }
+  }
+  q+=n;
+ }
 }
-static int suggested_available(void){struct SavedPlace p;return suggested_place(&p);}
-static int suggested_start(void){struct SavedPlace p;if(!suggested_place(&p))return 0;set_destination(p.name,p.lat,p.lon);return 1;}
+static int suggested_road_name(struct MobPoint p,char*out,unsigned cap){
+ static u32 serial;static struct MobPoint last;static int had_map=-1;static char name[113];
+ if(serial!=mob_suggest_serial||last.lat!=p.lat||last.lon!=p.lon||had_map!=mapok){
+  serial=mob_suggest_serial;last=p;had_map=mapok;name[0]=0;
+  if(mapok&&mh.maxlvl>=6&&map_view_covered(p.lat,p.lon)){
+   int tx=tile_div(p.lon,6),ty=tile_div(p.lat,6);u32 best=1600;struct RoadGeomRef winner={0};
+   for(int y=ty-1;y<=ty+1;y++)for(int x=tx-1;x<=tx+1;x++)
+    if(map_tile_in_pack(6,x,y))scan_road_tile_mode(get_tile(6,x,y),p.lat,p.lon,&best,&winner,0);
+   if(winner.valid){struct RoadCtx ctx={0};if(read_road_meta(get_tile(6,winner.tx,winner.ty),winner.mi,&ctx))copystr(name,sizeof(name),ctx.street);}
+  }
+  if(!name[0]&&mapok&&map_view_covered(p.lat,p.lon)){
+   int z=mh.maxlvl>=5?5:mh.maxlvl;if(z>=mh.minlvl){
+    int tx=tile_div(p.lon,z),ty=tile_div(p.lat,z);u32 best=1501u;
+    /* Bounded nearby labels, never a remote or invented settlement. */
+    for(int y=ty-2;y<=ty+2;y++)for(int x=tx-2;x<=tx+2;x++)if(map_tile_in_pack(z,x,y))
+     suggested_settlement_tile(get_tile((u8)z,x,y),p,&best,name,sizeof(name));
+   }
+  }
+ }
+ copystr(out,cap,name);return name[0]!=0;
+}
+static int suggested_place(struct SavedPlace*out){
+ if(!pref.learn_history||!pref.destination_predictions||!mob_suggest_valid||trip.active||trip.count||mob_declined_destination(mob_suggest_point))return 0;
+ struct MobPoint p=mob_suggest_point;
+ if(mapok&&!map_view_covered(p.lat,p.lon))return 0;
+ u32 best=101;const struct SavedPlace*chosen=0;
+ for(int i=0;i<nfaves;i++){u32 d=mob_dist(p,(struct MobPoint){faves[i].lat,faves[i].lon});if(d<best&&faves[i].name[0]&&!streq(faves[i].name,"MAP POINT")&&!streq(faves[i].name,"PHONE DESTINATION")){best=d;chosen=&faves[i];}}
+ if(!chosen)for(int i=0;i<nrecents;i++){u32 d=mob_dist(p,(struct MobPoint){recents[i].lat,recents[i].lon});if(d<best&&recents[i].name[0]&&!streq(recents[i].name,"MAP POINT")&&!streq(recents[i].name,"PHONE DESTINATION")){best=d;chosen=&recents[i];}}
+ if(chosen&&(!mapok||map_view_covered(chosen->lat,chosen->lon)))*out=*chosen;
+ else{
+  memzero(out,sizeof(*out));out->lat=p.lat;out->lon=p.lon;
+  if(!suggested_road_name(p,out->name,sizeof(out->name))){mobility_append_coord(out->name,sizeof(out->name),p.lat);appendstr(out->name,sizeof(out->name),", ");mobility_append_coord(out->name,sizeof(out->name),p.lon);}
+ }
+ return !mob_declined_destination((struct MobPoint){out->lat,out->lon});
+}
+/* Startup prompt is deliberately separate from route prediction. One prompt
+ * per boot, only on live stationary GPS before any journey has started. */
+static u32 frequent_boot_session,frequent_still_at,frequent_last_at;
+static struct MobPoint frequent_still_point;
+static int frequent_still,frequent_boot_pending;
+static void frequent_arm_startup(void){frequent_boot_session=mob_session_generation;frequent_boot_pending=1;frequent_still=0;}
+static int frequent_fave_near(struct MobPoint p){
+ for(int i=0;i<nfaves;i++)if(mob_dist(p,(struct MobPoint){faves[i].lat,faves[i].lon})<=MOB_DEST_RADIUS)return 1;
+ return 0;
+}
+static int frequent_current(struct MobPoint p,u32 now){
+ return pref.learn_history&&pref.destination_predictions&&mob_recording&&mob_session_generation==frequent_boot_session&&
+  !mob_started&&!trip.active&&!trip.count&&nfaves<FAVE_MAX&&!frequent_fave_near(p)&&gps.fix&&mob_rmc_fix&&now-mob_rmc_ms<=2500u&&mob_rmc_speed<=10&&mob_dist(p,mob_rmc_point)<=MOB_DEST_RADIUS;
+}
+static int frequent_named_place(struct MobPoint p,struct SavedPlace*out){
+ memzero(out,sizeof(*out));out->lat=p.lat;out->lon=p.lon;
+ u32 best=MOB_DEST_RADIUS+1u;const struct SavedPlace*chosen=0;
+ for(int i=0;i<nrecents;i++){u32 d=mob_dist(p,(struct MobPoint){recents[i].lat,recents[i].lon});if(d<best&&recents[i].name[0]&&!streq(recents[i].name,"MAP POINT")&&!streq(recents[i].name,"PHONE DESTINATION")){best=d;chosen=&recents[i];}}
+ if(chosen){copystr(out->name,sizeof(out->name),chosen->name);return 1;}
+ if(suggested_road_name(p,out->name,sizeof(out->name)))return 1;
+ return 0;
+}
+static void frequent_startup_service(u32 now,int fresh);
 static void mobility_service(u32 now){
  if(!pref.learn_history){if(mob_recording){mob_stop_recording();traffic_learning_reset();}return;}
  if(!mob_recording){mob_session_begin(now,lastfix_valid,lastfix_lat,lastfix_lon);traffic_learning_reset();}
@@ -2655,19 +2723,23 @@ static void mobility_service(u32 now){
   }
   traffic_learn_sample();
  }
- if(pref.destination_predictions&&!trip.active){
+ if(pref.destination_predictions&&!trip.active&&!trip.count&&mob_prediction_context_valid(now)){
   u32 epoch=mob_time(now);
-  static u32 last_minute=MOB_UNKNOWN;static int last_origin,last_started;
+  static u32 last_minute=MOB_UNKNOWN,last_session;static int last_origin,last_started;
   u32 minute=epoch==MOB_UNKNOWN?MOB_UNKNOWN:epoch/60u;
-  if(!mob_predict_ms||last_origin!=mob_origin_valid||last_started!=mob_started||(!mob_started&&minute!=last_minute)||(mob_started&&now-mob_predict_ms>=5000u)){
-   last_origin=mob_origin_valid;last_started=mob_started;
+  if(!mob_predict_ms||last_session!=mob_session_generation||last_origin!=mob_origin_valid||last_started!=mob_started||(!mob_started&&minute!=last_minute)||(mob_started&&now-mob_predict_ms>=5000u)){
+   last_session=mob_session_generation;last_origin=mob_origin_valid;last_started=mob_started;
    int old=mob_suggest_valid;struct MobPoint oldp=mob_suggest_point;
    mob_predict_ms=now;last_minute=minute;(void)mob_predict(now);
+   /* Resolve a new endpoint outside UI presentation, warming the bounded
+    * name cache before a framebuffer is built. */
+   if(mob_suggest_valid){struct SavedPlace p;(void)suggested_place(&p);}
    if(old!=mob_suggest_valid||oldp.lat!=mob_suggest_point.lat||oldp.lon!=mob_suggest_point.lon)render_background_dirty=1;
   }
- }else mob_suggest_valid=0;
+ }else{mob_suggest_valid=0;mob_predict_ms=0;}
  int prev_offer=traffic_offer_valid(),prev_warn=traffic_warn;u32 prev_saving=traffic_saving;
  traffic_service(now);
+ frequent_startup_service(now,fresh);
  if(prev_offer!=traffic_offer_valid()||prev_warn!=traffic_warn||prev_saving!=traffic_saving)render_background_dirty=1;
 }
 static void clear_trip(void){memzero(&trip,sizeof(trip));save_trip();arrival_ticks=0;trip_need_route=trip_route_defer=0;route_cancel();}
@@ -2998,6 +3070,9 @@ static void key_handle(int code){
  if(modal==MOD_NONE&&(code==K_MENU||screen!=SCR_MAP)){
   keydiag(code);if(code==K_MENU&&screen==SCR_MAP)menu_open(P_HOME,0,hud_now_ms());else menu_dispatch(code,hud_now_ms());return;
  }
+ if(code==K_ENTER&&hud_suggestion_shortcut_ready()){
+  hud_suggestion_invited=0;bt_control_mode=0;menu_open_suggestion(hud_now_ms());return;
+ }
  if(code==K_ENTER&&hud_diversion_shortcut_ready()){
   hud_diversion_invited=0;bt_control_mode=0;menu_open_diversion(1,hud_now_ms());return;
  }
@@ -3233,7 +3308,7 @@ static void run(void){
  cliou_load("./clio843/maps/fonts.cpf");
 #endif
 #endif
- hardware_load_bluetooth();load_prefs();debug_state_write();load_last_fix();mob_load();if(pref.learn_history)mob_session_begin(s_now_ms(),lastfix_valid,lastfix_lat,lastfix_lon);seed_boot_theme();if(!pref.debug)remove_stale_logs();load_last_audio();nrecents=read_places(RECENT_PATH,recents,RECENT_MAX);nfaves=read_places(FAVES_PATH,faves,FAVE_MAX);load_trip();apply_brightness();load_map();load_timezones();load_regions();load_cameras();seed_boot_map_view();load_route_data();s_unlink(BT_CMD_PATH);bt_write_small(BT_ACTIVE_PATH,"0\n");bt_active_written=0;bt_name_cache_load();bt_poll_status();if(trip.active){modal=MOD_RESUME_TRIP;modal_choice=0;}open_inputs();
+ hardware_load_bluetooth();load_prefs();debug_state_write();load_last_fix();mob_load();mob_fave_load();if(pref.learn_history){mob_session_begin(s_now_ms(),lastfix_valid,lastfix_lat,lastfix_lon);frequent_arm_startup();}seed_boot_theme();if(!pref.debug)remove_stale_logs();load_last_audio();nrecents=read_places(RECENT_PATH,recents,RECENT_MAX);nfaves=read_places(FAVES_PATH,faves,FAVE_MAX);load_trip();apply_brightness();load_map();load_timezones();load_regions();load_cameras();seed_boot_map_view();load_route_data();s_unlink(BT_CMD_PATH);bt_write_small(BT_ACTIVE_PATH,"0\n");bt_active_written=0;bt_name_cache_load();bt_poll_status();if(trip.active){modal=MOD_RESUME_TRIP;modal_choice=0;}open_inputs();
  control_log("CONSOLE READER",0,csw.fd);
  if(vehicle.enabled)for(int i=0;i<9;i++)control_log("VEHICLE STATUS LISTENER",vehicle_ports[i],vehicle.listen[i]);
   int wdfd=(int)s_open(WD_PATH,O_WRONLY_,0);debug_log(STATE_LOG,"CLIOPLAY GLOBAL " CLIOPLAY_VERSION " START");debug_log(STATE_LOG,qadjmode==7?(qadj_map_ok?"QAD7 PACKET+MMAP QUERY ENABLED":"QAD7 PAGED QUERY ENABLED"):"QADJ FAST QUERY FALLBACK CPR2");{char mb[96];mb[0]=0;appendstr(mb,sizeof(mb),"MMAP QAD=");append_int(mb,sizeof(mb),qadj_map_ok);appendstr(mb,sizeof(mb)," GEOM=");append_int(mb,sizeof(mb),route_geom_map_ok);debug_log(STATE_LOG,mb);}u32 tick=0,next_model=s_now_ms(),next_input=next_model;render_runtime_reset(next_model);

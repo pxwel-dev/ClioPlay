@@ -10,6 +10,7 @@ EXCLUDED_NAMES = {
     'bond.dat', 'faves.dat', 'recent.dat', 'trip.dat',
     'audlast.dat', 'ui_translations 2.h', 'history.dat',
     'history.prev.dat', 'mobility.dat', 'mobility.tmp',
+    'mobility-places.dat', 'mobility-places.tmp',
     'gpslast.dat', 'prepare_minimal_release.py'
 }
 PREVIEW_GIFS = ('boot-day.gif', 'boot-night.gif', 'popups.gif', 'driving.gif', 'menus.gif', 'bluetooth.gif', 'phone-destination.gif',
@@ -75,6 +76,8 @@ def gitignore():
 **/history.prev.dat
 **/mobility.dat
 **/mobility.tmp
+**/mobility-places.dat
+**/mobility-places.tmp
 **/cswmap.ini
 /csw
 /vstat

@@ -229,5 +229,9 @@
   "HUD layout": "HUD-Anordnung",
   "Navigation": "Navigation",
   "Driving history": "Fahrverlauf",
-  "System": "System"
+  "System": "System",
+  "Start suggested trip?": "Vorgeschlagene Fahrt starten?",
+  "Suggestion unavailable": "Vorschlag nicht verfügbar",
+  "You come here often": "Sie sind oft hier",
+  "Add to favourites?": "Zu Favoriten hinzufügen?"
 }

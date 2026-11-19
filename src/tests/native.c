@@ -55,7 +55,7 @@ static void fixture(void){
  * actual candidate search and splice are tested in mobility.c. */
 static void preview_prediction_seed(void){
  clear_trip();pref.learn_history=pref.destination_predictions=1;
- mob_model_reset();mob_origin_valid=1;mob_started=0;
+ mob_model_reset();mob_origin_valid=1;mob_origin_confirmed=0;mob_started=0;mob_declined_n=0;mob_suggest_valid=0;
  mob_live.origin=(struct MobPoint){car_lat(),car_lon()};
  u32 e=mob_epoch(2010,1,4,7,30,0);
  for(unsigned i=0;i<5;i++){
@@ -66,7 +66,7 @@ static void preview_prediction_seed(void){
  mob.n=mob.head=mob.serial=5;mob_current_epoch=e+35u*86400u;mob_clock_ms=hud_now_ms();
  nfaves=1;faves[0].lat=5497370;faves[0].lon=-161331;
  copystr(faves[0].name,sizeof(faves[0].name),"Work");
- assert(mob_predict(hud_now_ms())&&suggested_available());
+ struct SavedPlace choice;assert(mob_predict(hud_now_ms())&&suggested_place(&choice)&&streq(choice.name,"Work"));
 }
 static void preview_diversion_seed(void){
  /* This is a presentation fixture, not an assertion about real roads.

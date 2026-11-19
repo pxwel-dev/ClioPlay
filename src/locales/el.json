@@ -229,5 +229,9 @@
   "HUD layout": "Διάταξη HUD",
   "Navigation": "Πλοήγηση",
   "Driving history": "Ιστορικό οδήγησης",
-  "System": "Σύστημα"
+  "System": "Σύστημα",
+  "Start suggested trip?": "Έναρξη προτεινόμενης διαδρομής;",
+  "Suggestion unavailable": "Η πρόταση δεν είναι διαθέσιμη",
+  "You come here often": "Έρχεστε συχνά εδώ",
+  "Add to favourites?": "Προσθήκη στα αγαπημένα;"
 }

@@ -27,7 +27,7 @@ int main(int argc,char**argv){assert(argc==3&&load_font()&&cliou_load(argv[1]));
   assert(streq(place_display_name("MAP POINT"),ui_tr("Map point"))&&streq(place_display_name("PHONE DESTINATION"),ui_tr("Phone destination"))&&streq(place_display_name("Settings"),"Settings"));
   copystr(btui.status,sizeof(btui.status),"BT DAEMON ERROR");pref.debug=0;assert(streq(bt_status_text(),lang?ui_tr("Phone connection unavailable"):"Bluetooth unavailable"));btui.status[0]=0;
   for(unsigned i=0;i<sizeof(locale_cases)/sizeof(locale_cases[0]);i++){assert(streq(ui_tr(locale_cases[i][0]),locale_cases[i][lang]));whole_utf8(locale_cases[i][lang]);assert(cliou_width(locale_cases[i][lang],1)>0);}
-  const char*confirm_titles[]={"Take diversion?","Cancel route?","Remove stop?","Clear driving history?","Route to point?","Add point as stop?","Cancel current route?","Resume saved trip?"};
+  const char*confirm_titles[]={"Add to favourites?","Start suggested trip?","Take diversion?","Cancel route?","Remove stop?","Clear driving history?","Route to point?","Add point as stop?","Cancel current route?","Resume saved trip?"};
   for(unsigned i=0;i<sizeof(confirm_titles)/sizeof(confirm_titles[0]);i++)assert(width(ui_tr(confirm_titles[i]),CONFIRMATION_FACE)<=252);
   assert(width(ui_tr("Yes"),CONFIRMATION_FACE)<=104&&width(ui_tr("No"),CONFIRMATION_FACE)<=104);
   /* The action hint must always fit an available status HUD column. */
@@ -58,8 +58,43 @@ int main(int argc,char**argv){assert(argc==3&&load_font()&&cliou_load(argv[1]));
  nrecents=nfaves=1;copystr(recents[0].name,sizeof(recents[0].name),"Settings");copystr(faves[0].name,sizeof(faves[0].name),"Cancel");trip.active=1;trip.count=1;trip.active_idx=0;copystr(trip.target[0].name,sizeof(trip.target[0].name),"Saved");route_status=R_IDLE;trip_need_route=0;gps.hour=12;gps.min=35;
  int frames=0;
  for(int lang=0;lang<UI_LANGUAGE_COUNT;lang++)for(int night=0;night<2;night++)for(int page=0;page<19;page++){
-  pref.language=lang;pref.theme=night?THEME_NIGHT:THEME_DAY;modal=MOD_NONE;trip.active=page==5?0:1;screen=page==0?SCR_MENU:(page==1||page==5||page==6)?SCR_TRIP:page==2?SCR_BT:page==3?SCR_SET:SCR_KEY;if(page>=7&&page<10){screen=SCR_MAP;mapok=page!=7;gps.fix=page==9;track_valid=page==9;track_lat=5500000;track_lon=-160000;}else{mapok=0;gps.fix=0;track_valid=0;}if(screen==SCR_KEY)keyboard_begin();set_focus=7;kbd_action=KBD_NAME_FAVE;copystr(kbd_text,sizeof(kbd_text),"Cancel");if(page>=10&&page<14){screen=page==13?SCR_KEY:SCR_COORDINATES;coordinates.step=page==10?COORD_LAT:page==11?COORD_LON:COORD_REVIEW;coordinates.error=page<12;coordinates.focus=12;coordinates.review_focus=0;coordinates.lat=5497548;coordinates.lon=-164050;copystr(coordinates.value[0],sizeof(coordinates.value[0]),"54.97548");copystr(coordinates.value[1],sizeof(coordinates.value[1]),"-1.64050");copystr(coordinates.name,sizeof(coordinates.name),"Cancel");if(page==13)kbd_action=KBD_NAME_COORDINATES;}if(page==6)modal=MOD_RESUME_TRIP;menu_reset(hud_now_ms());if(page>=14)menu_open(P_SET_DISPLAY+page-14,0,hud_now_ms());draw();hud_settle_for_capture(hud_now_ms());menu_settle(hud_now_ms());draw();assert(streq(recents[0].name,"Settings")&&streq(faves[0].name,"Cancel")&&streq(trip.target[0].name,"Saved")&&streq(kbd_text,"Cancel"));char file[640];snprintf(file,sizeof(file),"%s/%s-%s-%d.rgb565",argv[2],ui_language_codes[lang],night?"night":"day",page);FILE*f=fopen(file,"wb");assert(f);fwrite(fb,1,sizeof(fb),f);fclose(f);frames++;
+  pref.language=lang;pref.theme=night?THEME_NIGHT:THEME_DAY;modal=MOD_NONE;trip.active=trip.count=page==5?0:1;screen=page==0?SCR_MENU:(page==1||page==5||page==6)?SCR_TRIP:page==2?SCR_BT:page==3?SCR_SET:SCR_KEY;if(page>=7&&page<10){screen=SCR_MAP;mapok=page!=7;gps.fix=page==9;track_valid=page==9;track_lat=5500000;track_lon=-160000;}else{mapok=0;gps.fix=0;track_valid=0;}if(screen==SCR_KEY)keyboard_begin();set_focus=7;kbd_action=KBD_NAME_FAVE;copystr(kbd_text,sizeof(kbd_text),"Cancel");if(page>=10&&page<14){screen=page==13?SCR_KEY:SCR_COORDINATES;coordinates.step=page==10?COORD_LAT:page==11?COORD_LON:COORD_REVIEW;coordinates.error=page<12;coordinates.focus=12;coordinates.review_focus=0;coordinates.lat=5497548;coordinates.lon=-164050;copystr(coordinates.value[0],sizeof(coordinates.value[0]),"54.97548");copystr(coordinates.value[1],sizeof(coordinates.value[1]),"-1.64050");copystr(coordinates.name,sizeof(coordinates.name),"Cancel");if(page==13)kbd_action=KBD_NAME_COORDINATES;}if(page==6)modal=MOD_RESUME_TRIP;menu_reset(hud_now_ms());if(page>=14)menu_open(P_SET_DISPLAY+page-14,0,hud_now_ms());draw();hud_settle_for_capture(hud_now_ms());menu_settle(hud_now_ms());draw();assert(streq(recents[0].name,"Settings")&&streq(faves[0].name,"Cancel")&&streq(trip.target[0].name,"Saved")&&streq(kbd_text,"Cancel"));char file[640];snprintf(file,sizeof(file),"%s/%s-%s-%d.rgb565",argv[2],ui_language_codes[lang],night?"night":"day",page);FILE*f=fopen(file,"wb");assert(f);fwrite(fb,1,sizeof(fb),f);fclose(f);frames++;
  }
+ // New persistent suggested-trip row and confirmation in both themes and
+ // control contexts. Preserve the full blue instruction with a long name.
+ for(int lang=0;lang<UI_LANGUAGE_COUNT;lang++)for(int night=0;night<2;night++){
+  pref.language=lang;pref.theme=night?THEME_NIGHT:THEME_DAY;pref.learn_history=pref.destination_predictions=1;
+  screen=SCR_MAP;modal=MOD_NONE;freecam=0;mapok=0;gps.fix=1;trip.active=trip.count=0;route_status=R_IDLE;
+  mob_declined_n=0;mob_suggest_valid=1;mob_suggest_serial++;mob_suggest_point=(struct MobPoint){5497548,-164050};
+  nrecents=0;nfaves=1;faves[0].lat=mob_suggest_point.lat;faves[0].lon=mob_suggest_point.lon;
+  copystr(faves[0].name,sizeof(faves[0].name),"A very long favourite name for the suggestion width test");
+  hw_bluetooth_enabled=btui.connected=1;set_band("CD");btui.playing=1;copystr(btui.title,sizeof(btui.title),"Bluetooth Sonata");
+  for(int state=0;state<3;state++){
+   hud_reset_animations();screen=SCR_MAP;bt_control_mode=state==1;draw();hud_settle_for_capture(hud_now_ms());draw();
+   assert(hud_tween[HC_STATUS].target.suggestion_serial==mob_suggest_serial);
+   assert(streq(hud_tween[HC_STATUS].target.traffic_hint,ui_tr(state==1?"BACK to review":"OK to review")));
+   assert(!!hud_suggestion_shortcut_ready()==(state!=1));
+   if(state==2){key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&confirm_kind==4&&sheet_focus==0);draw();menu_settle(hud_now_ms());draw();}
+   char file[640];snprintf(file,sizeof(file),"%s/%s-%s-suggestion-%d.rgb565",argv[2],ui_language_codes[lang],night?"night":"day",state);
+   FILE*f=fopen(file,"wb");assert(f);fwrite(fb,1,sizeof(fb),f);fclose(f);frames++;
+  }
+  menu_close(hud_now_ms());mob_suggest_valid=0;bt_control_mode=0;
+ }
+ mob_suggest_valid=0;pref.learn_history=0;trip.active=trip.count=1;
+ // The startup frequent-place confirmation uses the same dialog face and
+ // remains within the normal HUD area in every locale and theme.
+ for(int lang=0;lang<UI_LANGUAGE_COUNT;lang++)for(int night=0;night<2;night++){
+  pref.language=lang;pref.theme=night?THEME_NIGHT:THEME_DAY;pref.learn_history=pref.destination_predictions=1;
+  screen=SCR_MAP;modal=MOD_NONE;freecam=bt_control_mode=0;mapok=0;gps.fix=1;trip.active=trip.count=0;nfaves=0;route_status=R_IDLE;
+  mob_suggest_valid=0;mob_recording=1;mob_started=0;mob_rmc_fix=1;mob_rmc_speed=0;mob_rmc_point=(struct MobPoint){5497548,-164050};
+  frequent_boot_session=mob_session_generation;mob_rmc_ms=hud_now_ms();
+  confirm_frequent.lat=mob_rmc_point.lat;confirm_frequent.lon=mob_rmc_point.lon;confirm_frequent_named=1;copystr(confirm_frequent.name,sizeof(confirm_frequent.name),"Work");
+  assert(width(ui_tr("You come here often"),0)<=328);hud_reset_animations();confirm_kind=5;menu_open(P_CONFIRM,1,hud_now_ms());
+  draw();hud_settle_for_capture(hud_now_ms());menu_settle(hud_now_ms());draw();assert(sheet_page==P_CONFIRM&&sheet_focus==1);
+  char file[640];snprintf(file,sizeof(file),"%s/%s-%s-frequent.rgb565",argv[2],ui_language_codes[lang],night?"night":"day");FILE*f=fopen(file,"wb");assert(f);fwrite(fb,1,sizeof(fb),f);fclose(f);frames++;
+  menu_close(hud_now_ms());
+ }
+ mob_recording=0;pref.learn_history=0;trip.active=trip.count=1;
  // Exercise translated source headers and saved-phone dialog through actual drawing.
  for(int lang=0;lang<UI_LANGUAGE_COUNT;lang++){
   pref.language=lang;screen=SCR_BT;modal=MOD_NONE;copystr(af.band,sizeof(af.band),"CD");bt_control_mode=0;

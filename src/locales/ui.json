@@ -943,6 +943,22 @@
     "System": [
       "Système",
       "Sistema"
+    ],
+    "Start suggested trip?": [
+      "Démarrer le trajet suggéré ?",
+      "¿Iniciar viaje sugerido?"
+    ],
+    "Suggestion unavailable": [
+      "Suggestion indisponible",
+      "Sugerencia no disponible"
+    ],
+    "You come here often": [
+      "Vous venez souvent ici",
+      "Vienes aquí a menudo"
+    ],
+    "Add to favourites?": [
+      "Ajouter aux favoris ?",
+      "¿Añadir a favoritos?"
     ]
   },
   "language_names": {

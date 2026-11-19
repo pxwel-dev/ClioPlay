@@ -12,7 +12,7 @@ Open **MENU → Settings → Driving history**.
 | Setting | Effect |
 | --- | --- |
 | Learn driving history | Off initially; turn on to record and learn on the SD card. Turning it off stops collection and hides both intelligent features. |
-| Destination suggestions | Allows a learned destination in the empty Itinerary sheet. Independent of diversion display. |
+| Destination suggestions | Offers a learned destination in the driving-map status pill when no itinerary is active. Independent of diversion display. |
 | Intelligent diversions | Allows historical-traffic warnings, adjusted ETAs and a diversion choice when available. |
 | Clear driving history | Confirm to delete the recorded history and learned model; Favourites, Recents, preferences and itineraries are not deleted. |
 
@@ -20,13 +20,58 @@ Use Left/Right or OK to toggle the first three settings. OK on Clear driving
 history opens a confirmation. To stop learning after clearing, also turn off
 Learn driving history.
 
-The empty **Trip → Itinerary** page retains its original destination prompt
-and shows a second row, **Suggested: …**, when
-the model has sufficient evidence. Highlight it and press OK to start the normal
-route to that place. A saved Favourite within 100 m is preferred to a nearby
-Recent; otherwise the predicted latitude and longitude are displayed.
-Suggestions do not automatically start a route, add an itinerary stop or mark
-an arrival. They are hidden while an itinerary is active.
+### Suggested trips
+
+With sufficient evidence and no active itinerary, the normal driving-map
+status pill displays **Suggested: …** in the existing success green, followed
+by the standard blue **OK to review** instruction. In BT CTRL the hint is
+**BACK to review**: Back exits playback control, and OK then opens the same
+confirmation. The invitation is a persistent single row, not a timer or an
+automatic route. It is independent of the destination-entry pages. The empty
+Itinerary retains its original prompt and Coordinates action.
+
+The confirmation displays the destination and **Based on driving history**,
+with Yes initially selected. Yes starts the normal route (waiting for a GPS
+fix if necessary); No suppresses that destination for the remainder of the
+recording session. Back closes the confirmation without rejecting. A later
+independently supported destination can still be offered. Ignoring the pill
+requires no action: it remains only while the evidence supports it. A changed
+or expired suggestion cannot be accepted or rejected through an old popup.
+Starting another trip, disabling suggestions or learning, or entering Explore
+hides the invitation. The normal driving zoom and lower HUD are unchanged.
+
+A named Favourite within 100 m is preferred to a named Recent. Otherwise,
+the model retains the actual learned coordinates and tries the nearest street
+in a small destination-centred map neighbourhood, then a nearby named
+settlement. These names describe the vicinity, not a verified address; the
+last fallback is latitude and longitude. Explicitly accepted suggestions use
+normal route and Recent storage. No new training record is created by either
+confirmation choice: only the usual completed power-off session trains the
+model.
+
+### Frequent-place favourites
+
+When destination suggestions and driving-history learning are enabled, ClioPlay
+can ask **Add to favourites?** / **You come here often** on a subsequent startup.
+It requires five completed journeys ending within 100 m of the most recent
+completed destination, on at least three distinct arrival dates within the
+last 90 days. A fresh live GPS fix must confirm that location, with at least
+three seconds of stationary samples before the prompt opens. It never opens
+while moving, during Bluetooth control, Explore, an active itinerary, or an
+existing menu or dialog. The startup opportunity expires after three minutes;
+if driving begins or the position becomes invalid, an open prompt closes.
+
+No is selected by default because saving a favourite modifies personal data.
+Yes saves the latest actual learned endpoint under a nearby named Recent or
+an offline street/settlement name; when no meaningful name exists, it opens
+the existing naming keyboard instead. No, Back or simply leaving the prompt
+unanswered does not save anything. Already saved nearby favourites and a full
+favourites list are excluded. A checksummed local record prevents the same
+place from prompting again on a later startup (including after declining or
+ignoring it); clearing driving history resets the record. The prompt never
+starts a journey or adds evidence to the prediction model. Accepting it makes
+future suggestions easier to recognise through a named Favourite; it does not
+artificially increase their statistical confidence.
 
 During guidance, **Likely traffic ahead** means historical evidence suggests
 a delay, not that a real-time traffic incident was detected. Once a beneficial
@@ -65,9 +110,12 @@ cannot predict incidents, closures, weather or current traffic.
 ## Recording and successful sessions
 
 The recorder runs independently of map availability and of active guidance.
-Enable it before driving. The last saved GPS point in `gpslast.dat` is the
-fixed starting point of the new session, where available. Otherwise the first
-fresh valid fix establishes that point. No origin reconciliation is performed.
+Enable it before driving. The last saved GPS point in `gpslast.dat` is a provisional starting point
+where available. The first fresh valid fix establishes the origin if missing
+and replaces a saved point more than 100 m away, invalidating the old
+prediction. A fresh raw RMC time is required for a provisional startup offer,
+so the unit can suggest a destination even before position lock without
+relying on the display clock.
 The GPS heading stored by the previous session is not used as a departure
 direction.
 
@@ -87,7 +135,7 @@ request. It is handled before expensive route and rendering work. A session
 must have travelled at least 150 m and lasted 60 seconds, with an endpoint
 from a valid fix no older than two minutes, before it can train the model.
 A clean power-off adds a checksummed END record and commits the model.
-No arrival prompt, dwell-time arrival detector or GPS-loss heuristic is used.
+No arrival-time learning prompt, dwell-time arrival detector or GPS-loss completion heuristic is used. The optional frequent-place prompt occurs on a later stationary startup, not at the end of a journey.
 A device shutdown not observed by the application, a crash or an incomplete
 session does not count as a successful journey. Intermediate stops with
 Carminat still powered are part of the same session.
@@ -96,21 +144,42 @@ Raw date/time is assumed consistent, even if the actual calendar is wrong.
 The seven day indices are independent categories, not hardcoded weekdays and
 weekends. The display time adjustment, timezone and automatic theme continue
 to work exactly as before. They do not change the history clock. Traversal
-times use the monotonic clock. If time is unavailable, destination prediction
-uses spatial/frequency evidence until RMC time is received; road-speed learning
-and traffic estimation require valid raw time.
+times use the monotonic clock. If time is unavailable after a valid live position, prediction uses a more
+conservative spatial/frequency model. A previously confirmed position must
+remain fresh (within 15 seconds) to support an invitation; road-speed learning
+and traffic estimation still require valid raw time.
 
 ## Model and routing
 
-The contextual destination model stores up to 512 completed sessions. A
-bounded weighted scan compares origins within 300 m, cyclic time-of-day
-distance (up to four hours), seven day indices, session recency and the
-first 32 approximate 75 m-spaced trajectory points. Similar endpoints within
-100 m are combined. Three matching visits, sufficient absolute evidence
-and at least 65% of the relative candidate weight are required for a
-suggestion. These are heuristic weights, not calibrated probabilities.
-While driving, the model refreshes approximately every five seconds and
-uses the observed early trajectory to refine suggestions.
+The contextual destination model stores up to 512 completed sessions in the
+existing model format. A bounded weighted scan compares origins within 300 m,
+cyclic time-of-day distance (up to four hours), learned day-specific patterns
+and both session and calendar recency. A quadratic time kernel favours usual
+departure times. With at least three relevant same-day observations, the
+model favours that day more strongly; sparse day evidence falls back to
+pooled days rather than treating one observation as a routine. All seven day
+indices remain independent of hardcoded weekday/weekend assumptions.
+
+During movement, a forward-only segment match compares the first 32
+approximately 75 m-spaced trajectory samples against a bounded window of
+historical segments. Contradictory trajectories lose support. The model also
+withdraws a destination already reached or when the distance travelled plus
+the remaining direct distance is substantially beyond a historically plausible
+trip. The stored traces cover only the early route, not an entire journey.
+Predictions refresh at usable startup clock/position changes, then roughly
+every five seconds while moving.
+
+Similar endpoints within 100 m are combined, visiting the history ring newest
+first so a real recent endpoint anchors each cluster. New invitations require
+at least three independently weighted visits, sufficient absolute evidence and
+70% of the relative weight. Without a reliable departure time this becomes
+five visits and 80%. A still-leading displayed candidate can retain its
+identity at 55% (70% without time), reducing flicker; a new candidate must
+cross the higher entry threshold. Rejected locations are applied **after**
+ranking, so rejection does not falsely increase a weaker alternative's score.
+These are fixed-capacity, integer-only heuristics, not calibrated probabilities
+or a claim of measured real-world forecasting accuracy. A genuinely ambiguous
+context shows no suggestion.
 
 Road learning uses CPR2 v5 geometry when available. Samples are matched to
 nearby directed base arcs using position, heading, continuity and ambiguity
@@ -153,6 +222,8 @@ with a bug report or include them in Git/publication packages.
 | `clio843/history.prev.dat` | Previous rotated history segment. |
 | `clio843/mobility.dat` | Checksummed aggregate model committed on successful shutdown. |
 | `clio843/mobility.tmp` | Temporary replacement model during a save. |
+| `clio843/mobility-places.dat` | Private, checksummed frequent-place prompt locations. |
+| `clio843/mobility-places.tmp` | Temporary replacement of the prompt record. |
 
 The raw format is 28 bytes per little-endian record (approximately 101 kB
 per recorded hour, excluding markers); samples are buffered in blocks of
@@ -174,8 +245,10 @@ implementation does not remap old raw traces to replacement geometry.
 For development, see the [build guide](../BUILDING.md) and
 [release workflow](release-workflow.md). The standard host regression suite
 includes `mobility.c`, which checks time/day handling, complete-session
-learning, direction-specific profiles, exact-state candidate search and
-route splicing against a small directed fixture. A physical Carminat trial is
+learning, contextual prediction and confidence hysteresis, session dismissal,
+startup GPS reconciliation, frequent-place prompting and persistence,
+direction-specific profiles, exact-state candidate search and route splicing
+against a small directed fixture. A physical Carminat trial is
 needed to verify actual shutdown timing, GPS matching quality and performance.
 
 The optional local tool `tools/inspect_history.py` reports counts and durations
