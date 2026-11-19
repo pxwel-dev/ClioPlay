@@ -3,7 +3,7 @@
 This history records implemented changes. Entries marked **Unreleased** are prepared locally and have not been published.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
 
-## Version 2.2.0 — Unreleased
+## Version 2.2.0 — Release
 
 ### Changes in this version
 
