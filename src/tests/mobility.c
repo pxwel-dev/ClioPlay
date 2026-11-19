@@ -206,6 +206,7 @@ static void frequent_places(void){
  /* A name is resolved only after consent; show the latest name, not a stale draft. */
  copystr(recents[0].name,sizeof(recents[0].name),"WORKS");
  key_handle(K_LEFT);key_handle(K_ENTER);assert(sheet_page==P_NAME&&keyboard_origin==KBD_NAME_FREQUENT&&streq(kbd_text,"WORKS")&&nfaves==0);
+ assert(streq(menu_title(P_NAME),"Rename"));
  key_handle(K_ESC);assert(streq(kbd_text,"WORK"));pk_focus=PK_SAVE;key_handle(K_ENTER);
  assert(screen==SCR_MAP&&nfaves==1&&streq(faves[0].name,"WORK")&&faves[0].lat==pred_north.lat&&faves[0].lon==pred_north.lon&&!trip.active&&mob.n==5);
  frequent_fixture(now,e,1);frequent_wait(now,e);assert(sheet_page==P_CONFIRM);
