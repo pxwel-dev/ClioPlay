@@ -41,7 +41,7 @@ See the [full preview index](src/docs/demo/README.md) for all animations.
 
 | Frequent-place suggestion | Send a destination with [ClioPlay Send](https://pxwel-dev.github.io/ClioPlay-Send/) |
 | --- | --- |
-| <img src="src/docs/demo/v220-frequent-place.gif" width="450"> | <img src="src/docs/demo/phone-destination.gif" width="450"> |
+| <img src="src/docs/demo/v220-frequent-place.gif" width="400"> | <img src="src/docs/demo/phone-destination.gif" width="400"> |
 
 | Driving and camera alerts | Dynamically-resizing, animated frosted-glass menu |
 | --- | --- |
