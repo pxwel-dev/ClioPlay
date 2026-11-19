@@ -15,7 +15,7 @@ static int traffic_region=-2;
 static u32 traffic_offer_revision,traffic_saving,traffic_scan_ms,traffic_eta_ds,traffic_eta_revision;
 static u32 traffic_block_arc,traffic_base_ds;
 static int traffic_eta_head,traffic_slow_end;
-static u32 traffic_search_started;
+static u32 traffic_search_started,traffic_offer_serial;
 /* A route-local bit per incoming geometry segment. Declining one bypass
  * must not silence congestion elsewhere on this leg. Point indices stay
  * stable as route_head advances; a genuine route rebuild clears the bits. */
@@ -30,6 +30,54 @@ static int traffic_range_declined(int from,int to){
 }
 struct TrafficPoint {s32 lat,lon;u32 node,cost,arc,phys,m;};
 static struct TrafficPoint traffic_path[TRAFFIC_PATH_MAX];
+/* Geometry shared by both routes remains part of the solid main route.
+ * These flags are rebuilt once per published offer, never in a map frame. */
+static u8 traffic_shared_main[(ROUTE_PATH_MAX+7)/8],traffic_shared_alt[TRAFFIC_PATH_MAX];
+static int traffic_main_shared(int i){return (traffic_shared_main[i>>3]>>(i&7))&1;}
+static int traffic_same_segment(int i,int k){
+ return route_seg_arc[i]==traffic_path[k].arc&&route_lat[i-1]==traffic_path[k-1].lat&&
+  route_lon[i-1]==traffic_path[k-1].lon&&route_lat[i]==traffic_path[k].lat&&route_lon[i]==traffic_path[k].lon;
+}
+static u32 traffic_segment_hash(u32 arc,s32 lat0,s32 lon0,s32 lat1,s32 lon1){
+ u32 h=arc*16777619u;h=(h^(u32)lat0)*16777619u;h=(h^(u32)lon0)*16777619u;
+ h=(h^(u32)lat1)*16777619u;h=(h^(u32)lon1)*16777619u;return h^(h>>16);
+}
+/* Move the splice only to identical legal turn states, never a coincident
+ * coordinate alone. Do not change the active path or its costs here. */
+static int traffic_prepare_offer(void){
+ int a=traffic_begin_idx,b=traffic_join_idx,n=traffic_offer_n,pre=0,post=0;
+ for(int k=1;k<n&&a+k<=b&&traffic_same_segment(a+k,k);k++){
+  if(route_node[a+k]!=ROUTE_NOARC&&route_node[a+k]==traffic_path[k].node)pre=k;
+ }
+ for(int k=1;k<n-pre&&b-k>=a+pre&&traffic_same_segment(b-k+1,n-k);k++){
+  if(route_node[b-k]!=ROUTE_NOARC&&route_node[b-k]==traffic_path[n-k-1].node)post=k;
+ }
+ if(a+pre>=b-post||n-pre-post<2)return 0;
+ traffic_begin_idx=a+pre;traffic_join_idx=b-post;traffic_offer_n=n-pre-post;
+ if(pre)for(int k=0;k<traffic_offer_n;k++)traffic_path[k]=traffic_path[k+pre];
+ traffic_path[0].cost=traffic_path[0].m=0;traffic_path[0].arc=traffic_path[0].phys=ROUTE_NOARC;
+ memzero(traffic_shared_main,sizeof(traffic_shared_main));memzero(traffic_shared_alt,sizeof(traffic_shared_alt));
+ /* Index the candidate once. Directed arc and endpoints are hashed;
+  * verify exact geometry on collisions. No all-pairs scan in a map frame. */
+ enum {SHARED_SLOTS=2*TRAFFIC_PATH_MAX};
+ u16 slots[SHARED_SLOTS];memzero(slots,sizeof(slots));
+ for(int k=1;k<traffic_offer_n;k++){
+  u32 h=traffic_segment_hash(traffic_path[k].arc,traffic_path[k-1].lat,traffic_path[k-1].lon,traffic_path[k].lat,traffic_path[k].lon);
+  unsigned j=h&(SHARED_SLOTS-1);while(slots[j])j=(j+1)&(SHARED_SLOTS-1);slots[j]=(u16)k;
+ }
+ for(int i=traffic_begin_idx+1;i<=traffic_join_idx;i++){
+  u32 h=traffic_segment_hash(route_seg_arc[i],route_lat[i-1],route_lon[i-1],route_lat[i],route_lon[i]);
+  unsigned j=h&(SHARED_SLOTS-1);
+  while(slots[j]){int k=slots[j];if(traffic_same_segment(i,k)){traffic_shared_main[i>>3]|=(u8)(1u<<(i&7));traffic_shared_alt[k]=1;}j=(j+1)&(SHARED_SLOTS-1);}
+ }
+ traffic_offer_serial++;render_background_dirty=1;return 1;
+}
+static u32 traffic_decision_m(void){
+ if(traffic_begin_idx<=route_head||traffic_begin_idx>=route_n)return 0;
+ u32 m=geo_seg_m(car_lat(),car_lon(),route_lat[route_head+1],route_lon[route_head+1]);
+ for(int i=route_head+2;i<=traffic_begin_idx;i++)m=sat_add32(m,route_seg_m[i]);
+ return m;
+}
 struct TrafficState {u32 node,cost,arc;int next,done;};
 static struct TrafficState traffic_states[TRAFFIC_SEARCH_MAX];
 static unsigned traffic_state_n;
@@ -39,6 +87,7 @@ static int traffic_warn;
 static void traffic_reset_offer(void){
  traffic_offer_n=traffic_searching=traffic_warn=0;traffic_begin_idx=traffic_join_idx=-1;
  traffic_scan_ms=0;traffic_eta_revision=0xffffffffu;traffic_saving=0;traffic_route_revision++;
+ memzero(traffic_shared_main,sizeof(traffic_shared_main));memzero(traffic_shared_alt,sizeof(traffic_shared_alt));render_background_dirty=1;
 }
 static void traffic_invalidate(void){
  traffic_reset_offer();memzero(traffic_declined,sizeof(traffic_declined));
@@ -198,7 +247,8 @@ static int traffic_build_candidate(int idx,u32 now){
  u32 remaining=traffic_remaining_cost();
  if(saving<TRAFFIC_MIN_SAVING_DS||saving<remaining/10u)return 0;
  if(route_n-(traffic_join_idx-traffic_begin_idx)+(n-1)>ROUTE_PATH_MAX)return 0;
- traffic_offer_n=n;traffic_saving=saving;return 1;
+ traffic_offer_n=n;traffic_saving=saving;
+ if(!traffic_prepare_offer()){traffic_offer_n=0;traffic_saving=0;return 0;}return 1;
 }
 static void traffic_search_step(u32 now){
  if(!traffic_search_valid()||now-traffic_search_started>5000u){traffic_search_cancel();return;}
@@ -266,8 +316,8 @@ static void traffic_scan(u32 now){
 }
 static void traffic_service(u32 now){
  if(!pref.diversions||!pref.learn_history||mob.n<5||!gps.fix||mob_time(now)==MOB_UNKNOWN||!routeok||route_status!=R_READY||atlas_probe||
-  (atlas_ready&&atlas_owner(car_lat(),car_lon())!=atlas_route_region)){traffic_offer_n=traffic_warn=0;traffic_search_cancel();return;}
- if(traffic_offer_n&&!traffic_offer_valid()){traffic_offer_n=0;traffic_saving=0;}
+  (atlas_ready&&atlas_owner(car_lat(),car_lon())!=atlas_route_region)){if(traffic_offer_n)render_background_dirty=1;traffic_offer_n=traffic_warn=0;traffic_search_cancel();return;}
+ if(traffic_offer_n&&!traffic_offer_valid()){traffic_offer_n=0;traffic_saving=0;render_background_dirty=1;}
  if(traffic_searching){traffic_search_step(now);return;}
  if(route_head>=traffic_slow_end)traffic_warn=0;
  if(traffic_scan_ms&&now-traffic_scan_ms<15000u&&route_head-traffic_eta_head<64)return;

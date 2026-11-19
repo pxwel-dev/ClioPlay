@@ -189,7 +189,6 @@
   "Save favourite": "Αποθήκευση αγαπημένου",
   "Connect": "Σύνδεση",
   "Likely traffic ahead": "Πιθανή κίνηση μπροστά",
-  "Trip: save ~": "Διαδρομή: κέρδος ~",
   "Based on driving history": "Με βάση το ιστορικό οδήγησης",
   "Journeys: ": "Διαδρομές: ",
   "History cleared": "Το ιστορικό διαγράφηκε",
@@ -220,5 +219,10 @@
   "S": "Ν",
   "SW": "ΝΔ",
   "W": "Δ",
-  "NW": "ΒΔ"
+  "NW": "ΒΔ",
+  "Faster route available": "Διαθέσιμη ταχύτερη διαδρομή",
+  "Save ~": "Κέρδος ~",
+  "Decision: ": "Απόφαση: ",
+  "BACK to review": "Πίσω για προβολή",
+  "OK to review": "OK για προβολή"
 }

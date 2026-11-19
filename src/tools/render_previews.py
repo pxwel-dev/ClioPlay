@@ -218,11 +218,12 @@ def main():
                 'runs to R_READY on the local map bundle; target coordinates and nonempty '
                 'route geometry are asserted. GPS is held stationary. The 1.3-second '
                 'calculation display is a controlled preview interval, not a timing benchmark.')
-       	reports['v220-intelligent-diversions.gif']['routing_provenance'] = (
+        reports['v220-intelligent-diversions.gif']['routing_provenance'] = (
             'Real Newcastle route and legal alternative geometry from '
             'the installed CPR2 routing graph. Historical congestion '
             'observations are controlled examples. The production traffic '
-            'search and remote confirmation handler are used. This is '
+            'search, shared-geometry rendering, BT CTRL and direct map '
+            'confirmation handler are used. This is '
             'not a claim about actual traffic conditions.'
         )
         generator_paths = ('tools/render_previews.py', 'tools/render_gallery.py', 'tools/text_engine.py', 'tools/mobility_stories.py',
@@ -230,11 +231,11 @@ def main():
         manifest = {
             'schema': 'clioplay-readme-previews-1',
             'framebuffer': '480x272 RGB565 from production C draw() and key_handle()',
-			'example': (
-				'Newcastle upon Tyne, with simulated car and phone inputs; '
-				'2.2.0 uses controlled learned records and a real '
-				'map-backed diversion calculated by production routing'
-				),
+            'example': (
+                'Newcastle upon Tyne, with simulated car and phone inputs; '
+                '2.2.0 uses controlled learned records and a real '
+                'map-backed diversion calculated by production routing'
+            ),
             'native_sources': capture['native_sources'],
             'executables': capture['executables'],
             'generator_inputs': {path: sha(ROOT / path) for path in generator_paths},

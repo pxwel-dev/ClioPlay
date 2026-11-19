@@ -780,10 +780,6 @@
       "Ralentissements probables",
       "Tráfico probable"
     ],
-    "Trip: save ~": [
-      "Trajet : gain ~",
-      "Viaje: ahorra ~"
-    ],
     "Based on driving history": [
       "Selon vos trajets",
       "Según tus trayectos"
@@ -907,6 +903,26 @@
     "NW": [
       "NO",
       "NO"
+    ],
+    "Faster route available": [
+      "Trajet plus rapide",
+      "Ruta más rápida disponible"
+    ],
+    "Save ~": [
+      "Gain ~",
+      "Ahorra ~"
+    ],
+    "Decision: ": [
+      "Décision : ",
+      "Decisión: "
+    ],
+    "BACK to review": [
+      "Retour pour voir",
+      "Atrás para ver"
+    ],
+    "OK to review": [
+      "OK pour voir",
+      "OK para ver"
     ]
   },
   "language_names": {

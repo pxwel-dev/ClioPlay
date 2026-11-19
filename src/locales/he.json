@@ -189,7 +189,6 @@
   "Save favourite": "שמירה במועדפים",
   "Connect": "התחברות",
   "Likely traffic ahead": "עומס צפוי בהמשך",
-  "Trip: save ~": "נסיעה: חיסכון ~",
   "Based on driving history": "לפי היסטוריית הנהיגה",
   "Journeys: ": "נסיעות: ",
   "History cleared": "ההיסטוריה נוקתה",
@@ -220,5 +219,10 @@
   "S": "ד",
   "SW": "דמע",
   "W": "מע",
-  "NW": "צמע"
+  "NW": "צמע",
+  "Faster route available": "יש מסלול מהיר יותר",
+  "Save ~": "חיסכון ~",
+  "Decision: ": "נקודת החלטה: ",
+  "BACK to review": "חזרה לבדיקה",
+  "OK to review": "OK לבדיקה"
 }

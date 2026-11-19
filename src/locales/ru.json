@@ -189,7 +189,6 @@
   "Save favourite": "Сохранить в избранное",
   "Connect": "Подключить",
   "Likely traffic ahead": "Возможны пробки впереди",
-  "Trip: save ~": "Поездка: экономия ~",
   "Based on driving history": "По истории поездок",
   "Journeys: ": "Поездки: ",
   "History cleared": "История очищена",
@@ -220,5 +219,10 @@
   "S": "Ю",
   "SW": "ЮЗ",
   "W": "З",
-  "NW": "СЗ"
+  "NW": "СЗ",
+  "Faster route available": "Есть более быстрый маршрут",
+  "Save ~": "Экономия ~",
+  "Decision: ": "Решение: ",
+  "BACK to review": "Назад для просмотра",
+  "OK to review": "OK для просмотра"
 }

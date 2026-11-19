@@ -189,7 +189,6 @@
   "Save favourite": "Favoriet opslaan",
   "Connect": "Verbinden",
   "Likely traffic ahead": "Waarschijnlijk drukte",
-  "Trip: save ~": "Rit: bespaar ~",
   "Based on driving history": "Op basis van je ritten",
   "Journeys: ": "Ritten: ",
   "History cleared": "Geschiedenis gewist",
@@ -220,5 +219,10 @@
   "S": "Z",
   "SW": "ZW",
   "W": "W",
-  "NW": "NW"
+  "NW": "NW",
+  "Faster route available": "Snellere route beschikbaar",
+  "Save ~": "Bespaar ~",
+  "Decision: ": "Beslissen: ",
+  "BACK to review": "Terug om te bekijken",
+  "OK to review": "OK om te bekijken"
 }

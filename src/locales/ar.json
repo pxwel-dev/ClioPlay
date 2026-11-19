@@ -189,7 +189,6 @@
   "Save favourite": "حفظ في المفضلة",
   "Connect": "اتصال",
   "Likely traffic ahead": "ازدحام محتمل أمامك",
-  "Trip: save ~": "الرحلة: وفر ~",
   "Based on driving history": "استنادا إلى سجل القيادة",
   "Journeys: ": "الرحلات: ",
   "History cleared": "تم مسح السجل",
@@ -220,5 +219,10 @@
   "S": "ج",
   "SW": "ج.غ",
   "W": "غ",
-  "NW": "ش.غ"
+  "NW": "ش.غ",
+  "Faster route available": "يتوفر مسار أسرع",
+  "Save ~": "توفير ~",
+  "Decision: ": "القرار: ",
+  "BACK to review": "رجوع للمراجعة",
+  "OK to review": "OK للمراجعة"
 }

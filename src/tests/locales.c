@@ -26,6 +26,10 @@ int main(int argc,char**argv){assert(argc==3&&load_font()&&cliou_load(argv[1]));
   assert(streq(place_display_name("MAP POINT"),ui_tr("Map point"))&&streq(place_display_name("PHONE DESTINATION"),ui_tr("Phone destination"))&&streq(place_display_name("Settings"),"Settings"));
   copystr(btui.status,sizeof(btui.status),"BT DAEMON ERROR");pref.debug=0;assert(streq(bt_status_text(),lang?ui_tr("Phone connection unavailable"):"Bluetooth unavailable"));btui.status[0]=0;
   for(unsigned i=0;i<sizeof(locale_cases)/sizeof(locale_cases[0]);i++){assert(streq(ui_tr(locale_cases[i][0]),locale_cases[i][lang]));whole_utf8(locale_cases[i][lang]);assert(cliou_width(locale_cases[i][lang],1)>0);}
+  /* The action hint must always fit an available status HUD column. */
+  assert(width(ui_tr("BACK to review"),0)<=220&&width(ui_tr("OK to review"),0)<=220);
+  assert(width(ui_tr("Faster route available"),0)<=280);
+  char traffic_line[112];copystr(traffic_line,sizeof(traffic_line),ui_tr("Save ~"));append_eta(traffic_line,sizeof(traffic_line),3600);appendstr(traffic_line,sizeof(traffic_line)," / ");appendstr(traffic_line,sizeof(traffic_line),ui_tr("Decision: "));appendstr(traffic_line,sizeof(traffic_line),"350 yd");whole_utf8(traffic_line);assert(width(traffic_line,0)<=300);
   kbd_language=lang;kbd_page=0;for(int i=36;i<40;i++){if(!keyboard_valid_focus(i))continue;char b[16];const char*key=key_label(i,b);int limit=101;if(width(key,0)>limit)fprintf(stderr,"Key overflow %s %d: %s (%d)\n",ui_language_codes[lang],i,key,width(key,0));assert(width(key,0)<=limit);}
   const char*states[]={"Ready","Calc","No data","No road","No route","Mem full","Error","Wait","Done","Wait"};int over=0;for(unsigned i=0;i<sizeof(states)/sizeof(states[0]);i++){int w=width(ui_tr(states[i]),0);if(w>104){fprintf(stderr,"Status overflow %s %s: %s (%d)\n",ui_language_codes[lang],states[i],ui_tr(states[i]),w);over++;}}if(over)return 1;assert(width(ui_tr("CTRL"),0)<=52);
   nav_man_type=MAN_ROUNDABOUT;nav_man_exit=123;const char*exit=nav_man_text();whole_utf8(exit);assert(strstr(exit,"123"));assert(slen(exit)<64);

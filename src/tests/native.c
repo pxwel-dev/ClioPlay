@@ -89,7 +89,7 @@ static void preview_diversion_seed(void){
  traffic_warn=1;traffic_eta_revision=traffic_route_revision;traffic_slow_end=2;traffic_eta_ds=2000;traffic_saving=3550;
  trip.active=1;trip.count=1;trip.active_idx=0;
  copystr(trip.target[0].name,sizeof(trip.target[0].name),"Work");
- assert(traffic_offer_valid());
+ assert(traffic_prepare_offer()&&traffic_offer_valid());
 }
 
 static void scenes(void){

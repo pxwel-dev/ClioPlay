@@ -189,7 +189,6 @@
   "Save favourite": "Zapisz ulubione",
   "Connect": "Połącz",
   "Likely traffic ahead": "Możliwe korki",
-  "Trip: save ~": "Trasa: zysk ~",
   "Based on driving history": "Na podstawie historii jazdy",
   "Journeys: ": "Przejazdy: ",
   "History cleared": "Historia wyczyszczona",
@@ -220,5 +219,10 @@
   "S": "Pd",
   "SW": "Pd-Z",
   "W": "Zach",
-  "NW": "Pn-Z"
+  "NW": "Pn-Z",
+  "Faster route available": "Dostępna szybsza trasa",
+  "Save ~": "Zysk ~",
+  "Decision: ": "Decyzja: ",
+  "BACK to review": "Wstecz, aby sprawdzić",
+  "OK to review": "OK, aby sprawdzić"
 }

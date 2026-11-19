@@ -189,7 +189,6 @@
   "Save favourite": "保存收藏",
   "Connect": "连接",
   "Likely traffic ahead": "前方可能拥堵",
-  "Trip: save ~": "行程：节省 ~",
   "Based on driving history": "基于驾驶历史",
   "Journeys: ": "行程： ",
   "History cleared": "历史已清除",
@@ -220,5 +219,10 @@
   "S": "南",
   "SW": "西南",
   "W": "西",
-  "NW": "西北"
+  "NW": "西北",
+  "Faster route available": "有更快的路线",
+  "Save ~": "节省约",
+  "Decision: ": "决策点： ",
+  "BACK to review": "返回键查看",
+  "OK to review": "OK 键查看"
 }

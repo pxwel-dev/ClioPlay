@@ -147,26 +147,60 @@ static void two_diversions(void){
  for(int i=1;i<=6;i+=5){u32 k=traffic_key_for_arc(i,0);assert(k);struct MobRoad*r=mob_road_find(k,mob_bucket(epoch),1);assert(r);r->count=20;r->stamp=20;r->mean_ds=cost[i]*5u;}
  traffic_scan(100);assert(traffic_searching&&traffic_block_arc==1&&traffic_begin_idx==1&&traffic_join_idx==3);
  for(int i=0;i<100&&traffic_searching;i++)traffic_search_step(100+i*10);
- assert(traffic_offer_valid());u32 eta=traffic_remaining_cost();assert(eta>route_result_cost);
+ assert(traffic_offer_valid()&&traffic_begin_idx==1&&traffic_join_idx==2);u32 eta=traffic_remaining_cost();assert(eta>route_result_cost);
  trip.active=trip.count=1;trip.active_idx=0;hud_capture_clock=1;hud_capture_ms=1000;
  menu_reset(hud_now_ms());menu_open(P_TRIP,trip.count+2,hud_now_ms());key_handle(K_ENTER);
  assert(sheet_page==P_CONFIRM&&confirm_kind==3&&sheet_focus==0);
  key_handle(K_RIGHT);assert(sheet_focus==1);key_handle(K_ENTER);
  assert(sheet_page==P_TRIP&&!traffic_offer_valid()&&route_n==7&&route_node[2]==2);
- assert(traffic_segment_declined(2)&&traffic_segment_declined(3)&&!traffic_segment_declined(5));
+ assert(traffic_segment_declined(2)&&!traffic_segment_declined(3)&&!traffic_segment_declined(5));
  assert(traffic_warn&&traffic_remaining_cost()==eta&&!traffic_scan_ms);
  traffic_scan(1100);assert(traffic_searching&&traffic_block_arc==6&&traffic_begin_idx==4&&traffic_join_idx==6);
  for(int i=0;i<100&&traffic_searching;i++)traffic_search_step(1100+i*10);
- assert(traffic_offer_valid()&&traffic_path[1].node==8);
+ assert(traffic_offer_valid()&&traffic_path[1].node==8&&traffic_join_idx==5);
  menu_open(P_TRIP,trip.count+2,hud_now_ms());key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&sheet_focus==0);
  /* Simulate an obsolete dialog identity; declining it must not clear the current offer. */
  confirm_diversion_revision--;key_handle(K_RIGHT);key_handle(K_ENTER);
  assert(sheet_page==P_TRIP&&traffic_offer_valid()&&!traffic_segment_declined(5));
- menu_open(P_TRIP,trip.count+2,hud_now_ms());key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&sheet_focus==0);
- key_handle(K_ENTER);assert(!traffic_offer_valid()&&route_n==8&&route_node[5]==8);
- assert(traffic_segment_declined(2)&&traffic_segment_declined(3)&&traffic_segment_declined(5));
+ /* Map shortcut respects BT CTRL, Explore and console Info. */
+ menu_close(hud_now_ms());freecam=0;modal=MOD_NONE;screen=SCR_MAP;
+ gps.lat=track_lat=route_lat[0];gps.lon=track_lon=route_lon[0];track_valid=1;
+ hw_bluetooth_enabled=btui.connected=1;set_band("CD");btui.playing=1;
+ assert(bt_controls_available());bt_control_mode=1;hud_capture_ms+=500;
+ hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
+ assert(streq(hud_tween[HC_STATUS].target.traffic_hint,"BACK to review"));
+ assert(hud_tween[HC_STATUS].target.flags&HUD_KEYS);assert(!hud_diversion_shortcut_ready());
+ key_handle(K_ENTER);assert(screen==SCR_MAP&&bt_control_mode&&traffic_offer_valid()&&bt_transport_press.kind==BT_TRANSPORT_PLAY_PAUSE);
+ key_handle(K_BACK);assert(!bt_control_mode&&screen==SCR_MAP);
+ hud_capture_ms+=500;hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
+ assert(streq(hud_tween[HC_STATUS].target.traffic_hint,"OK to review")&&hud_diversion_shortcut_ready());
+ key_handle(K_CONSOLE_INFO);assert(screen==SCR_MAP&&hud_navigation.kind==HUD_JOURNEY);
+ pref.autozoom=1;zoom_override=5;
+ key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&sheet_focus==0&&confirm_diversion_map);
+ key_handle(K_BACK);assert(screen==SCR_MAP&&traffic_offer_valid()&&zoom_override==5);
+ hud_capture_ms+=500;hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
+ assert(hud_diversion_shortcut_ready());key_handle(K_ENTER);assert(sheet_page==P_CONFIRM);
+ /* A new offer with the same endpoints is still a different identity. */
+ traffic_offer_serial++;key_handle(K_ENTER);assert(screen==SCR_MAP&&traffic_offer_valid()&&route_n==7);
+ hud_capture_ms+=500;hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
+ assert(hud_diversion_shortcut_ready());key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&sheet_focus==0);
+ key_handle(K_ENTER);assert(screen==SCR_MAP&&zoom_override==5);assert(!traffic_offer_valid()&&route_n==8&&route_node[5]==8);
+ assert(traffic_segment_declined(2)&&!traffic_segment_declined(3)&&traffic_segment_declined(5));
  traffic_scan(1200);assert(!traffic_searching&&!traffic_offer_valid());
  traffic_invalidate();assert(!traffic_segment_declined(2)&&!traffic_segment_declined(5));
  fclose(f);routefd=-1;routeok=0;mob_clear();
 }
-int main(void){learner();tiny_graph();two_diversions();puts("Mobility recording, date, prediction, road profiles, exact-state diversion, section-local dismissal and default-Yes regression passed.");return 0;}
+static void shared_geometry(void){
+ traffic_invalidate();route_head=0;route_n=7;route_status=R_READY;gps.fix=pref.learn_history=pref.diversions=1;
+ for(int i=0;i<7;i++){route_lat[i]=5497000+i*100;route_lon[i]=-161000;route_node[i]=i;route_seg_arc[i]=i;route_seg_phys[i]=2*i;route_seg_m[i]=110;route_seg_cost[i]=100;}
+ traffic_begin_idx=1;traffic_join_idx=6;traffic_offer_n=6;traffic_region=atlas_route_region;traffic_offer_revision=traffic_route_revision;
+ for(int i=0;i<6;i++){int j=i+1;traffic_path[i]=(struct TrafficPoint){route_lat[j],route_lon[j],route_node[j],100,route_seg_arc[j],route_seg_phys[j],110};}
+ /* Distinct bypass: common prefix 1->2, 2->4 off the original, then common suffix 4->5->6. */
+ traffic_path[2].lon+=100;traffic_path[2].node=99;traffic_path[2].arc=99;traffic_path[3].arc=100;
+ assert(traffic_prepare_offer()&&traffic_offer_valid());
+ assert(traffic_begin_idx==2&&traffic_join_idx==4&&traffic_offer_n==3);
+ assert(route_overlay_slot(2,1)==0&&route_overlay_slot(3,1)==1&&route_overlay_slot(4,1)==1&&route_overlay_slot(5,1)==0);
+ route_head=1;assert(traffic_offer_valid());route_head=2;assert(!traffic_offer_valid());
+ traffic_invalidate();route_head=0;
+}
+int main(void){learner();shared_geometry();tiny_graph();two_diversions();puts("Mobility recording, date, prediction, road profiles, exact-state diversion, section-local dismissal and default-Yes regression passed.");return 0;}

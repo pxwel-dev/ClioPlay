@@ -5,11 +5,12 @@ enum {P_CLOSED,P_HOME,P_SETTINGS,P_TRIP,P_PLACES,P_STOP,P_DEST,P_PLACE,
 static int sheet_page,sheet_focus,sheet_old_page,sheet_old_focus,sheet_stack_page[12],sheet_stack_focus[12],sheet_depth;
 static int places_tab,place_index,stop_index,flow_action,language_keyboard,trip_tab_focus[3];
 static int keyboard_origin,phone_index,confirm_kind;
-static u32 confirm_diversion_revision;
+static u32 confirm_diversion_revision,confirm_diversion_serial;
+static int confirm_diversion_map;
 static int confirm_diversion_begin,confirm_diversion_join;
 /* A delayed response must never act on a replacement offer. */
 static int menu_diversion_current(void){
- return traffic_offer_valid()&&confirm_diversion_revision==traffic_offer_revision&&
+ return traffic_offer_valid()&&confirm_diversion_revision==traffic_offer_revision&&confirm_diversion_serial==traffic_offer_serial&&
   confirm_diversion_begin==traffic_begin_idx&&confirm_diversion_join==traffic_join_idx;
 }
 static char phone_addr[18];
@@ -73,6 +74,13 @@ static void menu_change(int next,int selected,u32 now){
 }
 static void menu_push(int next,int selected,u32 now){if(sheet_depth>=12)return;sheet_stack_page[sheet_depth]=sheet_page;sheet_stack_focus[sheet_depth++]=sheet_focus;menu_change(next,selected,now);}
 static void menu_back(u32 now){if(sheet_depth){sheet_depth--;menu_change(sheet_stack_page[sheet_depth],sheet_stack_focus[sheet_depth],now);}else menu_change(P_CLOSED,0,now);}
+static void menu_open_diversion(int from_map,u32 now){
+ if(!traffic_offer_valid())return;
+ confirm_kind=3;confirm_diversion_revision=traffic_offer_revision;confirm_diversion_serial=traffic_offer_serial;
+ confirm_diversion_begin=traffic_begin_idx;confirm_diversion_join=traffic_join_idx;confirm_diversion_map=from_map;
+ if(from_map){sheet_depth=0;menu_change(P_CONFIRM,0,now);}else menu_push(P_CONFIRM,0,now);
+ menu_pending=1;
+}
 static int place_count(void){return places_tab?nfaves:nrecents;}
 static int places_visible(struct HudBox b){int n=(b.h-67)/22;return n<1?1:n;}
 static int menu_count(int p){
@@ -117,7 +125,7 @@ static void menu_key(int code,u32 now){
   if(sheet_page==P_COORD){coordinate_move(code);return;}
   code=d>0?K_DOWN:K_UP;
  }
- if(code==K_MAP){menu_close(now);recenter_map();return;}
+ if(code==K_MAP){int keep=sheet_page==P_CONFIRM&&confirm_kind==3&&confirm_diversion_map;menu_close(now);if(!keep)recenter_map();return;}
  if(code==K_MENU){coordinates_active=0;kbd_picker=0;sheet_depth=0;bt_control_mode=0;menu_change(P_HOME,0,now);return;}
  if(sheet_page==P_NAME){
   pk_prepare();
@@ -191,9 +199,7 @@ static void menu_key(int code,u32 now){
   if(sheet_focus<trip.count){stop_index=sheet_focus;copystr(context_name,sizeof(context_name),trip.target[sheet_focus].name);menu_push(sheet_focus==trip.count-1?P_DEST:P_STOP,0,now);}
   else if(sheet_focus==trip.count){if(trip.count>=TRIP_MAX_TARGETS)return;open_sources(DEST_PICK_ADD_STOP,now);}
   else if(sheet_focus==trip.count+2&&traffic_offer_valid()){
-   confirm_kind=3;confirm_diversion_revision=traffic_offer_revision;
-   confirm_diversion_begin=traffic_begin_idx;confirm_diversion_join=traffic_join_idx;
-   menu_push(P_CONFIRM,0,now);
+   menu_open_diversion(0,now);
   }
   else if(sheet_focus==trip.count+1){confirm_kind=0;menu_push(P_CONFIRM,1,now);}return;
  }
@@ -246,10 +252,10 @@ static void menu_key(int code,u32 now){
   if(confirm_kind==2){if(sheet_focus==0){mob_clear();traffic_invalidate();traffic_learning_reset();notice_success(ui_tr("History cleared"));}menu_back(now);return;}
   if(confirm_kind==3){
    if(menu_diversion_current()){
-    if(sheet_focus==0){if(traffic_accept()){notice_success(ui_tr("Diversion selected"));menu_close(now);recenter_map();return;}}
+    if(sheet_focus==0){if(traffic_accept()){notice_success(ui_tr("Diversion selected"));menu_close(now);if(freecam)recenter_map();return;}}
     else traffic_reject();
    }
-   menu_return_trip(trip.active_idx,now);return;
+   if(confirm_diversion_map)menu_close(now);else menu_return_trip(trip.active_idx,now);return;
   }
   if(sheet_focus==0){if(confirm_kind==0){clear_trip();notice_success(ui_tr("Route cancelled"));}else trip_remove_stop(stop_index);}
   menu_return_trip(stop_index<trip.count?stop_index:0,now);return;
@@ -476,6 +482,7 @@ static void menu_contents(int p,int selected,struct HudBox b,int opacity,u32 now
   else if(confirm_kind==2)copystr(detail,sizeof(detail),ui_tr("Delete learned journeys and traffic"));
   else copystr(detail,sizeof(detail),place_display_name(confirm_kind?context_name:trip.count?trip.target[trip.count-1].name:""));
   text_value(b.x+14,b.y+29,b.w-28,detail,opacity);
+  if(confirm_kind==3&&b.h>=92&&menu_diversion_current())text_value(b.x+14,b.y+43,b.w-28,ui_tr("Based on driving history"),opacity);
   int w=(b.w-40)/2;const char*choices[]={"Yes","No"};
   for(int i=0;i<2;i++){int x=b.x+14+i*(w+12);menu_tile(x,b.y+b.h-34,w,24,selected==i,opacity);hud_ink_alpha=opacity;box_text(x,b.y+b.h-34,w,24,1,ui_tr(choices[i]),selected==i?C_ACTIVE_TEXT:C_WHITE);}return;
  }

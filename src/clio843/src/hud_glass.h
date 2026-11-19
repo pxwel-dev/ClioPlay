@@ -6,7 +6,8 @@ struct HudCard {
  struct HudBox box;
  int kind, flags, value;
  u16 ink;
- char title[193], detail[112], tag[24], badge[24], connection[96], feedback[112];
+ char title[193], detail[112], tag[24], badge[24], connection[96], feedback[112], traffic_title[112], traffic_detail[112], traffic_hint[80];
+ u32 traffic_serial;
 };
 struct HudTween {
  struct HudBox from;
@@ -26,12 +27,14 @@ static int hud_box_eq(struct HudBox a,struct HudBox b){
 static int hud_content_eq(const struct HudCard*a,const struct HudCard*b){
  return a->kind==b->kind&&a->flags==b->flags&&a->value==b->value&&a->ink==b->ink&&
   streq(a->title,b->title)&&streq(a->detail,b->detail)&&streq(a->tag,b->tag)&&streq(a->badge,b->badge)&&
-  streq(a->connection,b->connection)&&streq(a->feedback,b->feedback);
+  streq(a->connection,b->connection)&&streq(a->feedback,b->feedback)&&
+  streq(a->traffic_title,b->traffic_title)&&streq(a->traffic_detail,b->traffic_detail)&&streq(a->traffic_hint,b->traffic_hint)&&a->traffic_serial==b->traffic_serial;
 }
 static int hud_same_status_except_volume(const struct HudCard*a,const struct HudCard*b){
  return a->kind==b->kind&&a->flags==b->flags&&a->value==b->value&&a->ink==b->ink&&streq(a->tag,b->tag)&&
   (a->kind==HUD_VOLUME||streq(a->title,b->title))&&streq(a->detail,b->detail)&&
-  streq(a->connection,b->connection)&&streq(a->feedback,b->feedback);
+  streq(a->connection,b->connection)&&streq(a->feedback,b->feedback)&&
+  streq(a->traffic_title,b->traffic_title)&&streq(a->traffic_hint,b->traffic_hint)&&a->traffic_serial==b->traffic_serial;
 }
 /* Existing numeric channels may crossfade at the map cadence. New labels,
  * notification rows, symbols and geometry retain the faster transition clock. */

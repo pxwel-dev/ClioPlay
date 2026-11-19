@@ -564,7 +564,7 @@ static void poll_gps(void){if(gpsfd<0)gpsfd=(int)s_open(GPS_PATH,O_RDONLY_|O_NON
 
 /* One current transient per domain; repeated knob events replace the value
  * without replaying the entrance animation. Millisecond subtraction wraps. */
-enum {HUD_NONE,HUD_SOURCE,HUD_VOLUME,HUD_MANUAL_ZOOM,HUD_JOURNEY,HUD_HEADING,HUD_FAILURE,HUD_MEDIA,HUD_CALC,HUD_NOTICE,HUD_CONNECTION,HUD_BT_FEEDBACK,HUD_SYSTEM,HUD_TRACK,HUD_EXPLORE,HUD_AUTO_ZOOM};
+enum {HUD_NONE,HUD_SOURCE,HUD_VOLUME,HUD_MANUAL_ZOOM,HUD_JOURNEY,HUD_HEADING,HUD_FAILURE,HUD_MEDIA,HUD_CALC,HUD_NOTICE,HUD_CONNECTION,HUD_BT_FEEDBACK,HUD_SYSTEM,HUD_TRACK,HUD_EXPLORE,HUD_AUTO_ZOOM,HUD_TRAFFIC};
 #ifdef HOST_TEST
 static int hud_capture_clock;
 static u32 hud_capture_ms;
@@ -2185,7 +2185,7 @@ static void append_eta(char*b,unsigned cap,u32 ds){u32 min=udiv32(ds+300u,600u);
 static void append_arrival_clock(char*b,unsigned cap,u32 ds){int mt=local_clock_minutes();if(mt<0){appendstr(b,cap,"--:--");return;}u32 add=udiv32(ds+300u,600u);mt=(mt+(int)(add%1440u))%1440;char t[6];t[0]=(char)('0'+mt/600);t[1]=(char)('0'+(mt/60)%10);t[2]=':';t[3]=(char)('0'+(mt%60)/10);t[4]=(char)('0'+mt%10);t[5]=0;appendstr(b,cap,t);}
 static void route_draw_window(int*ps,int*pe){int first=route_head+1,last=route_n-1;if(first>last){*ps=1;*pe=0;return;}if(last-first+1<=ROUTE_DRAW_MAX_SEGMENTS){*ps=first;*pe=last;return;}if(!freecam){*ps=first;*pe=first+ROUTE_DRAW_MAX_SEGMENTS-1;if(*pe>last)*pe=last;return;}s32 vl=view_lat(),vo=view_lon();int cq=coslat_q15(vl),best=first;u32 bd=0xffffffffu;for(int i=first;i<=last;i+=64){s32 dx=lon_scale(route_lon[i]-vo,cq),dy=route_lat[i]-vl;u32 d=square_distance(dx,dy);if(d<bd){bd=d;best=i;}}{s32 dx=lon_scale(route_lon[last]-vo,cq),dy=route_lat[last]-vl;u32 d=square_distance(dx,dy);if(d<bd)best=last;}int half=ROUTE_DRAW_MAX_SEGMENTS/2,s=best-half;if(s<first)s=first;int e=s+ROUTE_DRAW_MAX_SEGMENTS-1;if(e>last){e=last;s=e-ROUTE_DRAW_MAX_SEGMENTS+1;if(s<first)s=first;}*ps=s;*pe=e;}
 /* Segment i runs from vertex i-1 to i. Highlight only the bypassed interval. */
-static int route_overlay_slot(int i,int offered){return offered&&i>traffic_begin_idx&&i<=traffic_join_idx?1:0;}
+static int route_overlay_slot(int i,int offered){return offered&&i>traffic_begin_idx&&i<=traffic_join_idx&&!traffic_main_shared(i)?1:0;}
 static void draw_route_overlay(int z){
  if(route_status!=R_READY||route_n-route_head<2)return;
  int s,e;route_draw_window(&s,&e);if(s>e)return;
@@ -2210,13 +2210,14 @@ static void draw_route_overlay(int z){
  }
  if(n>1)map_stroke_polyline(x,y,n,slot?C_ROUTE_SKIPPED:C_ROUTE,3);
  if(offered){
-  int an=0;map_mask_select(2);
-  for(int i=0;i<traffic_offer_n;i++){
-   if(!(i&31))render_checkpoint();
-   map_project_q8(traffic_path[i].lat,traffic_path[i].lon,z,&x[an],&y[an]);
-   if(++an==255){map_stroke_polyline(x,y,an,C_ROUTE_DIVERSION,3);x[0]=x[an-1];y[0]=y[an-1];an=1;}
+  int phase=0,px,py;map_mask_select(2);
+  map_project_q8(traffic_path[0].lat,traffic_path[0].lon,z,&px,&py);
+  for(int i=1;i<traffic_offer_n;i++){
+   if(!(i&31))render_checkpoint();int nx,ny;
+   map_project_q8(traffic_path[i].lat,traffic_path[i].lon,z,&nx,&ny);
+   if(!traffic_shared_alt[i])map_dash_segment(px,py,nx,ny,C_ROUTE_DIVERSION,&phase);else phase=0;
+   px=nx;py=ny;
   }
-  if(an>1)map_stroke_polyline(x,y,an,C_ROUTE_DIVERSION,3);
  }
  map_mask_end();
 }
@@ -2512,26 +2513,45 @@ static char notice_text[40]; /* Latest action, also used by native checks. */
 
 #include "hud.h"
 
+/* Real divergence/rejoin markers and one collision-aware saving label.
+ * Nothing is placed under the driving instruments or the status/clock HUD. */
+static void draw_diversion_annotations(int z){
+ if(!traffic_offer_valid())return;
+ for(int k=0;k<2;k++){
+  int i=k?traffic_offer_n-1:0,x,y;
+  map_project_q8(traffic_path[i].lat,traffic_path[i].lon,z,&x,&y);
+  if(x>=6*256&&x<=(W-6)*256&&y>=6*256&&y<=(H-6)*256){
+   map_dot_q8(x,y,C_ROUTE_DIVERSION,5);map_dot_q8(x,y,C_MAP_BG,3);
+  }
+ }
+ char text[48]="-";append_eta(text,sizeof(text),traffic_saving);
+ int w=width(text,0)+14;if(w>110)return;
+ int old=hud_ink_alpha;hud_ink_alpha=16;
+ /* Pick a visible alternate-only segment, not a label anchored to a shared
+  * road. Prefer the centre of the detour and avoid the car marker. */
+ for(int k=0;k<traffic_offer_n-1;k++){
+  int i=1+(traffic_offer_n/2+k-1)%(traffic_offer_n-1);if(traffic_shared_alt[i])continue;
+  int x,y,xx,yy;map_project_q8(traffic_path[i-1].lat,traffic_path[i-1].lon,z,&x,&y);
+  map_project_q8(traffic_path[i].lat,traffic_path[i].lon,z,&xx,&yy);x=(x+xx)/512;y=(y+yy)/512;
+  for(int side=0;side<2;side++){
+   int left=side?x-w-8:x+8,top=y-9;
+   if(top<44||top+18>=HUD_BOTTOM_Y-8||(!freecam&&left<MAP_ANCHOR_X+19&&left+w>MAP_ANCHOR_X-19&&top<view_anchor_y()+19&&top+18>view_anchor_y()-19))continue;
+   if(!label_free(left,top,left+w,top+18))continue;
+   ui_surface(left,top,w,18,C_PANEL);compact_center(left+w/2,top+3,w-8,0,text,C_ROUTE_DIVERSION);
+   hud_ink_alpha=old;return;
+  }
+ }
+ hud_ink_alpha=old;
+}
 static void draw_map_background(void){
  int z=active_zoom();perspective_scale_update();
  if(!freecam)drive_label_prepare(z);
- draw_map_geometry(z);draw_route_overlay(z);if(!freecam)drive_label_render();poi_render();
+ draw_map_geometry(z);draw_route_overlay(z);if(!freecam)drive_label_render();poi_render();draw_diversion_annotations(z);
  draw_car_marker(z);draw_explore_crosshair();
-}
-static void draw_traffic_notice(void){
- if(screen!=SCR_MAP||freecam||modal!=MOD_NONE||!traffic_warn||route_status!=R_READY||!pref.learn_history||!pref.diversions)return;
- char label[80];copystr(label,sizeof(label),ui_tr("Likely traffic ahead"));
- char detail[80];if(traffic_offer_valid()){
-  copystr(detail,sizeof(detail),ui_tr("Trip: save ~"));append_eta(detail,sizeof(detail),traffic_saving);
- }else copystr(detail,sizeof(detail),ui_tr("Based on driving history"));
- /* Compact secondary card; no input interception or automatic reroute. */
- int x=142,y=45,w=196;int old=hud_ink_alpha;hud_ink_alpha=256;
- ui_surface(x,y,w,36,C_PANEL2);compact_center(x+w/2,y+5,w-12,1,label,C_WHITE);
- compact_center(x+w/2,y+21,w-12,0,detail,C_MUTED);hud_ink_alpha=old;
 }
 static void draw_map(void){
  u32 now=hud_now_ms();freecam_orientation_anim_update(now);hud_prepare(active_zoom(),now,1);hud_driver_prepare(now);
- draw_map_background();hud_draw_all(hud_now_ms(),1);draw_traffic_notice();
+ draw_map_background();hud_draw_all(hud_now_ms(),1);
 }
 
 /* CLP2 is the only saved-place layout. Reject unsupported or truncated files. */
@@ -2886,7 +2906,7 @@ if(screen==SCR_KEY&&kbd_action==KBD_NAME_COORDINATES&&code==K_BACK){coordinates_
 if(code==K_BACK){
   if(screen==SCR_TRIP&&trip_pick_mode!=DEST_PICK_NONE){trip_pick_mode=DEST_PICK_NONE;trip_pane=1;trip_right_focus=0;return;}
   if(screen==SCR_MAP&&!freecam&&(bt_control_mode||bt_controls_available())){
-    bt_control_mode=!bt_control_mode;bt_transport_press.kind=0;return;
+    bt_control_mode=!bt_control_mode;hud_diversion_invited=0;bt_transport_press.kind=0;return;
   }
   if(screen==SCR_KEY){screen=SCR_TRIP;return;}if(screen==SCR_MENU)screen=SCR_MAP;else if(screen!=SCR_MAP)screen=SCR_MENU;return;
 }
@@ -2955,6 +2975,9 @@ static void key_handle(int code){
  menu_sync(hud_now_ms());
  if(modal==MOD_NONE&&(code==K_MENU||screen!=SCR_MAP)){
   keydiag(code);if(code==K_MENU&&screen==SCR_MAP)menu_open(P_HOME,0,hud_now_ms());else menu_dispatch(code,hud_now_ms());return;
+ }
+ if(code==K_ENTER&&hud_diversion_shortcut_ready()){
+  hud_diversion_invited=0;bt_control_mode=0;menu_open_diversion(1,hud_now_ms());return;
  }
  code=control_key(code);if(!code)return;
  int dirty=render_background_dirty,old_screen=screen,old_popup=popup_requested_key();

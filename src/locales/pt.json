@@ -189,7 +189,6 @@
   "Save favourite": "Guardar favorito",
   "Connect": "Ligar",
   "Likely traffic ahead": "Trânsito provável",
-  "Trip: save ~": "Viagem: poupe ~",
   "Based on driving history": "Com base nas suas viagens",
   "Journeys: ": "Viagens: ",
   "History cleared": "Histórico limpo",
@@ -220,5 +219,10 @@
   "S": "S",
   "SW": "SO",
   "W": "O",
-  "NW": "NO"
+  "NW": "NO",
+  "Faster route available": "Rota mais rápida disponível",
+  "Save ~": "Poupe ~",
+  "Decision: ": "Decisão: ",
+  "BACK to review": "Voltar para ver",
+  "OK to review": "OK para ver"
 }

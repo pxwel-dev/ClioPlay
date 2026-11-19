@@ -189,7 +189,6 @@
   "Save favourite": "Favorit speichern",
   "Connect": "Verbinden",
   "Likely traffic ahead": "Stau wahrscheinlich",
-  "Trip: save ~": "Fahrt: spare ~",
   "Based on driving history": "Aus bisherigen Fahrten",
   "Journeys: ": "Fahrten: ",
   "History cleared": "Verlauf gelöscht",
@@ -220,5 +219,10 @@
   "S": "S",
   "SW": "SW",
   "W": "W",
-  "NW": "NW"
+  "NW": "NW",
+  "Faster route available": "Schnellere Route verfügbar",
+  "Save ~": "Spare ~",
+  "Decision: ": "Entscheidung: ",
+  "BACK to review": "Zurück: ansehen",
+  "OK to review": "OK: ansehen"
 }

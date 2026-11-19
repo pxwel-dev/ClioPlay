@@ -189,7 +189,6 @@
   "Save favourite": "즐겨찾기 저장",
   "Connect": "연결",
   "Likely traffic ahead": "전방 정체 예상",
-  "Trip: save ~": "예상 절약 ~",
   "Based on driving history": "주행 기록 기준",
   "Journeys: ": "주행 횟수: ",
   "History cleared": "기록을 지웠습니다",
@@ -220,5 +219,10 @@
   "S": "남",
   "SW": "남서",
   "W": "서",
-  "NW": "북서"
+  "NW": "북서",
+  "Faster route available": "더 빠른 경로 있음",
+  "Save ~": "약 ~",
+  "Decision: ": "결정 지점: ",
+  "BACK to review": "뒤로를 눌러 확인",
+  "OK to review": "OK로 확인"
 }

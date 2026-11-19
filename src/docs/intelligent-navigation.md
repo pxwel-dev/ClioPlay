@@ -29,21 +29,34 @@ Suggestions do not automatically start a route, add an itinerary stop or mark
 an arrival. They are hidden while an itinerary is active.
 
 During guidance, **Likely traffic ahead** means historical evidence suggests
-a delay, not that a real-time traffic incident was detected. Where the local
-search finds a sufficiently beneficial alternative, the original route stays
-magenta outside the bypassed section, which is gold/yellow. The proposed
-alternative is aqua/teal. After accepting it, the selected route returns to
-the normal magenta colour. Open
-Trip → Itinerary → **Diversion** and confirm Yes (initially selected) to take it.
-No retains the active route and suppresses repeat offers overlapping the
-rejected section, while independent diversions elsewhere on the same route
-remain eligible. Historical warnings and ETA adjustments remain active.
-Accepted sections are also settled until passed; a full route recalculation
-clears these route-local decisions. Normal off-route rerouting remains
-available; an offer expires if the driver passes the divergence point or
-the route changes. No automatic switching is performed. Verify road signs
-and local conditions; historical travel times cannot predict incidents,
-closures, weather or current traffic.
+a delay, not that a real-time traffic incident was detected. Once a beneficial
+alternative is found, the animated glass status pill reads **Faster route
+available**, gives the estimated saving and remaining distance to the actual
+decision point, and shows the next available control. The shared geometry
+stays solid magenta; only the bypassed original geometry is gold/yellow and
+only the distinct proposed geometry is dashed aqua/teal. Small junction
+markers and a saving label appear when there is room on the map.
+
+On the driving map, press **OK to review**, then OK on the initially selected
+Yes to accept. In **BT CTRL**, the invitation instead reads **BACK to review**:
+Back closes Bluetooth controls, then the hint changes to OK to review. OK
+still controls playback while BT CTRL is active; track, volume, Explore,
+console Info and existing modal controls keep their ordinary behaviour.
+Trip → Itinerary → **Diversion** remains another way to open the same
+confirmation. No temporary zoom, map overview, countdown, sound or automatic
+route acceptance is used. The confirmation leaves the bottom HUD visible.
+Back closes a map-opened confirmation without rejecting it; No rejects only
+that bypassed section, and returns to the map (or Itinerary when opened there).
+The original route, warning and adjusted ETA remain; independent alternatives
+can still be offered. Yes makes the new active route solid magenta.
+
+The candidate is trimmed at matching legal turn states before presentation,
+so the distance and expiry refer to the actual departure point from the
+current route, not a shared search prefix. A stale confirmation cannot accept
+or reject a newer offer. Accepted sections are settled until passed; a full
+route recalculation clears route-local decisions. Normal off-route rerouting
+remains available. Verify road signs and conditions: historical travel times
+cannot predict incidents, closures, weather or current traffic.
 
 ## Recording and successful sessions
 

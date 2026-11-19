@@ -189,7 +189,6 @@
   "Save favourite": "Favori kaydet",
   "Connect": "Bağlan",
   "Likely traffic ahead": "İleride trafik olabilir",
-  "Trip: save ~": "Yolculuk: kazan ~",
   "Based on driving history": "Sürüş geçmişine göre",
   "Journeys: ": "Yolculuklar: ",
   "History cleared": "Geçmiş silindi",
@@ -220,5 +219,10 @@
   "S": "G",
   "SW": "GB",
   "W": "B",
-  "NW": "KB"
+  "NW": "KB",
+  "Faster route available": "Daha hızlı rota var",
+  "Save ~": "Kazanç ~",
+  "Decision: ": "Karar: ",
+  "BACK to review": "İncelemek için Geri",
+  "OK to review": "İncelemek için OK"
 }

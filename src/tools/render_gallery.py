@@ -695,7 +695,7 @@ static void restore_route(void){route_n=saved_n;route_head=0;route_result_m=save
  * from a freshly restored baseline route.
  */
 
-static int demo_div_n, demo_div_a, demo_div_b;
+static int demo_div_n, demo_div_a, demo_div_b,demo_profile_a,demo_profile_b;
 static u32 demo_div_saving;
 static struct TrafficPoint demo_div_path[TRAFFIC_PATH_MAX];
 
@@ -848,8 +848,9 @@ static int preview_find_map_diversion(u32 now)
                 if (!traffic_offer_valid())
                     continue;
 
-                demo_div_a = a;
-                demo_div_b = b;
+                demo_profile_a=a;demo_profile_b=b;
+                demo_div_a = traffic_begin_idx;
+                demo_div_b = traffic_join_idx;
                 demo_div_n = traffic_offer_n;
                 demo_div_saving = traffic_saving;
 
@@ -890,7 +891,7 @@ static void preview_map_diversion_seed(void)
     traffic_invalidate();
 
     /* Restore the learned context for this animation frame. */
-    preview_map_traffic_profile(demo_div_a, demo_div_b, now);
+    preview_map_traffic_profile(demo_profile_a, demo_profile_b, now);
 
     traffic_begin_idx = demo_div_a;
     traffic_join_idx = demo_div_b;
@@ -904,6 +905,8 @@ static void preview_map_diversion_seed(void)
         demo_div_path,
         sizeof(struct TrafficPoint) * demo_div_n
     );
+
+    assert(traffic_prepare_offer());
 
     /* Position the simulated vehicle immediately before the
      * divergence, using coordinates from the actual route.

@@ -138,6 +138,11 @@ static void diversion_colours(void){
   map_mask_select(2);map_line_q8(30*256,130*256,120*256,130*256,C_ROUTE_DIVERSION,3);
   map_mask_end();
   assert(fb[70*W+75]==C_ROUTE&&fb[100*W+75]==C_ROUTE_SKIPPED&&fb[130*W+75]==C_ROUTE_DIVERSION);
+  clear();map_mask_begin(2);map_mask_select(2);int phase=0;
+  map_dash_segment(30*256,130*256,55*256,130*256,C_ROUTE_DIVERSION,&phase);
+  map_dash_segment(55*256,130*256,120*256,130*256,C_ROUTE_DIVERSION,&phase);map_mask_end();
+  assert(fb[130*W+35]==C_ROUTE_DIVERSION&&fb[130*W+44]==0&&fb[130*W+50]==C_ROUTE_DIVERSION);
+  assert(phase==(90*256)%(17*256));
  }
 }
 int main(void){strokes();thin_roads();minor_roads();polygons();joins();diversion_colours();return 0;}

@@ -189,7 +189,6 @@
   "Save favourite": "पसंदीदा सहेजें",
   "Connect": "कनेक्ट करें",
   "Likely traffic ahead": "आगे जाम की संभावना",
-  "Trip: save ~": "यात्रा: बचत ~",
   "Based on driving history": "ड्राइविंग इतिहास के आधार पर",
   "Journeys: ": "यात्राएँ: ",
   "History cleared": "इतिहास मिटाया गया",
@@ -220,5 +219,10 @@
   "S": "द",
   "SW": "द.प",
   "W": "प",
-  "NW": "उ.प"
+  "NW": "उ.प",
+  "Faster route available": "तेज़ मार्ग उपलब्ध है",
+  "Save ~": "बचत ~",
+  "Decision: ": "निर्णय: ",
+  "BACK to review": "देखने के लिए वापस",
+  "OK to review": "देखने के लिए OK"
 }

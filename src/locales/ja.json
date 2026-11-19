@@ -189,7 +189,6 @@
   "Save favourite": "お気に入りに保存",
   "Connect": "接続",
   "Likely traffic ahead": "前方で渋滞の可能性",
-  "Trip: save ~": "所要時間短縮 ~",
   "Based on driving history": "運転履歴に基づく",
   "Journeys: ": "走行回数： ",
   "History cleared": "履歴を消去しました",
@@ -220,5 +219,10 @@
   "S": "南",
   "SW": "南西",
   "W": "西",
-  "NW": "北西"
+  "NW": "北西",
+  "Faster route available": "より速いルートがあります",
+  "Save ~": "約",
+  "Decision: ": "判断地点： ",
+  "BACK to review": "戻るで確認",
+  "OK to review": "OKで確認"
 }

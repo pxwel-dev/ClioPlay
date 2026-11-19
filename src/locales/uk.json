@@ -189,7 +189,6 @@
   "Save favourite": "Зберегти в обране",
   "Connect": "Підключити",
   "Likely traffic ahead": "Можливі затори попереду",
-  "Trip: save ~": "Маршрут: економія ~",
   "Based on driving history": "За історією поїздок",
   "Journeys: ": "Поїздки: ",
   "History cleared": "Історію очищено",
@@ -220,5 +219,10 @@
   "S": "Пд",
   "SW": "ПдЗх",
   "W": "Зх",
-  "NW": "ПнЗх"
+  "NW": "ПнЗх",
+  "Faster route available": "Є швидший маршрут",
+  "Save ~": "Економія ~",
+  "Decision: ": "Рішення: ",
+  "BACK to review": "Назад для огляду",
+  "OK to review": "OK для огляду"
 }
