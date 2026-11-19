@@ -71,7 +71,7 @@ STORIES.update({'v216-coordinates.gif': {'duration': 11200, 'events': [(0, 'clea
 
 STORIES.update({
     'v220-destination-prediction.gif': {'duration': 6500, 'events': DESTINATION_EVENTS},
-    'v220-intelligent-diversions.gif': {'duration': 7000, 'events': DIVERSION_EVENTS},
+    'v220-intelligent-diversions.gif': {'duration': 11000, 'events': DIVERSION_EVENTS},
 })
 
 

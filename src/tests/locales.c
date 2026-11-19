@@ -33,6 +33,12 @@ int main(int argc,char**argv){assert(argc==3&&load_font()&&cliou_load(argv[1]));
   assert(width(ui_tr("BACK to review"),0)<=220&&width(ui_tr("OK to review"),0)<=220);
   assert(width(ui_tr("Faster route available"),0)<=280);
   char traffic_line[112];copystr(traffic_line,sizeof(traffic_line),ui_tr("Save ~"));append_eta(traffic_line,sizeof(traffic_line),3600);appendstr(traffic_line,sizeof(traffic_line)," / ");appendstr(traffic_line,sizeof(traffic_line),ui_tr("Decision: "));appendstr(traffic_line,sizeof(traffic_line),"350 yd");whole_utf8(traffic_line);assert(width(traffic_line,0)<=300);
+  for(int media=0;media<2;media++){
+   traffic_saving=90000u;char compact[sizeof(((struct HudCard*)0)->traffic_hint)];
+   hud_diversion_compact_text(compact,sizeof(compact),media);whole_utf8(compact);
+   assert(strstr(compact,ui_tr(media?"BACK to review":"OK to review")));
+   assert(width(compact,0)<=HUD_CLOCK_X-36);
+  }
   kbd_language=lang;kbd_page=0;for(int i=36;i<40;i++){if(!keyboard_valid_focus(i))continue;char b[16];const char*key=key_label(i,b);int limit=101;if(width(key,0)>limit)fprintf(stderr,"Key overflow %s %d: %s (%d)\n",ui_language_codes[lang],i,key,width(key,0));assert(width(key,0)<=limit);}
   const char*states[]={"Ready","Calc","No data","No road","No route","Mem full","Error","Wait","Done","Wait"};int over=0;for(unsigned i=0;i<sizeof(states)/sizeof(states[0]);i++){int w=width(ui_tr(states[i]),0);if(w>104){fprintf(stderr,"Status overflow %s %s: %s (%d)\n",ui_language_codes[lang],states[i],ui_tr(states[i]),w);over++;}}if(over)return 1;assert(width(ui_tr("CTRL"),0)<=52);
   nav_man_type=MAN_ROUNDABOUT;nav_man_exit=123;const char*exit=nav_man_text();whole_utf8(exit);assert(strstr(exit,"123"));assert(slen(exit)<64);

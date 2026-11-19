@@ -37,7 +37,14 @@ stays solid magenta; only the bypassed original geometry is gold/yellow and
 only the distinct proposed geometry is dashed aqua/teal. Small junction
 markers identify the divergence and rejoin points when visible. Estimated
 savings are shown only in the status pill and confirmation, leaving the
-map clear of redundant text.
+map clear of redundant text. The full invitation is shown for five seconds,
+then collapses into one line with the saving and the current review control.
+It expands once more for five seconds when the driver is approximately
+20 seconds from the decision point at the current GPS speed (minimum 200 m,
+maximum 700 m). An offer already inside that range during its first expansion
+needs no second reminder. There are no repeated reminders; the compact
+invitation remains actionable until acceptance, rejection or expiry at the
+matched decision point. A new independent offer starts its own timing.
 
 On the driving map, press **OK to review**, then OK on the initially selected
 Yes to accept. In **BT CTRL**, the invitation instead reads **BACK to review**:
