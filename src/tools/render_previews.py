@@ -15,7 +15,7 @@ from render_gallery import (BLUETOOTH_SAMPLES, MENU_ENTRY_SAMPLES, MENU_RETURN_S
                             TRIPS_LAYOUT_SAMPLES, TRIPS_EMPTY_SAMPLES, POPUPS_LAYOUT_SAMPLES,
                             V216_COORDINATES_SAMPLES, V216_HUD_SETTINGS_SAMPLES,
                             V216_BLUETOOTH_HIDDEN_SAMPLES, V216_ITINERARY_SAMPLES,
-                            V220_DESTINATION_SAMPLES, V220_DIVERSION_SAMPLES, ROOT, sha)
+                            V220_DESTINATION_SAMPLES, V220_DIVERSION_SAMPLES, V220_FREQUENT_PLACE_SAMPLES, ROOT, sha)
 
 
 
@@ -35,6 +35,7 @@ def previews():
     boot = [(f'boot-fade-{ms:04d}', 67) for ms in range(0, 501, 67)] + [('boot-fade-0536', 364), ('boot-fade-0900', 700)]
     boot[0] = (boot[0][0], 750)
     return {
+        'v220-frequent-place.gif': timeline('night', timed_scenes('preview-v220-frequent-place', V220_FREQUENT_PLACE_SAMPLES, 5900)),
         'v220-destination-prediction.gif': timeline('night', timed_scenes('preview-v220-destination-prediction', V220_DESTINATION_SAMPLES, 6500)),
         'v220-intelligent-diversions.gif': timeline('night', timed_scenes('preview-v220-intelligent-diversions', V220_DIVERSION_SAMPLES, 6200)),
         'v216-coordinates.gif': timeline('night', timed_scenes('preview-v216-coordinates', V216_COORDINATES_SAMPLES, 11200)),

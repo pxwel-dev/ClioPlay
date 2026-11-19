@@ -15,7 +15,7 @@
 
 - Introduced optional, offline driving-history learning. Fresh GPS observations are recorded independently of active navigation and only successful Barcelona power-off sessions train the model.
 - Added contextual suggested trips in the map status pill, with provisional startup GPS reconciliation, adaptive day/time and recency scoring, ordered early-trajectory evidence, confidence hysteresis and offline destination naming. OK opens an explicit Yes/No confirmation; BT CTRL retains playback priority and displays BACK to review. No suppresses that destination for the current recording session. The empty Itinerary retains the original destination-entry layout.
-- Added an optional stationary-startup frequent-place favourite prompt after five completed visits across three dates within 90 days. It never repeats for the same place unless history is cleared; accepting saves or names a favourite, without starting navigation or changing prediction confidence.
+- Added an optional stationary-startup frequent-place favourite prompt after five completed visits across three dates within 90 days. It never repeats for the same place unless history is cleared; Yes opens the existing Favourite keyboard with a suggested name when available; only Save adds the favourite, without starting navigation or changing prediction confidence.
 - Added directional historical road-time profiles, traffic-adjusted ETAs and an explicit local Diversion choice with gold/yellow bypassed geometry and an aqua/teal alternative.
 - Shared route geometry remains magenta; dashed teal alternatives, yellow bypasses and junction markers distinguish proposed changes. A small frosted-glass map badge shows the approximate saving near the decision point; the glass HUD announces the offer with context-sensitive Back/OK instructions; direct map confirmation preserves Bluetooth controls and driving zoom.
 - Diversion invitations use a persistent single line with the established success green announcement and blue context-sensitive review instruction, until acceptance, rejection or expiry.
@@ -38,6 +38,38 @@ See the [full preview index](src/docs/demo/README.md) for all animations.
 | Destination prediction | Intelligent diversions |
 | --- | --- |
 | ![Learned destination in the driving HUD with explicit review](src/docs/demo/v220-destination-prediction.gif) | ![Historical traffic and alternative route selection, controlled fixture](src/docs/demo/v220-intelligent-diversions.gif) |
+
+<table align="center">
+  <thead>
+    <tr>
+      <th>
+        Frequent-place suggestion
+      </th>
+      <th>
+        Send a destination with
+        <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">
+        <img
+          src="src/docs/demo/v220-frequent-place.gif"
+          alt="Stationary startup prompt, prefilled Favourite name and explicit save"
+          width="480"
+        >
+      </td>
+      <td align="center">
+        <img
+          src="src/docs/demo/phone-destination.gif"
+          alt="ClioPlay Send and the head unit receiving a destination side by side"
+          width="480"
+        >
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 | Driving and camera alerts | Dynamically-resizing, animated frosted-glass menu |
 | --- | --- |
@@ -62,31 +94,6 @@ See the [full preview index](src/docs/demo/README.md) for all animations.
 | HUD Customisability | Song and radio updates |
 | --- | --- |
 | ![Change top and bottom bar pill positions in settings](src/docs/demo/v216-hud-settings.gif) | ![A new song appears, updates inside Bluetooth control, then radio tuning changes the frequency](src/docs/demo/metadata-updates.gif) |
-
-
-<table align="center">
-  <thead>
-    <tr>
-      <th>
-        Send a destination with
-        <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>
-      </th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td align="center">
-        <img
-          src="src/docs/demo/phone-destination.gif"
-          alt="ClioPlay Send and the head unit receiving a destination side by side"
-          width="480"
-        >
-      </td>
-    </tr>
-  </tbody>
-</table>
-
-
 
 ## Compatibility
 

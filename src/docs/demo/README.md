@@ -2,6 +2,7 @@
 
 | Preview | What it shows |
 | --- | --- |
+| [Frequent-place favourites](v220-frequent-place.gif) | Controlled stationary startup after five visits, name-free prompt, editable name prefilled from a Recent, then explicit Save and return to the map. |
 | [Destination prediction](v220-destination-prediction.gif) | Controlled completed-journey model, a matched Favourite, green/blue map invitation in BT CTRL and normal driving, and explicit Yes/No confirmation. |
 | [Intelligent diversions](v220-intelligent-diversions.gif) | Historical traffic warning, solid shared route, yellow bypass, dashed teal real-map alternative, a frosted-glass approximate saving badge beside the decision point, single-line green announcement and blue review hint, and animated BT CTRL → Back → OK → Yes confirmation. Traffic observations are controlled examples. |
 | [Day boot](boot-day.gif) / [Night boot](boot-night.gif) | Logo and wordmark on a soft theme-aware background, followed by the production half-second cross-fade into the live UI. The initial hold is illustrative, not a boot-time measurement. |

@@ -88,11 +88,20 @@ int main(int argc,char**argv){assert(argc==3&&load_font()&&cliou_load(argv[1]));
   screen=SCR_MAP;modal=MOD_NONE;freecam=bt_control_mode=0;mapok=0;gps.fix=1;trip.active=trip.count=0;nfaves=0;route_status=R_IDLE;
   mob_suggest_valid=0;mob_recording=1;mob_started=0;mob_rmc_fix=1;mob_rmc_speed=0;mob_rmc_point=(struct MobPoint){5497548,-164050};
   frequent_boot_session=mob_session_generation;mob_rmc_ms=hud_now_ms();
-  confirm_frequent.lat=mob_rmc_point.lat;confirm_frequent.lon=mob_rmc_point.lon;confirm_frequent_named=1;copystr(confirm_frequent.name,sizeof(confirm_frequent.name),"Work");
-  assert(width(ui_tr("You come here often"),0)<=328);hud_reset_animations();confirm_kind=5;menu_open(P_CONFIRM,1,hud_now_ms());
+  confirm_frequent=mob_rmc_point;
+  assert(width(ui_tr("You come here often"),0)<=252);hud_reset_animations();confirm_kind=5;menu_open(P_CONFIRM,1,hud_now_ms());
   draw();hud_settle_for_capture(hud_now_ms());menu_settle(hud_now_ms());draw();assert(sheet_page==P_CONFIRM&&sheet_focus==1);
   char file[640];snprintf(file,sizeof(file),"%s/%s-%s-frequent.rgb565",argv[2],ui_language_codes[lang],night?"night":"day");FILE*f=fopen(file,"wb");assert(f);fwrite(fb,1,sizeof(fb),f);fclose(f);frames++;
-  menu_close(hud_now_ms());
+  /* All locales must also enter the reused editable naming page without saving. */
+  nrecents=1;recents[0].lat=confirm_frequent.lat;recents[0].lon=confirm_frequent.lon;
+  copystr(recents[0].name,sizeof(recents[0].name),"Work 2");pref_keyboard_language=-1;
+  mob_rmc_ms=hud_now_ms();key_handle(K_LEFT);key_handle(K_ENTER);
+  assert(sheet_page==P_NAME&&keyboard_origin==KBD_NAME_FREQUENT&&streq(kbd_text,"Work 2")&&!nfaves);
+  assert(width(ui_tr("Name favourite"),title_face)<=428);
+  draw();menu_settle(hud_now_ms());draw();assert(sheet_page==P_NAME&&bottom_to==0);
+  snprintf(file,sizeof(file),"%s/%s-%s-frequent-name.rgb565",argv[2],ui_language_codes[lang],night?"night":"day");
+  f=fopen(file,"wb");assert(f);fwrite(fb,1,sizeof(fb),f);fclose(f);frames++;
+  key_handle(K_BACK);assert(screen==SCR_MAP&&!nfaves);
  }
  mob_recording=0;pref.learn_history=0;trip.active=trip.count=1;
  // Exercise translated source headers and saved-phone dialog through actual drawing.

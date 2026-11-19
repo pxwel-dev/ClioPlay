@@ -68,6 +68,31 @@ static void preview_prediction_seed(void){
  copystr(faves[0].name,sizeof(faves[0].name),"Work");
  struct SavedPlace choice;assert(mob_predict(hud_now_ms())&&suggested_place(&choice)&&streq(choice.name,"Work"));
 }
+/* Five distinct completed sessions at the current stationary position.
+ * Run the actual startup service, including its persistence and GPS checks. */
+static void preview_frequent_refresh(void){
+ u32 now=hud_now_ms(),epoch=mob_epoch(2026,10,21,12,35,0);
+ mob_rmc(now,epoch+(now-mob_begin_ms)/1000u,1,gps.lat,gps.lon,0,0);
+}
+static void preview_frequent_seed(void){
+ clear_trip();pref.learn_history=pref.destination_predictions=1;pref.language=0;pref_keyboard_language=-1;
+ mob_model_reset();mob_fave_reset();nfaves=0;nrecents=1;gps.fix=1;gps.mph10=0;bt_control_mode=0;freecam=0;
+ struct MobPoint p={car_lat(),car_lon()};gps.lat=track_lat=p.lat;gps.lon=track_lon=p.lon;
+ recents[0].lat=p.lat;recents[0].lon=p.lon;copystr(recents[0].name,sizeof(recents[0].name),"Work 2");
+ u32 now=hud_now_ms(),epoch=mob_epoch(2026,10,21,12,35,0);
+ /* Earlier startup notices have already had their normal screen time.
+  * Pre-roll the production event queue, so Save's own feedback is visible
+  * during this short capture even if the host has no installed map. */
+ hud_status_reset();hud_status_observe(1,now-10000u);
+ struct HudCard pre={0};hud_status_compose(&pre,now-10000u);
+ memzero(&pre,sizeof(pre));hud_status_compose(&pre,now-5000u);
+ memzero(&pre,sizeof(pre));hud_status_compose(&pre,now);
+ mob_session_begin(now-5000u,1,p.lat,p.lon);frequent_arm_startup();
+ for(unsigned i=0;i<5;i++){struct MobJourney*j=&mob.journey[i];j->origin=(struct MobPoint){p.lat+1000,p.lon};j->dest=p;j->depart=epoch-(5u-i)*86400u;j->serial=i+1;j->duration=600;}
+ mob.n=mob.head=mob.serial=5;
+ for(unsigned i=1;i<=5;i++){hud_capture_ms=now-5000u+i*1000u;preview_frequent_refresh();int fresh=mob_sample(hud_now_ms());frequent_startup_service(hud_now_ms(),fresh);}
+ assert(sheet_page==P_CONFIRM&&confirm_kind==5&&sheet_focus==1&&nfaves==0);
+}
 static void preview_diversion_seed(void){
  /* This is a presentation fixture, not an assertion about real roads.
   * Keep the installed map hidden rather than draw invented geometry over it. */

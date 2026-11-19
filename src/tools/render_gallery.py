@@ -19,7 +19,7 @@ from PIL import Image, ImageDraw, ImageFont
 from verify import decode
 from text_engine import build as build_text
 
-from mobility_stories import DESTINATION_EVENTS, MAP_DIVERSION_EVENTS
+from mobility_stories import DESTINATION_EVENTS, MAP_DIVERSION_EVENTS, FREQUENT_PLACE_EVENTS
 
 ROOT = Path(__file__).resolve().parents[1]
 SCENES = []
@@ -99,6 +99,7 @@ TRIPS_EMPTY_EVENTS = (
 )
 TRIPS_EMPTY_SAMPLES = sorted({at+step for at,_ in TRIPS_EMPTY_EVENTS for step in TWEEN_STEPS}|{5900})
 V220_DESTINATION_SAMPLES = sorted({at+step for at,_ in DESTINATION_EVENTS for step in TWEEN_STEPS}|{6000})
+V220_FREQUENT_PLACE_SAMPLES = sorted({at+step for at,_ in FREQUENT_PLACE_EVENTS for step in TWEEN_STEPS}|{5600})
 V220_DIVERSION_SAMPLES = sorted({
     at+step
     for at, _ in MAP_DIVERSION_EVENTS
@@ -662,6 +663,8 @@ def modern_menus():
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_BLUETOOTH_HIDDEN_EVENTS, V216_BLUETOOTH_HIDDEN_SAMPLES)
     motion('Version 2.1.8', 'preview-v216-itinerary', 'Scroll ten targets, with connectors bounded to the visible list',
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_ITINERARY_EVENTS, V216_ITINERARY_SAMPLES)
+    motion('Version 2.2.0', 'preview-v220-frequent-place', 'Stationary startup: offer, editable Favourite name, save',
+           'settle();', FREQUENT_PLACE_EVENTS, V220_FREQUENT_PLACE_SAMPLES)
     motion('Version 2.2.0', 'preview-v220-destination-prediction', 'Learned destination: BT CTRL, map invitation and confirmation',
            'settle();', DESTINATION_EVENTS, V220_DESTINATION_SAMPLES)
     motion(

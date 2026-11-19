@@ -62,10 +62,13 @@ existing menu or dialog. The startup opportunity expires after three minutes;
 if driving begins or the position becomes invalid, an open prompt closes.
 
 No is selected by default because saving a favourite modifies personal data.
-Yes saves the latest actual learned endpoint under a nearby named Recent or
-an offline street/settlement name; when no meaningful name exists, it opens
-the existing naming keyboard instead. No, Back or simply leaving the prompt
-unanswered does not save anything. Already saved nearby favourites and a full
+The prompt never displays an inferred name. Yes always opens the existing
+Favourite naming keyboard, populated with the best nearby named Recent or
+offline street/settlement name when available. The driver can edit it or
+enter a name from scratch. Only Save stores the actual learned endpoint
+under the reviewed name and returns to the driving map. Back cancels; if
+the vehicle moves or its position becomes invalid, naming closes without
+saving. No or leaving the prompt unanswered also saves nothing. Already saved nearby favourites and a full
 favourites list are excluded. A checksummed local record prevents the same
 place from prompting again on a later startup (including after declining or
 ignoring it); clearing driving history resets the record. The prompt never

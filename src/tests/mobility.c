@@ -202,12 +202,19 @@ static void frequent_places(void){
  mob_fave_reset();assert(!mob_fave_prompted(pred_north));mob_fave_load();assert(mob_fave_prompted(pred_north));
  mob_session_begin(now+10000,1,pred_north.lat,pred_north.lon);frequent_arm_startup();frequent_wait(now+10000,e+10);assert(sheet_page==P_CLOSED);
  frequent_fixture(now,e,1);nrecents=1;recents[0].lat=pred_north.lat+20;recents[0].lon=pred_north.lon;copystr(recents[0].name,sizeof(recents[0].name),"Work");
- frequent_wait(now,e);assert(sheet_page==P_CONFIRM&&confirm_kind==5&&confirm_frequent_named&&sheet_focus==1);
- key_handle(K_LEFT);key_handle(K_ENTER);assert(screen==SCR_MAP&&nfaves==1&&streq(faves[0].name,"Work")&&faves[0].lat==pred_north.lat&&!trip.active&&mob.n==5);
- frequent_fixture(now,e,1);frequent_wait(now,e);assert(sheet_page==P_CONFIRM&&!confirm_frequent_named);
- key_handle(K_LEFT);key_handle(K_ENTER);assert(sheet_page==P_NAME&&kbd_place_lat==pred_north.lat&&nfaves==0);
+ frequent_wait(now,e);assert(sheet_page==P_CONFIRM&&confirm_kind==5&&sheet_focus==1);
+ /* A name is resolved only after consent; show the latest name, not a stale draft. */
+ copystr(recents[0].name,sizeof(recents[0].name),"WORKS");
+ key_handle(K_LEFT);key_handle(K_ENTER);assert(sheet_page==P_NAME&&keyboard_origin==KBD_NAME_FREQUENT&&streq(kbd_text,"WORKS")&&nfaves==0);
+ key_handle(K_ESC);assert(streq(kbd_text,"WORK"));pk_focus=PK_SAVE;key_handle(K_ENTER);
+ assert(screen==SCR_MAP&&nfaves==1&&streq(faves[0].name,"WORK")&&faves[0].lat==pred_north.lat&&faves[0].lon==pred_north.lon&&!trip.active&&mob.n==5);
+ frequent_fixture(now,e,1);frequent_wait(now,e);assert(sheet_page==P_CONFIRM);
+ key_handle(K_LEFT);key_handle(K_ENTER);assert(sheet_page==P_NAME&&kbd_place_lat==pred_north.lat&&nfaves==0&&!kbd_text[0]);
+ pk_focus=PK_SAVE;key_handle(K_ENTER);assert(sheet_page==P_NAME&&nfaves==0);
  key_handle(K_BACK);assert(screen==SCR_MAP&&nfaves==0&&mob_fave_prompted(pred_north));
  frequent_fixture(now,e,1);frequent_wait(now,e);assert(sheet_page==P_CONFIRM);
+ frequent_tick(now+6000,e+6,50);menu_sync(hud_now_ms());assert(sheet_page==P_CLOSED&&nfaves==0);
+ frequent_fixture(now,e,1);frequent_wait(now,e);key_handle(K_LEFT);key_handle(K_ENTER);assert(sheet_page==P_NAME);
  frequent_tick(now+6000,e+6,50);menu_sync(hud_now_ms());assert(sheet_page==P_CLOSED&&nfaves==0);
  mob_clear();mob_fave_load();assert(!mob_fave_prompted(pred_north));hud_reset_animations();frequent_boot_pending=0;gps.mph10=0;
 }

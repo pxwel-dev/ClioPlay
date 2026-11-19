@@ -15,8 +15,10 @@ static int places_tab,place_index,stop_index,flow_action,language_keyboard,trip_
 static int keyboard_origin,phone_index,confirm_kind;
 static u32 confirm_diversion_revision,confirm_diversion_serial;
 static int confirm_diversion_map;
-static struct SavedPlace confirm_suggestion,confirm_frequent;
-static int confirm_frequent_named;
+static struct SavedPlace confirm_suggestion;
+static struct MobPoint confirm_frequent;
+/* Menu-only origin: the keyboard still uses the normal Favourite save action. */
+enum {KBD_NAME_FREQUENT=3};
 static u32 confirm_suggestion_serial;
 static int menu_suggestion_current(void){
  struct SavedPlace p;return confirm_suggestion_serial==mob_suggest_serial&&suggested_place(&p)&&suggestion_same(&p,&confirm_suggestion);
@@ -69,7 +71,6 @@ static struct HudBox menu_box(int p){
  if(p==P_PHONE_ACTIONS){w=324;h=136;}
  if(p==P_PAIR){w=316;h=128;}
  if(p==P_CONFIRM){w=280;h=92;
-  if(confirm_kind==5){w=356;h=106;}
   if(confirm_kind==4&&width(place_display_name(confirm_suggestion.name),0)>252){w=356;h=106;}
  }
  if(p==P_SOURCE){w=356;h=154;}
@@ -114,7 +115,7 @@ static void frequent_startup_service(u32 now,int fresh){
  if(now-frequent_still_at<3000u||screen!=SCR_MAP||sheet_page!=P_CLOSED||modal!=MOD_NONE||freecam||bt_control_mode||boot_fade.image||!gps.fix||mob_time(now)==MOB_UNKNOWN)return;
  struct MobPoint p;frequent_boot_pending=0;
  if(!mob_frequent_destination(mob_time(now),mob_rmc_point,&p)||!frequent_current(p,now)||!mob_fave_mark(p))return;
- confirm_frequent_named=frequent_named_place(p,&confirm_frequent);confirm_kind=5;sheet_depth=0;menu_change(P_CONFIRM,1,now);menu_pending=1;
+ confirm_frequent=p;confirm_kind=5;sheet_depth=0;menu_change(P_CONFIRM,1,now);menu_pending=1;
 }
 static int place_count(void){return places_tab?nfaves:nrecents;}
 static int places_visible(struct HudBox b){int n=(b.h-67)/22;return n<1?1:n;}
@@ -177,6 +178,7 @@ static void menu_key(int code,u32 now){
    if(sheet_depth&&sheet_stack_page[sheet_depth-1]==P_REVIEW)sheet_depth--;
    review_from_place=0;menu_change(P_REVIEW,0,now);
   }
+  else if(keyboard_origin==KBD_NAME_FREQUENT){if(save&&screen==SCR_TRIP)menu_close(now);}
   else if(save&&keyboard_origin!=KBD_NAME_COORDINATES&&kbd_text[0]){sheet_depth=0;places_tab=1;place_index=fave_contains(kbd_place_lat,kbd_place_lon);menu_change(P_PLACES,place_index>=0?place_index:0,now);}
   screen=menu_screen(sheet_page);return;
  }
@@ -288,10 +290,13 @@ static void menu_key(int code,u32 now){
  if(sheet_page==P_CONFIRM){
   if(confirm_kind==2){if(sheet_focus==0){mob_clear();traffic_invalidate();traffic_learning_reset();notice_success(ui_tr("History cleared"));}menu_back(now);return;}
   if(confirm_kind==5){
-   struct MobPoint p={confirm_frequent.lat,confirm_frequent.lon};
+   struct MobPoint p=confirm_frequent;
    if(sheet_focus==0&&frequent_current(p,now)){
-    if(confirm_frequent_named){add_fave_place(confirm_frequent.name,p.lat,p.lon);}
-    else{keyboard_open_fave_name(p.lat,p.lon);keyboard_origin=KBD_NAME_FAVE;sheet_depth=0;pk_reset();pk_prepare();menu_change(P_NAME,0,now);return;}
+    struct SavedPlace draft;
+    /* Defer naming until the driver agrees to edit; never save an inferred name. */
+    frequent_named_place(p,&draft);
+    keyboard_open_fave_name(p.lat,p.lon);copystr_limit(kbd_text,sizeof(kbd_text),draft.name,KBD_TEXT_LIMIT);
+    keyboard_origin=KBD_NAME_FREQUENT;sheet_depth=0;pk_reset();pk_prepare();menu_change(P_NAME,0,now);return;
    }
    menu_close(now);return;
   }
@@ -318,7 +323,7 @@ static void menu_tile(int x,int y,int w,int h,int chosen,int opacity){
  round_rect(x,y,w,h,5,chosen?C_ACTIVE:C_PANEL2,chosen?15:5);hud_ink_alpha=old;
 }
 static void text_value(int x,int y,int w,const char*s,int opacity){hud_ink_alpha=opacity;box_text(x,y,w,15,0,s,C_MUTED);}
-static const char*menu_title(int p){return p==P_HOME?"Menu":p==P_SETTINGS?"Settings":p==P_TRIP||p==P_PLACES?"Trip":p==P_STOP?"Stop":p==P_DEST?"Destination":p==P_PLACE?"Saved place":p==P_NAME?"Rename":p==P_COORD?"Coordinates":p==P_REVIEW?"Review":p==P_LANG?(language_keyboard?"Keyboard language":"Language"):p==P_CONFIRM?(confirm_kind==5?"Add to favourites?":confirm_kind==4?"Start suggested trip?":confirm_kind==3?"Take diversion?":confirm_kind==2?"Clear driving history?":confirm_kind?"Remove stop?":"Cancel route?"):p==P_PHONE_ACTIONS?"Device":p==P_PAIR?"Pair new phone":p==P_SOURCE?(source_action==DEST_PICK_ADD_STOP?"Add stop":source_action==DEST_PICK_CHANGE_DEST?"Change destination":"Choose source"):"Bluetooth";}
+static const char*menu_title(int p){return p==P_HOME?"Menu":p==P_SETTINGS?"Settings":p==P_TRIP||p==P_PLACES?"Trip":p==P_STOP?"Stop":p==P_DEST?"Destination":p==P_PLACE?"Saved place":p==P_NAME?(keyboard_origin==KBD_NAME_FREQUENT?"Name favourite":"Rename"):p==P_COORD?"Coordinates":p==P_REVIEW?"Review":p==P_LANG?(language_keyboard?"Keyboard language":"Language"):p==P_CONFIRM?(confirm_kind==5?"Add to favourites?":confirm_kind==4?"Start suggested trip?":confirm_kind==3?"Take diversion?":confirm_kind==2?"Clear driving history?":confirm_kind?"Remove stop?":"Cancel route?"):p==P_PHONE_ACTIONS?"Device":p==P_PAIR?"Pair new phone":p==P_SOURCE?(source_action==DEST_PICK_ADD_STOP?"Add stop":source_action==DEST_PICK_CHANGE_DEST?"Change destination":"Choose source"):"Bluetooth";}
 static void row_selection(struct HudBox b,int y,int index,int selected,int opacity,int height,int pitch){
  if(index!=selected)return;int offset=sheet_old_page==sheet_page?(sheet_old_focus-selected)*pitch:0;
  if(offset>height*3||offset< -height*3)offset=0;
@@ -405,7 +410,7 @@ static const char*entry_tail(char*out,unsigned cap,const char*text,int available
  const char*p=text;while(*p&&width(p,1)>available)p+=utf8_span(p);copystr(out,cap,p);return out;
 }
 static void name_content(struct HudBox b,int opacity,u32 now){
- (void)now;pk_prepare();hud_ink_alpha=opacity;title_draw(b,"Rename");
+ (void)now;pk_prepare();hud_ink_alpha=opacity;title_draw(b,menu_title(P_NAME));
  menu_tile(b.x+12,b.y+57,b.w-24,28,0,opacity);char text[193];entry_tail(text,sizeof(text),kbd_text,b.w-58);
  box_text(b.x+22,b.y+57,b.w-44,28,1,text[0]?text:ui_tr("Enter a name"),text[0]?C_WHITE:C_MUTED);
  struct Ink m=*ink_bounds(text,1);int caret=b.x+b.w/2+m.w/2+3;
@@ -529,15 +534,12 @@ static void menu_contents(int p,int selected,struct HudBox b,int opacity,u32 now
  if(p==P_PHONE_ACTIONS){int index=menu_phone_index();if(index<0)return;text_value(b.x+18,b.y+31,b.w-36,bt_display_name(index),opacity);options[0]=btdev[index].connected?"Disconnect":"Connect";options[1]="Forget";count=2;}
  if(p==P_CONFIRM){
   char detail[193]="";
-  if(confirm_kind==5){
-   copystr(detail,sizeof(detail),ui_tr("You come here often"));
-   if(b.h>=106){box_text(b.x+14,b.y+29,b.w-28,14,0,detail,C_MUTED);copystr(detail,sizeof(detail),confirm_frequent_named?confirm_frequent.name:ui_tr("Save favourite"));}
-  }
+  if(confirm_kind==5)copystr(detail,sizeof(detail),ui_tr("You come here often"));
   else if(confirm_kind==4)copystr(detail,sizeof(detail),menu_suggestion_current()?place_display_name(confirm_suggestion.name):ui_tr("Suggestion unavailable"));
   else if(confirm_kind==3){if(menu_diversion_current()){copystr(detail,sizeof(detail),ui_tr("Save approximately "));append_eta(detail,sizeof(detail),traffic_saving);}else copystr(detail,sizeof(detail),ui_tr("Diversion unavailable"));}
   else if(confirm_kind==2)copystr(detail,sizeof(detail),ui_tr("Delete learned journeys and traffic"));
   else copystr(detail,sizeof(detail),place_display_name(confirm_kind?context_name:trip.count?trip.target[trip.count-1].name:""));
-  int detail_y=b.y+29+(confirm_kind==5&&b.h>=106?14:0);
+  int detail_y=b.y+29;
   if(confirm_kind==4&&b.h>=106&&width(detail,0)>b.w-28){
    char first[193],second[193];
    if(hud_split_title(detail,0,b.w-28,first,second)){
@@ -587,7 +589,9 @@ static void menu_open_setting(int row,u32 now){
 }
 #endif
 static void menu_sync(u32 now){
- if(sheet_page==P_CONFIRM&&confirm_kind==5&&!frequent_current((struct MobPoint){confirm_frequent.lat,confirm_frequent.lon},now)){menu_close(now);return;}
+ if(((sheet_page==P_CONFIRM&&confirm_kind==5)||
+     (keyboard_origin==KBD_NAME_FREQUENT&&(sheet_page==P_NAME||(sheet_page==P_LANG&&language_keyboard))))
+    &&!frequent_current(confirm_frequent,now)){menu_close(now);return;}
  if(!hw_bluetooth_enabled&&(sheet_page==P_PHONE||sheet_page==P_PHONE_ACTIONS||sheet_page==P_PAIR||screen==SCR_BT)){
   sheet_depth=0;menu_change(P_HOME,0,now);return;
  }
