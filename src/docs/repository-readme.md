@@ -39,37 +39,9 @@ See the [full preview index](src/docs/demo/README.md) for all animations.
 | --- | --- |
 | ![Learned destination in the driving HUD with explicit review](src/docs/demo/v220-destination-prediction.gif) | ![Historical traffic and alternative route selection, controlled fixture](src/docs/demo/v220-intelligent-diversions.gif) |
 
-<table align="center">
-  <thead>
-    <tr>
-      <th>
-        Frequent-place suggestion
-      </th>
-      <th>
-        Send a destination with
-        <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>
-      </th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td align="center">
-        <img
-          src="src/docs/demo/v220-frequent-place.gif"
-          alt="Stationary startup prompt, prefilled Favourite name and explicit save"
-          width="480"
-        >
-      </td>
-      <td align="center">
-        <img
-          src="src/docs/demo/phone-destination.gif"
-          alt="ClioPlay Send and the head unit receiving a destination side by side"
-          width="480"
-        >
-      </td>
-    </tr>
-  </tbody>
-</table>
+| Frequent-place suggestion | Send a destination with [ClioPlay Send](https://pxwel-dev.github.io/ClioPlay-Send/) |
+| --- | --- |
+| <img src="src/docs/demo/v220-frequent-place.gif" width="391"> | <img src="src/docs/demo/phone-destination.gif" width="391"> |
 
 | Driving and camera alerts | Dynamically-resizing, animated frosted-glass menu |
 | --- | --- |
