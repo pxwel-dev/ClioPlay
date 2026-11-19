@@ -57,14 +57,14 @@ See the [full preview index](src/docs/demo/README.md) for all animations.
         <img
           src="src/docs/demo/v220-frequent-place.gif"
           alt="Stationary startup prompt, prefilled Favourite name and explicit save"
-          width="480"
+          width="475"
         >
       </td>
       <td align="center">
         <img
           src="src/docs/demo/phone-destination.gif"
           alt="ClioPlay Send and the head unit receiving a destination side by side"
-          width="480"
+          width="475"
         >
       </td>
     </tr>
