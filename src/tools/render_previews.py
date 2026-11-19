@@ -18,16 +18,14 @@ from render_gallery import (BLUETOOTH_SAMPLES, MENU_ENTRY_SAMPLES, MENU_RETURN_S
                             V220_DESTINATION_SAMPLES, V220_DIVERSION_SAMPLES, ROOT, sha)
 
 
-from mobility_stories import diversion_playback_ms
 
 def timeline(theme, scenes):
     return [(f'{theme}/{scene}.png', ms) for scene, ms in scenes]
 
 
-def timed_scenes(prefix, samples, end, playback_ms=lambda ms: ms):
-    return [(f'{prefix}-{start:04d}', playback_ms(stop) - playback_ms(start))
-            for start, stop in zip(samples, [*samples[1:], end])
-            if playback_ms(stop) > playback_ms(start)]
+def timed_scenes(prefix, samples, end):
+    return [(f'{prefix}-{start:04d}', stop - start)
+            for start, stop in zip(samples, [*samples[1:], end])]
 
 
 def previews():
@@ -38,7 +36,7 @@ def previews():
     boot[0] = (boot[0][0], 750)
     return {
         'v220-destination-prediction.gif': timeline('night', timed_scenes('preview-v220-destination-prediction', V220_DESTINATION_SAMPLES, 6500)),
-        'v220-intelligent-diversions.gif': timeline('night', timed_scenes('preview-v220-intelligent-diversions', V220_DIVERSION_SAMPLES, 11000, diversion_playback_ms)),
+        'v220-intelligent-diversions.gif': timeline('night', timed_scenes('preview-v220-intelligent-diversions', V220_DIVERSION_SAMPLES, 6200)),
         'v216-coordinates.gif': timeline('night', timed_scenes('preview-v216-coordinates', V216_COORDINATES_SAMPLES, 11200)),
         'v216-hud-settings.gif': timeline('night', timed_scenes('preview-v216-hud-settings', V216_HUD_SETTINGS_SAMPLES, 10000)),
         'v216-bluetooth-hidden.gif': timeline('night', timed_scenes('preview-v216-bluetooth-hidden', V216_BLUETOOTH_HIDDEN_SAMPLES, 9600)),

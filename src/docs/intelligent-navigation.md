@@ -34,19 +34,12 @@ alternative is found, the animated glass status pill reads **Faster route
 available** and shows the next available control. The shared geometry
 stays solid magenta; only the bypassed original geometry is gold/yellow and
 only the distinct proposed geometry is dashed aqua/teal. Small junction
-markers identify the divergence and rejoin points when visible. A rounded,
-anti-aliased approximate saving badge sits beside the decision point when
-space permits; the confirmation always includes the saving. The full
-invitation is shown for five seconds, then collapses into one line with
-the announcement and current review control.
-The invitation uses the theme-aware success green in both driving and BT CTRL
-contexts; the alternative geometry keeps its distinct teal colour.
-It expands once more for five seconds when the driver is approximately
-20 seconds from the decision point at the current GPS speed (minimum 200 m,
-maximum 700 m). An offer already inside that range during its first expansion
-needs no second reminder. There are no repeated reminders; the compact
-invitation remains actionable until acceptance, rejection or expiry at the
-matched decision point. A new independent offer starts its own timing.
+markers identify the divergence and rejoin points when visible. A rounded, anti-aliased frosted-glass badge with centred approximate
+savings text sits beside the decision point when space permits; the confirmation always includes the saving. The invitation
+is a single line: the theme-aware success green announcement followed by the
+standard blue review instruction, in both driving and BT CTRL contexts.
+It remains actionable until acceptance, rejection or expiry at the matched
+decision point.
 
 On the driving map, press **OK to review**, then OK on the initially selected
 Yes to accept. In **BT CTRL**, the invitation instead reads **BACK to review**:
@@ -62,7 +55,7 @@ The original route, warning and adjusted ETA remain; independent alternatives
 can still be offered. Yes makes the new active route solid magenta.
 
 The candidate is trimmed at matching legal turn states before presentation,
-so the distance and expiry refer to the actual departure point from the
+so the badge and offer expiry refer to the actual departure point from the
 current route, not a shared search prefix. A stale confirmation cannot accept
 or reject a newer offer. Accepted sections are settled until passed; a full
 route recalculation clears route-local decisions. Normal off-route rerouting

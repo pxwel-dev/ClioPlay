@@ -71,7 +71,7 @@ STORIES.update({'v216-coordinates.gif': {'duration': 11200, 'events': [(0, 'clea
 
 STORIES.update({
     'v220-destination-prediction.gif': {'duration': 6500, 'events': DESTINATION_EVENTS},
-    'v220-intelligent-diversions.gif': {'duration': 11000, 'events': DIVERSION_EVENTS},
+    'v220-intelligent-diversions.gif': {'duration': 6200, 'events': DIVERSION_EVENTS},
 })
 
 
@@ -186,9 +186,6 @@ def main():
         for i, (name, story) in enumerate(STORIES.items()):
             frames = [decode((temp/f'scene-{i}-{tick:04d}.rgb565').read_bytes())
                       for tick in range(story['duration']//INTERVAL_MS)]
-            if name == "v220-intelligent-diversions.gif":
-                from mobility_stories import DIVERSION_GIF_SKIP_FROM, DIVERSION_GIF_SKIP_TO
-                frames = [frame for i,frame in enumerate(frames) if not DIVERSION_GIF_SKIP_FROM <= i*INTERVAL_MS < DIVERSION_GIF_SKIP_TO]
             encode(frames, args.output/name)
 
 

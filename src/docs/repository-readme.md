@@ -16,8 +16,8 @@
 - Introduced optional, offline driving-history learning. Fresh GPS observations are recorded independently of active navigation and only successful Barcelona power-off sessions train the model.
 - Added contextual destination suggestions to an empty Itinerary using the last saved GPS position, raw GPS time/day patterns and early trajectory evidence, with nearby Favourites/Recents matching.
 - Added directional historical road-time profiles, traffic-adjusted ETAs and an explicit local Diversion choice with gold/yellow bypassed geometry and an aqua/teal alternative.
-- Shared route geometry remains magenta; dashed teal alternatives, yellow bypasses and junction markers distinguish proposed changes. A small map badge shows the approximate saving near the decision point; the glass HUD announces the offer with context-sensitive Back/OK instructions; direct map confirmation preserves Bluetooth controls and driving zoom.
-- Diversion invitations expand for five seconds, collapse to a compact actionable line and give one speed-aware five-second approach reminder (200–700 m). Both control contexts use the established success green.
+- Shared route geometry remains magenta; dashed teal alternatives, yellow bypasses and junction markers distinguish proposed changes. A small frosted-glass map badge shows the approximate saving near the decision point; the glass HUD announces the offer with context-sensitive Back/OK instructions; direct map confirmation preserves Bluetooth controls and driving zoom.
+- Diversion invitations use a persistent single line with the established success green announcement and blue context-sensitive review instruction, until acceptance, rejection or expiry.
 - Declining a diversion suppresses only its bypassed section; later independent offers remain available, and diversion confirmation initially selects Yes. Restored the original empty-Itinerary instructions alongside learned destinations.
 - Grouped Settings into Display, HUD layout, Navigation, Driving history and System pages.
 - Added history, destination suggestion and diversion controls in Settings → Driving history, including a confirmed clear-history action.

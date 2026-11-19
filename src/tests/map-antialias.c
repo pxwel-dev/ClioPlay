@@ -166,7 +166,11 @@ static void diversion_badge(void){
   nlbox=0;nav_card_w=0;traffic_saving=1200;
   char amount[112];diversion_saving_text(amount,sizeof(amount));assert(streq(amount,"Save ~2 min"));
   struct HudBox badge;assert(diversion_saving_box(5,width(amount,0)+18,&badge));
-  nlbox=0;clear();draw_diversion_markers(5);assert(memcmp(saved,fb,sizeof(fb)));
+  /* The badge is the same glass renderer as the main HUD, with exact
+   * glyph-ink centring. Compare the production map pass to that reference. */
+  hud_ink_alpha=16;hud_glass(badge,0);box_text(badge.x+6,badge.y,badge.w-12,badge.h,0,amount,hud_status_colour(HUD_SUCCESS,C_WHITE));
+  memcpy(saved,fb,sizeof(fb));
+  nlbox=0;clear();draw_diversion_markers(5);assert(!memcmp(saved,fb,sizeof(fb)));
   memcpy(saved,fb,sizeof(fb));nlbox=0;clear();traffic_saving=6000;draw_diversion_markers(5);assert(memcmp(saved,fb,sizeof(fb)));
   diversion_saving_text(amount,sizeof(amount));assert(streq(amount,"Save ~10 min"));
   /* A covering label forces the badge to stay hidden, not overlap. */

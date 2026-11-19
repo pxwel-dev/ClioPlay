@@ -2542,6 +2542,7 @@ static int diversion_saving_box(int z,int w,struct HudBox*b){
  }
  return 0;
 }
+static void box_text(int x,int y,int w,int h,int face,const char*s,u16 colour);
 static void draw_diversion_markers(int z){
  if(!traffic_offer_valid())return;
  for(int k=0;k<2;k++){
@@ -2555,11 +2556,12 @@ static void draw_diversion_markers(int z){
  struct HudBox badge;int w=width(text,0)+18;
  if(w<=164&&diversion_saving_box(z,w,&badge)){
   int old=hud_ink_alpha;hud_ink_alpha=16;
-  /* Supersampled round_rect corners and the same theme-aware success
-   * colour as the status HUD, with a distinct teal route marker. */
-  round_rect(badge.x,badge.y,badge.w,badge.h,10,C_BORDER,15);
-  round_rect(badge.x+1,badge.y+1,badge.w-2,badge.h-2,9,C_PANEL,15);
-  compact_center(badge.x+badge.w/2,badge.y+4,badge.w-12,0,text,hud_status_colour(HUD_SUCCESS,C_WHITE));
+  /* Sample the clean map framebuffer using the same frosted glass, rim
+   * and anti-aliased corners as the primary HUD. This background pass
+   * must not consume or reuse a foreground compositor cache slot. */
+  int glass_active=hud_glass_frame_active;hud_glass_frame_active=0;
+  hud_glass(badge,0);hud_glass_frame_active=glass_active;
+  box_text(badge.x+6,badge.y,badge.w-12,badge.h,0,text,hud_status_colour(HUD_SUCCESS,C_WHITE));
   hud_ink_alpha=old;
  }
 }

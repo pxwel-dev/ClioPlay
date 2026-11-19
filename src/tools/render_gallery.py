@@ -103,7 +103,7 @@ V220_DIVERSION_SAMPLES = sorted({
     at+step
     for at, _ in MAP_DIVERSION_EVENTS
     for step in TWEEN_STEPS
-} | {10500})
+} | {5900})
 POPUPS_LAYOUT_EVENTS = (
     (0, 'menu_open(P_TRIP,0,hud_now_ms());'),
     (900, 'confirm_kind=0;menu_change(P_CONFIRM,0,hud_now_ms());'),

@@ -72,12 +72,6 @@ static int traffic_prepare_offer(void){
  }
  traffic_offer_serial++;render_background_dirty=1;return 1;
 }
-static u32 traffic_decision_m(void){
- if(traffic_begin_idx<=route_head||traffic_begin_idx>=route_n)return 0;
- u32 m=geo_seg_m(car_lat(),car_lon(),route_lat[route_head+1],route_lon[route_head+1]);
- for(int i=route_head+2;i<=traffic_begin_idx;i++)m=sat_add32(m,route_seg_m[i]);
- return m;
-}
 struct TrafficState {u32 node,cost,arc;int next,done;};
 static struct TrafficState traffic_states[TRAFFIC_SEARCH_MAX];
 static unsigned traffic_state_n;

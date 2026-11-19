@@ -116,31 +116,6 @@ struct TwoGraph {
  struct CprNode node[9];u32 edge[10];struct CprBase base[10];
  struct CprArc arc[10];struct CprPoint geom[20];u32 ways[20];
 };
-static void diversion_timer(void){
- memzero(&hud_diversion,sizeof(hud_diversion));traffic_offer_serial++;
- gps.mph10=0;assert(hud_diversion_reminder_m()==200);
- gps.mph10=300;assert(hud_diversion_reminder_m()==268);
- gps.mph10=700;assert(hud_diversion_reminder_m()==626);
- gps.mph10=900;assert(hud_diversion_reminder_m()==700);
- gps.mph10=0;u32 start=0xfffffff0u;
- assert(hud_diversion_expanded(start,1000));
- assert(hud_diversion_expanded(start+4999u,1000));
- assert(!hud_diversion_expanded(start+5000u,1000));
- assert(!hud_diversion_expanded(start+6000u,201));
- assert(hud_diversion_expanded(start+6100u,200));
- assert(hud_diversion_expanded(start+11099u,180));
- assert(!hud_diversion_expanded(start+11100u,180));
- assert(!hud_diversion_expanded(start+12000u,250));
- assert(!hud_diversion_expanded(start+13000u,150));
- /* A new offer starts a new invitation. If already near, or if the
-  * driver reaches the threshold while it is expanded, do not replay it. */
- traffic_offer_serial++;assert(hud_diversion_expanded(20000,100));
- assert(!hud_diversion_expanded(25000,80));
- traffic_offer_serial++;assert(hud_diversion_expanded(30000,400));
- assert(hud_diversion_expanded(32000,190));
- assert(!hud_diversion_expanded(35000,180));
- memzero(&hud_diversion,sizeof(hud_diversion));
-}
 static void two_diversions(void){
  struct TwoGraph g={0};
  const struct CprPoint p[9]={{5497000,-161000},{5497100,-161000},{5497500,-161000},{5497750,-161000},
@@ -191,7 +166,7 @@ static void two_diversions(void){
  menu_close(hud_now_ms());freecam=0;modal=MOD_NONE;screen=SCR_MAP;
  gps.lat=track_lat=route_lat[0];gps.lon=track_lon=route_lon[0];track_valid=1;
  hw_bluetooth_enabled=btui.connected=1;set_band("CD");btui.playing=1;
- gps.mph10=240;assert(traffic_decision_m()>hud_diversion_reminder_m());
+ gps.mph10=240;
  /* A covered map, no unrelated notification, and normal route progress. */
  mapok=1;mh.flags=0;mh.minlat=mh.minlon=-90000000;mh.maxlat=mh.maxlon=90000000;
  hud_observed_route=R_READY;hud_reset_animations();
@@ -199,20 +174,19 @@ static void two_diversions(void){
  hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
  assert(streq(hud_tween[HC_STATUS].target.traffic_hint,"BACK to review"));
  assert(hud_tween[HC_STATUS].target.flags&HUD_KEYS);assert(!hud_diversion_shortcut_ready());
- u32 invitation_at=hud_capture_ms;int expanded_h=hud_tween[HC_STATUS].target.box.h;
- hud_capture_ms=invitation_at+4999u;hud_prepare(5,hud_now_ms(),1);
- assert(!(hud_tween[HC_STATUS].target.flags&HUD_TRAFFIC_COMPACT));
- hud_capture_ms=invitation_at+5000u;hud_prepare(5,hud_now_ms(),1);
- assert(hud_tween[HC_STATUS].target.flags&HUD_TRAFFIC_COMPACT);
- assert(hud_tween[HC_STATUS].target.box.h<=expanded_h-15);
- assert(strstr(hud_tween[HC_STATUS].target.traffic_hint,"BACK to review"));
- hud_capture_ms+=500;hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
+ /* The one-line invitation does not grow, collapse or replay after time. */
+ struct HudCard initial=hud_tween[HC_STATUS].target;
+ assert(streq(initial.traffic_title,"Faster route available")&&!initial.traffic_detail[0]);
+ hud_capture_ms+=60000u;hud_prepare(5,hud_now_ms(),1);
+ assert(hud_tween[HC_STATUS].target.box.h==initial.box.h);
+ assert(streq(hud_tween[HC_STATUS].target.traffic_hint,"BACK to review"));
+ hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
  assert(!hud_diversion_shortcut_ready());
  key_handle(K_ENTER);assert(screen==SCR_MAP&&bt_control_mode&&traffic_offer_valid()&&bt_transport_press.kind==BT_TRANSPORT_PLAY_PAUSE);
  key_handle(K_BACK);assert(!bt_control_mode&&screen==SCR_MAP);
  hud_capture_ms+=500;hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
- assert(hud_tween[HC_STATUS].target.flags&HUD_TRAFFIC_COMPACT);
- assert(strstr(hud_tween[HC_STATUS].target.title,"OK to review")||strstr(hud_tween[HC_STATUS].target.traffic_hint,"OK to review"));
+ assert(streq(hud_tween[HC_STATUS].target.traffic_hint,"OK to review"));
+ assert(!hud_tween[HC_STATUS].target.traffic_detail[0]);
  assert(hud_diversion_shortcut_ready());
  key_handle(K_CONSOLE_INFO);assert(screen==SCR_MAP&&hud_navigation.kind==HUD_JOURNEY);
  pref.autozoom=1;zoom_override=5;
@@ -221,20 +195,13 @@ static void two_diversions(void){
  hud_capture_ms+=500;hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
  assert(hud_diversion_shortcut_ready());key_handle(K_ENTER);assert(sheet_page==P_CONFIRM);
  key_handle(K_BACK);assert(screen==SCR_MAP&&traffic_offer_valid());
- /* No re-expansion when returning from the confirmation. */
+ /* Approaching the decision point does not change invitation content. */
  hud_capture_ms+=500;hud_prepare(5,hud_now_ms(),1);
- assert(hud_tween[HC_STATUS].target.flags&HUD_TRAFFIC_COMPACT);
- /* Advance to the preceding turn-state; one speed-aware reminder. */
+ assert(streq(hud_tween[HC_STATUS].target.traffic_hint,"OK to review"));
  route_head=3;gps.lat=track_lat=route_lat[3];gps.lon=track_lon=route_lon[3];gps.mph10=400;
- assert(traffic_decision_m()<=hud_diversion_reminder_m());
- hud_capture_ms+=500;hud_prepare(5,hud_now_ms(),1);u32 reminder_at=hud_capture_ms;
- assert(!(hud_tween[HC_STATUS].target.flags&HUD_TRAFFIC_COMPACT));
- assert(!hud_tween[HC_STATUS].target.traffic_detail[0]&&streq(hud_tween[HC_STATUS].target.traffic_hint,"OK to review"));
- hud_capture_ms=reminder_at+4999u;hud_prepare(5,hud_now_ms(),1);assert(!(hud_tween[HC_STATUS].target.flags&HUD_TRAFFIC_COMPACT));
- hud_capture_ms=reminder_at+5000u;hud_prepare(5,hud_now_ms(),1);assert(hud_tween[HC_STATUS].target.flags&HUD_TRAFFIC_COMPACT);
- gps.mph10=0;hud_capture_ms+=500;hud_prepare(5,hud_now_ms(),1);
- gps.mph10=400;hud_capture_ms+=500;hud_prepare(5,hud_now_ms(),1);assert(hud_tween[HC_STATUS].target.flags&HUD_TRAFFIC_COMPACT);
- /* Crossing the decision point removes both compact and expanded invitations. */
+ hud_capture_ms+=60000;hud_prepare(5,hud_now_ms(),1);
+ assert(streq(hud_tween[HC_STATUS].target.traffic_hint,"OK to review")&&!hud_tween[HC_STATUS].target.traffic_detail[0]);
+ /* Crossing the decision point removes the invitation. */
  route_head=traffic_begin_idx;hud_capture_ms+=500;hud_prepare(5,hud_now_ms(),1);
  assert(!hud_diversion_shortcut_ready()&&!hud_tween[HC_STATUS].target.traffic_serial);
  /* Restore the controlled car position for testing acceptance and stale identity. */
@@ -263,4 +230,4 @@ static void shared_geometry(void){
  route_head=1;assert(traffic_offer_valid());route_head=2;assert(!traffic_offer_valid());
  traffic_invalidate();route_head=0;
 }
-int main(void){learner();shared_geometry();tiny_graph();diversion_timer();two_diversions();puts("Mobility recording, date, prediction, road profiles, exact-state diversion, section-local dismissal, timed HUD, speed-aware reminder and default-Yes regression passed.");return 0;}
+int main(void){learner();shared_geometry();tiny_graph();two_diversions();puts("Mobility recording, date, prediction, road profiles, exact-state diversion, section-local dismissal, single-line HUD and default-Yes regression passed.");return 0;}
