@@ -122,4 +122,21 @@ static void bounds(void){
   menu_settle(hud_now_ms());menu_draw(hud_now_ms());assert(clip_x==0&&clip_y==0&&clip_right==W&&clip_bottom==H&&hud_ink_alpha==16);
  }
 }
-int main(void){tabs();saved_places();itinerary();long_itinerary();itinerary_connector_bounds();bluetooth();bounds();puts("Menu sheets: three tabs/remembered selections, compact scrolling places, naming/real coordinates, reviewed stops, ten-target persistence and unsupported-format rejection, reorder/remove/cancel, connector bounds, pinned pairing, address-stable phone actions, theme/HUD bounds passed.");}
+static void confirmation_typography(void){
+ reset();load_font();struct HudBox b={100,90,280,92,256};
+ static u16 expected[FB_PIX];
+ for(int night=0;night<2;night++)for(int kind=0;kind<4;kind++){
+  apply_palette(night);confirm_kind=kind;
+  fill(0,0,W,H,C_BG);hud_ink_alpha=16;
+  box_text(b.x+14,b.y+4,b.w-28,22,CONFIRMATION_FACE,ui_tr(menu_title(P_CONFIRM)),C_WHITE);
+  memcpy(expected,fb,sizeof(fb));
+  fill(0,0,W,H,C_BG);menu_contents(P_CONFIRM,0,b,16,hud_now_ms());
+  for(int y=b.y+4;y<b.y+26;y++)assert(!memcmp(&expected[y*W],&fb[y*W],W*sizeof(u16)));
+ }
+ const int modals[]={MOD_ROUTE_POINT,MOD_CANCEL_ROUTE,MOD_REMOVE_STOP,MOD_RESUME_TRIP};
+ for(unsigned i=0;i<sizeof(modals)/sizeof(modals[0]);i++){
+  struct PopupView v;popup_build(&v,modals[i]);assert(v.count==3);
+  for(int j=0;j<v.count;j++)assert(v.item[j].face==CONFIRMATION_FACE);
+ }
+}
+int main(void){tabs();saved_places();itinerary();long_itinerary();itinerary_connector_bounds();bluetooth();bounds();confirmation_typography();puts("Menu sheets: three tabs/remembered selections, compact scrolling places, naming/real coordinates, reviewed stops, ten-target persistence and unsupported-format rejection, reorder/remove/cancel, connector bounds, pinned pairing, address-stable phone actions, theme/HUD bounds passed.");}

@@ -145,4 +145,26 @@ static void diversion_colours(void){
   assert(phase==(90*256)%(17*256));
  }
 }
-int main(void){strokes();thin_roads();minor_roads();polygons();joins();diversion_colours();return 0;}
+static void diversion_markers_only(void){
+ traffic_invalidate();pref.learn_history=pref.diversions=gps.fix=1;
+ route_status=R_READY;route_head=0;route_n=4;traffic_begin_idx=1;traffic_join_idx=3;
+ traffic_offer_revision=traffic_route_revision;traffic_region=atlas_route_region;traffic_offer_n=3;
+ freecam=1;cam_lat=cam_lon=0;map_tilt_q8=0;freecam_course=0;freecam_course_valid=1;
+ for(int i=1;i<4;i++){
+  route_node[i]=(u32)i;route_lat[i]=0;route_lon[i]=(i-2)*100;
+  traffic_path[i-1]=(struct TrafficPoint){route_lat[i],route_lon[i],route_node[i],100,0,0,100};
+ }
+ traffic_path[1].lat=100;traffic_shared_alt[1]=traffic_shared_alt[2]=0;
+ assert(traffic_offer_valid());
+ for(int night=0;night<2;night++){
+  apply_palette(night);clear();
+  for(int i=0;i<3;i+=2){int x,y;map_project_q8(traffic_path[i].lat,traffic_path[i].lon,5,&x,&y);
+   assert(x>=6*256&&x<=(W-6)*256&&y>=6*256&&y<=(H-6)*256);
+   map_dot_q8(x,y,C_ROUTE_DIVERSION,5);map_dot_q8(x,y,C_MAP_BG,3);
+  }
+  memcpy(saved,fb,sizeof(fb));
+  for(u32 saving=1200;saving<=6000;saving+=4800){clear();traffic_saving=saving;draw_diversion_markers(5);assert(!memcmp(saved,fb,sizeof(fb)));}
+ }
+ traffic_invalidate();freecam=0;clear();memcpy(saved,fb,sizeof(fb));draw_diversion_markers(5);assert(!memcmp(saved,fb,sizeof(fb)));
+}
+int main(void){strokes();thin_roads();minor_roads();polygons();joins();diversion_colours();diversion_markers_only();return 0;}

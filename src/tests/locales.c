@@ -26,6 +26,9 @@ int main(int argc,char**argv){assert(argc==3&&load_font()&&cliou_load(argv[1]));
   assert(streq(place_display_name("MAP POINT"),ui_tr("Map point"))&&streq(place_display_name("PHONE DESTINATION"),ui_tr("Phone destination"))&&streq(place_display_name("Settings"),"Settings"));
   copystr(btui.status,sizeof(btui.status),"BT DAEMON ERROR");pref.debug=0;assert(streq(bt_status_text(),lang?ui_tr("Phone connection unavailable"):"Bluetooth unavailable"));btui.status[0]=0;
   for(unsigned i=0;i<sizeof(locale_cases)/sizeof(locale_cases[0]);i++){assert(streq(ui_tr(locale_cases[i][0]),locale_cases[i][lang]));whole_utf8(locale_cases[i][lang]);assert(cliou_width(locale_cases[i][lang],1)>0);}
+  const char*confirm_titles[]={"Take diversion?","Cancel route?","Remove stop?","Clear driving history?","Route to point?","Add point as stop?","Cancel current route?","Resume saved trip?"};
+  for(unsigned i=0;i<sizeof(confirm_titles)/sizeof(confirm_titles[0]);i++)assert(width(ui_tr(confirm_titles[i]),CONFIRMATION_FACE)<=252);
+  assert(width(ui_tr("Yes"),CONFIRMATION_FACE)<=104&&width(ui_tr("No"),CONFIRMATION_FACE)<=104);
   /* The action hint must always fit an available status HUD column. */
   assert(width(ui_tr("BACK to review"),0)<=220&&width(ui_tr("OK to review"),0)<=220);
   assert(width(ui_tr("Faster route available"),0)<=280);

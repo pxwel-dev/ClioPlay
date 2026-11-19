@@ -466,7 +466,8 @@ static void menu_contents(int p,int selected,struct HudBox b,int opacity,u32 now
  if(p==P_REVIEW){review_content(b,selected,opacity);return;}
  if(p==P_SETTINGS){settings_content(b,selected,opacity,now);return;}
  if(p==P_PHONE){phone_content(b,selected,opacity);return;}
- title_draw(b,menu_title(p));
+ if(p==P_CONFIRM)box_text(b.x+14,b.y+4,b.w-28,22,CONFIRMATION_FACE,ui_tr(menu_title(p)),C_WHITE);
+ else title_draw(b,menu_title(p));
  const char*options[6]={0};int count=0;
  if(p==P_SOURCE){options[0]="Recents";options[1]="Favourites";options[2]="Coordinates";count=3;}
  if(p==P_HOME){options[0]="Trip";options[1]=hw_bluetooth_enabled?"Bluetooth":"Settings";
@@ -481,10 +482,10 @@ static void menu_contents(int p,int selected,struct HudBox b,int opacity,u32 now
   if(confirm_kind==3){if(menu_diversion_current()){copystr(detail,sizeof(detail),ui_tr("Save approximately "));append_eta(detail,sizeof(detail),traffic_saving);}else copystr(detail,sizeof(detail),ui_tr("Diversion unavailable"));}
   else if(confirm_kind==2)copystr(detail,sizeof(detail),ui_tr("Delete learned journeys and traffic"));
   else copystr(detail,sizeof(detail),place_display_name(confirm_kind?context_name:trip.count?trip.target[trip.count-1].name:""));
-  text_value(b.x+14,b.y+29,b.w-28,detail,opacity);
-  if(confirm_kind==3&&b.h>=92&&menu_diversion_current())text_value(b.x+14,b.y+43,b.w-28,ui_tr("Based on driving history"),opacity);
+  box_text(b.x+14,b.y+29,b.w-28,14,0,detail,C_MUTED);
+  if(confirm_kind==3&&b.h>=92&&menu_diversion_current())box_text(b.x+14,b.y+43,b.w-28,14,0,ui_tr("Based on driving history"),C_MUTED);
   int w=(b.w-40)/2;const char*choices[]={"Yes","No"};
-  for(int i=0;i<2;i++){int x=b.x+14+i*(w+12);menu_tile(x,b.y+b.h-34,w,24,selected==i,opacity);hud_ink_alpha=opacity;box_text(x,b.y+b.h-34,w,24,1,ui_tr(choices[i]),selected==i?C_ACTIVE_TEXT:C_WHITE);}return;
+  for(int i=0;i<2;i++){int x=b.x+14+i*(w+12);menu_tile(x,b.y+b.h-34,w,24,selected==i,opacity);hud_ink_alpha=opacity;box_text(x,b.y+b.h-34,w,24,CONFIRMATION_FACE,ui_tr(choices[i]),selected==i?C_ACTIVE_TEXT:C_WHITE);}return;
  }
  if(p==P_PAIR){text_value(b.x+18,b.y+42,b.w-36,bt_status_text(),opacity);text_value(b.x+18,b.y+64,b.w-36,ui_tr("Waiting for phone"),opacity);return;}
  if(p==P_LANG){

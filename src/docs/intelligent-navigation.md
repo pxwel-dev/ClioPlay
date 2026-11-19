@@ -35,7 +35,9 @@ available**, gives the estimated saving and remaining distance to the actual
 decision point, and shows the next available control. The shared geometry
 stays solid magenta; only the bypassed original geometry is gold/yellow and
 only the distinct proposed geometry is dashed aqua/teal. Small junction
-markers and a saving label appear when there is room on the map.
+markers identify the divergence and rejoin points when visible. Estimated
+savings are shown only in the status pill and confirmation, leaving the
+map clear of redundant text.
 
 On the driving map, press **OK to review**, then OK on the initially selected
 Yes to accept. In **BT CTRL**, the invitation instead reads **BACK to review**:

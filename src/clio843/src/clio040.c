@@ -2500,6 +2500,8 @@ struct TripState {u8 active,count,active_idx,paused;struct TripTarget target[TRI
 static struct SavedPlace recents[RECENT_MAX],faves[FAVE_MAX];static int nrecents=0,nfaves=0;
 static struct TripState trip;static int trip_need_route=0,trip_route_defer=0,arrival_ticks=0;
 
+/* All Yes/No confirmations share the established popup font face. */
+enum {CONFIRMATION_FACE=1};
 enum {MOD_NONE=0,MOD_ROUTE_POINT=1,MOD_RECENT=2,MOD_FAVE=3,MOD_CANCEL_ROUTE=4,MOD_TARGET=5,MOD_REMOVE_STOP=6,MOD_ARRIVED_STOP=7,MOD_ARRIVED_DEST=8,MOD_RESUME_TRIP=9,MOD_SOURCE_PICK=10};
 static int modal=MOD_NONE,modal_choice=0,modal_index=-1;static s32 pending_lat=0,pending_lon=0;static int pending_point_stop=0;
 enum {DEST_PICK_NONE=0,DEST_PICK_ADD_STOP=1,DEST_PICK_CHANGE_DEST=2};
@@ -2513,9 +2515,9 @@ static char notice_text[40]; /* Latest action, also used by native checks. */
 
 #include "hud.h"
 
-/* Real divergence/rejoin markers and one collision-aware saving label.
- * Nothing is placed under the driving instruments or the status/clock HUD. */
-static void draw_diversion_annotations(int z){
+/* Only the divergence/rejoin markers belong on the map. Savings and
+ * decision instructions are presented by the glass HUD and confirmation. */
+static void draw_diversion_markers(int z){
  if(!traffic_offer_valid())return;
  for(int k=0;k<2;k++){
   int i=k?traffic_offer_n-1:0,x,y;
@@ -2524,29 +2526,11 @@ static void draw_diversion_annotations(int z){
    map_dot_q8(x,y,C_ROUTE_DIVERSION,5);map_dot_q8(x,y,C_MAP_BG,3);
   }
  }
- char text[48]="-";append_eta(text,sizeof(text),traffic_saving);
- int w=width(text,0)+14;if(w>110)return;
- int old=hud_ink_alpha;hud_ink_alpha=16;
- /* Pick a visible alternate-only segment, not a label anchored to a shared
-  * road. Prefer the centre of the detour and avoid the car marker. */
- for(int k=0;k<traffic_offer_n-1;k++){
-  int i=1+(traffic_offer_n/2+k-1)%(traffic_offer_n-1);if(traffic_shared_alt[i])continue;
-  int x,y,xx,yy;map_project_q8(traffic_path[i-1].lat,traffic_path[i-1].lon,z,&x,&y);
-  map_project_q8(traffic_path[i].lat,traffic_path[i].lon,z,&xx,&yy);x=(x+xx)/512;y=(y+yy)/512;
-  for(int side=0;side<2;side++){
-   int left=side?x-w-8:x+8,top=y-9;
-   if(top<44||top+18>=HUD_BOTTOM_Y-8||(!freecam&&left<MAP_ANCHOR_X+19&&left+w>MAP_ANCHOR_X-19&&top<view_anchor_y()+19&&top+18>view_anchor_y()-19))continue;
-   if(!label_free(left,top,left+w,top+18))continue;
-   ui_surface(left,top,w,18,C_PANEL);compact_center(left+w/2,top+3,w-8,0,text,C_ROUTE_DIVERSION);
-   hud_ink_alpha=old;return;
-  }
- }
- hud_ink_alpha=old;
 }
 static void draw_map_background(void){
  int z=active_zoom();perspective_scale_update();
  if(!freecam)drive_label_prepare(z);
- draw_map_geometry(z);draw_route_overlay(z);if(!freecam)drive_label_render();poi_render();draw_diversion_annotations(z);
+ draw_map_geometry(z);draw_route_overlay(z);if(!freecam)drive_label_render();poi_render();draw_diversion_markers(z);
  draw_car_marker(z);draw_explore_crosshair();
 }
 static void draw_map(void){
