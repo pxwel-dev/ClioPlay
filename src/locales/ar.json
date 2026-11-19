@@ -224,5 +224,10 @@
   "Save ~": "توفير ~",
   "Decision: ": "القرار: ",
   "BACK to review": "رجوع للمراجعة",
-  "OK to review": "OK للمراجعة"
+  "OK to review": "OK للمراجعة",
+  "Display": "الشاشة",
+  "HUD layout": "تخطيط HUD",
+  "Navigation": "الملاحة",
+  "Driving history": "سجل القيادة",
+  "System": "النظام"
 }

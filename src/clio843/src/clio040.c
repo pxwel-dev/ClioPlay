@@ -2515,8 +2515,33 @@ static char notice_text[40]; /* Latest action, also used by native checks. */
 
 #include "hud.h"
 
-/* Only the divergence/rejoin markers belong on the map. Savings and
- * decision instructions are presented by the glass HUD and confirmation. */
+/* A single anti-aliased saving badge belongs beside the real decision
+ * point, not halfway along the alternative. Only place it in clear map
+ * space, outside the car, driving instruments and existing label boxes. */
+static void diversion_saving_text(char*b,unsigned cap){
+ copystr(b,cap,ui_tr("Save ~"));append_eta(b,cap,traffic_saving);
+}
+static int diversion_saving_box(int z,int w,struct HudBox*b){
+ int qx,qy;map_project_q8(traffic_path[0].lat,traffic_path[0].lon,z,&qx,&qy);
+ int x=qx>>8,y=qy>>8;
+ if(x<6||x>W-6||y<6||y>H-6)return 0;
+ int carx,cary,joinx,joiny;
+ world_to_screen(car_lat(),car_lon(),z,&carx,&cary);
+ world_to_screen(traffic_path[traffic_offer_n-1].lat,traffic_path[traffic_offer_n-1].lon,z,&joinx,&joiny);
+ const int h=20,gap=9;
+ /* Try the sides first; keep all alternatives immediately adjacent. */
+ const int xs[]={x+gap,x-w-gap,x+20,x-w-20,x-w/2,x-w/2,x+gap,x-w-gap};
+ const int ys[]={y-h/2,y-h/2,y-h/2,y-h/2,y-h-gap,y+gap,y-h-gap,y-h-gap};
+ for(unsigned i=0;i<sizeof(xs)/sizeof(xs[0]);i++){
+  int l=xs[i],t=ys[i];
+  if(t<40||t+h>HUD_BOTTOM_Y-8||l<4||l+w>W-4)continue;
+  if(l<carx+19&&l+w>carx-19&&t<cary+19&&t+h>cary-19)continue;
+  if(l<joinx+6&&l+w>joinx-6&&t<joiny+6&&t+h>joiny-6)continue;
+  if(!label_free(l-2,t-2,l+w+2,t+h+2))continue;
+  *b=hud_box(l,t,w,h);return 1;
+ }
+ return 0;
+}
 static void draw_diversion_markers(int z){
  if(!traffic_offer_valid())return;
  for(int k=0;k<2;k++){
@@ -2525,6 +2550,17 @@ static void draw_diversion_markers(int z){
   if(x>=6*256&&x<=(W-6)*256&&y>=6*256&&y<=(H-6)*256){
    map_dot_q8(x,y,C_ROUTE_DIVERSION,5);map_dot_q8(x,y,C_MAP_BG,3);
   }
+ }
+ char text[112];diversion_saving_text(text,sizeof(text));
+ struct HudBox badge;int w=width(text,0)+18;
+ if(w<=164&&diversion_saving_box(z,w,&badge)){
+  int old=hud_ink_alpha;hud_ink_alpha=16;
+  /* Supersampled round_rect corners and the same theme-aware success
+   * colour as the status HUD, with a distinct teal route marker. */
+  round_rect(badge.x,badge.y,badge.w,badge.h,10,C_BORDER,15);
+  round_rect(badge.x+1,badge.y+1,badge.w-2,badge.h-2,9,C_PANEL,15);
+  compact_center(badge.x+badge.w/2,badge.y+4,badge.w-12,0,text,hud_status_colour(HUD_SUCCESS,C_WHITE));
+  hud_ink_alpha=old;
  }
 }
 static void draw_map_background(void){

@@ -224,5 +224,10 @@
   "Save ~": "Κέρδος ~",
   "Decision: ": "Απόφαση: ",
   "BACK to review": "Πίσω για προβολή",
-  "OK to review": "OK για προβολή"
+  "OK to review": "OK για προβολή",
+  "Display": "Οθόνη",
+  "HUD layout": "Διάταξη HUD",
+  "Navigation": "Πλοήγηση",
+  "Driving history": "Ιστορικό οδήγησης",
+  "System": "Σύστημα"
 }

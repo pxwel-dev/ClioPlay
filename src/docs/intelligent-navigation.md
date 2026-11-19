@@ -7,7 +7,7 @@ route to learn. Use the normal navigation engine for actual guidance.
 
 ## Enable and use
 
-Open **MENU → Settings** and scroll to the new rows.
+Open **MENU → Settings → Driving history**.
 
 | Setting | Effect |
 | --- | --- |
@@ -31,14 +31,16 @@ an arrival. They are hidden while an itinerary is active.
 During guidance, **Likely traffic ahead** means historical evidence suggests
 a delay, not that a real-time traffic incident was detected. Once a beneficial
 alternative is found, the animated glass status pill reads **Faster route
-available**, gives the estimated saving and remaining distance to the actual
-decision point, and shows the next available control. The shared geometry
+available** and shows the next available control. The shared geometry
 stays solid magenta; only the bypassed original geometry is gold/yellow and
 only the distinct proposed geometry is dashed aqua/teal. Small junction
-markers identify the divergence and rejoin points when visible. Estimated
-savings are shown only in the status pill and confirmation, leaving the
-map clear of redundant text. The full invitation is shown for five seconds,
-then collapses into one line with the saving and the current review control.
+markers identify the divergence and rejoin points when visible. A rounded,
+anti-aliased approximate saving badge sits beside the decision point when
+space permits; the confirmation always includes the saving. The full
+invitation is shown for five seconds, then collapses into one line with
+the announcement and current review control.
+The invitation uses the theme-aware success green in both driving and BT CTRL
+contexts; the alternative geometry keeps its distinct teal colour.
 It expands once more for five seconds when the driver is approximately
 20 seconds from the decision point at the current GPS speed (minimum 200 m,
 maximum 700 m). An offer already inside that range during its first expansion

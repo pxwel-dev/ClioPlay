@@ -224,5 +224,10 @@
   "Save ~": "节省约",
   "Decision: ": "决策点： ",
   "BACK to review": "返回键查看",
-  "OK to review": "OK 键查看"
+  "OK to review": "OK 键查看",
+  "Display": "显示",
+  "HUD layout": "HUD 布局",
+  "Navigation": "导航",
+  "Driving history": "驾驶历史",
+  "System": "系统"
 }

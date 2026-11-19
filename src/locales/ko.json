@@ -224,5 +224,10 @@
   "Save ~": "약 ~",
   "Decision: ": "결정 지점: ",
   "BACK to review": "뒤로를 눌러 확인",
-  "OK to review": "OK로 확인"
+  "OK to review": "OK로 확인",
+  "Display": "화면",
+  "HUD layout": "HUD 배치",
+  "Navigation": "내비게이션",
+  "Driving history": "주행 기록",
+  "System": "시스템"
 }

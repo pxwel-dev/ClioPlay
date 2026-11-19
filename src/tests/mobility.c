@@ -204,7 +204,7 @@ static void two_diversions(void){
  assert(!(hud_tween[HC_STATUS].target.flags&HUD_TRAFFIC_COMPACT));
  hud_capture_ms=invitation_at+5000u;hud_prepare(5,hud_now_ms(),1);
  assert(hud_tween[HC_STATUS].target.flags&HUD_TRAFFIC_COMPACT);
- assert(hud_tween[HC_STATUS].target.box.h<=expanded_h-29);
+ assert(hud_tween[HC_STATUS].target.box.h<=expanded_h-15);
  assert(strstr(hud_tween[HC_STATUS].target.traffic_hint,"BACK to review"));
  hud_capture_ms+=500;hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
  assert(!hud_diversion_shortcut_ready());
@@ -229,7 +229,7 @@ static void two_diversions(void){
  assert(traffic_decision_m()<=hud_diversion_reminder_m());
  hud_capture_ms+=500;hud_prepare(5,hud_now_ms(),1);u32 reminder_at=hud_capture_ms;
  assert(!(hud_tween[HC_STATUS].target.flags&HUD_TRAFFIC_COMPACT));
- assert(hud_tween[HC_STATUS].target.traffic_detail[0]&&streq(hud_tween[HC_STATUS].target.traffic_hint,"OK to review"));
+ assert(!hud_tween[HC_STATUS].target.traffic_detail[0]&&streq(hud_tween[HC_STATUS].target.traffic_hint,"OK to review"));
  hud_capture_ms=reminder_at+4999u;hud_prepare(5,hud_now_ms(),1);assert(!(hud_tween[HC_STATUS].target.flags&HUD_TRAFFIC_COMPACT));
  hud_capture_ms=reminder_at+5000u;hud_prepare(5,hud_now_ms(),1);assert(hud_tween[HC_STATUS].target.flags&HUD_TRAFFIC_COMPACT);
  gps.mph10=0;hud_capture_ms+=500;hud_prepare(5,hud_now_ms(),1);

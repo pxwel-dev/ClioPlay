@@ -224,5 +224,10 @@
   "Save ~": "Экономия ~",
   "Decision: ": "Решение: ",
   "BACK to review": "Назад для просмотра",
-  "OK to review": "OK для просмотра"
+  "OK to review": "OK для просмотра",
+  "Display": "Экран",
+  "HUD layout": "Расположение HUD",
+  "Navigation": "Навигация",
+  "Driving history": "История поездок",
+  "System": "Система"
 }

@@ -113,7 +113,7 @@ static void bluetooth(void){
  sheet_focus=1;key_handle(K_ENTER);nbtdev=0;menu_sync(hud_now_ms());assert(sheet_page==P_PHONE);
 }
 static void bounds(void){
- reset();load_font();const int pages[]={P_HOME,P_SETTINGS,P_PHONE,P_TRIP,P_COORD,P_NAME,P_REVIEW,P_CONFIRM};
+ reset();load_font();const int pages[]={P_HOME,P_SETTINGS,P_SET_DISPLAY,P_SET_HUD,P_SET_NAV,P_SET_HISTORY,P_SET_SYSTEM,P_PHONE,P_TRIP,P_COORD,P_NAME,P_REVIEW,P_CONFIRM};
  for(int night=0;night<2;night++)for(unsigned i=0;i<sizeof(pages)/sizeof(pages[0]);i++){
   apply_palette(night);menu_open(pages[i],0,hud_now_ms());hud_prepare(5,hud_now_ms(),1);hud_driver_prepare(hud_now_ms());menu_prepare(hud_now_ms());
   struct HudBox b=sheet_to_box;assert(b.x>=0&&b.x+b.w<=W&&b.y>=0&&b.y+b.h<=H);
@@ -139,4 +139,26 @@ static void confirmation_typography(void){
   for(int j=0;j<v.count;j++)assert(v.item[j].face==CONFIRMATION_FACE);
  }
 }
-int main(void){tabs();saved_places();itinerary();long_itinerary();itinerary_connector_bounds();bluetooth();bounds();confirmation_typography();puts("Menu sheets: three tabs/remembered selections, compact scrolling places, naming/real coordinates, reviewed stops, ten-target persistence and unsupported-format rejection, reorder/remove/cancel, connector bounds, pinned pairing, address-stable phone actions, theme/HUD bounds passed.");}
+/* Traverse every category with the real remote/console handler. */
+static void settings_categories(void){
+ reset();key_handle(K_MENU);choose(menu_count(P_HOME)-1);assert(sheet_page==P_SETTINGS);
+ unsigned seen=0;
+ for(int g=0;g<SETTINGS_GROUP_COUNT;g++){
+  choose(g);assert(sheet_page==P_SET_DISPLAY+g&&sheet_focus==0&&screen==SCR_SET);
+  for(int row=0;row<menu_count(sheet_page);row++){
+   assert(sheet_focus==row);int id=settings_row(sheet_page,row);
+   assert(id>=0&&id<SETTING_COUNT&&!(seen&(1u<<id)));seen|=1u<<id;
+   if(row+1<menu_count(sheet_page))key_handle(K_DOWN);
+  }
+  key_handle(K_BACK);assert(sheet_page==P_SETTINGS&&sheet_focus==g);
+ }
+ assert(seen==(1u<<SETTING_COUNT)-1);
+ choose(3);choose(3);assert(sheet_page==P_CONFIRM&&confirm_kind==2&&sheet_focus==1);
+ key_handle(K_ENTER);assert(sheet_page==P_SET_HISTORY&&sheet_focus==3);
+ key_handle(K_BACK);assert(sheet_page==P_SETTINGS&&sheet_focus==3);
+ choose(4);choose(0);assert(sheet_page==P_LANG&&!language_keyboard);
+ key_handle(K_BACK);assert(sheet_page==P_SET_SYSTEM&&sheet_focus==0);
+ key_handle(K_BACK);assert(sheet_page==P_SETTINGS&&sheet_focus==4);
+ key_handle(K_MAP);assert(sheet_page==P_CLOSED&&screen==SCR_MAP);
+}
+int main(void){tabs();saved_places();itinerary();long_itinerary();itinerary_connector_bounds();bluetooth();bounds();confirmation_typography();settings_categories();puts("Menu sheets: three tabs/remembered selections, compact scrolling places, naming/real coordinates, reviewed stops, ten-target persistence and unsupported-format rejection, reorder/remove/cancel, connector bounds, pinned pairing, address-stable phone actions, theme/HUD bounds passed.");}

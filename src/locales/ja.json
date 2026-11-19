@@ -224,5 +224,10 @@
   "Save ~": "約",
   "Decision: ": "判断地点： ",
   "BACK to review": "戻るで確認",
-  "OK to review": "OKで確認"
+  "OK to review": "OKで確認",
+  "Display": "画面",
+  "HUD layout": "HUD の配置",
+  "Navigation": "ナビゲーション",
+  "Driving history": "走行履歴",
+  "System": "システム"
 }

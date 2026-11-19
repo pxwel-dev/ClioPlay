@@ -120,7 +120,7 @@ POPUPS_LAYOUT_SAMPLES = sorted({at+step for at,_ in POPUPS_LAYOUT_EVENTS for ste
 # ClioPlay 2.1.6 compact-screen and HUD customization animations.
 V216_COORDINATES_EVENTS = ((0, 'clear_trip();menu_open(P_TRIP,0,hud_now_ms());'), (800, 'key_handle(K_ENTER);assert(sheet_page==P_COORD);'), (1400, 'coordinates.focus=4;key_handle(K_ENTER);'), (1650, 'coordinates.focus=3;key_handle(K_ENTER);'), (1900, 'coordinates.focus=COORD_DOT;key_handle(K_ENTER);'), (2150, 'coordinates.focus=8;key_handle(K_ENTER);'), (2400, 'coordinates.focus=6;key_handle(K_ENTER);'), (3000, 'key_handle(K_SR);assert(coordinates.step==COORD_LON);'), (3600, 'coordinates.focus=COORD_SIGN;key_handle(K_ENTER);'), (3800, 'coordinates.focus=0;key_handle(K_ENTER);'), (4000, 'coordinates.focus=COORD_DOT;key_handle(K_ENTER);'), (4200, 'coordinates.focus=5;key_handle(K_ENTER);'), (4600, 'key_handle(K_ESC);assert(streq(coordinates.value[1],"-1."));'), (5100, 'coordinates.focus=COORD_NEXT;key_handle(K_ENTER);assert(coordinates.error&&coordinates.step==COORD_LON);'), (6500, 'coordinates.focus=5;key_handle(K_ENTER);'), (7100, 'key_handle(K_SR);assert(coordinates.step==COORD_LAT);'), (7900, 'coordinates.focus=COORD_NEXT;key_handle(K_ENTER);assert(sheet_page==P_NAME);'), (9600, 'pk_focus=PK_SAVE;key_handle(K_ENTER);assert(sheet_page==P_REVIEW);'))
 V216_COORDINATES_SAMPLES = sorted({at+step for at,_ in V216_COORDINATES_EVENTS for step in TWEEN_STEPS} | {11100})
-V216_HUD_SETTINGS_EVENTS = ((0, 'menu_open(P_SETTINGS,10,hud_now_ms());'), (1700, 'key_handle(K_RIGHT);assert(pref.top_swap);'), (3600, 'key_handle(K_DOWN);assert(sheet_focus==11);'), (4200, 'key_handle(K_RIGHT);assert(pref.bottom_swap);'), (6100, 'key_handle(K_MAP);assert(sheet_page==P_CLOSED);'), (8200, 'menu_open(P_SETTINGS,11,hud_now_ms());'))
+V216_HUD_SETTINGS_EVENTS = ((0, 'menu_open(P_SETTINGS,1,hud_now_ms());'), (700, 'key_handle(K_ENTER);assert(sheet_page==P_SET_HUD);'), (1700, 'key_handle(K_RIGHT);assert(pref.top_swap);'), (3600, 'key_handle(K_DOWN);assert(settings_row(sheet_page,sheet_focus)==11);'), (4200, 'key_handle(K_RIGHT);assert(pref.bottom_swap);'), (6100, 'key_handle(K_MAP);assert(sheet_page==P_CLOSED);'), (8200, 'menu_open_setting(11,hud_now_ms());'))
 V216_HUD_SETTINGS_SAMPLES = sorted({at+step for at,_ in V216_HUD_SETTINGS_EVENTS for step in TWEEN_STEPS} | {9900})
 V216_BLUETOOTH_HIDDEN_EVENTS = ((0, 'menu_open(P_HOME,0,hud_now_ms());'), (2200, 'hw_bluetooth_enabled=0;menu_change(P_HOME,0,hud_now_ms());assert(menu_count(P_HOME)==2);'), (4400, 'key_handle(K_DOWN);key_handle(K_ENTER);assert(sheet_page==P_SETTINGS);'), (6600, 'key_handle(K_MENU);assert(sheet_page==P_HOME);'), (7500, 'hw_bluetooth_enabled=1;menu_change(P_HOME,1,hud_now_ms());'), (8500, 'key_handle(K_ENTER);assert(sheet_page==P_PHONE);'))
 V216_BLUETOOTH_HIDDEN_SAMPLES = sorted({at+step for at,_ in V216_BLUETOOTH_HIDDEN_EVENTS for step in TWEEN_STEPS} | {9500})
@@ -167,7 +167,7 @@ def catalog(sender_receipts=None):
         ('recents','screen=SCR_TRIP;trip_pane=0;trip_tab=0;nrecents=25;',24),
         ('favourites','screen=SCR_TRIP;trip_pane=0;trip_tab=1;nfaves=25;',24),
         ('phones','screen=SCR_BT;bt_page_focus=0;',20),
-        ('settings','screen=SCR_SET;set_focus=0;',9),
+        ('settings','menu_open_setting(0,hud_now_ms());',9),
         ('languages','screen=SCR_KEY;keyboard_open_fave_rename(0);kbd_picker=1;kbd_pick=0;',17),
     ):
         add('Scrollbars',f'scrollbar-{name}-top',name+' · first page',setup)
@@ -239,7 +239,7 @@ def catalog(sender_receipts=None):
         'screen=SCR_BT;show_phone_connection();')
     add('Prototype HUD','hud-phone-route-volume','Phone connection alongside route progress, volume and Bluetooth controls',
         'key_handle(K_BACK);route_status=R_CALC;set_volume(18);show_phone_connection();copystr(btui.title,sizeof(btui.title),"Night Drive");')
-    add('Prototype HUD','hud-setting-changed','Brightness updates in its row','screen=SCR_SET;set_focus=0;key_handle(K_RIGHT);')
+    add('Prototype HUD','hud-setting-changed','Brightness updates in its row','menu_open_setting(0,hud_now_ms());key_handle(K_RIGHT);')
     add('Prototype HUD','hud-menu-audio-connection','Audio and connection notices stay above settings',
         'screen=SCR_SET;set_band("FM");copystr(af.station,sizeof(af.station),"BBC Radio 1");rebuild_source();set_volume(18);show_phone_connection();')
     for elapsed in (0,80,160,240,320):
@@ -469,35 +469,39 @@ def catalog(sender_receipts=None):
     key('Favourite keyboard','keyboard-utf8-delete','Delete a whole native character','screen=SCR_KEY;keyboard_open_fave_rename(0);copystr(kbd_text,sizeof(kbd_text),"東京");','key_handle(K_ESC);','assert(!strcmp(kbd_text,"東"));')
     key('Favourite keyboard','keyboard-save-empty','Empty name stays in keyboard','name_keyboard();kbd_focus=38;','key_handle(K_ENTER);','assert(screen==SCR_KEY);')
     # Settings: row navigation, every discrete option, and meaningful numeric boundaries.
-    for i,title in enumerate(('Brightness','Theme','Units','Auto zoom','Camera alerts','Clock','Debug log','Language','Day starts','Night starts')):
-        key('Settings',f'settings-focus-{i}','Select '+title,'screen=SCR_SET;','key_handle(K_DOWN);'*i,f'assert(set_focus=={i});')
-    key('Settings','settings-up','Move settings selection up','screen=SCR_SET;set_focus=7;','key_handle(K_UP);','assert(set_focus==6);')
+    # Keep each capture's remote interaction on the categorised settings tree.
+    groups = ((0,1,8,9),(10,11),(2,3,4),(12,13,14,15),(7,5,6))
+    titles = ('Brightness','Theme','Units','Auto zoom','Camera alerts','Clock','Debug log','Language','Day starts','Night starts','Top pill order','Bottom pill order','Learn driving history','Destination suggestions','Intelligent diversions','Clear driving history')
+    for group,rows in enumerate(groups):
+        for pos,i in enumerate(rows):
+            key('Settings',f'settings-focus-{i}','Select '+titles[i],'menu_open(P_SETTINGS,0,hud_now_ms());','key_handle(K_DOWN);'*group+'key_handle(K_ENTER);'+'key_handle(K_DOWN);'*pos,f'assert(settings_row(sheet_page,sheet_focus)=={i});')
+    key('Settings','settings-up','Move settings selection up','menu_open_setting(6,hud_now_ms());','key_handle(K_UP);','assert(settings_row(sheet_page,sheet_focus)==5);')
     key('Settings','schedule-edit-day','Adjust the Day start hour',
-        'screen=SCR_SET;set_focus=8;theme_time_part=0;','key_handle(K_RIGHT);',
+        'menu_open_setting(8,hud_now_ms());theme_time_part=0;','key_handle(K_RIGHT);',
         'assert(pref.day_start==8*60);')
     key('Settings','schedule-edit-minute','Adjust the Night start minute',
-        'screen=SCR_SET;set_focus=9;theme_time_part=0;','key_handle(K_ENTER);key_handle(K_LEFT);',
+        'menu_open_setting(9,hud_now_ms());theme_time_part=0;','key_handle(K_ENTER);key_handle(K_LEFT);',
         'assert(pref.night_start==17*60+59);')
     for value in (10,50,100):
-        key('Settings',f'brightness-{value}',f'Brightness {value}%','screen=SCR_SET;pref.bright=50;', 'key_handle(K_LEFT);'*((50-value)//10) if value<50 else 'key_handle(K_RIGHT);'*((value-50)//10),f'assert(pref.bright=={value});')
+        key('Settings',f'brightness-{value}',f'Brightness {value}%','menu_open_setting(0,hud_now_ms());pref.bright=50;', 'key_handle(K_LEFT);'*((50-value)//10) if value<50 else 'key_handle(K_RIGHT);'*((value-50)//10),f'assert(pref.bright=={value});')
     for value,title in enumerate(('Day','Night','Auto')):
-        key('Settings',f'theme-{title.lower()}','Theme · '+title,'screen=SCR_SET;set_focus=1;pref.theme=THEME_DAY;','key_handle(K_RIGHT);'*value,f'assert(pref.theme=={value});', 'Changing theme changes the framebuffer palette; paired columns identify the starting theme, and can converge on the same explicit setting.')
+        key('Settings',f'theme-{title.lower()}','Theme · '+title,'menu_open_setting(1,hud_now_ms());pref.theme=THEME_DAY;','key_handle(K_RIGHT);'*value,f'assert(pref.theme=={value});', 'Changing theme changes the framebuffer palette; paired columns identify the starting theme, and can converge on the same explicit setting.')
     for value,title in enumerate(('Auto','Metric','Imperial')):
-        key('Settings',f'units-{title.lower()}','Units · '+title,'screen=SCR_SET;set_focus=2;pref.units=0;','key_handle(K_RIGHT);'*value,f'assert(pref.units=={value});')
+        key('Settings',f'units-{title.lower()}','Units · '+title,'menu_open_setting(2,hud_now_ms());pref.units=0;','key_handle(K_RIGHT);'*value,f'assert(pref.units=={value});')
     for on in (False,True):
-        key('Settings','autozoom-'+str(int(on)),'Auto zoom · '+('On' if on else 'Off'),f'screen=SCR_SET;set_focus=3;pref.autozoom={int(not on)};','key_handle(K_RIGHT);',f'assert(pref.autozoom=={int(on)});')
-        key('Settings','debug-'+str(int(on)),'Debug log · '+('On' if on else 'Off'),f'screen=SCR_SET;set_focus=6;pref.debug={int(not on)};','key_handle(K_RIGHT);',f'assert(pref.debug=={int(on)});')
+        key('Settings','autozoom-'+str(int(on)),'Auto zoom · '+('On' if on else 'Off'),f'menu_open_setting(3,hud_now_ms());pref.autozoom={int(not on)};','key_handle(K_RIGHT);',f'assert(pref.autozoom=={int(on)});')
+        key('Settings','debug-'+str(int(on)),'Debug log · '+('On' if on else 'Off'),f'menu_open_setting(6,hud_now_ms());pref.debug={int(not on)};','key_handle(K_RIGHT);',f'assert(pref.debug=={int(on)});')
     for value,title in enumerate(('Off','Visual','Phone audio')):
-        key('Settings',f'camera-setting-{value}','Camera alerts · '+title,'screen=SCR_SET;set_focus=4;pref.cameras=0;','key_handle(K_RIGHT);'*value,f'assert(pref.cameras=={value});')
+        key('Settings',f'camera-setting-{value}','Camera alerts · '+title,'menu_open_setting(4,hud_now_ms());pref.cameras=0;','key_handle(K_RIGHT);'*value,f'assert(pref.cameras=={value});')
     for on in (False,True):
-        key('Settings','clock-'+str(int(on)),'Clock · '+('Automatic' if on else 'Manual'),f'screen=SCR_SET;set_focus=5;pref.clock_auto={int(not on)};','key_handle(K_ENTER);',f'assert(pref.clock_auto=={int(on)});')
+        key('Settings','clock-'+str(int(on)),'Clock · '+('Automatic' if on else 'Manual'),f'menu_open_setting(5,hud_now_ms());pref.clock_auto={int(not on)};','key_handle(K_ENTER);',f'assert(pref.clock_auto=={int(on)});')
     for name,setup,action in [('plus-quarter','pref.hoff=pref.moff=0;','key_handle(K_RIGHT);'),('minus-quarter','pref.hoff=pref.moff=0;','key_handle(K_LEFT);'),('lower-wrap','pref.hoff=-12;pref.moff=0;','key_handle(K_LEFT);'),('upper-wrap','pref.hoff=14;pref.moff=0;','key_handle(K_RIGHT);')]:
-        key('Settings','clock-'+name,'Manual clock · '+name,'screen=SCR_SET;set_focus=5;'+setup,action)
+        key('Settings','clock-'+name,'Manual clock · '+name,'menu_open_setting(5,hud_now_ms());'+setup,action)
     languages=json.loads((ROOT/'locales/ui.json').read_text())['languages']
     for i,code in enumerate(languages):
-        key('Languages','language-'+code,'Language · '+code,'screen=SCR_SET;set_focus=7;pref.language=0;','key_handle(K_RIGHT);'*i,f'assert(pref.language=={i});')
-    key('Languages','language-enter','Cycle language with ENTER','screen=SCR_SET;set_focus=7;','key_handle(K_ENTER);','assert(pref.language==1);')
-    key('Languages','language-backward','Cycle language backwards','screen=SCR_SET;set_focus=7;','key_handle(K_LEFT);',f'assert(pref.language=={len(languages)-1});')
+        key('Languages','language-'+code,'Language · '+code,'menu_open_setting(7,hud_now_ms());pref.language=0;','key_handle(K_RIGHT);'*i,f'assert(pref.language=={i});')
+    key('Languages','language-enter','Choose a language using the picker','menu_open_setting(7,hud_now_ms());pref.language=0;','key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_ENTER);','assert(pref.language==1&&sheet_page==P_SET_SYSTEM);')
+    key('Languages','language-backward','Cycle language backwards','menu_open_setting(7,hud_now_ms());','key_handle(K_LEFT);',f'assert(pref.language=={len(languages)-1});')
     roundabout = 'region_flags|=4;nav_man_type=MAN_ROUNDABOUT;nav_man_exit=3;nav_man_idx=route_head+8;nav_man_m=180;'
     add('Navigation states','roundabout-guidance','Roundabout circulation and exit number',roundabout,
         note='Controlled third-exit guidance state; production clockwise HUD glyph.')
@@ -518,19 +522,19 @@ def catalog(sender_receipts=None):
             f'assert(!strcmp(kbd_text,"{char}"));')
     for value in (20,30,40,60,70,80,90):
         key('Settings',f'brightness-{value}',f'Brightness {value}%',
-            'screen=SCR_SET;pref.bright=50;',
+            'menu_open_setting(0,hud_now_ms());pref.bright=50;',
             'key_handle(K_LEFT);'*((50-value)//10) if value<50 else 'key_handle(K_RIGHT);'*((value-50)//10),f'assert(pref.bright=={value});')
     for name,setup,action,check in [
-        ('brightness-min','screen=SCR_SET;pref.bright=10;','K_LEFT','assert(pref.bright==10);'),
-        ('brightness-max','screen=SCR_SET;pref.bright=100;','K_RIGHT','assert(pref.bright==100);'),
-        ('theme-wrap-left','screen=SCR_SET;set_focus=1;pref.theme=0;','K_LEFT','assert(pref.theme==2);'),
-        ('theme-wrap-right','screen=SCR_SET;set_focus=1;pref.theme=2;','K_RIGHT','assert(pref.theme==0);'),
-        ('units-wrap-left','screen=SCR_SET;set_focus=2;pref.units=0;','K_LEFT','assert(pref.units==2);'),
-        ('units-wrap-right','screen=SCR_SET;set_focus=2;pref.units=2;','K_RIGHT','assert(pref.units==0);'),
-        ('cameras-wrap-left','screen=SCR_SET;set_focus=4;pref.cameras=0;','K_LEFT','assert(pref.cameras==2);'),
-        ('cameras-wrap-right','screen=SCR_SET;set_focus=4;pref.cameras=2;','K_RIGHT','assert(pref.cameras==0);'),
-        ('language-wrap-right','screen=SCR_SET;set_focus=7;pref.language=UI_LANGUAGE_COUNT-1;','K_RIGHT','assert(pref.language==0);'),
-        ('language-wrap-enter','screen=SCR_SET;set_focus=7;pref.language=UI_LANGUAGE_COUNT-1;','K_ENTER','assert(pref.language==0);'),
+        ('brightness-min','menu_open_setting(0,hud_now_ms());pref.bright=10;','K_LEFT','assert(pref.bright==10);'),
+        ('brightness-max','menu_open_setting(0,hud_now_ms());pref.bright=100;','K_RIGHT','assert(pref.bright==100);'),
+        ('theme-wrap-left','menu_open_setting(1,hud_now_ms());pref.theme=0;','K_LEFT','assert(pref.theme==2);'),
+        ('theme-wrap-right','menu_open_setting(1,hud_now_ms());pref.theme=2;','K_RIGHT','assert(pref.theme==0);'),
+        ('units-wrap-left','menu_open_setting(2,hud_now_ms());pref.units=0;','K_LEFT','assert(pref.units==2);'),
+        ('units-wrap-right','menu_open_setting(2,hud_now_ms());pref.units=2;','K_RIGHT','assert(pref.units==0);'),
+        ('cameras-wrap-left','menu_open_setting(4,hud_now_ms());pref.cameras=0;','K_LEFT','assert(pref.cameras==2);'),
+        ('cameras-wrap-right','menu_open_setting(4,hud_now_ms());pref.cameras=2;','K_RIGHT','assert(pref.cameras==0);'),
+        ('language-wrap-right','menu_open_setting(7,hud_now_ms());pref.language=UI_LANGUAGE_COUNT-1;','K_RIGHT','assert(pref.language==0);'),
+        ('language-wrap-enter','menu_open_setting(7,hud_now_ms());pref.language=UI_LANGUAGE_COUNT-1;','K_ENTER','assert(sheet_page==P_LANG&&sheet_focus==UI_LANGUAGE_COUNT-1);'),
         ('connected-choice-right','screen=SCR_BT;','K_RIGHT','assert(bt_page_connected_choice==1);'),
         ('connected-choice-left','screen=SCR_BT;bt_page_connected_choice=1;','K_LEFT','assert(bt_page_connected_choice==0);'),
         ('saved-phone-dialog','screen=SCR_BT;bt_page_focus=1;','K_ENTER','assert(bt_page_dialog>=0);'),
@@ -570,13 +574,13 @@ def catalog(sender_receipts=None):
     add('Camera states','camera-limit-variable','Speed camera with a variable limit','show_camera(1,0);camera_current.flags=8;')
     # Short, everyday examples for the publication showcase.
     for name,title,setup,action in [
-        ('showcase-theme-day','Choose the Day theme','screen=SCR_SET;set_focus=1;pref.theme=THEME_NIGHT;refresh_theme();','K_LEFT'),
-        ('showcase-theme-auto','Automatic day/night theme','screen=SCR_SET;set_focus=1;pref.theme=THEME_NIGHT;refresh_theme();','K_RIGHT'),
-        ('showcase-theme-night','Return to the Night theme','screen=SCR_SET;set_focus=1;pref.theme=THEME_AUTO;refresh_theme();','K_LEFT'),
-        ('showcase-units-auto','Use automatic country units','screen=SCR_SET;set_focus=2;pref.units=2;','K_RIGHT'),
-        ('showcase-language-en','Return to English','screen=SCR_SET;set_focus=7;pref.language=1;','K_LEFT'),
-        ('showcase-camera-off','Turn camera alerts off','screen=SCR_SET;set_focus=4;pref.cameras=1;','K_LEFT'),
-        ('showcase-camera-audio','Enable camera cues through phone audio','screen=SCR_SET;set_focus=4;pref.cameras=1;','K_RIGHT'),
+        ('showcase-theme-day','Choose the Day theme','menu_open_setting(1,hud_now_ms());pref.theme=THEME_NIGHT;refresh_theme();','K_LEFT'),
+        ('showcase-theme-auto','Automatic day/night theme','menu_open_setting(1,hud_now_ms());pref.theme=THEME_NIGHT;refresh_theme();','K_RIGHT'),
+        ('showcase-theme-night','Return to the Night theme','menu_open_setting(1,hud_now_ms());pref.theme=THEME_AUTO;refresh_theme();','K_LEFT'),
+        ('showcase-units-auto','Use automatic country units','menu_open_setting(2,hud_now_ms());pref.units=2;','K_RIGHT'),
+        ('showcase-language-en','Return to English','menu_open_setting(7,hud_now_ms());pref.language=1;','K_LEFT'),
+        ('showcase-camera-off','Turn camera alerts off','menu_open_setting(4,hud_now_ms());pref.cameras=1;','K_LEFT'),
+        ('showcase-camera-audio','Enable camera cues through phone audio','menu_open_setting(4,hud_now_ms());pref.cameras=1;','K_RIGHT'),
         ('showcase-keyboard-char','Enter a character','screen=SCR_KEY;keyboard_open_fave_rename(0);kbd_focus=4;','K_ENTER'),
         ('showcase-keyboard-delete','Delete a character','screen=SCR_KEY;keyboard_open_fave_rename(0);appendstr(kbd_text,sizeof(kbd_text),"E");','K_ESC')]:
         key('Showcase controls',name,title,setup,f'key_handle({action});')
@@ -620,6 +624,10 @@ def modern_menus():
     for page,name,title in [('P_HOME','menu','Menu'),('P_TRIP','itinerary','Active itinerary'),('P_PHONE','phone','Saved phones'),('P_SETTINGS','settings','Settings')]:
         SCENES[:] = [s for s in SCENES if s['id']!=name]
         add('Menu sheets',name,title,f'menu_open({page},0,hud_now_ms());')
+    for group,title in enumerate(('Display','HUD layout','Navigation','Driving history','System')):
+        key('Menu sheets',f'settings-category-{group}',title,f'menu_open(P_SETTINGS,{group},hud_now_ms());','key_handle(K_ENTER);',f'assert(sheet_page==P_SET_DISPLAY+{group});')
+    for row,title in enumerate(('Brightness','Theme','Units','Auto zoom','Camera alerts','Clock','Debug log','Language','Day starts','Night starts','Top pill order','Bottom pill order','Learn driving history','Destination suggestions','Intelligent diversions','Clear driving history')):
+        add('Menu sheets',f'settings-focus-{row}',title,f'menu_open_setting({row},hud_now_ms());')
     for tab,name in [(0,'recents'),(1,'favourites')]:
         add('Menu sheets',name+'-tab',name.title(),f'menu_open(P_TRIP,0,hud_now_ms());'+('key_handle(K_RIGHT);'*(tab+1)))
         for bottom in (False,True):
@@ -627,8 +635,8 @@ def modern_menus():
                 f'nrecents=nfaves=25;places_tab={tab};menu_open(P_PLACES,{24 if bottom else 0},hud_now_ms());')
     add('Menu sheets','showcase-keyboard-char','Adaptive naming keyboard','keyboard_open_fave_rename(0);menu_open(P_NAME,0,hud_now_ms());pk_reset();pk_prepare();pk_focus=4;', 'key_handle(K_ENTER);')
     for name,row,part in [('schedule-edit-day',8,0),('schedule-edit-minute',9,1)]:
-        add('Menu sheets',name,'Custom theme schedule',f'menu_open(P_SETTINGS,{row},hud_now_ms());theme_time_part={part};')
-    add('Menu sheets','showcase-theme-day','Choose Day theme','menu_open(P_SETTINGS,1,hud_now_ms());pref.theme=THEME_NIGHT;refresh_theme();','key_handle(K_LEFT);')
+        add('Menu sheets',name,'Custom theme schedule',f'menu_open_setting({row},hud_now_ms());theme_time_part={part};')
+    add('Menu sheets','showcase-theme-day','Choose Day theme','menu_open_setting(1,hud_now_ms());pref.theme=THEME_NIGHT;refresh_theme();','key_handle(K_LEFT);')
     for lang in range(18):
         add('Menu sheets','keyboard-'+str(lang),'Native naming layout',f'pref_keyboard_language={lang};keyboard_open_fave_rename(0);menu_open(P_NAME,0,hud_now_ms());pk_reset();pk_prepare();')
     events=((0,'key_handle(K_MENU);'),(700,'key_handle(K_ENTER);'),(1500,'key_handle(K_RIGHT);'),
@@ -636,7 +644,7 @@ def modern_menus():
             (3800,'key_handle(K_DOWN);key_handle(K_ENTER);'),(4600,'key_handle(K_DOWN);key_handle(K_ENTER);'),
             (5400,'key_handle(K_BACK);'),(6200,'key_handle(K_MENU);'),
             (7000,'key_handle(K_DOWN);key_handle(K_DOWN);key_handle(K_ENTER);'),
-            (7800,'key_handle(K_DOWN);'),(8600,'key_handle(K_RIGHT);'),(9400,'key_handle(K_MAP);'))
+            (7800,'key_handle(K_DOWN);'),(8600,'key_handle(K_ENTER);assert(sheet_page==P_SET_HUD);'),(9400,'key_handle(K_MAP);'))
     samples=sorted({at+step for at,_ in events for step in TWEEN_STEPS}|{9800})
     motion('Menu sheets','preview-menu-tour','On-map Menu, three Trip tabs, Bluetooth actions and Settings',
            'settle();set_volume(16);draw();hud_capture_ms+=400u;draw();',events,samples)

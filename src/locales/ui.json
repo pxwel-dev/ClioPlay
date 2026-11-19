@@ -923,6 +923,26 @@
     "OK to review": [
       "OK pour voir",
       "OK para ver"
+    ],
+    "Display": [
+      "Affichage",
+      "Pantalla"
+    ],
+    "HUD layout": [
+      "Disposition du HUD",
+      "Diseño del HUD"
+    ],
+    "Navigation": [
+      "Navigation",
+      "Navegación"
+    ],
+    "Driving history": [
+      "Historique de conduite",
+      "Historial de conducción"
+    ],
+    "System": [
+      "Système",
+      "Sistema"
     ]
   },
   "language_names": {

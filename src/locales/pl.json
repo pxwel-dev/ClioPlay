@@ -224,5 +224,10 @@
   "Save ~": "Zysk ~",
   "Decision: ": "Decyzja: ",
   "BACK to review": "Wstecz, aby sprawdzić",
-  "OK to review": "OK, aby sprawdzić"
+  "OK to review": "OK, aby sprawdzić",
+  "Display": "Wyświetlacz",
+  "HUD layout": "Układ HUD",
+  "Navigation": "Nawigacja",
+  "Driving history": "Historia jazdy",
+  "System": "System"
 }

@@ -221,7 +221,7 @@ static int hud_diversion_expanded(u32 now,u32 distance){
  return expanded;
 }
 static void hud_diversion_compact_text(char*b,unsigned cap,int media){
- copystr(b,cap,ui_tr("Save ~"));append_eta(b,cap,traffic_saving);
+ copystr(b,cap,ui_tr("Faster route available"));
  appendstr(b,cap," / ");appendstr(b,cap,ui_tr(media?"BACK to review":"OK to review"));
 }
 static int hud_diversion_shortcut_ready(void){
@@ -243,9 +243,6 @@ static void hud_traffic_compose(struct HudCard*c,int map,int media,u32 now){
  if(!c->kind){c->kind=HUD_TRAFFIC;copystr(c->title,sizeof(c->title),title);c->ink|=offered?HUD_SUCCESS:HUD_WARNING;}
  else copystr(c->traffic_title,sizeof(c->traffic_title),title);
  if(offered){
-  copystr(c->traffic_detail,sizeof(c->traffic_detail),ui_tr("Save ~"));append_eta(c->traffic_detail,sizeof(c->traffic_detail),traffic_saving);
-  appendstr(c->traffic_detail,sizeof(c->traffic_detail)," / ");appendstr(c->traffic_detail,sizeof(c->traffic_detail),ui_tr("Decision: "));
-  append_nav_distance(c->traffic_detail,sizeof(c->traffic_detail),distance);
   copystr(c->traffic_hint,sizeof(c->traffic_hint),ui_tr(media?"BACK to review":"OK to review"));c->traffic_serial=traffic_offer_serial;
  }else copystr(c->traffic_detail,sizeof(c->traffic_detail),ui_tr("Based on driving history"));
 }
@@ -527,8 +524,8 @@ static void hud_draw_status(struct HudBox b,const struct HudCard*c,u32 now){
  if(c->kind==HUD_TRAFFIC&&(c->flags&HUD_TRAFFIC_COMPACT)){
   /* Render the compact invitation with the live control context, and
    * arm OK only when that exact instruction is actually legible. */
-  if(current){char line[112];hud_diversion_compact_text(line,sizeof(line),media);
-   compact_fit(tx,small_y,end-tx,0,line,C_ROUTE_DIVERSION);
+  if(current){char line[160];hud_diversion_compact_text(line,sizeof(line),media);
+   compact_fit(tx,small_y,end-tx,0,line,hud_status_colour(HUD_SUCCESS,C_WHITE));
    if(hud_ink_alpha>=8&&!media&&width(line,0)<=end-tx)hud_diversion_invited=traffic_offer_serial;
   }
  }else compact_fit(tx,title_y,end-tx,1,c->title,hud_status_colour(c->ink&3,c->flags&HUD_PROGRESS?C_CYAN:C_WHITE));
@@ -580,12 +577,12 @@ static void hud_draw_status(struct HudBox b,const struct HudCard*c,u32 now){
   if(traffic_lines[i][0]&&(i!=2||current)){
    hud_ink_alpha=hud_status_row_ink(streq(traffic_old[i],traffic_next[i])?full:fade,room);
    if(hud_ink_alpha){
-    char compact[112];const char*line=traffic_lines[i];
+    char compact[160];const char*line=traffic_lines[i];
     if(i==2){
      if(c->flags&HUD_TRAFFIC_COMPACT){hud_diversion_compact_text(compact,sizeof(compact),media);line=compact;}
      else line=ui_tr(media?"BACK to review":"OK to review");
     }
-    compact_fit(x+10,row-2,w-20,0,line,i==0?(live?C_ROUTE_DIVERSION:C_WARN):i==2?C_ACCENT:C_MUTED);
+    compact_fit(x+10,row-2,w-20,0,line,i==0?(live?hud_status_colour(HUD_SUCCESS,C_WHITE):C_WARN):i==2?((c->flags&HUD_TRAFFIC_COMPACT)?hud_status_colour(HUD_SUCCESS,C_WHITE):C_ACCENT):C_MUTED);
     if(i==2&&hud_ink_alpha>=8&&!media&&width(line,0)<=w-20)hud_diversion_invited=traffic_offer_serial;
    }
   }

@@ -30,3 +30,9 @@ MAP_DIVERSION_EVENTS = (
      'assert(mapok&&route_status==R_READY&&route_n==expected_n'
      '&&!traffic_offer_valid());'),
 )
+
+# Skip static idle time in the published GIF, not in the native HUD clock.
+DIVERSION_GIF_SKIP_FROM = 1000
+DIVERSION_GIF_SKIP_TO = 4500
+def diversion_playback_ms(ms):
+    return ms - max(0, min(ms, DIVERSION_GIF_SKIP_TO) - DIVERSION_GIF_SKIP_FROM)

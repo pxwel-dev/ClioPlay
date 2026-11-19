@@ -145,7 +145,7 @@ static void diversion_colours(void){
   assert(phase==(90*256)%(17*256));
  }
 }
-static void diversion_markers_only(void){
+static void diversion_badge(void){
  traffic_invalidate();pref.learn_history=pref.diversions=gps.fix=1;
  route_status=R_READY;route_head=0;route_n=4;traffic_begin_idx=1;traffic_join_idx=3;
  traffic_offer_revision=traffic_route_revision;traffic_region=atlas_route_region;traffic_offer_n=3;
@@ -163,8 +163,15 @@ static void diversion_markers_only(void){
    map_dot_q8(x,y,C_ROUTE_DIVERSION,5);map_dot_q8(x,y,C_MAP_BG,3);
   }
   memcpy(saved,fb,sizeof(fb));
-  for(u32 saving=1200;saving<=6000;saving+=4800){clear();traffic_saving=saving;draw_diversion_markers(5);assert(!memcmp(saved,fb,sizeof(fb)));}
+  nlbox=0;nav_card_w=0;traffic_saving=1200;
+  char amount[112];diversion_saving_text(amount,sizeof(amount));assert(streq(amount,"Save ~2 min"));
+  struct HudBox badge;assert(diversion_saving_box(5,width(amount,0)+18,&badge));
+  nlbox=0;clear();draw_diversion_markers(5);assert(memcmp(saved,fb,sizeof(fb)));
+  memcpy(saved,fb,sizeof(fb));nlbox=0;clear();traffic_saving=6000;draw_diversion_markers(5);assert(memcmp(saved,fb,sizeof(fb)));
+  diversion_saving_text(amount,sizeof(amount));assert(streq(amount,"Save ~10 min"));
+  /* A covering label forces the badge to stay hidden, not overlap. */
+  nlbox=1;lbox[0]=(struct LBox){0,0,W,H};assert(!diversion_saving_box(5,width(amount,0)+18,&badge));nlbox=0;
  }
  traffic_invalidate();freecam=0;clear();memcpy(saved,fb,sizeof(fb));draw_diversion_markers(5);assert(!memcmp(saved,fb,sizeof(fb)));
 }
-int main(void){strokes();thin_roads();minor_roads();polygons();joins();diversion_colours();diversion_markers_only();return 0;}
+int main(void){strokes();thin_roads();minor_roads();polygons();joins();diversion_colours();diversion_badge();return 0;}

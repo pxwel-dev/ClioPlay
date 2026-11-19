@@ -42,7 +42,7 @@ class TranslationCoverage(unittest.TestCase):
         # Indirect lookup tables and menu titles do not contain literal ui_tr calls.
         indirect = {
             'clio040.c': [r'setting_names\[\]\s*=\s*\{([^}]+)\}'],
-            'menu_sheet.h': [r'menu_title\(int p\)\{([^}]+)\}',
+            'menu_sheet.h': [r'settings_groups\[\]\s*=\s*\{(.*?)\n\};', r'menu_title\(int p\)\{([^}]+)\}',
                              r'const char\*actions\[\]\s*=\s*\{([^}]+)\}',
                              r'const char\*names\[\]\s*=\s*\{("Itinerary"[^}]+)\}',
                              r'options\[\d+\]\s*=([^;]+);'],
@@ -51,7 +51,7 @@ class TranslationCoverage(unittest.TestCase):
         }
         for file, patterns in indirect.items():
             for pattern in patterns:
-                fragments = re.findall(pattern, (src/file).read_text())
+                fragments = re.findall(pattern, (src/file).read_text(), re.S)
                 self.assertTrue(fragments, (file, pattern))
                 for frag in fragments:
                     self.assertEqual({json.loads(x) for x in STRINGS.findall(frag)}-keys, set(), (file, frag))

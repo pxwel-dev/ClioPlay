@@ -195,17 +195,17 @@ static void test_menu_states(void){
  screen=SCR_SET;modal=MOD_NONE;
  hud_audio.kind=hud_source.kind=hud_navigation.kind=hud_connection.kind=hud_bt_feedback.kind=HUD_NONE;
  hud_reset_animations();
- set_focus=0;pref.bright=100;key_handle(K_RIGHT);assert(pref.bright==100);
+ menu_open_setting(0,hud_now_ms());pref.bright=100;key_handle(K_RIGHT);assert(pref.bright==100);
  key_handle(K_DOWN);assert(set_focus==1);
  pref.bright=50;
  for(int i=0;i<8;i++){
   char b[96],before[96];copystr(before,sizeof(before),setting_value(i,b));
-  menu_open(P_SETTINGS,i,hud_now_ms());set_focus=i;hud_capture_ms+=3000;key_handle(K_RIGHT);
+  menu_open_setting(i,hud_now_ms());set_focus=i;hud_capture_ms+=3000;key_handle(K_RIGHT);
   assert(!streq(before,setting_value(i,b)));
   hud_prepare(0,hud_capture_ms,0);assert(hud_kind==HUD_NONE);
  }
- pref.language=0;menu_open(P_SETTINGS,5,hud_now_ms());set_focus=5;key_handle(K_ENTER);assert(pref.clock_auto);
- menu_open(P_SETTINGS,7,hud_now_ms());key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_ENTER);assert(pref.language==1);
+ pref.language=0;menu_open_setting(5,hud_now_ms());set_focus=5;key_handle(K_ENTER);assert(pref.clock_auto);
+ menu_open_setting(7,hud_now_ms());key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_ENTER);assert(pref.language==1);
  pref.language=0;
  screen=SCR_TRIP;
  set_destination("Station",12,34);assert(streq(notice_text,"Route started"));

@@ -224,5 +224,10 @@
   "Save ~": "बचत ~",
   "Decision: ": "निर्णय: ",
   "BACK to review": "देखने के लिए वापस",
-  "OK to review": "देखने के लिए OK"
+  "OK to review": "देखने के लिए OK",
+  "Display": "डिस्प्ले",
+  "HUD layout": "HUD का लेआउट",
+  "Navigation": "नेविगेशन",
+  "Driving history": "ड्राइविंग इतिहास",
+  "System": "सिस्टम"
 }

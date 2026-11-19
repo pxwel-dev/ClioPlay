@@ -224,5 +224,10 @@
   "Save ~": "Kazanç ~",
   "Decision: ": "Karar: ",
   "BACK to review": "İncelemek için Geri",
-  "OK to review": "İncelemek için OK"
+  "OK to review": "İncelemek için OK",
+  "Display": "Ekran",
+  "HUD layout": "HUD düzeni",
+  "Navigation": "Navigasyon",
+  "Driving history": "Sürüş geçmişi",
+  "System": "Sistem"
 }

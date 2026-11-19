@@ -16,10 +16,11 @@
 - Introduced optional, offline driving-history learning. Fresh GPS observations are recorded independently of active navigation and only successful Barcelona power-off sessions train the model.
 - Added contextual destination suggestions to an empty Itinerary using the last saved GPS position, raw GPS time/day patterns and early trajectory evidence, with nearby Favourites/Recents matching.
 - Added directional historical road-time profiles, traffic-adjusted ETAs and an explicit local Diversion choice with gold/yellow bypassed geometry and an aqua/teal alternative.
-- Shared route geometry remains magenta; dashed teal alternatives, yellow bypasses and junction markers distinguish proposed changes. The glass HUD shows savings, decision distance and context-sensitive Back/OK instructions; direct map confirmation preserves Bluetooth controls and driving zoom.
-- Diversion invitations expand for five seconds, collapse to a compact actionable line and give one speed-aware five-second approach reminder (200–700 m).
+- Shared route geometry remains magenta; dashed teal alternatives, yellow bypasses and junction markers distinguish proposed changes. A small map badge shows the approximate saving near the decision point; the glass HUD announces the offer with context-sensitive Back/OK instructions; direct map confirmation preserves Bluetooth controls and driving zoom.
+- Diversion invitations expand for five seconds, collapse to a compact actionable line and give one speed-aware five-second approach reminder (200–700 m). Both control contexts use the established success green.
 - Declining a diversion suppresses only its bypassed section; later independent offers remain available, and diversion confirmation initially selects Yes. Restored the original empty-Itinerary instructions alongside learned destinations.
-- Added history, destination suggestion and diversion controls in Settings, including a confirmed clear-history action. 
+- Grouped Settings into Display, HUD layout, Navigation, Driving history and System pages.
+- Added history, destination suggestion and diversion controls in Settings → Driving history, including a confirmed clear-history action.
 - Fixed Bluetooth phone names and connected-state identity when switching between saved devices; both remain keyed by hardware address.
 - Completed the new navigation and HUD translations across all 18 interface languages, and added missing-key regression checks.
 - Added native regression cases and two controlled preview storyboards. Historical traffic is not live traffic.
@@ -101,7 +102,7 @@ Focus temperature readings take priority when valid. See the
 [console setup and controls](src/README.md#physical-console-and-temperature-sources).
 The hardware protocol was contributed from a tested Scénic 3.
 
-ClioPlay automatically discovers Bluetooth hardware on the Carminat; for Bluetooth, the Carminat must have: (`hw_bluetooth=1`). If no Bluetooth hardware is discovered, ClioPlay hides all Bluetooth-related UI features (Bluetooth audio and sending destinations by phone via <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>). 
+ClioPlay automatically discovers Bluetooth hardware on the Carminat; for Bluetooth, the Carminat must have: (`hw_bluetooth=1`). If no Bluetooth hardware is discovered, ClioPlay hides all Bluetooth-related UI features (Bluetooth audio and sending destinations by phone via <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>).
 
 ClioPlay handles the audio source as follows:
 
@@ -174,8 +175,9 @@ upper-right console buttons act as the remote's soft keys.
 
 Turning the console knob also zooms the map, skips tracks in **BT CTRL**, scrolls
 lists and moves through keyboard/keypad buttons or dialog choices. In Settings,
-turn it to choose a row, use the joystick left/right to change its value, and
-press it for the row's OK action.
+turn it to choose a category and press to open it. Within a category, turn to
+choose a row, use the joystick left/right to change its value, and press for
+the row's OK action. Back returns to the category list.
 
 Console shortcuts: **DEST** opens Trip; **LIGHT** cycles Day/Night/Auto;
 **INFO** and **REPEAT** show the journey overview on the map (heading without a

@@ -20,6 +20,7 @@ int main(int argc,char**argv){assert(argc==3&&load_font()&&cliou_load(argv[1]));
    }
   }
   assert(width(bt_source_label(),0)<=52);assert(width(bt_label(),3)<=440);assert(streq(bt_source_label(),"BT"));assert(streq(bt_label(),lang?ui_tr("Phone connection"):"Bluetooth"));assert(width(ui_tr("Phone audio"),1)<=180);
+  for(int g=0;g<SETTINGS_GROUP_COUNT;g++){const char*t=ui_tr(settings_groups[g].title);assert(width(t,title_face)<=344);assert(width(t,1)<=292);}
   char settings_text[96];pref.top_swap=1;assert(streq(setting_value(10,settings_text),ui_tr("Clock left")));pref.top_swap=0;assert(streq(setting_value(10,settings_text),ui_tr("Status left")));
   pref.bottom_swap=1;assert(streq(setting_value(11,settings_text),ui_tr("Direction left")));pref.bottom_swap=0;assert(streq(setting_value(11,settings_text),ui_tr("Speed left")));
   assert(starts(setting_value(15,settings_text),ui_tr("Journeys: ")));
@@ -32,11 +33,11 @@ int main(int argc,char**argv){assert(argc==3&&load_font()&&cliou_load(argv[1]));
   /* The action hint must always fit an available status HUD column. */
   assert(width(ui_tr("BACK to review"),0)<=220&&width(ui_tr("OK to review"),0)<=220);
   assert(width(ui_tr("Faster route available"),0)<=280);
-  char traffic_line[112];copystr(traffic_line,sizeof(traffic_line),ui_tr("Save ~"));append_eta(traffic_line,sizeof(traffic_line),3600);appendstr(traffic_line,sizeof(traffic_line)," / ");appendstr(traffic_line,sizeof(traffic_line),ui_tr("Decision: "));appendstr(traffic_line,sizeof(traffic_line),"350 yd");whole_utf8(traffic_line);assert(width(traffic_line,0)<=300);
+  char traffic_line[112];traffic_saving=3600;diversion_saving_text(traffic_line,sizeof(traffic_line));whole_utf8(traffic_line);assert(width(traffic_line,0)+18<=164);
   for(int media=0;media<2;media++){
    traffic_saving=90000u;char compact[sizeof(((struct HudCard*)0)->traffic_hint)];
    hud_diversion_compact_text(compact,sizeof(compact),media);whole_utf8(compact);
-   assert(strstr(compact,ui_tr(media?"BACK to review":"OK to review")));
+   assert(strstr(compact,ui_tr(media?"BACK to review":"OK to review"))&&strstr(compact,ui_tr("Faster route available")));
    assert(width(compact,0)<=HUD_CLOCK_X-36);
   }
   kbd_language=lang;kbd_page=0;for(int i=36;i<40;i++){if(!keyboard_valid_focus(i))continue;char b[16];const char*key=key_label(i,b);int limit=101;if(width(key,0)>limit)fprintf(stderr,"Key overflow %s %d: %s (%d)\n",ui_language_codes[lang],i,key,width(key,0));assert(width(key,0)<=limit);}
@@ -51,14 +52,14 @@ int main(int argc,char**argv){assert(argc==3&&load_font()&&cliou_load(argv[1]));
  char invalid[]="language=999";parse_pref_line(invalid);assert(pref.language==0);
  char negative[]="language=-1";parse_pref_line(negative);assert(pref.language==0);
  // The remote cycles and wraps in both directions without changing unit/camera policy.
- screen=SCR_SET;set_focus=7;pref.language=0;pref.units=1;pref.cameras=2;pref.clock_auto=1;
+ menu_open_setting(7,hud_now_ms());pref.language=0;pref.units=1;pref.cameras=2;pref.clock_auto=1;
  key_handle(K_LEFT);assert(pref.language==UI_LANGUAGE_COUNT-1);key_handle(K_RIGHT);assert(pref.language==0);
  for(int lang=1;lang<=UI_LANGUAGE_COUNT;lang++){key_handle(K_RIGHT);assert(pref.language==lang%UI_LANGUAGE_COUNT);assert(pref.units==1&&pref.cameras==2&&pref.clock_auto==1);}
  // Localize interface literals without altering received names that match them.
  nrecents=nfaves=1;copystr(recents[0].name,sizeof(recents[0].name),"Settings");copystr(faves[0].name,sizeof(faves[0].name),"Cancel");trip.active=1;trip.count=1;trip.active_idx=0;copystr(trip.target[0].name,sizeof(trip.target[0].name),"Saved");route_status=R_IDLE;trip_need_route=0;gps.hour=12;gps.min=35;
  int frames=0;
- for(int lang=0;lang<UI_LANGUAGE_COUNT;lang++)for(int night=0;night<2;night++)for(int page=0;page<14;page++){
-  pref.language=lang;pref.theme=night?THEME_NIGHT:THEME_DAY;modal=MOD_NONE;trip.active=page==5?0:1;screen=page==0?SCR_MENU:(page==1||page==5||page==6)?SCR_TRIP:page==2?SCR_BT:page==3?SCR_SET:SCR_KEY;if(page>=7&&page<10){screen=SCR_MAP;mapok=page!=7;gps.fix=page==9;track_valid=page==9;track_lat=5500000;track_lon=-160000;}else{mapok=0;gps.fix=0;track_valid=0;}if(screen==SCR_KEY)keyboard_begin();set_focus=7;kbd_action=KBD_NAME_FAVE;copystr(kbd_text,sizeof(kbd_text),"Cancel");if(page>=10){screen=page==13?SCR_KEY:SCR_COORDINATES;coordinates.step=page==10?COORD_LAT:page==11?COORD_LON:COORD_REVIEW;coordinates.error=page<12;coordinates.focus=12;coordinates.review_focus=0;coordinates.lat=5497548;coordinates.lon=-164050;copystr(coordinates.value[0],sizeof(coordinates.value[0]),"54.97548");copystr(coordinates.value[1],sizeof(coordinates.value[1]),"-1.64050");copystr(coordinates.name,sizeof(coordinates.name),"Cancel");if(page==13)kbd_action=KBD_NAME_COORDINATES;}if(page==6)modal=MOD_RESUME_TRIP;menu_reset(hud_now_ms());draw();hud_settle_for_capture(hud_now_ms());menu_settle(hud_now_ms());draw();assert(streq(recents[0].name,"Settings")&&streq(faves[0].name,"Cancel")&&streq(trip.target[0].name,"Saved")&&streq(kbd_text,"Cancel"));char file[640];snprintf(file,sizeof(file),"%s/%s-%s-%d.rgb565",argv[2],ui_language_codes[lang],night?"night":"day",page);FILE*f=fopen(file,"wb");assert(f);fwrite(fb,1,sizeof(fb),f);fclose(f);frames++;
+ for(int lang=0;lang<UI_LANGUAGE_COUNT;lang++)for(int night=0;night<2;night++)for(int page=0;page<19;page++){
+  pref.language=lang;pref.theme=night?THEME_NIGHT:THEME_DAY;modal=MOD_NONE;trip.active=page==5?0:1;screen=page==0?SCR_MENU:(page==1||page==5||page==6)?SCR_TRIP:page==2?SCR_BT:page==3?SCR_SET:SCR_KEY;if(page>=7&&page<10){screen=SCR_MAP;mapok=page!=7;gps.fix=page==9;track_valid=page==9;track_lat=5500000;track_lon=-160000;}else{mapok=0;gps.fix=0;track_valid=0;}if(screen==SCR_KEY)keyboard_begin();set_focus=7;kbd_action=KBD_NAME_FAVE;copystr(kbd_text,sizeof(kbd_text),"Cancel");if(page>=10&&page<14){screen=page==13?SCR_KEY:SCR_COORDINATES;coordinates.step=page==10?COORD_LAT:page==11?COORD_LON:COORD_REVIEW;coordinates.error=page<12;coordinates.focus=12;coordinates.review_focus=0;coordinates.lat=5497548;coordinates.lon=-164050;copystr(coordinates.value[0],sizeof(coordinates.value[0]),"54.97548");copystr(coordinates.value[1],sizeof(coordinates.value[1]),"-1.64050");copystr(coordinates.name,sizeof(coordinates.name),"Cancel");if(page==13)kbd_action=KBD_NAME_COORDINATES;}if(page==6)modal=MOD_RESUME_TRIP;menu_reset(hud_now_ms());if(page>=14)menu_open(P_SET_DISPLAY+page-14,0,hud_now_ms());draw();hud_settle_for_capture(hud_now_ms());menu_settle(hud_now_ms());draw();assert(streq(recents[0].name,"Settings")&&streq(faves[0].name,"Cancel")&&streq(trip.target[0].name,"Saved")&&streq(kbd_text,"Cancel"));char file[640];snprintf(file,sizeof(file),"%s/%s-%s-%d.rgb565",argv[2],ui_language_codes[lang],night?"night":"day",page);FILE*f=fopen(file,"wb");assert(f);fwrite(fb,1,sizeof(fb),f);fclose(f);frames++;
  }
  // Exercise translated source headers and saved-phone dialog through actual drawing.
  for(int lang=0;lang<UI_LANGUAGE_COUNT;lang++){

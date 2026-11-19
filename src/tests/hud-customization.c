@@ -81,7 +81,7 @@ static void test_prefs_and_geometry(void){
  assert(hud_tween[HC_STATUS].target.box.x>=W/2);
  assert(hud_tween[HC_SPEED].target.box.x==HUD_TURN_X);
  assert(hud_tween[HC_TURN].target.box.x==HUD_BOTTOM_MARGIN);
- menu_open(P_SETTINGS,10,hud_now_ms());hud_prepare(5,hud_capture_ms,0);
+ menu_open_setting(10,hud_now_ms());hud_prepare(5,hud_capture_ms,0);
  assert(hud_status_pose(hud_capture_ms).x>=W/2);
  assert(sheet_to_box.y+sheet_to_box.h<=HUD_BOTTOM_Y);
 

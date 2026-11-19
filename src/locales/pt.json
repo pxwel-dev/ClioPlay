@@ -224,5 +224,10 @@
   "Save ~": "Poupe ~",
   "Decision: ": "Decisão: ",
   "BACK to review": "Voltar para ver",
-  "OK to review": "OK para ver"
+  "OK to review": "OK para ver",
+  "Display": "Ecrã",
+  "HUD layout": "Disposição do HUD",
+  "Navigation": "Navegação",
+  "Driving history": "Histórico de condução",
+  "System": "Sistema"
 }

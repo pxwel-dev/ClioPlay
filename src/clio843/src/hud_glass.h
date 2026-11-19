@@ -6,7 +6,7 @@ struct HudCard {
  struct HudBox box;
  int kind, flags, value;
  u16 ink;
- char title[193], detail[112], tag[24], badge[24], connection[96], feedback[112], traffic_title[112], traffic_detail[112], traffic_hint[80];
+ char title[193], detail[112], tag[24], badge[24], connection[96], feedback[112], traffic_title[112], traffic_detail[112], traffic_hint[160];
  u32 traffic_serial;
 };
 struct HudTween {
