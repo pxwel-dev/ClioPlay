@@ -314,9 +314,9 @@ project helpers are included separately; see [source status](docs/source-status.
 `clio843/src/release_version.h` from it and records the version in each binary’s
 build report. The Settings footer and UI/Bluetooth startup logs use that generated value. Bootstrap
 scripts declare the same `CLIOPLAY_VERSION`. Use
-`python3 tools/release_version.py --set 2.2.0` (or the intended new version) to
+`python3 tools/release_version.py --set 2.2.1` (or the intended new version) to
 synchronise the header, bootstrap versions and `bootstrap-SHA256.json`.
-Alternatively, `python3 tools/rebuild_arm.py --version 2.2.0` synchronises and
+Alternatively, `python3 tools/rebuild_arm.py --version 2.2.1` synchronises and
 rebuilds in one command.
 `python3 tools/release_version.py --check` rejects mismatched labels before
 building or publishing. Downloader user agents also read `VERSION`. Map formats,

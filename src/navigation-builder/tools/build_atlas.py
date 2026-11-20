@@ -15,7 +15,7 @@ def sha(p):
  with Path(p).open('rb') as f:
   for b in iter(lambda:f.read(4*1024*1024),b''):h.update(b)
  return h.hexdigest()
-def build(pbf,bounds,output,work,cache,imports=(),countries=(),speed_import=None):
+def build(pbf,bounds,output,work,cache,imports=(),countries=(),speed_import=None,source=None):
  from speed_import import SpeedImport
  correction=SpeedImport(speed_import) if speed_import else None
  from global_regions import Regions
@@ -78,7 +78,7 @@ def build(pbf,bounds,output,work,cache,imports=(),countries=(),speed_import=None
      queue[0:0]=[(a,b,c,d) for b,d in zip(ys,ys[1:]) for a,c in zip(xs,xs[1:])];shutil.rmtree(dest,ignore_errors=True);continue
     raise RuntimeError(f'Region build failed; inspect {log}\n'+text[-1800:])
    unchanged()
-   source=sha(extract);files={n:sha(dest/n) for n in (*REGIONAL,'cameras.cpc','route.cpn')};cached={'builder_sha256':builder_sha,'source':source,'core':list(core),'files':files};stamp.write_text(json.dumps(cached,indent=2)+'\n')
+   region_source=sha(extract);files={n:sha(dest/n) for n in (*REGIONAL,'cameras.cpc','route.cpn')};cached={'builder_sha256':builder_sha,'source':region_source,'core':list(core),'files':files};stamp.write_text(json.dumps(cached,indent=2)+'\n')
   raw=(dest/'cameras.cpc').read_bytes();h=CHDR.unpack_from(raw)
   if h[:3]!=(b'CPC1',2,CREC.size):raise ValueError('Camera version mismatch')
   for i in range(h[3]):
@@ -98,7 +98,7 @@ def build(pbf,bounds,output,work,cache,imports=(),countries=(),speed_import=None
   for r in records:f.write(CREC.pack(*r))
  names=['atlas.cpa',*SHARED]
  for m in metadata:names.extend(m['path']+'/'+n for n in REGIONAL)
- manifest={'builder':'global-atlas-2','speed_import':correction.identity if correction else None,'builder_sha256':builder_sha,'source':{'name':pbf.name,'sha256':sha(pbf),'bounds':bounds},'atlas':report,'timezones':tz,'regions':metadata,'files':{n:{'bytes':(staged/n).stat().st_size,'sha256':sha(staged/n)} for n in names}}
+ manifest={'builder':'global-atlas-2','speed_import':correction.identity if correction else None,'builder_sha256':builder_sha,'source':source or {'name':pbf.name,'sha256':sha(pbf),'bounds':bounds},'atlas':report,'timezones':tz,'regions':metadata,'files':{n:{'bytes':(staged/n).stat().st_size,'sha256':sha(staged/n)} for n in names}}
  if not output.exists():
   for path in staged.rglob('*'):
    if path.is_file() and path.relative_to(staged).as_posix() not in names:path.unlink()

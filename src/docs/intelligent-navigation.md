@@ -1,4 +1,4 @@
-# Intelligent navigation (2.2.0)
+# Intelligent navigation
 
 ClioPlay can learn the driver's own journeys and typical road travel times.
 This is an optional, entirely offline feature. It is not a live traffic service,
@@ -264,5 +264,5 @@ anything. Run it from `src/` with the file paths on a mounted SD card:
 python3 tools/inspect_history.py /path/to/card/clio843/history.prev.dat /path/to/card/clio843/history.dat
 ```
 
-The [preview catalogue](demo/README.md) contains controlled 2.2.0 recordings;
+The [preview catalogue](demo/README.md) contains recordings made with controlled fixtures;
 these previews do not demonstrate real predictive accuracy or observed traffic.

@@ -110,7 +110,7 @@ static void rate_checks(void){
 }
 static void source_checks(void){
  u8 p[2048];int n=packet(p,5);reset(44100);pump(p,n,30,0);
- assert(decst.initialized&&snd_started);u32 frames=media_frames,packets=media_packets;
+ assert(media_frames>0&&snd_started);u32 frames=media_frames,packets=media_packets;
  mock_source=0;audio_source_refresh();assert(sndfd<0&&sbc_resume_reset);
  pump(p,n,20,30);assert(media_packets==packets+20&&media_frames==frames);
  /* Malformed media is still bounded while muted; it cannot reopen output. */

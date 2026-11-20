@@ -136,31 +136,28 @@ static const int sbc_offset8[4][8]={{-2,0,0,0,0,0,0,1},{-3,0,0,0,0,0,1,2},{-4,0,
 
 enum { SBC_MONO=0,SBC_DUAL=1,SBC_STEREO=2,SBC_JOINT=3 };
 struct SbcFrame {int frequency,blocks,mode,channels,allocation,subbands,bitpool;u8 joint;u8 scale[2][8];s32 sb[16][2][8];s16 pcm[2][128];};
-struct SbcState {s32 V[2][170];s16 offset[2][16];int initialized;};
+/* Each PCM phase uses alternating matrix rows i and i+8 over ten ages.
+ * Interleave them into two mirrored rings so the FIR reads one contiguous
+ * window and the cursor wraps once per block, rather than once per row. */
+struct SbcState {
+ s32 history[2][8][2][20];
+ unsigned cursor[2];
+};
 
-/* The decoder requests at most 16 bits. Read only the bytes covered by that
- * request; callers validate the bit range before entering this hot path. */
-static u32 get_bits(const u8*d,u32 bitpos,int n){
- if(!n)return 0;
- u32 byte=bitpos>>3,shift=bitpos&7u,v=(u32)d[byte]<<16;
- if(shift+(u32)n>8u)v|=(u32)d[byte+1]<<8;
- if(shift+(u32)n>16u)v|=d[byte+2];
- return (v>>(24u-shift-(u32)n))&((1u<<n)-1u);
-}
-/* Exact division by 2^bits-1, not an approximate audio calculation. Floor
- * reciprocal multiplication underestimates the quotient by at most one; the
- * remainder correction restores the original result over the full u32 range.
- * ARMv4T has UMULL, avoiding the old 32-iteration division per subband sample. */
-static u32 sbc_levels_divide(u32 n,int bits){
- static const u32 reciprocal[17]={0,0,
+/* Floor reciprocals leave a quotient at most one low. Correct the
+ * remainder to keep the original fixed-point result for every sample. */
+static const u32 sbc_reciprocal[17]={0,0,
   0xffffffffu/3u,0xffffffffu/7u,0xffffffffu/15u,0xffffffffu/31u,
   0xffffffffu/63u,0xffffffffu/127u,0xffffffffu/255u,0xffffffffu/511u,
   0xffffffffu/1023u,0xffffffffu/2047u,0xffffffffu/4095u,0xffffffffu/8191u,
   0xffffffffu/16383u,0xffffffffu/32767u,0xffffffffu/65535u};
- if(bits==1)return n;
- u32 divisor=(1u<<bits)-1u,q=(u32)(((unsigned long long)n*reciprocal[bits])>>32);
- return q+(n-q*divisor>=divisor);
+
+static inline u32 sbc_dequantize(u32 n,u32 levels,u32 reciprocal){
+ if(levels==1)return n;
+ u32 q=(u32)(((unsigned long long)n*reciprocal)>>32);
+ return q+(n-q*levels>=levels);
 }
+
 static void sbc_bits(struct SbcFrame*f,int bits[2][8]){
   int bitneed[2][8],maxneed=0,bitcount=0,slicecount=0,bitslice,ch,sb;
   for(ch=0;ch<2;ch++)for(sb=0;sb<8;sb++){
@@ -177,16 +174,67 @@ static void sbc_bits(struct SbcFrame*f,int bits[2][8]){
 static int sbc_unpack(const u8*d,u32 len,struct SbcFrame*f){
   if(len<4||d[0]!=0x9c)return -1;f->frequency=(d[1]>>6)&3;f->blocks=4+4*((d[1]>>4)&3);f->mode=(d[1]>>2)&3;f->channels=f->mode==SBC_MONO?1:2;f->allocation=(d[1]>>1)&1;f->subbands=(d[1]&1)?8:4;f->bitpool=d[2];
   if(f->frequency!=2||f->blocks!=16||f->subbands!=8||(f->mode!=SBC_STEREO&&f->mode!=SBC_JOINT)||f->bitpool<2||f->bitpool>53)return -2;
-  u32 consumed=32;f->joint=0;if(f->mode==SBC_JOINT){if(len*8u<consumed+8)return-3;for(int sb=0;sb<7;sb++)if(get_bits(d,consumed+sb,1))f->joint|=(u8)(1u<<sb);consumed+=8;}
-  if(len*8u<consumed+64)return-3;for(int ch=0;ch<2;ch++)for(int sb=0;sb<8;sb++){f->scale[ch][sb]=(u8)get_bits(d,consumed,4);consumed+=4;}
-  int bits[2][8];sbc_bits(f,bits);
-  for(int blk=0;blk<16;blk++)for(int ch=0;ch<2;ch++)for(int sb=0;sb<8;sb++){int nb=bits[ch][sb];if(!nb){f->sb[blk][ch][sb]=0;continue;}if(consumed+(u32)nb>len*8u)return-3;u32 a=get_bits(d,consumed,nb);consumed+=(u32)nb;u32 num=((a<<1)|1u)<<f->scale[ch][sb];f->sb[blk][ch][sb]=(s32)sbc_levels_divide(num,nb)-(1<<f->scale[ch][sb]);}
-  if(f->mode==SBC_JOINT)for(int blk=0;blk<16;blk++)for(int sb=0;sb<8;sb++)if(f->joint&(1u<<sb)){s32 a=f->sb[blk][0][sb],b=f->sb[blk][1][sb];f->sb[blk][0][sb]=a+b;f->sb[blk][1][sb]=a-b;}
-  if(consumed&7u)consumed+=8u-(consumed&7u);return (int)(consumed>>3);
+  unsigned header=f->mode==SBC_JOINT?13u:12u;
+  /* Sixteen blocks at bitpool bits each give an exact byte length. */
+  unsigned frame_bytes=header+2u*(unsigned)f->bitpool;
+  if(len<frame_bytes)return -3;
+
+  const u8*scale=d+header-8;
+  f->joint=0;
+  if(f->mode==SBC_JOINT){
+   unsigned joint=d[4];
+   for(int sb=0;sb<7;sb++)if(joint&(128u>>sb))f->joint|=(u8)(1u<<sb);
+  }
+  for(int ch=0;ch<2;ch++)for(int i=0;i<4;i++){
+   u8 pair=*scale++;
+   f->scale[ch][2*i]=pair>>4;
+   f->scale[ch][2*i+1]=pair&15;
+  }
+
+  struct Quantizer {unsigned width,scale,levels,reciprocal;};
+  struct Quantizer plan[2][8];
+  int bits[2][8],block_bits=0;
+  sbc_bits(f,bits);
+  for(int ch=0;ch<2;ch++)for(int sb=0;sb<8;sb++){
+   unsigned width=(unsigned)bits[ch][sb];
+   plan[ch][sb]=(struct Quantizer){width,f->scale[ch][sb],(1u<<width)-1u,sbc_reciprocal[width]};
+   block_bits+=(int)width;
+  }
+  if(block_bits!=f->bitpool)return -3;
+
+  const u8*payload=d+header;
+  u32 reservoir=0;
+  unsigned available=0;
+  for(int block=0;block<16;block++){
+   for(int ch=0;ch<2;ch++)for(int sb=0;sb<8;sb++){
+    const struct Quantizer*q=&plan[ch][sb];
+    s32 sample=0;
+    if(q->width){
+     while(available<q->width){
+      reservoir=(reservoir<<8)|*payload++;
+      available+=8;
+     }
+     available-=q->width;
+     u32 value=(reservoir>>available)&q->levels;
+     u32 numerator=((value<<1)|1u)<<q->scale;
+     sample=(s32)sbc_dequantize(numerator,q->levels,q->reciprocal)-(1<<q->scale);
+    }
+    f->sb[block][ch][sb]=sample;
+   }
+  }
+  if(f->joint){
+   for(int sb=0;sb<7;sb++)if(f->joint&(1u<<sb)){
+    for(int block=0;block<16;block++){
+     s32 left=f->sb[block][0][sb],right=f->sb[block][1][sb];
+     f->sb[block][0][sb]=left+right;
+     f->sb[block][1][sb]=left-right;
+    }
+   }
+  }
+  return (int)frame_bytes;
 }
 static s16 clip16(s32 v){return v>32767?32767:(v<-32768?-32768:(s16)v);}
 static s32 madd(s32 a,s32 b,s32 r){return (s32)((u32)a*(u32)b+(u32)r);} /* intentional fixed-point wrap */
-static void sbc_state_init(struct SbcState*s){memzero(s,sizeof(*s));for(int ch=0;ch<2;ch++)for(int i=0;i<16;i++)s->offset[ch][i]=(s16)(10*i+10);s->initialized=1;}
 /* Fold exact quantised-matrix identities. Odd rows pair c and -c-1,
  * rather than exact negatives: subtract the right-hand sum before shifting.
  * All arithmetic stays modulo 2^32, preserving the original fixed-point PCM. */
@@ -212,15 +260,48 @@ static void sbc_matrix8(const s32*x,s32*out){
  out[12]=(s32)((u32)synmatrix8[12][0]*total);
 }
 static void sbc_synth8(struct SbcState*s,struct SbcFrame*f,int ch,int blk){
-  s32 matrix[16];sbc_matrix8(f->sb[blk][ch],matrix);s16*off=s->offset[ch];for(int i=0;i<16;i++){off[i]--;if(off[i]<0){off[i]=159;for(int j=0;j<9;j++)s->V[ch][j+160]=s->V[ch][j];}s->V[ch][off[i]]=SCALE8(matrix[i]);}
-  for(int i=0,idx=0;i<8;i++,idx+=5){int k=(i+8)&15;s32 r=madd(s->V[ch][off[k]+9],sbc_proto_8_80m1[idx+4],0);r=madd(s->V[ch][off[i]+8],sbc_proto_8_80m0[idx+4],r);r=madd(s->V[ch][off[k]+7],sbc_proto_8_80m1[idx+3],r);r=madd(s->V[ch][off[i]+6],sbc_proto_8_80m0[idx+3],r);r=madd(s->V[ch][off[k]+5],sbc_proto_8_80m1[idx+2],r);r=madd(s->V[ch][off[i]+4],sbc_proto_8_80m0[idx+2],r);r=madd(s->V[ch][off[k]+3],sbc_proto_8_80m1[idx+1],r);r=madd(s->V[ch][off[i]+2],sbc_proto_8_80m0[idx+1],r);r=madd(s->V[ch][off[k]+1],sbc_proto_8_80m1[idx],r);r=madd(s->V[ch][off[i]],sbc_proto_8_80m0[idx],r);f->pcm[ch][blk*8+i]=clip16(SCALE8(r));}
-}
-static int sbc_decode(const u8*d,u32 len,struct SbcState*s,struct SbcFrame*f){int n=sbc_unpack(d,len,f);if(n<0)return n;if(!s->initialized)sbc_state_init(s);for(int ch=0;ch<2;ch++)for(int blk=0;blk<16;blk++)sbc_synth8(s,f,ch,blk);return n;}
+ s32 matrix[16];
+ sbc_matrix8(f->sb[blk][ch],matrix);
+ unsigned phase=s->cursor[ch]?s->cursor[ch]-1u:9u;
+ s->cursor[ch]=phase;
+ for(int i=0;i<8;i++){
+  s32 *current=&s->history[ch][i][phase&1u][phase];
+  s32 *alternate=&s->history[ch][i][(phase&1u)^1u][phase];
+  current[0]=current[10]=SCALE8(matrix[i]);
+  alternate[0]=alternate[10]=SCALE8(matrix[i+8]);
 
-/* Normal 44.1 kHz output needs no resampling or inactive-chime mixing. */
-static void sbc_pcm_interleave(u8*out,const struct SbcFrame*f){
- for(int i=0;i<128;i++){u16 l=(u16)f->pcm[0][i],r=(u16)f->pcm[1][i];
-  out[4*i]=(u8)l;out[4*i+1]=(u8)(l>>8);out[4*i+2]=(u8)r;out[4*i+3]=(u8)(r>>8);}
+  const s32 *even=&sbc_proto_8_80m0[i*5],*odd=&sbc_proto_8_80m1[i*5];
+  s32 sum=madd(current[0],even[0],0);
+  sum=madd(current[1],odd[0],sum);
+  sum=madd(current[2],even[1],sum);
+  sum=madd(current[3],odd[1],sum);
+  sum=madd(current[4],even[2],sum);
+  sum=madd(current[5],odd[2],sum);
+  sum=madd(current[6],even[3],sum);
+  sum=madd(current[7],odd[3],sum);
+  sum=madd(current[8],even[4],sum);
+  sum=madd(current[9],odd[4],sum);
+  f->pcm[ch][blk*8+i]=clip16(SCALE8(sum));
+ }
+}
+static int sbc_decode(const u8*d,u32 len,struct SbcState*s,struct SbcFrame*f){
+ int n=sbc_unpack(d,len,f);
+ if(n<0)return n;
+ for(int ch=0;ch<2;ch++)for(int blk=0;blk<16;blk++)sbc_synth8(s,f,ch,blk);
+ return n;
+}
+
+/* The PCM ring consumes little-endian stereo frames. Use one aligned
+ * word store for a left/right pair on the ARM target and little-endian hosts. */
+static inline u32 pcm_word(s16 left,s16 right){
+ u32 word=(u32)(u16)left|((u32)(u16)right<<16);
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+ word=__builtin_bswap32(word);
+#endif
+ return word;
+}
+static void sbc_pcm_interleave(u32*out,const struct SbcFrame*f){
+ for(int i=0;i<128;i++)out[i]=pcm_word(f->pcm[0][i],f->pcm[1][i]);
 }
 
 #if !defined(HOST_TEST) || defined(AUDIO_RUNTIME_TEST)
@@ -612,7 +693,7 @@ static int listenfd=-1,ctrllistenfd=-1,sigfd=-1,mediafd=-1;
 static int cfg_ok=0,av_opened=0,av_started=0,manual_block=0;
 static int sbc_resume_reset=1,media_audio_idle=0;
 static int avrcp_delay_ticks=-1,reconnect_profile_ticks=-1;
-static struct SbcState decst;static struct SbcFrame decfr;static u8 pcm_out[512];
+static struct SbcState decst;static struct SbcFrame decfr;static u32 pcm_out[128];
 /* Capability is a mask: 44.1 kHz + Stereo + Joint Stereo.  A SET_CONFIGURATION
  * selects exactly one channel mode, so accept 0x22 (Stereo) or 0x21 (Joint). */
 static const u8 SBC_CAP0=0x23;
@@ -660,14 +741,14 @@ static void alert_service(void){u32 now=alert_now_ms(),msg[4];snd_feed_now=now;l
  if(!snd_open())return;if(snd_started)snd_sample_playback();u32 target=udiv32(snd_output_bps,5u);
  /* At most 250ms of PCM per poll, including the initial 150ms prefill. */
  for(unsigned block=0;block<88&&(snd_started?snd_used:snd_queued)<target;block++){
-  for(int i=0;i<128;i++){int gain,tone=chime_sample(&camera_chime,&gain);s16 v=(s16)tone;pcm_out[4*i]=(u8)v;pcm_out[4*i+1]=(u8)((u16)v>>8);pcm_out[4*i+2]=(u8)v;pcm_out[4*i+3]=(u8)((u16)v>>8);}if(!snd_push(pcm_out,512))break;
+  for(int i=0;i<128;i++){int gain,tone=chime_sample(&camera_chime,&gain);s16 v=(s16)tone;pcm_out[i]=pcm_word(v,v);}if(!snd_push((const u8*)pcm_out,sizeof(pcm_out)))break;
  }
 }
 static void pcm_pack(void){int q=0,d=snd_div;
  if(d==1&&!chime_active(&camera_chime)){
   sbc_pcm_interleave(pcm_out,&decfr);
-  q=512;
- }else{if(d<1)d=1;for(int i=0;i<128;i+=d){s32 l=0,r=0;for(int j=0;j<d;j++){l+=decfr.pcm[0][i+j];r+=decfr.pcm[1][i+j];}if(d==2){l>>=1;r>>=1;}else if(d==4){l>>=2;r>>=2;}int gain,tone=chime_sample(&camera_chime,&gain);s16 ls=(s16)chime_mix(l,gain,tone),rs=(s16)chime_mix(r,gain,tone);pcm_out[q++]=(u8)ls;pcm_out[q++]=(u8)((u16)ls>>8);pcm_out[q++]=(u8)rs;pcm_out[q++]=(u8)((u16)rs>>8);}}if(!snd_push(pcm_out,(u32)q))status_set("BT BUFFERING");else status_set(snd_started?"BT STREAMING":"BT BUFFERING");}
+  q=128;
+ }else{if(d<1)d=1;for(int i=0;i<128;i+=d){s32 l=0,r=0;for(int j=0;j<d;j++){l+=decfr.pcm[0][i+j];r+=decfr.pcm[1][i+j];}if(d==2){l>>=1;r>>=1;}else if(d==4){l>>=2;r>>=2;}int gain,tone=chime_sample(&camera_chime,&gain);s16 ls=(s16)chime_mix(l,gain,tone),rs=(s16)chime_mix(r,gain,tone);pcm_out[q++]=pcm_word(ls,rs);}}if(!snd_push((const u8*)pcm_out,(u32)q*4u))status_set("BT BUFFERING");else status_set(snd_started?"BT STREAMING":"BT BUFFERING");}
 static void media_packet(const u8*b,int n){if(!av_started||n<14)return;alert_last_media=alert_now_ms();snd_feed_now=alert_last_media;if(source_active&&snd_started)snd_sample_playback();media_packets++;media_bytes+=(u32)n;int cc=b[0]&15,off=12+4*cc;if(b[0]&0x10){if(off+4>n){media_decode_errors++;return;}int ext=((int)b[off+2]<<8)|b[off+3];off+=4+ext*4;}if(off>=n){media_decode_errors++;return;}u8 ph=b[off++];if(ph&0xe0){media_decode_errors++;return;}int frames=ph&15;if(frames<1){media_decode_errors++;return;}if(!source_active){sbc_resume_reset=1;return;}media_audio_idle=0;if(sbc_resume_reset){memzero(&decst,sizeof(decst));sbc_resume_reset=0;}int decoded=0;for(int k=0;k<frames&&off<n;k++){int used=sbc_decode(b+off,(u32)(n-off),&decst,&decfr);if(used<=0){media_decode_errors++;break;}off+=used;decoded++;media_frames++;if(sndfd<0&&!snd_open())return;pcm_pack();}u32 finished=alert_now_ms();if(decoded&&snd_feed_valid)snd_feed_at=finished;if(audio_profile_on){u32 elapsed=finished-alert_last_media;if(elapsed>audio_packet_max_ms)audio_packet_max_ms=elapsed;}if(media_packets==1||media_packets==10||(media_packets%100u)==0||decoded!=frames)av_log_media();}
 
 /* ---------------- AVRCP Controller: metadata + 4 transport commands ----- */

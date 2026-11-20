@@ -38,7 +38,7 @@ if the distribution is not installed or needs updating.
 
 1. Download/extract the whole ClioPlay repository to a local Windows folder.
    Run it from the extracted folder, not inside the ZIP.
-2. Download an `.osm.pbf` covering your journeys from
+2. Download one or more `.osm.pbf` extracts covering your journeys from
    [Geofabrik Downloads](https://download.geofabrik.de/).
 3. Insert the SD card. Check its drive letter in File Explorer.
 4. If the card is not already visible in Ubuntu, mount its Windows drive letter.
@@ -65,7 +65,9 @@ paths:
 | `C:\Users\you\Downloads\region.osm.pbf` | `/mnt/c/Users/you/Downloads/region.osm.pbf` |
 | SD card `E:\` mounted as above | `/mnt/e` |
 
-Confirm the map region, wait for the navigation build, then review and confirm
+Enter each map path in turn, then press Enter on an empty prompt to start. Use
+matching snapshot downloads for multiple regions. Confirm the coverage, wait
+for the navigation build, then review and confirm
 the SD-card target. Existing preferences, pairings and saved places are retained;
 replaced files are backed up. The launcher never selects or formats a disk.
 

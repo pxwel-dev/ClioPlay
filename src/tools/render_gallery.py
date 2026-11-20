@@ -663,12 +663,12 @@ def modern_menus():
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_BLUETOOTH_HIDDEN_EVENTS, V216_BLUETOOTH_HIDDEN_SAMPLES)
     motion('Version 2.1.8', 'preview-v216-itinerary', 'Scroll ten targets, with connectors bounded to the visible list',
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_ITINERARY_EVENTS, V216_ITINERARY_SAMPLES)
-    motion('Version 2.2.0', 'preview-v220-frequent-place', 'Stationary startup: offer, editable Favourite name, save',
+    motion('Intelligent navigation', 'preview-v220-frequent-place', 'Stationary startup: offer, editable Favourite name, save',
            'settle();', FREQUENT_PLACE_EVENTS, V220_FREQUENT_PLACE_SAMPLES)
-    motion('Version 2.2.0', 'preview-v220-destination-prediction', 'Learned destination: BT CTRL, map invitation and confirmation',
+    motion('Intelligent navigation', 'preview-v220-destination-prediction', 'Learned destination: BT CTRL, map invitation and confirmation',
            'settle();', DESTINATION_EVENTS, V220_DESTINATION_SAMPLES)
     motion(
-        'Version 2.2.0',
+        'Intelligent navigation',
         'preview-v220-intelligent-diversions',
         'Historical traffic warning and real map-backed diversion',
         'settle();',

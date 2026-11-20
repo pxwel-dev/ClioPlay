@@ -3,6 +3,11 @@
 This history records implemented changes. Entries marked **Unreleased** are prepared locally and have not been published.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
 
+## Version 2.2.1 — Release
+
+- The guided installer and navigation builder accept multiple matching OSM extracts for one cross-border build. The installer merges them locally and rejects conflicting versions of shared objects.
+- Bluetooth SBC decoding uses less computation while preserving the same PCM output and playback configuration.
+
 ## Version 2.2.0 — Release
 
 ### Changes in this version

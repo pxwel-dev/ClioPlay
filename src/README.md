@@ -1,4 +1,7 @@
-# ClioPlay version 2.2.0
+# ClioPlay version 2.2.1
+
+Version 2.2.1 adds multi-extract map installation and reduces Bluetooth SBC
+decoding work while preserving PCM output. See the [changelog](docs/changelog.md).
 
 ## Set up a card
 
@@ -9,14 +12,16 @@ To change and rebuild the runtime, follow [BUILDING.md](BUILDING.md).
 
 Install Python 3.11+, osmium-tool, a C++17 compiler, and cabextract or 7-Zip. Run `Install.command` on macOS, or `python3 install.py`.
 
-1. Select your `.osm.pbf` first. The installer scans it and asks you to verify the
-   intended coverage. Complete relations can contain remote nodes; both source
-   metadata and the installation envelope are retained. Bounds alone do not prove
-   that a country is complete.
+1. Enter or drag in your first `.osm.pbf` path. Add more paths when prompted, then
+   press Enter on an empty prompt to continue. For multiple files, choose extracts
+   from the same provider and snapshot. The installer merges them locally, rejects
+   conflicting versions of shared objects and asks you to verify the coverage.
+   Bounds alone do not prove that a country is complete. You can also supply
+   `--pbf PATH` once per file when starting `python3 install.py`.
 2. The builder creates and checks every navigation file. Fonts, country profiles,
    timezone boundaries and offline DST rules are bundled; coastline data is
    downloaded and cached automatically on first use.
-3. Large extracts automatically become an atlas of overlapping regional packs.
+3. A large combined extract automatically becomes an atlas of overlapping regional packs.
    Small extracts remain a single pack. Select the SD-card root after building.
 4. The installer automatically downloads and caches TomTom Navcore 8.843,
    verifies its checksum, and combines `ttsystem` and `vehicledaemon` with the full AUX/remote/Bluetooth bootstrap,

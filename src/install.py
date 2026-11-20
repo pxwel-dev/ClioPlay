@@ -8,10 +8,12 @@ def main(argv=None):
  parser=argparse.ArgumentParser(description=__doc__)
  parser.add_argument('--update',type=Path,metavar='SD_ROOT',help='update existing software without rebuilding maps or downloading firmware')
  parser.add_argument('--dry-run',action='store_true',help='validate and list an update without changing the card')
+ parser.add_argument('--pbf',type=Path,action='append',default=[],metavar='PATH',help='OSM extract for a fresh installation, repeat for more regions')
  parser.add_argument('--speed-import',type=Path,help='optional source-attributed missing speed-limit corrections')
  args=parser.parse_args(argv)
  if args.update is not None:
   if args.speed_import:parser.error("--speed-import requires a fresh navigation build, not --update")
+  if args.pbf:parser.error("--pbf requires a fresh navigation build, not --update")
   sys.path.insert(0,str(ROOT/'tools'))
   from update_card import run_update
   try:run_update(args.update,args.dry_run)
@@ -22,7 +24,11 @@ def main(argv=None):
  if not sys.stdin.isatty():raise SystemExit('Run interactively in a terminal; build_navigation.py supports unattended builds.')
  print('ClioPlay Global · clean installation')
  try:
-  subprocess.run([sys.executable,str(BUILDER/'build_navigation.py'),'--output',str(ROOT/'navigation-output'),*(['--speed-import',str(args.speed_import.expanduser().resolve())] if args.speed_import else [])],check=True)
+  command=[sys.executable,str(BUILDER/'build_navigation.py'),
+           *[str(path.expanduser().resolve()) for path in args.pbf],
+           '--output',str(ROOT/'navigation-output')]
+  if args.speed_import:command+=['--speed-import',str(args.speed_import.expanduser().resolve())]
+  subprocess.run(command,check=True)
  except subprocess.CalledProcessError:
   raise SystemExit('Navigation build did not complete. The target has not been changed. Run the installer again to resume completed atlas regions.') from None
  print('The complete navigation bundle has been built and checked.')

@@ -31,7 +31,7 @@ function Invoke-ClioPlayWindowsInstall {
             throw 'Required Ubuntu tools are missing. Run the apt command in WINDOWS.md.'
         }
         Write-Host 'ClioPlay installer - Windows through WSL'
-        Write-Host 'Use Linux paths in the prompts, such as /mnt/c/Users/you/Downloads/map.osm.pbf.'
+        Write-Host 'Use Linux paths such as /mnt/c/Users/you/Downloads/map.osm.pbf. Enter each map path, then press Enter on an empty prompt.'
         Write-Host 'For SD-card drive letters and mounting, follow WINDOWS.md.'
         # Keep the real Windows console handles: piping this interactive child
         # through PowerShell would risk making Python's stdin non-interactive.

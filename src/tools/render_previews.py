@@ -34,7 +34,7 @@ def previews():
     metadata_samples = sorted({at+step for at in (0,900,1700,2900,4300,8500) for step in TWEEN_STEPS} | {700,2600,3900,7200,9200})
     boot = [(f'boot-fade-{ms:04d}', 67) for ms in range(0, 501, 67)] + [('boot-fade-0536', 364), ('boot-fade-0900', 700)]
     boot[0] = (boot[0][0], 750)
-    return {
+    plans = {
         'v220-frequent-place.gif': timeline('night', timed_scenes('preview-v220-frequent-place', V220_FREQUENT_PLACE_SAMPLES, 5900)),
         'v220-destination-prediction.gif': timeline('night', timed_scenes('preview-v220-destination-prediction', V220_DESTINATION_SAMPLES, 6500)),
         'v220-intelligent-diversions.gif': timeline('night', timed_scenes('preview-v220-intelligent-diversions', V220_DIVERSION_SAMPLES, 6200)),
@@ -87,6 +87,21 @@ def previews():
         ]),
     }
 
+    return {name: gif_clock(sequence) for name, sequence in plans.items()}
+
+
+def gif_clock(sequence):
+    """Drop samples that have no display time at GIF's 10 ms resolution."""
+    result = []
+    elapsed = encoded = 0
+    for frame, ms in sequence:
+        elapsed += ms
+        target = round(elapsed / 10) * 10
+        if target > encoded:
+            result.append((frame, target - encoded))
+            encoded = target
+    return result
+
 
 # RGB565-expanded body/facet colours from the Day/Night vehicle palette.
 # Keep these small but important details out of whole-scene colour averaging.
@@ -120,13 +135,7 @@ def encode_gif(captures, destination, sequence):
     reserved = [channel for colour in POINTER_COLOURS for channel in colour]
     palette.putpalette(reserved + learned.getpalette()[:(256-len(POINTER_COLOURS))*3])
     indexed = [quantize_preview(image, palette) for image in images]
-    # GIF has a 10 ms clock: carry rounding error to retain total timing.
-    durations, elapsed, encoded = [], 0, 0
-    for _, ms in sequence:
-        elapsed += ms
-        target = round(elapsed / 10) * 10
-        durations.append(target - encoded)
-        encoded = target
+    durations = [ms for _, ms in sequence]
     indexed[0].save(destination, save_all=True, append_images=indexed[1:],
                     duration=durations, loop=0, optimize=True)
     with Image.open(destination) as image:
@@ -235,7 +244,7 @@ def main():
             'framebuffer': '480x272 RGB565 from production C draw() and key_handle()',
             'example': (
                 'Newcastle upon Tyne, with simulated car and phone inputs; '
-                '2.2.0 uses controlled learned records and a real '
+                'This demonstration uses controlled learned records and a real '
                 'map-backed diversion calculated by production routing'
             ),
             'native_sources': capture['native_sources'],

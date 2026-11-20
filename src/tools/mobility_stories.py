@@ -1,5 +1,5 @@
 
-"""Controlled native capture sequences for the 2.2.0 preview GIFs."""
+"""Controlled native capture sequences for the intelligent navigation preview GIFs."""
 
 DESTINATION_EVENTS = (
     (0, 'preview_prediction_seed();bt_control_mode=0;key_handle(K_BACK);assert(bt_control_mode);'),

@@ -1,7 +1,7 @@
 {
   "schema": "clioplay-readme-previews-1",
   "framebuffer": "480x272 RGB565 from production C draw() and key_handle()",
-  "example": "Newcastle upon Tyne, with simulated car and phone inputs; 2.2.0 uses controlled learned records and a real map-backed diversion calculated by production routing",
+  "example": "Newcastle upon Tyne, with simulated car and phone inputs; This demonstration uses controlled learned records and a real map-backed diversion calculated by production routing",
   "native_sources": {
     "clio843/src/frame_schedule.h": "50bac892308f48eb49dbc30948b2531ca3b8d1ff71296820168f86a48a12751a",
     "clio843/src/global_clock.h": "5fbcf43cb8aceb59e87d6f8118d121ce5798eec064c0ed5a7586a2eb25de8512",
@@ -18,7 +18,7 @@
     "clio843/src/splash_icon.h": "1c0cb3bf3be97ce49cdf626bc0184b0736b49fee877a92f5bf2e5cb2d0ec17eb",
     "clio843/src/hud_status.h": "91f9d2cc57aeae72deebee57974292a8c3033631b4cd11b83d57fdececbaeaed",
     "clio843/src/last_fix.h": "eaf9a30204c7b146bf83ea6ea6f2f4a9c25486dcbf69bc366824888426668cca",
-    "clio843/src/clioa2dp.c": "f887aa9dfd772bbfed1a313cc16160ac2838372ed2944e4409482e1604e61bce",
+    "clio843/src/clioa2dp.c": "dbf3477952eae85e4ddbbbf907dca2a5f706c36fe8901116d61fa9f70405b84b",
     "clio843/src/atlas_catalog.h": "e68482414282efe29ca954b24778c89e03a3d70197bc9b29effd830dec97f8f0",
     "clio843/src/menu_keyboard.h": "c2bbd1281013adcf7e0620b4f360133b837ac2596fe9b5ea81f1e0cac423b5a0",
     "clio843/src/traffic.h": "a4d536dfefa1a619234f4410423ad170ac49bd8dc991e7c8886ba9c9ef136186",
@@ -26,7 +26,7 @@
     "clio843/src/global_regions.h": "00772a81c56fefdcf466ce0594c05a9d62983861a6f81be872fb7e474956d647",
     "clio843/src/boot_transition.h": "8ea391927a52cf8eaa9f010a70b8f8e012b768346ca9cd297110e40e6a850007",
     "clio843/src/menu_sheet.h": "cc0d9de55f2d3d5c7b4b84f9c93c8f60d0829ab76bb33f2670374acfd51449a0",
-    "clio843/src/release_version.h": "dab5bc6013fa4b1273487d05c3029b9b6ca7a3092291fa385ebfba7e3e6f4adb",
+    "clio843/src/release_version.h": "56a0f632cb6daf36d2334a8c88d9f83eeb3c3286481d1ada707e5e2a9c2bedf5",
     "clio843/src/vehicle_icon.h": "dfcb48775858684a323506e4cb6f61eba56ce3d8c7507a5ef86b58d917f24b4a",
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
     "clio843/src/cliospl.c": "523530da194e4a859de29b448926f347d70c6c6c243d08d9b048fb68e08e3d33",
@@ -402,10 +402,10 @@
     "clio843/src/vendor/harfbuzz/src/hb-ft.h": "6f727829c7b2b73482fc44b5852e5f6fef4bf5f8803618fe29acba8c1cd46d66",
     "clio843/src/vendor/harfbuzz/src/hb-buffer-verify.cc": "ef30b4ce521a4554d40bbe850f728e4d447d99e0d1827692b2ebf5fee73cb402",
     "clio843/src/vendor/harfbuzz/src/hb-ot-shaper-arabic.cc": "7ef3512719efb9591dd05c82f161c2df07852a80563c0f4f901e8dde6e1370e9",
-    "clio843/src/vendor/harfbuzz/src/graph/gsubgpos-context.cc": "bc55f636037c8474ac74982b148783ae3c1d5b4407360bf62694af44e009c415",
-    "clio843/src/vendor/harfbuzz/src/wasm/graphite/shape.cc": "940a17b02f33fe97154ab79f9eedb8c3a47df611e011e0c877002a21c86ea755",
     "clio843/src/vendor/harfbuzz/src/wasm/sample/c/shape-fallback.cc": "bf24e6cd4ce83cc61f47cd0e8fc0d407e848663c6f786bbd90b874c7ca1189a4",
     "clio843/src/vendor/harfbuzz/src/wasm/sample/c/shape-ot.cc": "9ac5d6267bc92a35a7fda2b8949232de4104a6148824d25aadced3a4bda3665c",
+    "clio843/src/vendor/harfbuzz/src/wasm/graphite/shape.cc": "940a17b02f33fe97154ab79f9eedb8c3a47df611e011e0c877002a21c86ea755",
+    "clio843/src/vendor/harfbuzz/src/graph/gsubgpos-context.cc": "bc55f636037c8474ac74982b148783ae3c1d5b4407360bf62694af44e009c415",
     "clio843/src/vendor/harfbuzz/src/OT/Var/VARC/VARC.cc": "67b9899f76918440bfe468a05eb67b18955bd9b62eabe705c1e9a7b2c2bcc8d5",
     "clio843/src/vendor/sheenbidi/Source/SheenBidi.c": "14f1708e5afda180ee89f263d2833ecebc8c92be33ee79a62eb860d950419ae2",
     "clio843/src/vendor/sheenbidi/Source/Core/List.c": "559c1cb2711199b3b4559277fe0fef01fd06a889710b56eacee6c8447970d950",
@@ -507,15 +507,15 @@
     "clio843/src/vendor/sheenbidi/Headers/SheenBidi/SheenBidi.h": "44a644a72edf2300838d32c3e32aa14a7cb66b584fb9da643b8311aa21991cbe"
   },
   "executables": {
-    "clio040": "a1f046a61faa3b877e0080e2be763d6d60732b6f2e0c2c8b466547850df9c8e1",
-    "cliospl": "fcd0c31b24ee1a0057af29f6621a926db5f01b8e943d29b83d73c32c5f484deb",
-    "clioa2dp": "568a859ca6ab45687fef0de04c5c7034b37115c9449f30131fb2a6208502bfc1"
+    "clio040": "e07b9c0ac58b39b63dc88e6bb6c6d16ff40388a9632d26d597524868e938644f",
+    "cliospl": "8182a5be4526b406eddd7324b59cbc96131196509702ef60da7ba5a37a1cdebb",
+    "clioa2dp": "4ddc88cd270d284bb6b0135b30eedf1fbdb307c9cdf13acd7330f2f3780bfebe"
   },
   "generator_inputs": {
-    "tools/render_previews.py": "c77367b2b8f61b327d46f1fea890bfb17da87331fe65d48ba3750e17fb026ac9",
-    "tools/render_gallery.py": "3a11c1f1fec394c79334bb1573b4972347e3139db7c494c7017508fd573e742f",
+    "tools/render_previews.py": "e6f2e85c0d377a885636f2a9a7492ce4b2e5f932b8b796c19242645278253104",
+    "tools/render_gallery.py": "9482431ee69aee7f0f24a3834869d75b01b48a53ff9210487b0fd3523b634800",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
-    "tools/mobility_stories.py": "9fa6e097dca5acc9ad861a4ea1007793a8a64aa810d53384b7fdb7cb7d5020e4",
+    "tools/mobility_stories.py": "99df64698df1e87482f2b8635518a7d5af8330598f9ec9786dbc0604676acfa9",
     "tests/native.c": "f125852e4e0c57f557417c378d8168db0eb36efa7e29938adcaf40528d660b37",
     "tests/splash.c": "3d9b3fa740dd139a0d7776c1ec33c789af5c7ecc739a6355b982195490540c72",
     "tests/fixtures/route.h": "8d4a20c13f4bc6d04e0815eb77917f5e5129285cb1138c8f2a2df1d27816e22f",
@@ -523,7 +523,7 @@
   },
   "previews": {
     "v220-frequent-place.gif": {
-      "sha256": "e3ad9d4878b79af9a0447f6799780897f182fd953c22b3a55c0b2bdcce686f99",
+      "sha256": "14219c66816fb69857d81fd9e31f4849505219dafea9fadf24923c3129bc312e",
       "frames": 19,
       "duration_ms": 5900,
       "reserved_pointer_colours": [
@@ -724,7 +724,7 @@
       ]
     },
     "v220-destination-prediction.gif": {
-      "sha256": "bf1ac6fdb48f408026e6e462e05d2e8569d15081ba1917eba88249542c6ffe3a",
+      "sha256": "2c7c945864fbcbfd6df2b2ee6ae662e10c4d5fe496e65ac494e7c4cdb591269c",
       "frames": 24,
       "duration_ms": 6500,
       "reserved_pointer_colours": [
@@ -853,7 +853,7 @@
       ]
     },
     "v220-intelligent-diversions.gif": {
-      "sha256": "66e6ea3c5ac91851f001cb54cfacf8b1ff039c4245a771ea6a13146cdbab9a7f",
+      "sha256": "ba1492cd27896c469721b7cb733963f98f854aea06c94651c3f0b805a25ecd6e",
       "frames": 24,
       "duration_ms": 6200,
       "reserved_pointer_colours": [
@@ -983,8 +983,8 @@
       "routing_provenance": "Real Newcastle route and legal alternative geometry from the installed CPR2 routing graph. Historical congestion observations are controlled examples. The production traffic search, shared-geometry rendering, BT CTRL and direct map confirmation handler are used. This is not a claim about actual traffic conditions."
     },
     "v216-coordinates.gif": {
-      "sha256": "9a800b6c9aa3b23a914a6a161d86375c743ebf3ea5fec9e7bfb7bb8f9934cdf4",
-      "frames": 46,
+      "sha256": "361eb446f4464e9b837c3bca5ae51c5c7fa51634cfd95c8c61b90348fbc372d1",
+      "frames": 44,
       "duration_ms": 11200,
       "reserved_pointer_colours": [
         [
@@ -1214,15 +1214,7 @@
           "rgb565_sha256": "551187824d98a246aa5efc231949f2dff34874effbcae2849ed719d9ba709329"
         },
         {
-          "frame": "night/preview-v216-coordinates-3800.png",
-          "rgb565_sha256": "f0162af9488adc71799008e2093e2eafe2a8edc2a96e70d7ac3c534446cb0e9e"
-        },
-        {
           "frame": "night/preview-v216-coordinates-3801.png",
-          "rgb565_sha256": "f0162af9488adc71799008e2093e2eafe2a8edc2a96e70d7ac3c534446cb0e9e"
-        },
-        {
-          "frame": "night/preview-v216-coordinates-3867.png",
           "rgb565_sha256": "f0162af9488adc71799008e2093e2eafe2a8edc2a96e70d7ac3c534446cb0e9e"
         },
         {
@@ -1238,16 +1230,8 @@
           "rgb565_sha256": "f0162af9488adc71799008e2093e2eafe2a8edc2a96e70d7ac3c534446cb0e9e"
         },
         {
-          "frame": "night/preview-v216-coordinates-4000.png",
-          "rgb565_sha256": "528b0e4620e4b4b03a4600d11f2e8dd93c720fbad8a5461c4de0a5d8a0d140c9"
-        },
-        {
           "frame": "night/preview-v216-coordinates-4001.png",
           "rgb565_sha256": "528b0e4620e4b4b03a4600d11f2e8dd93c720fbad8a5461c4de0a5d8a0d140c9"
-        },
-        {
-          "frame": "night/preview-v216-coordinates-4067.png",
-          "rgb565_sha256": "3e71b725c26b9602b8e2169886c44fbbd7d8f722c394afa8a0f5eaef538602fb"
         },
         {
           "frame": "night/preview-v216-coordinates-4068.png",
@@ -1262,16 +1246,8 @@
           "rgb565_sha256": "ef26d1238b1abd0c459004fc52705fe16fd202031ef55187875ac32fed6b86f5"
         },
         {
-          "frame": "night/preview-v216-coordinates-4200.png",
-          "rgb565_sha256": "a327bbf7cbc6c498987c9c6622085669a702fbb3485d4dbdf0155bc800157fe4"
-        },
-        {
           "frame": "night/preview-v216-coordinates-4201.png",
           "rgb565_sha256": "a327bbf7cbc6c498987c9c6622085669a702fbb3485d4dbdf0155bc800157fe4"
-        },
-        {
-          "frame": "night/preview-v216-coordinates-4267.png",
-          "rgb565_sha256": "6ce58561c003fdbc05fe1dd4ba1ee5b53f1f94c58f17de1e34a47081b918ff46"
         },
         {
           "frame": "night/preview-v216-coordinates-4268.png",
@@ -1448,7 +1424,7 @@
       ]
     },
     "v216-hud-settings.gif": {
-      "sha256": "bfdffa39af393155a6aac34a1d5470860879701fc00a75bcff76c590ce99a31c",
+      "sha256": "c56a4a7cc78ce03ba9918755129aaad986c0a1c7bc5b2e74aa727afbd25ff744",
       "frames": 34,
       "duration_ms": 10000,
       "reserved_pointer_colours": [
@@ -1484,127 +1460,127 @@
         },
         {
           "frame": "night/preview-v216-hud-settings-0134.png",
-          "rgb565_sha256": "2a3b1444453f56d7eb434205c36445e55dc68ce782fb5bc4a8333f7a34221aa3"
+          "rgb565_sha256": "a8a082ee4fcfdf85b53a144e0d5815319aa6ac453cd831b74860a4a573aacd5d"
         },
         {
           "frame": "night/preview-v216-hud-settings-0201.png",
-          "rgb565_sha256": "b629daee89ef6a1cf1989aaf9a2d9cee225244a5a948d9dbfd82b6fc860f93c8"
+          "rgb565_sha256": "141c21bf269ea2929daeaf0b22ab2e89c48a1970fde57d7344abf5b95bf81ce8"
         },
         {
           "frame": "night/preview-v216-hud-settings-0268.png",
-          "rgb565_sha256": "d8f9185b3acfe15a2e17f1767f6e1b359b48489c45ef0d31b7690d30bd3d372e"
+          "rgb565_sha256": "ec04d3c271091831dcae3cba1204208d8f98a9736480501e2207818cebdaa026"
         },
         {
           "frame": "night/preview-v216-hud-settings-0335.png",
-          "rgb565_sha256": "da50e9791f651ee22ad7e9122e38c541c4ae5c7e4c6496bdc1d64a91a86aaf64"
+          "rgb565_sha256": "05c41859ee7f2f784c685fc905d951aa84c8a698e6f6f3c387bdc9f98c5245a9"
         },
         {
           "frame": "night/preview-v216-hud-settings-0700.png",
-          "rgb565_sha256": "da50e9791f651ee22ad7e9122e38c541c4ae5c7e4c6496bdc1d64a91a86aaf64"
+          "rgb565_sha256": "05c41859ee7f2f784c685fc905d951aa84c8a698e6f6f3c387bdc9f98c5245a9"
         },
         {
           "frame": "night/preview-v216-hud-settings-0767.png",
-          "rgb565_sha256": "103b9741759fba78eff3ff789315b2156df0c607551412889f41d42387f62437"
+          "rgb565_sha256": "2734fd528f053f0f3b6f3a856d61185fe8ddd722cf8bbe73837d8f58bdac7adc"
         },
         {
           "frame": "night/preview-v216-hud-settings-0834.png",
-          "rgb565_sha256": "81bec1fec550e40fec6849eea7d12d041abcc028c2224450db1f14fe406a7bfd"
+          "rgb565_sha256": "cb780eb704064a4e50e81eaaac419595e2bc4bf59b1c39aa4a7ed68fbec5098c"
         },
         {
           "frame": "night/preview-v216-hud-settings-0901.png",
-          "rgb565_sha256": "6200b1488c79a00a8dfbc0ea9d048bbffb8106df76addd3db4fc9196cd40ec0f"
+          "rgb565_sha256": "cb2a4a82c1919ed0e5e55e99e1534a8c201f2a9387ed17f40c0f6b9cb623f3bb"
         },
         {
           "frame": "night/preview-v216-hud-settings-0968.png",
-          "rgb565_sha256": "be87a7f11f3d0e42f612bc2208e0448cf72864cae56c985806f11ee3ccd8128c"
+          "rgb565_sha256": "8761f8ce14869c2ddb43583ca72f9de24b3476834c393198a1c8c5bfd9d43f49"
         },
         {
           "frame": "night/preview-v216-hud-settings-1035.png",
-          "rgb565_sha256": "7b8683a12d1002495494c4a545dce932acb605653c85fe521637c6818ab96e42"
+          "rgb565_sha256": "c36bb8eb6e16a6e41bb184c83afbf5159324fb7f43c21c0d950c102c65b0e6ed"
         },
         {
           "frame": "night/preview-v216-hud-settings-1700.png",
-          "rgb565_sha256": "d46d9099915ece9af8e5e230b0c2016822d3d59c960109a4d1c86b9a77c1f385"
+          "rgb565_sha256": "415ab10c400304a50ed684ae9e40f6af9a7f851635ccfcbca6cfd6f9c340a85c"
         },
         {
           "frame": "night/preview-v216-hud-settings-1767.png",
-          "rgb565_sha256": "e766a7b50a934d8ec686c1a7752cf4a5dd9160e794fe6fc459865f5973e95074"
+          "rgb565_sha256": "887f4d35ccb8b74700eadd4dc030e4edabe1a25baa348b18e27e79c8d4875b9a"
         },
         {
           "frame": "night/preview-v216-hud-settings-1834.png",
-          "rgb565_sha256": "0ebaedaca8bcc25e91a8711ea92eec5892ef7e6878baf274047941a29e5221d1"
+          "rgb565_sha256": "204626d5bf965acc8f57a2fd2bde4e2449c42eb8cca08294402b886ebc3a3767"
         },
         {
           "frame": "night/preview-v216-hud-settings-1901.png",
-          "rgb565_sha256": "f28434a25a4af04ac590caac3703346d330708e8cf70c165c74bced56c12f57f"
+          "rgb565_sha256": "e07f78e3378fbf5fad03b1a559256fe35f14f1c68a1aeb7f9e43debe9c301dca"
         },
         {
           "frame": "night/preview-v216-hud-settings-1968.png",
-          "rgb565_sha256": "57e48d3719abdcd941043a7031eca7cb7170610bb84a31c745bfd0e61bffa90b"
+          "rgb565_sha256": "d6278007790da6ec5aad9149ca5d064ceb48d145cb5c195df8ed421806fffb31"
         },
         {
           "frame": "night/preview-v216-hud-settings-2035.png",
-          "rgb565_sha256": "21ca1a6de9767b6515017257c076c89f0d0834c7972f72a9c3a9107cfee18467"
+          "rgb565_sha256": "ff38d937052cd1610d4e1a9d935bcb04556f581eeba9a35b796930681cbd330a"
         },
         {
           "frame": "night/preview-v216-hud-settings-3600.png",
-          "rgb565_sha256": "90f3ccb6151e0d3994c728e8b801832db92d8eeb4a625d9d11e01ac869bc7028"
+          "rgb565_sha256": "3993b966b6cfd350ca148d770971e78c1ab3667c2bde9078a4c495e4273c3f2a"
         },
         {
           "frame": "night/preview-v216-hud-settings-3667.png",
-          "rgb565_sha256": "90f3ccb6151e0d3994c728e8b801832db92d8eeb4a625d9d11e01ac869bc7028"
+          "rgb565_sha256": "3993b966b6cfd350ca148d770971e78c1ab3667c2bde9078a4c495e4273c3f2a"
         },
         {
           "frame": "night/preview-v216-hud-settings-3734.png",
-          "rgb565_sha256": "90f3ccb6151e0d3994c728e8b801832db92d8eeb4a625d9d11e01ac869bc7028"
+          "rgb565_sha256": "3993b966b6cfd350ca148d770971e78c1ab3667c2bde9078a4c495e4273c3f2a"
         },
         {
           "frame": "night/preview-v216-hud-settings-3801.png",
-          "rgb565_sha256": "90f3ccb6151e0d3994c728e8b801832db92d8eeb4a625d9d11e01ac869bc7028"
+          "rgb565_sha256": "3993b966b6cfd350ca148d770971e78c1ab3667c2bde9078a4c495e4273c3f2a"
         },
         {
           "frame": "night/preview-v216-hud-settings-3868.png",
-          "rgb565_sha256": "90f3ccb6151e0d3994c728e8b801832db92d8eeb4a625d9d11e01ac869bc7028"
+          "rgb565_sha256": "3993b966b6cfd350ca148d770971e78c1ab3667c2bde9078a4c495e4273c3f2a"
         },
         {
           "frame": "night/preview-v216-hud-settings-3935.png",
-          "rgb565_sha256": "90f3ccb6151e0d3994c728e8b801832db92d8eeb4a625d9d11e01ac869bc7028"
+          "rgb565_sha256": "3993b966b6cfd350ca148d770971e78c1ab3667c2bde9078a4c495e4273c3f2a"
         },
         {
           "frame": "night/preview-v216-hud-settings-4200.png",
-          "rgb565_sha256": "371d224ba84177a8a445e256d6a6c01520a98dde28008433d1b73018fac16943"
+          "rgb565_sha256": "6eee6120146e859621569bea1917bcb7a64fd219d3208f0b8b5cebe7587d037a"
         },
         {
           "frame": "night/preview-v216-hud-settings-4267.png",
-          "rgb565_sha256": "0793f16fad749e1ea9a00814ab1b7aa620e073d49b834c92c19996e89bc1057f"
+          "rgb565_sha256": "e01b70dfb566ffc4cb516fe8af13fa91d309d38109c485c3fd8fd657e4757427"
         },
         {
           "frame": "night/preview-v216-hud-settings-4334.png",
-          "rgb565_sha256": "5fb575c2dc5673a50a0d206bda64283a793624f35bd19533b67cee4df7b970eb"
+          "rgb565_sha256": "4ad7655a66a737064655a6c801e498c649836a3847d63816e582c5023940a49b"
         },
         {
           "frame": "night/preview-v216-hud-settings-4401.png",
-          "rgb565_sha256": "629108ec6dc3fe0c148cf5e21a16d76b6c0adfc4544df0e9a4a6c31376bfd14b"
+          "rgb565_sha256": "c60db898b4dd77b8d91bae63d4cbad91b56b5be7b83771524a50acd9274fb91f"
         },
         {
           "frame": "night/preview-v216-hud-settings-4468.png",
-          "rgb565_sha256": "8a44c8406ca8f715278da3cc37e9392731d51e44b8f8c1356accf33b0dbb8bab"
+          "rgb565_sha256": "5876d8ead916998f390f7791a5bffbab035292a83d3a780a92809b5e47e988f6"
         },
         {
           "frame": "night/preview-v216-hud-settings-4535.png",
-          "rgb565_sha256": "f8ed5a6ad4019cd446b283b7296f750fee09e67344604efbe3869d5fdbeacc39"
+          "rgb565_sha256": "1f4708a95183ecbb60cab28fd6f50a5691a5fbb25837a6ffc05c731d058e477f"
         },
         {
           "frame": "night/preview-v216-hud-settings-6100.png",
-          "rgb565_sha256": "f8ed5a6ad4019cd446b283b7296f750fee09e67344604efbe3869d5fdbeacc39"
+          "rgb565_sha256": "1f4708a95183ecbb60cab28fd6f50a5691a5fbb25837a6ffc05c731d058e477f"
         },
         {
           "frame": "night/preview-v216-hud-settings-6167.png",
-          "rgb565_sha256": "46b7c190dd8bb733d06d298e51c3b989d31465b868192ba59f25f663920436af"
+          "rgb565_sha256": "ee0e393c4b78dc6a026b291deda3af2358743bb3d66b0dd4e7ddb5a802022fcf"
         },
         {
           "frame": "night/preview-v216-hud-settings-6234.png",
-          "rgb565_sha256": "85d62d66049b83b729717b3b8be23b83c909132ae9fbe1beccc22ddc7b77f8be"
+          "rgb565_sha256": "ac266b541589b59a82e38d4ca52470187ca8a2f4fd9878bbafe5c869f3e80a8a"
         },
         {
           "frame": "night/preview-v216-hud-settings-6301.png",
@@ -1624,32 +1600,32 @@
         },
         {
           "frame": "night/preview-v216-hud-settings-8267.png",
-          "rgb565_sha256": "690932eab8628df92eb76de40575a04535ba7fe2b3a02f63d559a8259957975f"
+          "rgb565_sha256": "f9171820a6b3ef7e87d96d01280a2568585d365441acc681f777867d0b7bbe26"
         },
         {
           "frame": "night/preview-v216-hud-settings-8334.png",
-          "rgb565_sha256": "e099f18f1bb6114bb1543c03fd90f389c69e26e0542122c287883cd6ba59ddd2"
+          "rgb565_sha256": "01ef0befdb89ba2b5593e2a76edbf9565bd01f66a221d041f4fc5f9c1918b17a"
         },
         {
           "frame": "night/preview-v216-hud-settings-8401.png",
-          "rgb565_sha256": "e00cfa06fe2a0ec57644a48cc4feb309b97b0fdd7c72887e80bd6b2309907ae0"
+          "rgb565_sha256": "cafb3d6df35238c97ccef9051e232ac96bf88c9418c6a539e755946058f8f872"
         },
         {
           "frame": "night/preview-v216-hud-settings-8468.png",
-          "rgb565_sha256": "374d3908c6c96b2f552de6e24f7e6d585e42c035285b08204f39467acbb4cb4c"
+          "rgb565_sha256": "32406b784656d4109ee246f94c7b0bb71c79e631a5c059ca0a43d80fc9818045"
         },
         {
           "frame": "night/preview-v216-hud-settings-8535.png",
-          "rgb565_sha256": "f8ed5a6ad4019cd446b283b7296f750fee09e67344604efbe3869d5fdbeacc39"
+          "rgb565_sha256": "1f4708a95183ecbb60cab28fd6f50a5691a5fbb25837a6ffc05c731d058e477f"
         },
         {
           "frame": "night/preview-v216-hud-settings-9900.png",
-          "rgb565_sha256": "f8ed5a6ad4019cd446b283b7296f750fee09e67344604efbe3869d5fdbeacc39"
+          "rgb565_sha256": "1f4708a95183ecbb60cab28fd6f50a5691a5fbb25837a6ffc05c731d058e477f"
         }
       ]
     },
     "v216-bluetooth-hidden.gif": {
-      "sha256": "4640aa97ac2a2310ffcfc01f18a8dcbc555671ee987b94829169f96a3ba475fb",
+      "sha256": "91d3e71700bc9ef5a1a9072a92d34f149f397e6f64c4d85bfea624caa0e8dfcd",
       "frames": 32,
       "duration_ms": 9600,
       "reserved_pointer_colours": [
@@ -1729,35 +1705,35 @@
         },
         {
           "frame": "night/preview-v216-bluetooth-hidden-4467.png",
-          "rgb565_sha256": "2027f18df4b4687397e2b94dc38b0906928c0c66eeef31b6783873e7f697c51d"
+          "rgb565_sha256": "d4ef3f52779fa4e84371bbe4614ba7ecc2671e1195635b9e9d60e8a7217fd9a4"
         },
         {
           "frame": "night/preview-v216-bluetooth-hidden-4534.png",
-          "rgb565_sha256": "1aca6ceb754ef6934c5c2676493e6cc48cd99e984b95090722c02965e6e01bbe"
+          "rgb565_sha256": "19770d6b4518f0e8e9a72cd66e7f03e1df0ee6d87e0e78e6148d4e86e0a5416e"
         },
         {
           "frame": "night/preview-v216-bluetooth-hidden-4601.png",
-          "rgb565_sha256": "a9c194129ef58961dac52d05d2668d7565c5dfcefeec3da0419faf12cf10941c"
+          "rgb565_sha256": "eb29bf0342f64537d6062dc3a1bd620878a4ed0ae4f68a3ecd6ff72a03a512af"
         },
         {
           "frame": "night/preview-v216-bluetooth-hidden-4668.png",
-          "rgb565_sha256": "9b18d000502d21c2f221c1ee7c37fb532574fb4deb47db4ca8ac5ba0faf0ad9a"
+          "rgb565_sha256": "573e37ad4f0c5a441e2bbc4494f98bd048069887207b1d6f135c8669da060660"
         },
         {
           "frame": "night/preview-v216-bluetooth-hidden-4735.png",
-          "rgb565_sha256": "f1c8acf6604673e010b1a335bab7b06bb331092220f1c2634b38f2de107c092e"
+          "rgb565_sha256": "b2789e72859c0b8c70f28bf6b066b751131937b8ec0286bd310712e4afec4999"
         },
         {
           "frame": "night/preview-v216-bluetooth-hidden-6600.png",
-          "rgb565_sha256": "f1c8acf6604673e010b1a335bab7b06bb331092220f1c2634b38f2de107c092e"
+          "rgb565_sha256": "b2789e72859c0b8c70f28bf6b066b751131937b8ec0286bd310712e4afec4999"
         },
         {
           "frame": "night/preview-v216-bluetooth-hidden-6667.png",
-          "rgb565_sha256": "2ce5f7f1526aeef018272da76a7738d75df44d3489c79351a5b0b380d5286451"
+          "rgb565_sha256": "51443388deae46d29fccee8ef93611bd08364bef31dd2364ecfc1e678f52ceb5"
         },
         {
           "frame": "night/preview-v216-bluetooth-hidden-6734.png",
-          "rgb565_sha256": "1686eb1c71e95c1713652d21b0f2ff6d529622b39348f2f3a26d4819d555dca1"
+          "rgb565_sha256": "638f714be23d2b34498e5db7c660416a58973f90eaf02c038162ccd43372e8e6"
         },
         {
           "frame": "night/preview-v216-bluetooth-hidden-6801.png",
@@ -1826,7 +1802,7 @@
       ]
     },
     "v216-itinerary.gif": {
-      "sha256": "e696dcb8f3963d1214bc627fc130eda860e3e80a343ea1de570819a48583a678",
+      "sha256": "e7f369d113c3c83f3e8bc5c2c5e4c973dcc23f3e699c935b565e1e5985c4b4a9",
       "frames": 30,
       "duration_ms": 9900,
       "reserved_pointer_colours": [
@@ -2219,7 +2195,7 @@
       ]
     },
     "trips-layout.gif": {
-      "sha256": "3e72a2512035122f0afae0036cc0df075b2e28712bf3fd0e354d5c55cbc39894",
+      "sha256": "0758b7cbaebea6b3908c7d3b19be1d3b732c34a5967e2b92c6a69bef0dbcee71",
       "frames": 60,
       "duration_ms": 13200,
       "reserved_pointer_colours": [
@@ -2612,7 +2588,7 @@
       ]
     },
     "trips-empty-layout.gif": {
-      "sha256": "df54b07557344814ea2fc8b309753e074152782163f1a5549f9a871f11f0f7be",
+      "sha256": "022a7492340d115e5f84faefa30bc67cd9b9c94a8d91e72ade7c5cd9c834caee",
       "frames": 16,
       "duration_ms": 6200,
       "reserved_pointer_colours": [
@@ -2717,7 +2693,7 @@
       ]
     },
     "popups-layout.gif": {
-      "sha256": "3a4bad79f393d23a0761e482e25300d293c20351577ac5aee2dc7a2308823821",
+      "sha256": "e8ff118e55a80973d7794be1302faf062b9691e4d482a5315c0c8a10d88b0b87",
       "frames": 42,
       "duration_ms": 10800,
       "reserved_pointer_colours": [
@@ -2942,7 +2918,7 @@
       ]
     },
     "boot-day.gif": {
-      "sha256": "66fe800778590c306792675234625b6eccb1e02326f494ac2d45a1fe4a3cb748",
+      "sha256": "07b382fd40822718d6ff13b6866c74c55aa4b0ff3b6f16009cb05f06b3dae1c7",
       "frames": 9,
       "duration_ms": 2280,
       "reserved_pointer_colours": [
@@ -2970,31 +2946,31 @@
       "source_frames": [
         {
           "frame": "day/boot-fade-0000.png",
-          "rgb565_sha256": "6d63ad0c69c2b67c76c793d36db8d3dbfb8e1b38261c4a279079a890a15899c5"
+          "rgb565_sha256": "76202e3e923445d514e60a8b3176ba6c453822bd39c1113c59e0384a4df6cad4"
         },
         {
           "frame": "day/boot-fade-0067.png",
-          "rgb565_sha256": "9e3dd855e2d72bb552fb4ce26fb43126b2b88209886b06e07e9dd24b9ac766ec"
+          "rgb565_sha256": "4c45bf419563618d7e590466bb2b617376429e4076e79337e63fa98ff228e199"
         },
         {
           "frame": "day/boot-fade-0134.png",
-          "rgb565_sha256": "a4b90f9410bf6a05cce83560830284bc3a11054d7a89cd5415e3349a89333414"
+          "rgb565_sha256": "8d8866d2090df3bd11f0ba22ccd70fc8578f3cc1a434b8925fab1899e3a4c8ff"
         },
         {
           "frame": "day/boot-fade-0201.png",
-          "rgb565_sha256": "4d58e47b18739b3275e09069328c43a571ab1b356138560c0f089dc061aa84fb"
+          "rgb565_sha256": "9235b8ce8fed433c3c7fb2913c7b9658056d8c2fc734f6554bb700ea3178b54e"
         },
         {
           "frame": "day/boot-fade-0268.png",
-          "rgb565_sha256": "c91b8314671f9d446f608a343a993722488d03dca3a6144dd93d25c48d6eb7b8"
+          "rgb565_sha256": "5d56d442ab9b2c126beab5874b989df299f1a97af56102c48c1f850d35c90b3e"
         },
         {
           "frame": "day/boot-fade-0335.png",
-          "rgb565_sha256": "9ae09ebbeee0fad3dad3b634cb86c2bbe8a7bbd1cf43e26d29d67df998c7f2e9"
+          "rgb565_sha256": "d077bc6dcb445050a74b6b0f110c57c8702b6bff23aa642e1e0dbf26cf7b8a1d"
         },
         {
           "frame": "day/boot-fade-0402.png",
-          "rgb565_sha256": "acd9351d3719761277784a046bec0bb25736c0ff64615b4e93df77b5f735a29b"
+          "rgb565_sha256": "9bcd65c69d98450fb7d25ac8a4543b0c9c00f808ac609877eecbdcd8e288eb42"
         },
         {
           "frame": "day/boot-fade-0469.png",
@@ -3011,7 +2987,7 @@
       ]
     },
     "boot-night.gif": {
-      "sha256": "349fdb8bd421d4886cb10cf31c596fbd0cfe1b838e01d00981c6d30cf8bbcb77",
+      "sha256": "fbabb279edd6825cb4e4019ea1fbd78c302a44c14252e3a77c700f6f74224265",
       "frames": 9,
       "duration_ms": 2280,
       "reserved_pointer_colours": [
@@ -3039,31 +3015,31 @@
       "source_frames": [
         {
           "frame": "night/boot-fade-0000.png",
-          "rgb565_sha256": "5817144f4e92b704824f00ee4d9b48a0857e7d6cfd288fe788a43c3b5b76ac33"
+          "rgb565_sha256": "5344d72a4e864ba711e1d1dddfe52984c54e209ffd776a558ac7185ed0076cfe"
         },
         {
           "frame": "night/boot-fade-0067.png",
-          "rgb565_sha256": "988a0779c40be27ea9fe308768fa17f0757d55671911fdce31f5f56d217bb668"
+          "rgb565_sha256": "1862106fb9fa85eedaeb68b1a30126d1a9e14959c1c5c1ed64f098a7a8a5c0b5"
         },
         {
           "frame": "night/boot-fade-0134.png",
-          "rgb565_sha256": "ea9d3dc5273dca595c52f80a1505fc9b82b613484d123b59c69dca78a434825e"
+          "rgb565_sha256": "e064d7112645f972198c1863e210619df333fd63ddf2e6e546ec8b6c02c100a4"
         },
         {
           "frame": "night/boot-fade-0201.png",
-          "rgb565_sha256": "cb088fdc2737202f47f61518a5be26d4a57b5738b9a26bcf37665eaf472a97ce"
+          "rgb565_sha256": "87b5394ced849854c21417c73652b7f9f763272bbb7200e3d1d93f9bfc5562e3"
         },
         {
           "frame": "night/boot-fade-0268.png",
-          "rgb565_sha256": "4602d27ffbb15e8318403ee69c23ad923b87737f4747297b23d677c926ccbf99"
+          "rgb565_sha256": "58c9a4dd013e7fdf5427aeaab46f129585269a09023c39741515741b3c5399c6"
         },
         {
           "frame": "night/boot-fade-0335.png",
-          "rgb565_sha256": "cde767e5594e687c38996a466dfc92f87ffb2a342bee67d4929ea2b6040d46c0"
+          "rgb565_sha256": "e842ac760195fdc7ed9bd613df4290d39efb3ec5d59273094ec08297e4beda49"
         },
         {
           "frame": "night/boot-fade-0402.png",
-          "rgb565_sha256": "dc7c947b128c02a5c4f11e127980e397e3a6afc89b9e97fc389ee35479eea645"
+          "rgb565_sha256": "a5ee2b792fef012f48be5ed2ec662520401e81126196cb36de0813de89296c30"
         },
         {
           "frame": "night/boot-fade-0469.png",
@@ -3080,7 +3056,7 @@
       ]
     },
     "popups.gif": {
-      "sha256": "aa29ee20a1a5dd7fa1af517e8f2f3526d9a7701a1905636127acfb8b0549ae4c",
+      "sha256": "8126b115f1d95a296b1d7a266e39d2084e1b9f7cccadb54f46b4514788c3e95b",
       "frames": 54,
       "duration_ms": 7200,
       "reserved_pointer_colours": [
@@ -3425,7 +3401,7 @@
       ]
     },
     "metadata-updates.gif": {
-      "sha256": "b90e3e8e97d664a6e21cfeba8fe4384779d040f4d561204546b3f263b7c06dfd",
+      "sha256": "90bbc2dea900736b68d9c3ce02dff47a3a3400e42cd9430115631ebfe8f2d3c8",
       "frames": 32,
       "duration_ms": 9600,
       "reserved_pointer_colours": [
@@ -3618,7 +3594,7 @@
       ]
     },
     "status-notifications.gif": {
-      "sha256": "b4db2f7eebe4485a4233e4f5a5f727119a80fab982ef56a1c9ec1acdbc1a4ce0",
+      "sha256": "375d05a9b664dc5a22f26a0df8a7285a9f36626481345eff421d237ced6df3fb",
       "frames": 33,
       "duration_ms": 9200,
       "reserved_pointer_colours": [
@@ -3827,7 +3803,7 @@
       ]
     },
     "driving.gif": {
-      "sha256": "6ac4f8ba4e21ac0fef0331e1e0fd73ed842d4d4b0d739b529551a30ed1519005",
+      "sha256": "81909a7e3558c2f3fb3615bfd04ec83a276e954343a5944f1c3d7656a699af21",
       "frames": 17,
       "duration_ms": 5300,
       "reserved_pointer_colours": [
@@ -3932,7 +3908,7 @@
       ]
     },
     "menus.gif": {
-      "sha256": "5ba22ecd46364c2b5727f504454f96b30e886183479314176394ca610b9f5823",
+      "sha256": "84e9ba57a832596c7fd78c4451ebe87af237ac71ba1069bf5a843e145ca5c82e",
       "frames": 64,
       "duration_ms": 9900,
       "reserved_pointer_colours": [
@@ -4180,83 +4156,83 @@
         },
         {
           "frame": "night/preview-menu-tour-7067.png",
-          "rgb565_sha256": "11dbf1430fe9ba1c403db87d41d7a2c7146bc6995eaaf02a700248bec0557253"
+          "rgb565_sha256": "14727b9906bf9cb45b3c15781082e3dd47c1917e10852c3e0081bc5b5d30a059"
         },
         {
           "frame": "night/preview-menu-tour-7134.png",
-          "rgb565_sha256": "9b3f0d5b9547925268960526aae1504a932ad304ed8abc8817d7cf1c1a5f5b1b"
+          "rgb565_sha256": "9075758c56f9f8e93e95e3b82929eca8026d3baccfaa38e0adb8476d143a50ea"
         },
         {
           "frame": "night/preview-menu-tour-7201.png",
-          "rgb565_sha256": "9f66fd07e6555d86a6c1068f91ad42d41ac2ee21ea358cb76cf91c59602aa2fb"
+          "rgb565_sha256": "0710c5abb40d1f687b330e1edce39566c41ed8b2d513e4fae9e146328542806f"
         },
         {
           "frame": "night/preview-menu-tour-7268.png",
-          "rgb565_sha256": "fac44d5cd92321fb6c8d6614b2aa4d4263cc0418e76c76cbf69e10e28d9c5fbc"
+          "rgb565_sha256": "b84e14da704f61952b685414b05ce952c1058e8937e36aa339304566410ce9d1"
         },
         {
           "frame": "night/preview-menu-tour-7335.png",
-          "rgb565_sha256": "f1c8acf6604673e010b1a335bab7b06bb331092220f1c2634b38f2de107c092e"
+          "rgb565_sha256": "b2789e72859c0b8c70f28bf6b066b751131937b8ec0286bd310712e4afec4999"
         },
         {
           "frame": "night/preview-menu-tour-7800.png",
-          "rgb565_sha256": "3ab6737da70933eff7f3532299482c3ad1fb0a640aa016a570cd587a858578de"
+          "rgb565_sha256": "24dc83b75912a11ec38cb9df1a9fc255f4cf8b04c85d68f45e9ffe3e4f9c708e"
         },
         {
           "frame": "night/preview-menu-tour-7867.png",
-          "rgb565_sha256": "3ab6737da70933eff7f3532299482c3ad1fb0a640aa016a570cd587a858578de"
+          "rgb565_sha256": "24dc83b75912a11ec38cb9df1a9fc255f4cf8b04c85d68f45e9ffe3e4f9c708e"
         },
         {
           "frame": "night/preview-menu-tour-7934.png",
-          "rgb565_sha256": "3ab6737da70933eff7f3532299482c3ad1fb0a640aa016a570cd587a858578de"
+          "rgb565_sha256": "24dc83b75912a11ec38cb9df1a9fc255f4cf8b04c85d68f45e9ffe3e4f9c708e"
         },
         {
           "frame": "night/preview-menu-tour-8001.png",
-          "rgb565_sha256": "3ab6737da70933eff7f3532299482c3ad1fb0a640aa016a570cd587a858578de"
+          "rgb565_sha256": "24dc83b75912a11ec38cb9df1a9fc255f4cf8b04c85d68f45e9ffe3e4f9c708e"
         },
         {
           "frame": "night/preview-menu-tour-8068.png",
-          "rgb565_sha256": "3ab6737da70933eff7f3532299482c3ad1fb0a640aa016a570cd587a858578de"
+          "rgb565_sha256": "24dc83b75912a11ec38cb9df1a9fc255f4cf8b04c85d68f45e9ffe3e4f9c708e"
         },
         {
           "frame": "night/preview-menu-tour-8135.png",
-          "rgb565_sha256": "3ab6737da70933eff7f3532299482c3ad1fb0a640aa016a570cd587a858578de"
+          "rgb565_sha256": "24dc83b75912a11ec38cb9df1a9fc255f4cf8b04c85d68f45e9ffe3e4f9c708e"
         },
         {
           "frame": "night/preview-menu-tour-8600.png",
-          "rgb565_sha256": "3ab6737da70933eff7f3532299482c3ad1fb0a640aa016a570cd587a858578de"
+          "rgb565_sha256": "24dc83b75912a11ec38cb9df1a9fc255f4cf8b04c85d68f45e9ffe3e4f9c708e"
         },
         {
           "frame": "night/preview-menu-tour-8667.png",
-          "rgb565_sha256": "06df46bd38794b7a87ee3b751a7e9c1bba6b4824d1a1d94e5ab87b8d87bde57c"
+          "rgb565_sha256": "e0191adf86607b85fc307716c564358cf08d629a84e8bb3c244304e50c106ee2"
         },
         {
           "frame": "night/preview-menu-tour-8734.png",
-          "rgb565_sha256": "51bebb1b7df280bfd5c08dce5294b30a7dbac992828fae78e744c58864e169a4"
+          "rgb565_sha256": "3c331ecab3758501cd71d0e2dff05171a096afa3c14a787e9859c70bf87d312c"
         },
         {
           "frame": "night/preview-menu-tour-8801.png",
-          "rgb565_sha256": "ccd5de7b94effbb0486b08cd02ea007442049604adea86c3d52ec851b4f2f172"
+          "rgb565_sha256": "73f3c480d79883c1b264c412abbe06a79a9e502095f229ee5e68791d0a307dd2"
         },
         {
           "frame": "night/preview-menu-tour-8868.png",
-          "rgb565_sha256": "0346112e42e5338c91e12ed91ef5f0b2d89015656d2bfc633a75d41cd3066d82"
+          "rgb565_sha256": "555caf8bfee433ea89b28986e5e2777b93c984716def5776211fbc770c087ca9"
         },
         {
           "frame": "night/preview-menu-tour-8935.png",
-          "rgb565_sha256": "ca494cf78ad19d4077e8b47d6f52bb9177371a39058369ac52cd32eb7d91b3a6"
+          "rgb565_sha256": "d834038fbcaed75ed41962a2568b983ce9cd463e8f4ca70700183638d7fa1545"
         },
         {
           "frame": "night/preview-menu-tour-9400.png",
-          "rgb565_sha256": "ca494cf78ad19d4077e8b47d6f52bb9177371a39058369ac52cd32eb7d91b3a6"
+          "rgb565_sha256": "d834038fbcaed75ed41962a2568b983ce9cd463e8f4ca70700183638d7fa1545"
         },
         {
           "frame": "night/preview-menu-tour-9467.png",
-          "rgb565_sha256": "3f1266583572e866df5ea14ab8318c6443f7926c5320600f6589fb3558a6e62f"
+          "rgb565_sha256": "f3fbdc19a9674b8c94927e7df3b1e4403049dede72c9fb0be9bbde15ffdc2340"
         },
         {
           "frame": "night/preview-menu-tour-9534.png",
-          "rgb565_sha256": "648ef2f89a5df7c4f70e4c4d3d16f74607ab4cbb8eda9a5e2a6fd6d56663b407"
+          "rgb565_sha256": "76ed8d498b0c30d266256aa77be94af8f9cc462c1bf51aefd27570f4d8872474"
         },
         {
           "frame": "night/preview-menu-tour-9601.png",
@@ -4277,7 +4253,7 @@
       ]
     },
     "bluetooth.gif": {
-      "sha256": "efcaf83d086e7659e42475879ada9ea83013674c16d01ed9db8c4b366f9c7b18",
+      "sha256": "612e994e4fbc322fd2b37c8e80a157c093392db52d60c04f5bf61eee237d0eae",
       "frames": 36,
       "duration_ms": 4750,
       "reserved_pointer_colours": [
@@ -4474,7 +4450,7 @@
       ]
     },
     "phone-destination.gif": {
-      "sha256": "954488f3dc63ef567878f0edf8c65d5c208d67a6b5c27c81852ea7835df291d9",
+      "sha256": "c8f994291b556bb9f8cc65501c174f052cd2ec01c4c2aa035033d550ef28b6e0",
       "frames": 11,
       "duration_ms": 7200,
       "reserved_pointer_colours": [
@@ -4563,7 +4539,7 @@
           "transfer-056.jpg": "01cd1bf92bb29e65bba8e31beb96ba341b0e206a675d3970ef29cbae5f85a5fc"
         },
         "ready_sha256": "93bc757770a4188a9de3234f4f0d4a60d8c77855b80e625fb949db06a93ee37c",
-        "previous_gif_sha256": "e196052e124b33e2f2aa06d2c04ec1b006c5ce63fad02f201d3aa014138652bf"
+        "previous_gif_sha256": "954488f3dc63ef567878f0edf8c65d5c208d67a6b5c27c81852ea7835df291d9"
       },
       "source_frames": [
         {
@@ -4613,7 +4589,7 @@
       ]
     },
     "speed-warning.gif": {
-      "sha256": "d45bcc9cc61db76eb93d8f75558debe7121a8d402f7ce618286fb3eebfae57c1",
+      "sha256": "84df5f8e11a0b48fcbe4065e6e00c0dd72d0a96a51f0b949b5ba59ce7b1b213f",
       "frames": 34,
       "duration_ms": 3650,
       "reserved_pointer_colours": [
@@ -4826,7 +4802,7 @@
       ]
     },
     "map-browsing.gif": {
-      "sha256": "66f9e90e0f062f19eff1b02506c6b3420649873961dc3579e0c1c1001e455a4b",
+      "sha256": "0b4bf47f09325db01dd1d8d49d41d79c951469ed821c5e845f966c8d869e1920",
       "frames": 36,
       "duration_ms": 6500,
       "reserved_pointer_colours": [
@@ -5019,7 +4995,7 @@
       ]
     },
     "roundabout-eta.gif": {
-      "sha256": "3ea4d947411a8cd6c0a0e86e80f9724990149b78a1206a62ebfc17b08f112ce9",
+      "sha256": "effe3a2de223c0ed13dd735131f09314124c3f83436568b692fc73efc362ff3e",
       "frames": 11,
       "duration_ms": 5600,
       "reserved_pointer_colours": [
@@ -5100,7 +5076,7 @@
       ]
     },
     "coordinate-route.gif": {
-      "sha256": "88ee7a70352823d0bec4ac9516fabacca8aec3abb5cb0db51ce5fa381ae5c4e4",
+      "sha256": "6b21538376e25b43112fac0843acae7e42de5977154090b1d02119de0caecfaa",
       "frames": 19,
       "duration_ms": 8400,
       "reserved_pointer_colours": [
@@ -5238,7 +5214,7 @@
       "routing_provenance": "Production remote handlers create the destination and production routing runs to R_READY on the local map bundle; target coordinates and nonempty route geometry are asserted. GPS is held stationary. The 1.3-second calculation display is a controlled preview interval, not a timing benchmark."
     },
     "map-point-route.gif": {
-      "sha256": "ceb2a1ee69c4a929f24a4c66f969798e41e3eb94676f9554c02d3124dd3a5086",
+      "sha256": "9b7a1fb49a8a7734bb01e75756c3e55b05972fe8f225d464f2561931087681d2",
       "frames": 25,
       "duration_ms": 7000,
       "reserved_pointer_colours": [
@@ -5400,7 +5376,7 @@
       "routing_provenance": "Production remote handlers create the destination and production routing runs to R_READY on the local map bundle; target coordinates and nonempty route geometry are asserted. GPS is held stationary. The 1.3-second calculation display is a controlled preview interval, not a timing benchmark."
     },
     "coordinates.gif": {
-      "sha256": "dba955c5a7d67c505335bdafc5b424904ca9eed1c3f060baf342d6ac8f502505",
+      "sha256": "8cc828d47f35e580116cc9b18da4ff296c6ed7d9343eb193f4cee88e2eecea0c",
       "frames": 6,
       "duration_ms": 6800,
       "reserved_pointer_colours": [
@@ -5453,7 +5429,7 @@
       ]
     },
     "add-stop.gif": {
-      "sha256": "f43e54982c10b1b9960defca7c1280810f4d60336ab19a3466dd7275f0a2c72b",
+      "sha256": "62f7597aa7f4be2a32491723920117d5cf5cf6f242c3d7ccf5cd1a2c9d850775",
       "frames": 5,
       "duration_ms": 6350,
       "reserved_pointer_colours": [

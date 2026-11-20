@@ -1,6 +1,6 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
-<h1 align="center">ClioPlay 2.2.0</h1>
+<h1 align="center">ClioPlay 2.2.1</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
 <p align="center">
   Created and maintained by <a href="https://github.com/pxwel-dev">Pawel (pxwel-dev)</a>.
@@ -9,23 +9,10 @@
 
 <p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases/tag/Release">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-## Version 2.2.0 — Release
+## Version 2.2.1
 
-### Changes in this version
-
-- Introduced optional, offline driving-history learning. Fresh GPS observations are recorded independently of active navigation and only successful Barcelona power-off sessions train the model.
-- Added contextual suggested trips in the map status pill, with provisional startup GPS reconciliation, adaptive day/time and recency scoring, ordered early-trajectory evidence, confidence hysteresis and offline destination naming. OK opens an explicit Yes/No confirmation; BT CTRL retains playback priority and displays BACK to review. No suppresses that destination for the current recording session. The empty Itinerary retains the original destination-entry layout.
-- Added an optional stationary-startup frequent-place favourite prompt after five completed visits across three dates within 90 days. It never repeats for the same place unless history is cleared; Yes opens the existing Favourite keyboard with a suggested name when available; only Save adds the favourite, without starting navigation or changing prediction confidence.
-- Added directional historical road-time profiles, traffic-adjusted ETAs and an explicit local Diversion choice with gold/yellow bypassed geometry and an aqua/teal alternative.
-- Shared route geometry remains magenta; dashed teal alternatives, yellow bypasses and junction markers distinguish proposed changes. A small frosted-glass map badge shows the approximate saving near the decision point; the glass HUD announces the offer with context-sensitive Back/OK instructions; direct map confirmation preserves Bluetooth controls and driving zoom.
-- Diversion invitations use a persistent single line with the established success green announcement and blue context-sensitive review instruction, until acceptance, rejection or expiry.
-- Declining a diversion suppresses only its bypassed section; later independent offers remain available, and diversion confirmation initially selects Yes.
-- Grouped Settings into Display, HUD layout, Navigation, Driving history and System pages.
-- Added history, destination suggestion and diversion controls in Settings → Driving history, including a confirmed clear-history action.
-- Fixed Bluetooth phone names and connected-state identity when switching between saved devices; both remain keyed by hardware address.
-- Completed the new navigation and HUD translations across all 18 interface languages, and added missing-key regression checks.
-- Added native regression cases and two controlled preview storyboards. Historical traffic is not live traffic.
-- Added a software-only update mode with verified staged copies, a dated software backup and rollback; existing maps, settings and personal history remain untouched.
+- Build one navigation bundle from multiple matching country or regional `.osm.pbf` extracts. The installer merges them and reports incompatible overlaps before building maps.
+- Bluetooth SBC decoding and PCM packing use less ARM CPU work while preserving identical PCM and the existing playback configuration.
 
 See [version history](CHANGELOG.md) for implemented changes by version.
 
@@ -116,9 +103,9 @@ For new stops/destinations, enter **Coordinates** on the head unit, choose **Nex
 
 The instructions below are for fresh installations or new navigation data.
 
-You need a FAT32-formatted SD card (SDHC, minimum 2GB, recommended 8GB, theoretical max 32GB) for the head unit and an `.osm.pbf` map extract covering your journeys.
+You need a FAT32-formatted SD card (SDHC, minimum 2GB, recommended 8GB, theoretical max 32GB) for the head unit and one or more `.osm.pbf` map extracts covering your journeys.
 
-Get the map extract from [Geofabrik Downloads](https://download.geofabrik.de/) by choosing your region and downloading its `.osm.pbf` file. Download and extract this repository, then follow your desktop setup:
+Choose your regions and download their `.osm.pbf` files from [Geofabrik Downloads](https://download.geofabrik.de/). When combining extracts, use the same provider and snapshot so shared border data agrees. Download and extract this repository, then follow your desktop setup:
 
 | Computer | Start here |
 | --- | --- |
@@ -126,7 +113,7 @@ Get the map extract from [Geofabrik Downloads](https://download.geofabrik.de/) b
 | **macOS** | Install `python`, `osmium-tool`, `llvm` and `cabextract` with Homebrew, then open **Install.command**. |
 | **Linux (Ubuntu 24.04)** | Install `python3 python3-venv python3-pip build-essential osmium-tool cabextract` with `apt`, then run `python3 install.py`. |
 
-1. Choose your PBF and confirm its region.
+1. Enter or drag in each `.osm.pbf` path. Press Enter on an empty prompt when done. The installer merges multiple selections and asks you to confirm the resulting coverage.
 2. Let the installer build and check navigation data.
 3. Select the SD-card root and confirm installation.
 4. Safely eject it before use and insert into your car.
@@ -216,4 +203,4 @@ Original ClioPlay development includes:
 
 Third-party software and dependencies retain their respective licences and attribution notices, as documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-<sub>Release files refreshed 19 November 2026 (Europe/London).</sub>
+<sub>Release files refreshed 20 November 2026 (Europe/London).</sub>

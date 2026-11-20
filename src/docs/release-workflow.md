@@ -65,7 +65,8 @@ python3 -m pip install Pillow
 
 Use that same environment for subsequent commands.
 
-The 2.2.0 intelligent navigation previews use controlled fixtures. Both are included automatically by the existing full GIF regeneration command. See [intelligent navigation](intelligent-navigation.md) for testing and privacy requirements.
+The three intelligent navigation previews use controlled fixtures. The full
+GIF regeneration command includes all three. See [intelligent navigation](intelligent-navigation.md) for testing and privacy requirements.
 
 ## 2. Check the version and rebuild
 

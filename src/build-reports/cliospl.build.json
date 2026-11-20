@@ -3,7 +3,7 @@
   "abi": "ELF32 EABI5 soft-float; Linux OABI syscalls",
   "entry": "0x331a4",
   "bytes": 84220,
-  "sha256": "fcd0c31b24ee1a0057af29f6621a926db5f01b8e943d29b83d73c32c5f484deb",
+  "sha256": "8182a5be4526b406eddd7324b59cbc96131196509702ef60da7ba5a37a1cdebb",
   "sections": {
     ".text": {
       "address": "0x331a4",
@@ -22,9 +22,9 @@
       "bytes": 261124
     }
   },
-  "version": "2.2.0",
+  "version": "2.2.1",
   "source": "clio843/src/cliospl.c",
-  "source_tree_sha256": "a74333ebba4f2624c955a93b96d57646727fb0551e01377708432be80d31a038",
+  "source_tree_sha256": "82162b7c0c6c3aa0c5e2f90507e9a28c22bfbf8b39f44a876b93f7ba120884ce",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "e68482414282efe29ca954b24778c89e03a3d70197bc9b29effd830dec97f8f0",
@@ -37,7 +37,7 @@
     "clio843/src/boot_theme.h": "fa46f1bda9c0f37306c90f34d497192953aa718b30fa688291bbc7a66ddab746",
     "clio843/src/boot_transition.h": "8ea391927a52cf8eaa9f010a70b8f8e012b768346ca9cd297110e40e6a850007",
     "clio843/src/clio040.c": "6f39fb1e16b3d5067f6eaad91b5b850a95d3c8e8c9b20c75f82f691d55ef474a",
-    "clio843/src/clioa2dp.c": "f887aa9dfd772bbfed1a313cc16160ac2838372ed2944e4409482e1604e61bce",
+    "clio843/src/clioa2dp.c": "dbf3477952eae85e4ddbbbf907dca2a5f706c36fe8901116d61fa9f70405b84b",
     "clio843/src/cliospl.c": "523530da194e4a859de29b448926f347d70c6c6c243d08d9b048fb68e08e3d33",
     "clio843/src/coordinates.h": "2304d8a216e0524a33acd5b8bc662c8f098b618417dcdcf4f90ca1c54c37a4e3",
     "clio843/src/cswd.c": "707aa0a1fdcd8048d2fa252a14ce32176fae347d512e11869f2905a69380530c",
@@ -69,7 +69,7 @@
     "clio843/src/nav_roundabout.h": "470390303a8f18184a020710012ea0353d0425c26a1381bbaa4064ca2d7f39be",
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
     "clio843/src/popups.h": "7dda640ae8983314a9465003f46e4c5992b3b69bdbd4438727d8dcdf7152a2d8",
-    "clio843/src/release_version.h": "dab5bc6013fa4b1273487d05c3029b9b6ca7a3092291fa385ebfba7e3e6f4adb",
+    "clio843/src/release_version.h": "56a0f632cb6daf36d2334a8c88d9f83eeb3c3286481d1ada707e5e2a9c2bedf5",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
     "clio843/src/splash_icon.h": "1c0cb3bf3be97ce49cdf626bc0184b0736b49fee877a92f5bf2e5cb2d0ec17eb",
     "clio843/src/traffic.h": "a4d536dfefa1a619234f4410423ad170ac49bd8dc991e7c8886ba9c9ef136186",
@@ -1039,7 +1039,7 @@
     "clio843/src/vendor/sheenbidi/Source/UBA/StatusStack.h": "348774283d029f4afa64b95ba9fe04240d754587b483a8bcc345e1d6e78c6261",
     "clio843/src/vstatd.c": "a359d214853cdd511fb79e905fafc52f5413b635bb3288b268d04c15724a666f",
     "tools/build_ui.py": "b5874193f7b1903d2da65043e329011c3df07a4b5fcfedd9e424814a905c5c05",
-    "VERSION": "c4a2383a03bdb6739d16a0e24058e4b9c7da4e63d203e0be2f448868cc03c530",
+    "VERSION": "fe650098093fad42070e8a2cacfb216a6c416af57bd26dd6ff479fef69f8bc71",
     "tools/release_version.py": "451f42b3395dad4e8351570645f5f1cba50d48e2051f9681cb77fe1328be78dc",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
     "tools/build_translations.py": "f0970483186937bbbc3b86f4bab877a2a6fe244830e99ee9ac82c2f58858e6f0",
