@@ -3,6 +3,16 @@
 This history records implemented changes. Entries marked **Unreleased** are prepared locally and have not been published.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
 
+## Version 2.2.2 — Release (Major Performance Optimisation)
+
+- Increased the Bluetooth PCM prefill from 150 to 200 ms for more playback headroom under UI load.
+- Reused the finished map while parked and updated only changed framebuffer rows when the driver supports partial writes.
+- Prepared Explore rotation backgrounds and parked menu, popup and pill transitions before playback. Prepared frames play in order when a refresh runs late. Routine Bluetooth and clock updates wait for a prepared transition to finish.
+- Raised live and buffered animations and steady HUD updates to a 20 FPS target. Moving maps still target 10 FPS and route calculation caps the entire display at 5 FPS.
+- Kept the current menu page visible as taller status notices resize it. Scrollable rows move and fade at the edges as the available height changes.
+- Made Itinerary's footer a single row. Use Left/Right to wrap between its available buttons, including Cancel route and Diversion.
+- Added wraparound on menu lists, dialogs, and keyboard controls. Trip tabs use Left/Right; the soft keys retain their zoom, text-entry and pairing actions.
+
 ## Version 2.2.1 — Release
 
 - The guided installer and navigation builder accept multiple matching OSM extracts for one cross-border build. The installer merges them locally and rejects conflicting versions of shared objects.

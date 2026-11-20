@@ -158,8 +158,8 @@ static void coordinates_handle(int code){
   return;
  }
  if(coordinates.step==COORD_REVIEW){
-  if((code==K_UP||code==K_LEFT)&&coordinates.review_focus>0)coordinates.review_focus--;
-  else if((code==K_DOWN||code==K_RIGHT)&&coordinates.review_focus<3)coordinates.review_focus++;
+  if(code==K_UP||code==K_LEFT||code==K_DOWN||code==K_RIGHT)
+   coordinates.review_focus=wrap_focus(coordinates.review_focus,code==K_UP||code==K_LEFT?-1:1,4);
   else if(code==K_ENTER){
    if(coordinates.review_focus==0)coordinates_submit();
    else if(coordinates.review_focus==1){coordinates.step=COORD_LAT;coordinates.focus=0;coordinates.error=0;}

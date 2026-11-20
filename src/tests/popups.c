@@ -84,14 +84,20 @@ int main(void){
  /* Popup-only controls preserve the clean map; legal actions remain immediate. */
  setup(40000);freecam=1;render_background_dirty=0;key_handle(K_ENTER);
  assert(modal==MOD_ROUTE_POINT&&!render_background_dirty);
- key_handle(K_RIGHT);assert(modal_choice==1&&!render_background_dirty);
+ key_handle(K_LEFT);assert(modal_choice==1&&!render_background_dirty);
+ key_handle(K_RIGHT);assert(modal_choice==0&&!render_background_dirty);
  key_handle(K_BACK);assert(modal==MOD_NONE&&!render_background_dirty);
+ modal=MOD_SOURCE_PICK;modal_choice=0;
+ key_handle(K_UP);assert(modal_choice==3);
+ key_handle(K_DOWN);assert(modal_choice==0);
+ key_handle(K_LEFT);assert(modal_choice==3);
+ key_handle(K_RIGHT);assert(modal_choice==0);
  /* Popup frame requests use the pill clock without waiting for a map frame. */
  setup(50000);at(50000,1);at(50500,1);renderer.map_at=60000;render_background_dirty=0;
  modal=MOD_ROUTE_POINT;at(50501,0);u32 presents=render_stats.presents,maps=render_stats.maps;
  for(u32 t=50502;t<50840;t++)at(t,0);
  assert(render_stats.presents>=presents+4&&render_stats.maps==maps&&!popup_animating(50839));
- modal=MOD_NONE;at(50841,0);assert(renderer.ui_period==67);
+ modal=MOD_NONE;at(50841,0);assert(renderer.ui_period==50);
  for(u32 t=50842;t<51200;t++)at(t,0);
  assert(!popup_animating(51200)&&popup_pose(51200).a==0);
  /* Menu dismissal must request the final clear without a new background. */
@@ -99,11 +105,11 @@ int main(void){
  for(u32 t=52000;t<52500;t++)at(t,t==52000);
  modal=MOD_NONE;u32 menu_maps=render_stats.maps;
  for(u32 t=52500;t<53000;t++)at(t,0);
- assert(!popup_animating(53000)&&popup_pose(53000).a==0&&popup.presented_at>=52820&&render_stats.maps==menu_maps+5);
+ assert(!popup_animating(53000)&&popup_pose(53000).a==0&&popup.presented_at>=52820&&render_stats.maps==menu_maps);
  /* Route calculation caps popup, HUD and map together at five presentations. */
  setup(60000);route_status=R_CALC;modal=MOD_SOURCE_PICK;dest_pick_action=DEST_PICK_ADD_STOP;
  for(u32 t=60000;t<61000;t++)at(t,t%100==0);
- assert(render_stats.presents==5&&render_stats.maps==5);
+ assert(render_stats.presents==5&&render_stats.maps==1);
  /* A clipped child glass surface cannot leak outside an animated parent. */
  setup(70000);gradient();u16 original[FB_PIX];memcpy(original,fb,sizeof original);
  clip_x=100;clip_y=100;clip_right=140;clip_bottom=130;
@@ -114,5 +120,5 @@ int main(void){
  setup(0xffffff80u);modal=MOD_ROUTE_POINT;popup_prepare(0xffffff80u);
  assert(popup_pose(0x20u).a>0&&popup_pose(0x20u).a<256);
  hud_capture_ms=0xc0u;draw_modal();assert(popup_pose(0xc0u).a==256&&!popup_animating(0xc0u));
- puts("Popups: all families, glass, entrance/exit/resize/reversal, animated focus/text, retained close data, input, clipping, independent 15 Hz scheduling and 5 Hz routing cap passed.");
+ puts("Popups: all families, glass, entrance/exit/resize/reversal, animated focus/text, retained close data, input, clipping, independent 20 Hz scheduling and 5 Hz routing cap passed.");
 }

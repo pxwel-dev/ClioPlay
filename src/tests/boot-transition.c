@@ -17,7 +17,7 @@ int main(void){
   assert(s_open(BOOT_IMAGE_PATH,0,0)<0); // Consumed once, before slow UI loaders.
   target();boot_fade_apply(0xfffffff0u);assert(!memcmp(fb,original,sizeof(original)));
   unsigned previous=0;
-  for(u32 elapsed=67;elapsed<500;elapsed+=67){
+  for(u32 elapsed=FRAME_UI_MS;elapsed<500;elapsed+=FRAME_UI_MS){
    target();boot_fade_apply(0xfffffff0u+elapsed);unsigned changed=0;
    for(unsigned i=0;i<FB_PIX;i++)changed+=fb[i]!=original[i];
    assert(changed>=previous);previous=changed;
@@ -41,8 +41,8 @@ int main(void){
   route_status=calc?R_CALC:R_IDLE;route_n=0;freecam=bt_control_mode=0;pref.debug=0;
   hud_reset_animations();apply_palette(calc);render_runtime_reset(10000);
   for(u32 t=10000;t<11000;t++){hud_capture_ms=t;render_runtime_step(t,t%100u==0);}
-  assert(!boot_fade.image&&render_stats.maps==(calc?5u:10u));
-  assert(render_stats.presents<=(calc?5u:15u)&&render_stats.presents>=(calc?5u:10u));
+  assert(!boot_fade.image&&render_stats.maps==1);
+  assert(render_stats.presents<=(calc?5u:20u)&&render_stats.presents>=(calc?5u:10u));
  }
- puts("Boot transition: exact splash/UI endpoints, monotonic blend, clock wrap, corrupt/stale/truncated handoffs, one-shot cleanup, immediate input, live map updates and 15/5 Hz cadence passed.");
+ puts("Boot transition: exact splash/UI endpoints, monotonic blend, clock wrap, corrupt/stale/truncated handoffs, one-shot cleanup, immediate input, held parked map and 20/5 Hz cadence passed.");
 }

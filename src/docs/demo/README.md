@@ -24,7 +24,7 @@
 | [Trip layout](trips-layout.gif) | Compact Itinerary, Recents, Favourites, and destination-source review. |
 | [Empty trip layout](trips-empty-layout.gif) | Open Coordinates from an empty itinerary and return using Back. |
 | [Popup layout](popups-layout.gif) | Smaller confirmation cards, dynamic action menus and compact language picker; expanded name keyboard. |
-| [Itinerary](v216-itinerary.gif) | Scroll all ten targets (nine stops and destination), with centred symbols and connectors ending at the last visible row; Add stop is unavailable when full. |
+| [Itinerary](v216-itinerary.gif) | Scroll the itinerary, wrap between Add stop and Cancel route, and dismiss the confirmation to keep the trip. |
 | [Bluetooth hidden](v216-bluetooth-hidden.gif) | Able to use ClioPlay, even if hw_bluetooth=0 |
 | [Hud Customisability](v216-hud-settings.gif) | Change top and bottom bar pill positions in Settings → HUD layout |
 
@@ -34,13 +34,12 @@ map position and simulated GPS acquisition. Their initial hold is illustrative;
 loading time is not measured. Other previews show an example route around Newcastle upon Tyne. Car and phone inputs
 are controlled samples. The destination preview feeds a sample message into
 the ClioPlay daemon/UI handoff. Camera positions are illustrative. Motion is
-sampled at approximately 15 frames per second during short transitions, and
-5 frames per second while calculating a route. GIF timing uses 67 ms animation samples and 200 ms calculation samples. The timings
+sampled at 20 frames per second during short transitions, and
+5 frames per second while calculating a route. GIF timing uses 50 ms animation samples and 200 ms calculation samples. The timings
 describe controlled host captures, not achieved head-unit frame rates. The runtime
 uses separate map and animation schedules, capped together during calculation;
-steady speed, distance, clock, volume and playback-progress values use the
-10 FPS map cadence. New information, fades, resizing and warning pulses retain
-the 15 FPS transition target.
+the map targets 10 FPS. Steady HUD changes, fades, resizing and warning pulses
+target 20 FPS.
 Glass uses complete 8 × 8 area filtering plus a weighted blend of neighbouring
 areas over a 24 × 24 footprint, with higher-precision colour calculations
 and full-strength, screen-anchored 8 × 8 ordered dithering at the final RGB565
@@ -50,7 +49,7 @@ cycle between frames. GIF palette reduction can obscure this detail compared
 with the native RGB565 display. Unchanged-background samples are
 cached during live overlay animations.
 All popup windows use the same glass. Their entrances, exits, resizing, content
-changes and selection highlights share the pills' independent 15 FPS transition
+changes and selection highlights share the pills' independent 20 FPS transition
 clock; map drawing remains on its normal schedule. The entire UI retains the
 5 FPS cap during route calculation. Popup actions are handled immediately.
 Explore camera passes require extra drawing work. Head-unit performance, Bluetooth and audio require a

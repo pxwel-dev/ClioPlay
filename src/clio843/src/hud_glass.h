@@ -36,8 +36,8 @@ static int hud_same_status_except_volume(const struct HudCard*a,const struct Hud
   streq(a->connection,b->connection)&&streq(a->feedback,b->feedback)&&
   streq(a->traffic_title,b->traffic_title)&&streq(a->traffic_hint,b->traffic_hint)&&a->traffic_serial==b->traffic_serial&&a->suggestion_serial==b->suggestion_serial;
 }
-/* Existing numeric channels may crossfade at the map cadence. New labels,
- * notification rows, symbols and geometry retain the faster transition clock. */
+/* Existing numeric channels crossfade on the live clock. New labels,
+ * notification rows, symbols and geometry can also request prepared frames. */
 static int hud_value_update(int id,const struct HudCard*a,const struct HudCard*b){
  if(a->kind!=b->kind||a->flags!=b->flags||a->value!=b->value||a->ink!=b->ink||
     !streq(a->tag,b->tag)||!streq(a->connection,b->connection)||!streq(a->feedback,b->feedback))return 0;
@@ -65,6 +65,7 @@ static void hud_set_card(int id,struct HudCard target,u32 now){
   t->from=hud_pose(t,now);t->target.box.a=0;t->target.box.y+=dy;t->position_at=now;
   return;
  }
+ if(hud_box_eq(t->target.box,target.box)&&hud_content_eq(&t->target,&target))return;
  struct HudBox here=hud_pose(t,now);
  if(!here.a){
   t->from=target.box;t->from.a=0;t->position_at=now;
@@ -365,6 +366,7 @@ static void hud_glass_surface(struct HudBox b,u16 tint,u16 edge,unsigned frost,i
  hud_glass_surface_rim(b,tint,edge,frost,alert,1);
 }
 static void hud_glass(struct HudBox b,int alert){
+ if(b.a>0)overlay_mark_rows(b.y,b.y+b.h);
  u16 tint=theme_resolved?rgb(13,21,33):rgb(247,251,255);
  u16 edge=hud_mix16(theme_resolved?rgb(125,152,184):rgb(128,151,174),rgb(255,43,59),(unsigned)(alert+8)/16u);
  hud_glass_surface(b,tint,edge,theme_resolved?12u:11u,alert);

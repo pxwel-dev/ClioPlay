@@ -173,8 +173,7 @@ static int popup_animating(u32 now){
 static void popup_settle_for_capture(u32 now){
  popup.at=now-320u;popup.content_at=now-320u;popup.focus_at=now-160u;popup.presented_at=now;
 }
-static void draw_modal(void){
- u32 now=hud_now_ms();popup_prepare(now);popup.presented_at=now;
+static void popup_paint(u32 now){
  struct HudBox b=popup_pose(now);if(b.a<=0)return;
  hud_glass(b,0);
  int ox=clip_x,oy=clip_y,orr=clip_right,ob=clip_bottom,oa=hud_ink_alpha;
@@ -209,4 +208,8 @@ static void draw_modal(void){
   compact_center(r->x+dx+r->w/2,r->y+dy+(r->button?3:0),r->w- (r->button?16:0),r->face,r->text,ink);
  }
  clip_x=ox;clip_y=oy;clip_right=orr;clip_bottom=ob;hud_ink_alpha=oa;
+}
+
+static void draw_modal(void){
+ u32 now=hud_now_ms();popup_prepare(now);popup_paint(now);popup.presented_at=now;
 }

@@ -1,7 +1,7 @@
-# ClioPlay version 2.2.1
+# ClioPlay version 2.2.2
 
-Version 2.2.1 adds multi-extract map installation and reduces Bluetooth SBC
-decoding work while preserving PCM output. See the [changelog](docs/changelog.md).
+Version 2.2.2 raises the Bluetooth prefill to 200 ms, makes animation and steady
+HUD updates smoother, and adds wraparound to menu controls. See the [changelog](docs/changelog.md).
 
 ## Set up a card
 
@@ -44,7 +44,7 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
   services and data load. Once
   the first UI frame is ready, the splash cross-fades into the live display over
   about half a second. Map/model/input services continue normally; pressing a
-  control reveals the UI immediately. The transition targets 15 FPS, or 5 FPS
+  control reveals the UI immediately. The transition targets 20 FPS, or 5 FPS
   during route calculation. It adds no readiness wait or artificial loading stage.
 
 - **Driving display:** the map fills the screen. The clock shows the outside
@@ -207,9 +207,9 @@ coordinate-entry and dialog instructions:
 Turning the knob is an additional convenience: it zooms the map, selects tracks
 in BT CTRL, scrolls lists and traverses keyboard/keypad buttons and dialog choices.
 In Settings, turn it to select a row; joystick Left/Right changes the value and
-knob press performs OK. In Trip, either the upper soft buttons or joystick
-Left/Right cycle Itinerary, Recents and Favourites. Turning the knob scrolls
-the current list. No long-press binding is required.
+knob press performs OK. In Trip, use the joystick Left/Right for tabs or
+for the buttons on the Itinerary footer. Turning the knob moves between list
+rows and wraps at the ends. No long-press binding is required.
 
 The [console action table](#physical-console-and-temperature-sources) also covers
 INFO, REPEAT, LIGHT and DEST shortcuts. Optional custom mappings can change these
@@ -248,10 +248,12 @@ calculation uses the existing five-frame-per-second cap. Declining keeps Explore
 - **Menu:** use **Up / Down** to choose Trip, Bluetooth or Settings. Press **OK**
   to open it or **BACK** to return to driving. From a page, **MENU** or **BACK**
   returns to Menu. **MAP** goes directly to the driving map.
-- **Trip:** always opens **Itinerary** first. **Left / Right** or the left/right
-  soft keys cycle **Itinerary → Recents → Favourites**, remembering each tab's
-  selection. **Up / Down** or knob rotation scrolls. **OK** opens stop, destination
-  or saved-place actions. A trip holds up to **10 targets** (9 stops plus the final
+- **Trip:** always opens **Itinerary** first. Use **Left / Right** to cycle
+  **Itinerary → Recents → Favourites**. Each tab remembers its selection.
+  **Up / Down** or knob rotation moves between rows and wraps at the ends.
+  On the Itinerary footer, **Left / Right** wraps between **Add stop**,
+  **Cancel route** and **Diversion** when offered. Move **Up / Down** to a
+  target to switch tabs again. **OK** opens the highlighted action. A trip holds up to **10 targets** (9 stops plus the final
   destination), including stops already visited. Scroll to see targets beyond the
   visible rows; connector lines end at the last visible marker. **Add stop** is
   disabled at capacity; remove an unvisited stop or start a new trip to free space.
@@ -268,8 +270,9 @@ calculation uses the existing five-frame-per-second cap. Declining keeps Explore
 All these pages are animated frosted-glass sheets over the live map. Menu,
 Settings, Bluetooth, Trip, coordinates and review use compact sheets between
 the persistent HUD pills. Only the naming keyboard expands into the lower HUD area. An unusually tall status notice
-can temporarily hide the lower pills to make room for a compact page. The top
-clock and status pill keep their position and notice timers across page changes.
+shrinks the sheet in sync with the notice. The current page stays visible and
+its scrolling rows fade at the edges. The top clock and status pill keep their
+position and notice timers across page changes.
 
 ### Intelligent navigation
 
@@ -309,10 +312,11 @@ The release version is shown at the bottom of Settings.
   have their own mode. The **left soft key**
   deletes, the **right soft key** inserts a space, and **BACK** returns to the
   previous page without saving (or to longitude with the coordinate name retained). In the language chooser, **Up / Down** moves one language,
-  **Left / Right** jumps six, **OK** selects, and **BACK** or the **left soft key**
+  **Left / Right** jumps six, both directions wrap, **OK** selects, and **BACK**
   closes the chooser. See [language-specific input](locales/README.md#favourite-keyboard).
 - In option dialogs, **Up / Left** selects the previous option and **Down / Right**
-  selects the next one. In Yes/No dialogs, use **Left / Right**. **OK** confirms,
+  selects the next one. Choices wrap at the ends. In Yes/No dialogs, use
+  **Left / Right**. **OK** confirms,
   and **BACK** dismisses ordinary dialogs. Menu action lists use **Up / Down**;
   their Yes/No confirmations still use **Left / Right**. At the saved-trip resume prompt, choose
   an option and confirm with **OK**. At arrival, **OK** continues from a stop or
@@ -394,11 +398,13 @@ is capped at 5 FPS**, including pills, loading indicators, playback, speed warni
 menus and Explore rotation. This leaves more CPU time for routing. New input and
 status changes queue for the next frame; input, GPS and audio services keep running.
 On completion, failure or cancellation, normal presentation resumes immediately.
-Outside calculation, a separate compositor targets approximately 15 FPS while overlays animate. It
-restores the latest finished background before drawing each overlay frame, so
-map updates can continue during an animation without showing partial roads or
-retaining old glyphs. Two extra RGB565 backgrounds use about 510 KiB of RAM.
-Quiet screens do not redraw at 15 FPS unnecessarily.
+Outside calculation, live and prepared animations and steady HUD updates target
+20 FPS. The compositor draws over the latest finished map. While parked, it
+holds the current map until the scene changes and prepares finite pill, popup
+and menu transitions before displaying them. The extra preparation adds a
+short delay. Routine playback and clock updates let the queued transition
+finish. Unchanged screens hold their last image. When the framebuffer driver
+supports partial writes, only the changed overlay rows are sent.
 
 Frosted surfaces combine complete 8 × 8 backdrop areas with a separable
 1–2–1 blend over neighbouring areas in both axes, softening detail over a
@@ -419,7 +425,7 @@ itinerary actions, phone prompts, Bluetooth actions and keyboard language choice
 Yes/No confirmations use compact cards with reduced padding; itinerary removal
 and cancellation retain the target name. Action menus size to their available
 choices. Their entrances, exits, resizing, text changes and moving selection highlights
-share the pills' independent 15 FPS animation clock (5 FPS during calculation).
+share the pills' independent 20 FPS animation clock (5 FPS during calculation).
 Popup-only input does not force a new map frame. Actions take effect immediately;
 copied popup content remains available while closing, including after deletion
 or a page change. A settled popup returns to the normal presentation cadence.
@@ -431,11 +437,9 @@ phone-pairing action is pinned separately above the device list. Popup scrollbar
 and share its entrance, exit and content fades.
 
 Explore rotation and tilt follow a 500 ms elapsed-time transition rather than a
-fixed number of map frames. Camera presentation requests additional map drawing
-passes using the tile cache; these still cost CPU time. During rotation, live map
-updates are coalesced onto the 15 FPS presentation clock so the 10 FPS map
-clock cannot insert redundant full renders between camera frames. The existing
-500 ms eased trajectory and exact projection are retained. Offscreen strokes are rejected
+fixed number of map frames. ClioPlay normally prepares the ten map backgrounds
+for the rotation before presenting them at 20 FPS. The HUD draws over each
+prepared background and keeps its own notification timers. Offscreen strokes are rejected
 conservatively before rasterisation, and tile coordinates use an exactly
 equivalent shift/remainder conversion instead of repeated software division. Live model updates keep
 running, and rotation never resets a pill's appearance or notification timer.
@@ -444,10 +448,11 @@ Routing uses spare
 deadline budget in chunks of at most 5 ms, with periodic cooperative clock checks.
 
 These are scheduling targets, not measured frame rates on the 400 MHz head unit.
-Slow SD reads or drawing can miss deadlines; missed frames are skipped rather than
-replayed in a burst. With Debug enabled, five-second `FRAME 5S` summaries in the
+Slow SD reads or drawing can delay presentation. Live transitions sample the
+current time. Prepared sequences keep every frame in order and take longer when
+the unit is busy. With Debug enabled, five-second `FRAME 5S` summaries in the
 existing `state.log` report presentations, scheduled map frames, extra camera
-passes, lateness and drawing/routing time. No frame log is written with Debug off.
+passes, lateness, drawing/routing time and animation preparation time. No frame log is written with Debug off.
 
 ### Radio and Bluetooth source selection
 
@@ -529,5 +534,5 @@ footprints and add no runtime blur or font dependency.
 
 For device validation, compare Explore entry/exit with Bluetooth playing and
 paused, including simultaneous volume/track notices, reversal and route start.
-The 15 FPS camera/HUD cadence is a target, not measured physical head-unit FPS.
+The camera and HUD target 20 FPS. Actual frame rates depend on the head unit and its workload.
 During route calculation the whole UI remains capped at 5 FPS.

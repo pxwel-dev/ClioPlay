@@ -57,8 +57,42 @@ static void keyboard_press(void){if(!keyboard_valid_focus(kbd_focus))return;if(k
 }
 static const char*key_label(int i,char b[16]){b[0]=0;if(i>=40){if(i==40)return"<";if(i==47)return">";kbd_character(kbd_candidates,kbd_candidate_page*6+i-41,b);return b;}if(i<36){if(keyboard_page_count()>1&&i>=34)return i==34?"<":">";kbd_character(kbd_layouts[kbd_language].characters,kbd_page*(keyboard_page_count()>1?34:36)+i,b);const char*p=b;int cp=*p?utf8_code(&p):0;if((cp>=0x64b&&cp<=0x670)||(cp>=0x93a&&cp<=0x94f)||cp==0x901||cp==0x902||cp==0x903){char mark[8];copystr(mark,sizeof(mark),b);copystr(b,16,"◌");appendstr(b,16,mark);}return b;}if(i==36)return kbd_layouts[kbd_language].name;if(i==38)return kbd_action==KBD_NAME_COORDINATES?ui_tr("Next"):kbd_save_labels[pref.language];return"";}
 static int keyboard_col(int i){return i>=40?i-40:i==36?(kbd_column>=4&&kbd_column<=5?kbd_column:4):i==38?(kbd_column>=6&&kbd_column<=7?kbd_column:6):i%8;}
-static void keyboard_move(int dx,int dy){if(!keyboard_valid_focus(kbd_focus))kbd_focus=0;int row=kbd_focus>=40?-1:kbd_focus/8,col=keyboard_col(kbd_focus);if(dx){for(int c=col+dx;c>=0&&c<8;c+=dx){int i=row<0?40+c:row*8+c;if(row==4&&c==5)i=36;if(row==4&&c==7)i=38;if(i!=kbd_focus&&keyboard_valid_focus(i)){kbd_focus=i;kbd_column=c;return;}}return;}for(int r=row+dy;r>=-1&&r<=4;r+=dy){int best=-1,dist=99;for(int c=0;c<8;c++){int i=r<0?40+c:r*8+c;if(r<0&&(i==40||i==47))continue;if(r==4&&c==5)i=36;if(r==4&&c==7)i=38;if(!keyboard_valid_focus(i))continue;int d=c>col?c-col:col-c;if(d<dist){dist=d;best=i;}}if(best>=0){kbd_focus=best;kbd_column=col;return;}}}
-static void keyboard_handle(int code){if(kbd_picker){if(code==K_BACK||code==K_ESC){kbd_picker=0;return;}if(code==K_UP&&kbd_pick>0)kbd_pick--;else if(code==K_DOWN&&kbd_pick+1<UI_LANGUAGE_COUNT)kbd_pick++;else if(code==K_LEFT){kbd_pick-=6;if(kbd_pick<0)kbd_pick=0;}else if(code==K_RIGHT){kbd_pick+=6;if(kbd_pick>=UI_LANGUAGE_COUNT)kbd_pick=UI_LANGUAGE_COUNT-1;}else if(code==K_ENTER){kbd_language=kbd_pick;pref_keyboard_language=kbd_pick;kbd_page=0;kbd_picker=0;kbd_clear_composition();prefs_mark_dirty();}return;}
+static int keyboard_focus_at(int row,int column){
+ if(row<0)return 40+column;
+ if(row==4&&column==5)return 36;
+ if(row==4&&column==7)return 38;
+ return row*8+column;
+}
+static void keyboard_move(int dx,int dy){
+ if(!keyboard_valid_focus(kbd_focus))kbd_focus=0;
+ int row=kbd_focus>=40?-1:kbd_focus/8,col=keyboard_col(kbd_focus);
+ if(dx){
+  for(int step=1;step<8;step++){
+   int c=wrap_focus(col,dx*step,8),i=keyboard_focus_at(row,c);
+   if(i!=kbd_focus&&keyboard_valid_focus(i)){kbd_focus=i;kbd_column=c;return;}
+  }
+  return;
+ }
+ for(int step=1;step<6;step++){
+  int r=wrap_focus(row+1,dy*step,6)-1,best=-1,dist=99;
+  for(int c=0;c<8;c++){
+   int i=keyboard_focus_at(r,c);
+   if(r<0&&(i==40||i==47))continue;
+   if(!keyboard_valid_focus(i))continue;
+   int d=c>col?c-col:col-c;
+   if(d<dist){dist=d;best=i;}
+  }
+  if(best>=0){kbd_focus=best;kbd_column=col;return;}
+ }
+}
+static void keyboard_handle(int code){
+ if(kbd_picker){
+  if(code==K_BACK){kbd_picker=0;return;}
+  int delta=code==K_UP?-1:code==K_DOWN?1:code==K_LEFT?-6:code==K_RIGHT?6:0;
+  if(delta)kbd_pick=wrap_focus(kbd_pick,delta,UI_LANGUAGE_COUNT);
+  else if(code==K_ENTER){kbd_language=kbd_pick;pref_keyboard_language=kbd_pick;kbd_page=0;kbd_picker=0;kbd_clear_composition();prefs_mark_dirty();}
+  return;
+ }
  if(code==K_ESC){keyboard_backspace();return;}if(code==K_SR){keyboard_space();return;}if(code==K_LEFT)keyboard_move(-1,0);else if(code==K_RIGHT)keyboard_move(1,0);else if(code==K_UP)keyboard_move(0,-1);else if(code==K_DOWN)keyboard_move(0,1);else if(code==K_ENTER)keyboard_press();}
 static void draw_keyboard(void){fill(0,0,W,H,C_BG);keyboard_surface(12,MENU_BODY_Y,456,36,0);char display[193];copystr(display,sizeof(display),kbd_text);if(kbd_pinyin[0]){appendstr(display,sizeof(display)," [");char roman[9];copystr(roman,sizeof(roman),kbd_pinyin);for(int i=0;roman[i];i++)roman[i]=(char)(roman[i]-'a'+'A');appendstr(display,sizeof(display),roman);appendstr(display,sizeof(display),"]");}compact_fit(22,MENU_BODY_Y+9,436,1,display[0]?display:ui_tr(kbd_action==KBD_NAME_COORDINATES?"Name (optional)":"Enter a name"),display[0]?C_WHITE:C_MUTED);
  for(int i=0;i<40;i++){if(!keyboard_valid_focus(i))continue;int x=12+(i%8)*57,y=115+(i/8)*30,w=i==36||i==38?109:52,f=kbd_focus==i;keyboard_surface(x,y,w,26,f);char b[16],name[96];const char*s=key_label(i,b);if(i==36&&keyboard_page_count()>1){copystr(name,sizeof(name),s);appendstr(name,sizeof(name)," ");append_int(name,sizeof(name),kbd_page+1);appendstr(name,sizeof(name),"/");append_int(name,sizeof(name),keyboard_page_count());s=name;}compact_center(x+w/2,y+5,w-8,0,s,ui_choice_text(f));}

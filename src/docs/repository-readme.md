@@ -9,10 +9,11 @@
 
 <p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases/tag/Release">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-## Version @@VERSION@@
+## Version @@VERSION@@ (Major Performance Optimisation)
 
-- Build one navigation bundle from multiple matching country or regional `.osm.pbf` extracts. The installer merges them and reports incompatible overlaps before building maps.
-- Bluetooth SBC decoding and PCM packing use less ARM CPU work while preserving identical PCM and the existing playback configuration.
+- Bluetooth playback now uses a 200 ms prefill.
+- Animations and steady HUD updates target 20 FPS. ClioPlay prepares Explore rotation and parked overlay transitions ahead of playback; the menu resizes alongside taller notices. Routing calculations still temporary caps ClioPlay to 5 FPS to allow the single core 400mhz CPU maximum headroom for calculations. 
+- Trip footer buttons, menu lists, dialogs and keyboards wrap around. Use the arrows to change Trip tabs or select Cancel route on the footer.
 
 See [version history](CHANGELOG.md) for implemented changes by version.
 
@@ -137,8 +138,8 @@ upper-right console buttons act as the remote's soft keys.
 | **Centre / OK** | **Press the knob** | On the driving map, show ETA and remaining distance, or heading without a route. In map browsing, select the crosshair point. In **BT CTRL**, play/pause. In menus, select or confirm. |
 | **Up / Down** | **Joystick up / down** | Enter map browsing and pan, or move through menu rows. |
 | **Left / Right** | **Joystick left / right** | Enter map browsing and pan, change tabs/options/settings, or select dialog choices. In **BT CTRL**, previous/next track. |
-| **Left soft key** | **Upper-left button** | Zoom out; previous Trip tab; delete a character in coordinate/name entry. |
-| **Right soft key** | **Upper-right button** | Zoom in; next Trip tab; pair a phone from Bluetooth; cycle latitude/longitude; insert a space in a name. |
+| **Left soft key** | **Upper-left button** | Zoom out; delete a character in coordinate/name entry. |
+| **Right soft key** | **Upper-right button** | Zoom in; pair a phone from Bluetooth; cycle latitude/longitude; insert a space in a name. |
 
 Turning the console knob also zooms the map, skips tracks in **BT CTRL**, scrolls
 lists and moves through keyboard/keypad buttons or dialog choices. In Settings,
@@ -162,9 +163,11 @@ each screen, including settings, pairing and the favourite keyboard.
 Menus now open as animated glass panels over the map. Menu, Bluetooth and
 Settings retain the bottom driving pills when there is room; Trip and its entry
 pages use a taller panel. Time and active status notices remain in place. Trip
-always opens on **Itinerary**; **Left / Right** or the soft keys cycle through
-**Itinerary → Recents → Favourites**, and **Up / Down** or the console knob scrolls
-the current list. Press **OK** to open an item, **BACK** to return one level,
+always opens on **Itinerary**. **Left / Right** cycles through **Itinerary →
+Recents → Favourites**. On the itinerary's bottom row, **Left / Right** wraps
+between action buttons, including **Cancel route**. Use **Up / Down** or the
+console knob to move between rows and wrap at the ends. Press **OK** to open an
+item, **BACK** to return one level,
 or **MAP** to return directly to driving. **Pair new phone** stays at the top of
 Bluetooth and is also available with its right soft key.
 

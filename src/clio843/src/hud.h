@@ -717,8 +717,8 @@ static void hud_draw_all(u32 now,int map){
  if(map){hud_draw_card(HC_SPEED,now);hud_draw_card(HC_ROAD,now);hud_draw_card(HC_TURN,now);}
  hud_draw_card(HC_CLOCK,now);hud_draw_card(HC_STATUS,now);
 }
-/* New content and geometry use about 15 Hz; routine values use the map cadence.
- * Include the final frame after a transition ends. */
+/* New content and geometry may request buffering. Include the final frame
+ * after a transition ends. */
 static int hud_menu_animating(u32 now){
  if(hud_status_page!=screen)return 1;
  const int ids[]={HC_STATUS,HC_CLOCK};

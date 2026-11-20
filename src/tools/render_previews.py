@@ -10,7 +10,7 @@ import sys
 import tempfile
 
 from PIL import Image, ImageChops, ImageDraw, ImageFont
-from render_gallery import (BLUETOOTH_SAMPLES, MENU_ENTRY_SAMPLES, MENU_RETURN_SAMPLES, PHONE_CALC_SAMPLES, ROUNDABOUT_ETA_SAMPLES,
+from render_gallery import (ANIMATION_SAMPLE_MS, BLUETOOTH_SAMPLES, MENU_ENTRY_SAMPLES, MENU_RETURN_SAMPLES, PHONE_CALC_SAMPLES, ROUNDABOUT_ETA_SAMPLES,
                             SPEED_WARNING_SAMPLES, EXPLORE_SAMPLES, TWEEN_STEPS, ZOOM_MODE_SAMPLES, ROUTE_READY_SAMPLES, POPUP_SAMPLES,
                             TRIPS_LAYOUT_SAMPLES, TRIPS_EMPTY_SAMPLES, POPUPS_LAYOUT_SAMPLES,
                             V216_COORDINATES_SAMPLES, V216_HUD_SETTINGS_SAMPLES,
@@ -32,7 +32,8 @@ def previews():
     road_frames = sorted({0,5300}|{at+step for at in (100,1100,4100) for step in TWEEN_STEPS})
     status_samples = sorted({at+step for at in (0,800,1600,2600,6500,7000) for step in TWEEN_STEPS} | {4400,4800,5400,6100,6200,6280,6360,6440,8600})
     metadata_samples = sorted({at+step for at in (0,900,1700,2900,4300,8500) for step in TWEEN_STEPS} | {700,2600,3900,7200,9200})
-    boot = [(f'boot-fade-{ms:04d}', 67) for ms in range(0, 501, 67)] + [('boot-fade-0536', 364), ('boot-fade-0900', 700)]
+    boot = [(f'boot-fade-{ms:04d}', ANIMATION_SAMPLE_MS) for ms in range(0, 500, ANIMATION_SAMPLE_MS)]
+    boot += [('boot-fade-0500', 400), ('boot-fade-0900', 700)]
     boot[0] = (boot[0][0], 750)
     plans = {
         'v220-frequent-place.gif': timeline('night', timed_scenes('preview-v220-frequent-place', V220_FREQUENT_PLACE_SAMPLES, 5900)),

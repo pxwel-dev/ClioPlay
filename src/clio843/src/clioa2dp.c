@@ -481,7 +481,7 @@ struct SndFmt{u32 rate,channels,bits,frames,mode;};struct SndPair{u32 handle,pos
  * and byte-accurate validity tracking between successive hardware cursor reads.
  * The driver does not expose an underrun flag; clock elapsed since the last
  * cursor sample also guards against cursor wrap or freeze during starvation. */
-#define SND_PREFILL_44K_BYTES 26460u /* 150 ms * 44100 samples/s * 4 bytes */
+#define SND_PREFILL_44K_BYTES 35280u /* 200 ms * 44100 samples/s * 4 bytes */
 #define SND_RING_GUARD 4u
 #define SND_UNDERRUN_MARGIN_MS 40u
 static int sndfd=-1,snd_started=0,snd_mix_active=0,snd_div=1;

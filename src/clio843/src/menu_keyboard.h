@@ -75,12 +75,30 @@ static int pk_nearest(int row,int x){
 }
 static void pk_move(int code){
  int dx=code==K_RIGHT?1:code==K_LEFT?-1:0,dy=code==K_DOWN?1:code==K_UP?-1:0;
+ if(!pk_valid(pk_focus)){pk_focus=pk_count()?0:PK_LANGUAGE;pk_nav_x=-1;}
  int control=pk_focus>=PK_LANGUAGE,current=control?-1:pk_key_row(pk_focus);
- if(dx){pk_nav_x=-1;if(control){int n=pk_focus;do{n=PK_LANGUAGE+(n-PK_LANGUAGE+dx+5)%5;}while(!pk_valid(n));pk_focus=n;}
-  else{if(kbd_language==12||kbd_language==17)dx=-dx;int start=pk_row_start(current),count=pk_row_count(current);pk_focus=start+(pk_focus-start+dx+count)%count;}return;}
- if(dy){if(pk_nav_x<0)pk_nav_x=control?pk_control_centre(pk_focus):pk_key_centre(pk_focus);
-  int rows=pk_grid_rows(),row=current+dy;if(row< -1)row=rows-1;if(row>=rows)row=-1;
-  int best=pk_nearest(row,pk_nav_x);if(best>=0)pk_focus=best;}
+ if(dx){
+  pk_nav_x=-1;
+  if(control){
+   int focus=pk_focus;
+   do{focus=PK_LANGUAGE+wrap_focus(focus-PK_LANGUAGE,dx,PK_SAVE-PK_LANGUAGE+1);}while(!pk_valid(focus));
+   pk_focus=focus;
+  }else{
+   if(kbd_language==12||kbd_language==17)dx=-dx;
+   int start=pk_row_start(current);
+   pk_focus=start+wrap_focus(pk_focus-start,dx,pk_row_count(current));
+  }
+  return;
+ }
+ if(dy){
+  if(pk_nav_x<0)pk_nav_x=control?pk_control_centre(pk_focus):pk_key_centre(pk_focus);
+  int rows=pk_grid_rows()+1,row=current+1;
+  for(int i=1;i<rows;i++){
+   row=wrap_focus(row,dy,rows);
+   int best=pk_nearest(row-1,pk_nav_x);
+   if(best>=0){pk_focus=best;return;}
+  }
+ }
 }
 static void pk_rotate(int direction){
  int items[65],n=0;for(int i=0;i<pk_count();i++)items[n++]=i;for(int i=100;i<=PK_SAVE;i++)if(pk_valid(i))items[n++]=i;

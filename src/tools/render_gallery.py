@@ -23,7 +23,7 @@ from mobility_stories import DESTINATION_EVENTS, MAP_DIVERSION_EVENTS, FREQUENT_
 
 ROOT = Path(__file__).resolve().parents[1]
 SCENES = []
-ANIMATION_SAMPLE_MS = 67  # Match FRAME_UI_MS: approximately 15 Hz.
+ANIMATION_SAMPLE_MS = 50  # Match the runtime 20 Hz HUD and animation clock.
 TWEEN_STEPS = tuple(range(0, 351, ANIMATION_SAMPLE_MS))
 EXPLORE_SAMPLES = tuple(range(0, 568, ANIMATION_SAMPLE_MS))  # Include the first completed pose.
 BLUETOOTH_EVENTS = (
@@ -125,13 +125,15 @@ V216_HUD_SETTINGS_EVENTS = ((0, 'menu_open(P_SETTINGS,1,hud_now_ms());'), (700, 
 V216_HUD_SETTINGS_SAMPLES = sorted({at+step for at,_ in V216_HUD_SETTINGS_EVENTS for step in TWEEN_STEPS} | {9900})
 V216_BLUETOOTH_HIDDEN_EVENTS = ((0, 'menu_open(P_HOME,0,hud_now_ms());'), (2200, 'hw_bluetooth_enabled=0;menu_change(P_HOME,0,hud_now_ms());assert(menu_count(P_HOME)==2);'), (4400, 'key_handle(K_DOWN);key_handle(K_ENTER);assert(sheet_page==P_SETTINGS);'), (6600, 'key_handle(K_MENU);assert(sheet_page==P_HOME);'), (7500, 'hw_bluetooth_enabled=1;menu_change(P_HOME,1,hud_now_ms());'), (8500, 'key_handle(K_ENTER);assert(sheet_page==P_PHONE);'))
 V216_BLUETOOTH_HIDDEN_SAMPLES = sorted({at+step for at,_ in V216_BLUETOOTH_HIDDEN_EVENTS for step in TWEEN_STEPS} | {9500})
-# Ten-target example scrolls through every stop, the destination and the footer.
-ITINERARY_SETUP = 'for(int i=trip.count;i<TRIP_MAX_TARGETS;i++){char name[32];snprintf(name,sizeof(name),"Stop %d",i);assert(trip_add_stop(name,5498000+i*100,-164000-i*100));}menu_open(P_TRIP,0,hud_now_ms());'
+# Keep Add stop enabled so the footer can show both wrap directions.
+ITINERARY_SETUP = 'for(int i=trip.count;i<TRIP_MAX_TARGETS-1;i++){char name[32];snprintf(name,sizeof(name),"Stop %d",i);assert(trip_add_stop(name,5498000+i*100,-164000-i*100));}menu_open(P_TRIP,0,hud_now_ms());'
 V216_ITINERARY_EVENTS = ((0, ITINERARY_SETUP),) + tuple(
-    (1000+i*500, 'key_handle(K_DOWN);assert(sheet_focus==%d);' % (i+1)) for i in range(11)) + (
-    (6800, 'key_handle(K_UP);assert(sheet_focus==trip.count);key_handle(K_ENTER);assert(sheet_page==P_TRIP);'),
-    (7800, 'key_handle(K_UP);assert(sheet_focus==trip.count-1);'),
-    (8800, 'for(int i=0;i<9;i++)key_handle(K_UP);assert(sheet_focus==0);'))
+    (1000+i*500, 'key_handle(K_DOWN);assert(sheet_focus==%d);' % (i+1)) for i in range(9)) + (
+    (5750, 'key_handle(K_RIGHT);assert(sheet_focus==trip.count+1);'),
+    (6400, 'key_handle(K_RIGHT);assert(sheet_focus==trip.count);'),
+    (7100, 'key_handle(K_LEFT);assert(sheet_focus==trip.count+1);'),
+    (7800, 'key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&sheet_focus==1);'),
+    (8800, 'key_handle(K_BACK);assert(sheet_page==P_TRIP&&trip.active);'))
 V216_ITINERARY_SAMPLES = sorted({at+step for at,_ in V216_ITINERARY_EVENTS for step in TWEEN_STEPS} | {9800})
 
 
@@ -161,7 +163,7 @@ def motion(group, name, title, setup, events, samples):
 def catalog(sender_receipts=None):
     SCENES.clear()
     add('Overview', 'driving', 'Driving with a route')
-    for elapsed in (*range(0, 501, ANIMATION_SAMPLE_MS), 536, 900):
+    for elapsed in (*range(0, 501, ANIMATION_SAMPLE_MS), 900):
         add('Overview', f'boot-fade-{elapsed:04d}', f'Boot to UI · {elapsed} ms',
             f'boot_preview({elapsed});gallery_motion=1;')
     for name, setup, steps in (
@@ -175,7 +177,7 @@ def catalog(sender_receipts=None):
         key('Scrollbars',f'scrollbar-{name}-bottom',name+' · last page',setup,'key_handle(K_DOWN);'*steps)
 
     motion('Popup animations', 'preview-popups', 'Glass confirmations, animated choices, resizing and dismissal',
-           'explore();settle();', POPUP_EVENTS, POPUP_SAMPLES)
+           'preview_enter_explore();settle();', POPUP_EVENTS, POPUP_SAMPLES)
     status_events = (
         (0, 'gps.fix=0;'),
         (800, 'set_volume(16);'),
@@ -272,7 +274,7 @@ def catalog(sender_receipts=None):
     motion('HUD motion', 'hud-speed-warning', 'Speeding warning', road_cleared,
            ((400, 'gps.mph10=390;assert(hud_is_overspeed());'),
             (2640, 'gps.mph10=240;assert(!hud_is_overspeed());')), SPEED_WARNING_SAMPLES)
-    for name, title, setup in [('explore','Explore map','explore();'), ('menu','Main menu','screen=SCR_MENU;'), ('trip-recents','Recent destinations','screen=SCR_TRIP;'), ('trip-favourites','Favourite destinations','screen=SCR_TRIP;trip_tab=1;'), ('itinerary','Current itinerary','screen=SCR_TRIP;trip_pane=1;'), ('phone','Phone connection','screen=SCR_BT;'), ('settings','Settings','screen=SCR_SET;'), ('keyboard','Name a favourite','name_keyboard();')]:
+    for name, title, setup in [('explore','Explore map','preview_enter_explore();'), ('menu','Main menu','screen=SCR_MENU;'), ('trip-recents','Recent destinations','screen=SCR_TRIP;'), ('trip-favourites','Favourite destinations','screen=SCR_TRIP;trip_tab=1;'), ('itinerary','Current itinerary','screen=SCR_TRIP;trip_pane=1;'), ('phone','Phone connection','screen=SCR_BT;'), ('settings','Settings','screen=SCR_SET;'), ('keyboard','Name a favourite','name_keyboard();')]:
         add('Overview',name,title,setup)
     for i,title in enumerate(('Destinations','Bluetooth','Settings')):
         key('Menu',f'menu-focus-{i}',f'Select {title}', 'key_handle(K_MENU);', 'key_handle(K_DOWN);'*i, f'assert(menu_focus=={i});')
@@ -291,9 +293,9 @@ def catalog(sender_receipts=None):
         key('Menu',f'{name}-map',f'MAP returns from {name}',f'screen={page};','key_handle(K_MAP);','assert(screen==SCR_MAP);')
         key('Menu',f'{name}-page-back',f'BACK leaves {name}',f'screen={page};','key_handle(K_BACK);')
     for name,code in [('up','K_UP'),('down','K_DOWN'),('left','K_LEFT'),('right','K_RIGHT')]:
-        key('Map',f'pan-{name}',f'Pan Explore {name}','explore();',f'key_handle({code});')
+        key('Map',f'pan-{name}',f'Pan Explore {name}','preview_enter_explore();',f'key_handle({code});')
     for free in (False,True):
-        setup='explore();' if free else ''
+        setup='preview_enter_explore();' if free else ''
         for name,code in [('in','K_SR'),('out','K_ESC')]:
             key('Map',f'zoom-{name}-'+('explore' if free else 'driving'),f'Zoom {name} in '+('Explore' if free else 'driving'),setup,f'key_handle({code});')
     key('Map','autozoom-override','Override automatic zoom','pref.autozoom=1;zoom_override=4;','key_handle(K_SR);','assert(zoom_override==5);')
@@ -301,7 +303,7 @@ def catalog(sender_receipts=None):
     key('Map','map-menu','Open menu from driving','','key_handle(K_MENU);','assert(screen==SCR_MENU);')
     for mode in ('enter','leave'):
         for frame,elapsed in enumerate(EXPLORE_SAMPLES):
-            setup='' if mode=='enter' else 'explore();'
+            setup='' if mode=='enter' else 'preview_enter_explore();'
             action=f'key_handle(K_MAP);explore_sample({elapsed});'
             key('Animations',f'explore-{mode}-{frame:02}',f'Explore {mode} · frame {frame}',setup,action,note='Elapsed-time camera samples at approximately 15 Hz; map/model cadence is separate. Host captures do not measure hardware throughput.')
     browse = 'key_handle(K_MAP);' + 'explore_sample(100);' * 6
@@ -419,7 +421,7 @@ def catalog(sender_receipts=None):
     key('Saved-place actions','unnamed-recent-favourite','Name an unnamed map point as a favourite','screen=SCR_TRIP;copystr(recents[0].name,sizeof(recents[0].name),"MAP POINT");key_handle(K_ENTER);modal_choice=2;','key_handle(K_ENTER);','assert(screen==SCR_KEY);')
     key('Itinerary actions','unnamed-destination-favourite','Name an unnamed destination as a favourite','screen=SCR_TRIP;copystr(trip.target[1].name,sizeof(trip.target[1].name),"MAP POINT");trip_pane=1;trip_right_focus=1;key_handle(K_ENTER);modal_choice=1;','key_handle(K_ENTER);','assert(screen==SCR_KEY);')
     # Yes/no actions expose both selection states and confirmed outcomes.
-    confirmations=[('map-route','Route to map point','explore();trip.active=0;key_handle(K_ENTER);'),('map-stop','Add map point as stop','explore();key_handle(K_ENTER);'),('cancel-route','Cancel current route','screen=SCR_TRIP;modal=MOD_CANCEL_ROUTE;'),('remove-stop','Remove itinerary stop','screen=SCR_TRIP;modal=MOD_REMOVE_STOP;modal_index=0;'),('resume-trip','Resume saved trip','screen=SCR_MAP;trip.paused=1;modal=MOD_RESUME_TRIP;')]
+    confirmations=[('map-route','Route to map point','preview_enter_explore();trip.active=0;key_handle(K_ENTER);'),('map-stop','Add map point as stop','preview_enter_explore();key_handle(K_ENTER);'),('cancel-route','Cancel current route','screen=SCR_TRIP;modal=MOD_CANCEL_ROUTE;'),('remove-stop','Remove itinerary stop','screen=SCR_TRIP;modal=MOD_REMOVE_STOP;modal_index=0;'),('resume-trip','Resume saved trip','screen=SCR_MAP;trip.paused=1;modal=MOD_RESUME_TRIP;')]
     for name,title,state in confirmations:
         for choice,answer in ((0,'Yes'),(1,'No')):
             setup=state+f'modal_choice={choice};'
@@ -544,7 +546,7 @@ def catalog(sender_receipts=None):
         ('saved-phone-soft-back','screen=SCR_BT;bt_page_focus=1;key_handle(K_ENTER);','K_ESC','assert(bt_page_dialog<0);'),
         ('phone-up','screen=SCR_BT;bt_page_focus=2;','K_UP','assert(bt_page_focus==1);'),
         ('map-recenter','cam_lat+=100;cam_lon+=100;','K_ENTER',''),
-        ('map-menu-from-explore','explore();','K_MENU','assert(screen==SCR_MENU);'),
+        ('map-menu-from-explore','preview_enter_explore();','K_MENU','assert(screen==SCR_MENU);'),
         ('map-no-fix','gps.fix=track_valid=0;','K_MAP','assert(!freecam);'),
         ('trip-cancel-open','screen=SCR_TRIP;trip_pane=1;trip_right_focus=3;','K_ENTER','assert(modal==MOD_CANCEL_ROUTE);'),
         ('trip-add-open','screen=SCR_TRIP;trip_pane=1;trip_right_focus=2;','K_ENTER','assert(modal==MOD_SOURCE_PICK);'),
@@ -563,7 +565,7 @@ def catalog(sender_receipts=None):
     for name,setup in [('stop','MOD_ARRIVED_STOP'),('destination','MOD_ARRIVED_DEST')]:
         key('Dialog controls','arrival-protected-'+name,'Arrival prompt awaits confirmation · '+name,
             f'modal={setup};','key_handle(K_BACK);key_handle(K_MAP);',f'assert(modal=={setup});')
-    for name,setup in [('map-min','manual_zoom=mh.minlvl;'),('map-max','manual_zoom=mh.maxlvl;'),('explore-min','explore();freecam_zoom=mh.minlvl;'),('explore-max','explore();freecam_zoom=MAX_EXPLORE_ZOOM;')]:
+    for name,setup in [('map-min','manual_zoom=mh.minlvl;'),('map-max','manual_zoom=mh.maxlvl;'),('explore-min','preview_enter_explore();freecam_zoom=mh.minlvl;'),('explore-max','preview_enter_explore();freecam_zoom=MAX_EXPLORE_ZOOM;')]:
         key('Map boundaries','zoom-boundary-'+name,'Zoom boundary · '+name,setup,
             'key_handle(K_ESC);' if name.endswith('min') else 'key_handle(K_SR);')
     for name,setup in [('disconnected','btui.connected=0;'),('no-track',''),('unavailable','btui.connected=0;copystr(btui.status,sizeof(btui.status),"BT DAEMON ERROR");screen=SCR_BT;')]:
@@ -641,7 +643,7 @@ def modern_menus():
     for lang in range(18):
         add('Menu sheets','keyboard-'+str(lang),'Native naming layout',f'pref_keyboard_language={lang};keyboard_open_fave_rename(0);menu_open(P_NAME,0,hud_now_ms());pk_reset();pk_prepare();')
     events=((0,'key_handle(K_MENU);'),(700,'key_handle(K_ENTER);'),(1500,'key_handle(K_RIGHT);'),
-            (2300,'key_handle(K_SR);'),(3100,'key_handle(K_BACK);'),
+            (2300,'key_handle(K_RIGHT);'),(3100,'key_handle(K_BACK);'),
             (3800,'key_handle(K_DOWN);key_handle(K_ENTER);'),(4600,'key_handle(K_DOWN);key_handle(K_ENTER);'),
             (5400,'key_handle(K_BACK);'),(6200,'key_handle(K_MENU);'),
             (7000,'key_handle(K_DOWN);key_handle(K_DOWN);key_handle(K_ENTER);'),
@@ -661,7 +663,7 @@ def modern_menus():
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_HUD_SETTINGS_EVENTS, V216_HUD_SETTINGS_SAMPLES)
     motion('Version 2.1.6', 'preview-v216-bluetooth-hidden', 'Simulated Bluetooth hardware flag hides UI entries',
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_BLUETOOTH_HIDDEN_EVENTS, V216_BLUETOOTH_HIDDEN_SAMPLES)
-    motion('Version 2.1.8', 'preview-v216-itinerary', 'Scroll ten targets, with connectors bounded to the visible list',
+    motion('Version 2.1.8', 'preview-v216-itinerary', 'Scroll the itinerary and wrap between footer actions',
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_ITINERARY_EVENTS, V216_ITINERARY_SAMPLES)
     motion('Intelligent navigation', 'preview-v220-frequent-place', 'Stationary startup: offer, editable Favourite name, save',
            'settle();', FREQUENT_PLACE_EVENTS, V220_FREQUENT_PLACE_SAMPLES)
@@ -972,7 +974,7 @@ static void preview_map_diversion_seed(void)
 
     assert(mapok && traffic_warn && traffic_offer_valid());
 }
-static void explore(void){enter_freecam();explore_sample(500);}
+static void preview_enter_explore(void){enter_freecam();explore_sample(500);}
 static void name_keyboard(void){screen=SCR_KEY;keyboard_open_fave_name(5497370,-161331);}
 static void coordinate_digits(const char*s){while(*s){char c=*s++;coordinates.focus=c=='-'?COORD_SIGN:c=='.'?COORD_DOT:c=='0'?COORD_ZERO:c-'1';key_handle(K_ENTER);}}
 static void coordinate_preview(const char*stage){
