@@ -12,7 +12,7 @@
 ## Version 2.2.2 (Major Performance Optimisation)
 
 - Bluetooth playback now uses a 200 ms prefill.
-- Animations and steady HUD updates target 20 FPS. ClioPlay prepares Explore rotation and parked overlay transitions ahead of playback; the menu resizes alongside taller notices. Routing calculations still temporary caps ClioPlay to 5 FPS to allow the single core 400mhz CPU maximum headroom for calculations. 
+- Animations and steady HUD updates target 20 FPS. ClioPlay prepares Explore rotation and parked overlay transitions ahead of playback; the menu resizes alongside taller notices. Routing calculations still temporarily cap ClioPlay to 5 FPS to allow the single core 400mhz CPU maximum headroom for calculations. 
 - Trip footer buttons, menu lists, dialogs and keyboards wrap around. Use the arrows to change Trip tabs or select Cancel route on the footer.
 
 See [version history](CHANGELOG.md) for implemented changes by version.
