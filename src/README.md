@@ -266,6 +266,21 @@ Confirming a point selected in Explore returns directly to the driving map with
 the reverse rotation/tilt animation. The time/temperature pill remains visible;
 calculation uses the existing five-frame-per-second cap. Declining keeps Explore.
 
+#### Auto zoom and close-up street names in v2.2.5 (Unreleased)
+
+Auto zoom selects across **Z9–Z4**, giving closer views at low speeds while keeping roughly 33–51 seconds of forward sightline across driving speeds. Manual driving zoom (soft keys / knob rotation) also reaches **Z9** on standard Z6 map packs. Separate speed thresholds for speeding up (zooming out) and slowing down (zooming in) create a hysteresis band around each boundary so small speed fluctuations do not keep changing the zoom; large speed jumps step straight to the matching level. When **Learn driving history** is enabled, learned Adaptive Auto-zoom adjustments (`±1` level) are clamped across the full **Z4–Z9** range.
+
+| Zoom | Default speed band | Zooms out (speeding up) | Zooms in (slowing down) | Forward view | Where it fits |
+| --- | --- | --- | --- | --- | --- |
+| **Z9** | `< 5 mph` (`< 8 km/h`) | `≥ 6 mph` (`≥ 10 km/h`) → Z8 | — | ~92 m | Parking and walking-pace manoeuvres |
+| **Z8** | `5 to < 12 mph` (`8–19 km/h`) | `≥ 14 mph` (`≥ 23 km/h`) → Z7 | `≤ 4 mph` (`≤ 6 km/h`) → Z9 | ~184 m | Car parks, queues and tight streets |
+| **Z7** | `12 to < 25 mph` (`19–40 km/h`) | `≥ 27 mph` (`≥ 43 km/h`) → Z6 | `≤ 10 mph` (`≤ 16 km/h`) → Z8 | ~367 m | Residential streets and town centres |
+| **Z6** | `25 to < 45 mph` (`40–72 km/h`) | `≥ 48 mph` (`≥ 77 km/h`) → Z5 | `≤ 23 mph` (`≤ 37 km/h`) → Z7 | ~735 m | Urban through roads and suburban driving |
+| **Z5** | `45 to < 65 mph` (`72–105 km/h`) | `≥ 68 mph` (`≥ 109 km/h`) → Z4 | `≤ 42 mph` (`≤ 68 km/h`) → Z6 | ~1.47 km | Faster A-roads and dual carriageways |
+| **Z4** | `≥ 65 mph` (`≥ 105 km/h`) | — | `≤ 62 mph` (`≤ 100 km/h`) → Z5 | ~2.94 km | Motorway lookahead |
+
+At **Z7–Z9**, roads preserve all four fractional bits of Z6’s 12-bit tile coordinates for smooth close-up geometry, and road names from the installed map are placed beside visible clipped road segments where there is room on screen (keeping clear of the active route, car marker, Explore crosshair and HUD cards, and handing off cleanly with the temporary bottom street-name pill). Existing map packs support both improvements with no rebuild required.
+
 ### Menu, Trip and Bluetooth
 
 - **Menu:** use **Up / Down** to choose Trip, Bluetooth or Settings. Press **OK**
@@ -305,8 +320,8 @@ position and notice timers across page changes.
 ### Intelligent navigation
 
 Optional offline learning uses completed Barcelona power-off driving sessions, even without an active route. Enable **Learn driving history** in Settings → Driving history. The empty Itinerary retains the original destination-entry layout. With no active trip and sufficient evidence, the map status pill displays a green Suggested destination and blue OK to review (BACK to review during BT CTRL). OK opens a default-Yes confirmation; No suppresses that destination for the recording session, Back leaves it eligible, and ignoring it never changes the route. On a later stationary startup, five completed visits across three distinct dates in the last 90 days can prompt Add to favourites? for the current place. No is the safe default. Yes opens the existing Favourite naming keyboard with an editable inferred name (or an empty field); only Save adds the Favourite and returns to the map. The prompt is shown at most once per place until driving history is cleared, and never starts navigation. The predictor reconciles the stored starting point with live GPS, combines day/time, recency and early trajectory evidence, and resolves destinations via named Favourites/Recents, nearby offline map names or coordinates. During guidance, a historical traffic warning may appear and a **Diversion** action is available in Trip if a beneficial legal local alternative is found. Shared geometry stays solid magenta, bypassed geometry is yellow/gold and the distinct proposed diversion is dashed aqua/teal. The glass status pill continuously displays a single line with the success-green Faster route available announcement and blue OK to review (BACK to review when BT CTRL is active). A centred, anti-aliased frosted-glass badge near the actual decision point shows the approximate saving when space permits. The invitation disappears at the decision point if ignored. Press OK twice from the driving map to accept; with BT CTRL active, press Back first. Normal zoom and Bluetooth controls are preserved. The confirmation opens on Yes, alongside No and a **View diversion** button.
-Selecting **View diversion** closes the popup and opens Explore framed around
-the proposed bypass so you can pan and zoom to inspect it; pressing **MAP**
+Selecting **View diversion** (or **View route** for a usual-route proposal) closes the popup and opens Explore tightly framed and vertically centred around
+the proposed bypass across the full `480 × 272` viewport (up to Z9) so you can pan and zoom to inspect it; pressing **MAP**
 returns to the driving view and re-opens the same confirmation (if still valid).
 Declining it keeps the original route, warning and adjusted ETA, and only suppresses alternative offers overlapping that section. Later independent diversions remain eligible. No live traffic or automatic route selection is used. Learning still relies only on completed power-off sessions, not arrival prompts. Destination suggestions and diversions can be enabled separately; **Clear driving history** removes the private learned data after confirmation. Raw GPS time is independent of the UI clock adjustment. See [intelligent navigation](docs/intelligent-navigation.md) for the complete behavior and limitations.
 

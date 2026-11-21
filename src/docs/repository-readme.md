@@ -23,6 +23,14 @@ See [version history](CHANGELOG.md) for implemented changes by version.
 
 See [intelligent navigation](src/docs/intelligent-navigation.md) for configuration, model behaviour and privacy.
 
+## In development for v2.2.5
+
+- **Expanded Auto zoom (Z9–Z4) & close-up manual zoom:** selects Z9 (`< 5 mph`), Z8 (`5–12 mph`), Z7 (`12–25 mph`), Z6 (`25–45 mph`), Z5 (`45–65 mph`) and Z4 (`≥ 65 mph`) with proportional speed hysteresis (`4/6`, `10/14`, `23/27`, `42/48`, `62/68 mph`) so speed fluctuations near a boundary never oscillate zoom; manual driving zoom and Adaptive Auto-zoom clamping also extend to Z9.
+- **Close-up vector precision & street names (Z7–Z9):** preserves full sub-unit Z6 vertex precision and places street names beside visible road segments at Z7–Z9 (avoiding the route, car marker and HUD pills) using existing map packs.
+- **Tighter View diversion / View route framing:** opens Explore tightly fitted and vertically centred around the proposed diversion or usual-route loop across the full `480 × 272` viewport (up to Z9).
+
+See the [unreleased changes](src/docs/changelog.md#version-225--unreleased) and [zoom table](src/README.md#auto-zoom-and-close-up-street-names-in-v225-unreleased).
+
 ## UI previews
 
 See the [full preview index](src/docs/demo/README.md) for all animations.

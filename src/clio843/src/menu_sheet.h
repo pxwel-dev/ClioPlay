@@ -215,12 +215,19 @@ static void menu_view_diversion(u32 now){
  s32 mid_lat=min_lat+(max_lat-min_lat)/2;
  s32 mid_lon=lon_delta(base_lon+min_dlon+(max_dlon-min_dlon)/2);
  s32 lat_span=max_lat-min_lat,lon_span=lon_scale(max_dlon-min_dlon,coslat_q15(mid_lat));
- int lo=mapok?(int)mh.minlvl:0,best_z=lo;
- for(int z=6;z>=lo;z--){
-  u32 scale_q8=65536u>>(14-z);
-  u32 pw=((u32)lon_span*scale_q8)>>8,ph=((u32)lat_span*scale_q8)>>8;
-  if(pw<=340u&&ph<=112u){best_z=z;break;}
+ int hi=MAX_EXPLORE_ZOOM,lo=mapok?(int)mh.minlvl:0,best_z=lo;
+ for(int z=hi;z>=lo;z--){
+  int sh=14-z;
+  unsigned long long pw=((unsigned long long)(u32)lon_span*256u)>>sh;
+  unsigned long long ph=((unsigned long long)(u32)lat_span*256u)>>sh;
+  if(pw<=448u&&ph<=240u){best_z=z;break;}
  }
+ /* Centre the route box vertically at H/2 (16 px margins all round) rather
+  * than at FREECAM_ANCHOR_Y=160 so the full 480x272 Explore view is used. */
+ s32 y_shift=(s32)(((((long long)(FREECAM_ANCHOR_Y-H/2))<<(14-best_z))+128)>>8);
+ s32 view_lat_target=mid_lat-y_shift;
+ if(view_lat_target< -8500000)view_lat_target=-8500000;
+ if(view_lat_target>8500000)view_lat_target=8500000;
  diversion_preview_active=1;
  diversion_preview_from_map=confirm_diversion_map;
  diversion_preview_kind=confirm_diversion_kind;
@@ -229,7 +236,7 @@ static void menu_view_diversion(u32 now){
  diversion_preview_begin=confirm_diversion_begin;
  diversion_preview_join=confirm_diversion_join;
  menu_close(now);
- enter_freecam_at(mid_lat,mid_lon,best_z);
+ enter_freecam_at(view_lat_target,mid_lon,best_z);
  hud_pulse(&hud_navigation,HUD_EXPLORE,1800);
 }
 static void start_name(int origin,u32 now){

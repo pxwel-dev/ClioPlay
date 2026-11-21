@@ -17,7 +17,7 @@ static void lines_only(struct Tile*t,int z,int roads){
   const u8*p=t->data,*end=p+t->len;int count=rd16(p),span=span_for_level(t->lvl);p+=8;
   for(int i=0;i<count&&p+4<=end;i++){
     int layer=p[0],style=p[1],np=p[2];p+=4;if(p+np*4>end)return;
-    if(!(style&128)&&((layer==0)==roads))draw_path(t,span,layer,style,np,&p,end,z);
+    if(!(style&128)&&((layer==0)==roads))draw_path(t,span,layer,style,np,&p,end,z,0);
     else p+=np*4;
   }
 }
@@ -68,6 +68,40 @@ static unsigned verify(int z,unsigned*water,unsigned*green){
 static void point(u8*p,int i,int x,int y){
   p[i*4]=x;p[i*4+1]=x>>8;p[i*4+2]=y;p[i*4+3]=y>>8;
 }
+static void cropped_labels(void){
+  static const char visible[]="Long Street Crossing the Entire Crop";
+  static const char outside[]="Off-screen Street";
+  struct Tile tile={.lvl=6,.data={2,0,0,0,2,0,0,0,0,6,2,0}};
+  point(tile.data+12,0,128,2192);point(tile.data+12,1,3968,2192);
+  tile.data[21]=6;tile.data[22]=2;tile.data[23]=1;
+  point(tile.data+24,0,128,3968);point(tile.data+24,1,3968,3968);
+  tile.data[36]=sizeof(visible)-1;
+  memcpy(tile.data+37,visible,sizeof(visible)-1);
+  int at=37+sizeof(visible)-1;
+  tile.data[at+4]=sizeof(outside)-1;
+  memcpy(tile.data+at+5,outside,sizeof(outside)-1);
+  tile.len=at+5+sizeof(outside)-1;
+
+  for(int driving=0;driving<=1;driving++){
+    scene(128,65,9,0,driving,0);
+    perspective_scale_update();
+    drive_label_prepare(9);
+    fill(0,0,W,H,C_MAP_BG);
+    map_mask_begin(1);
+    draw_tile_geometry(&tile,9,MAP_DRAW_ROADS);
+    map_mask_end();
+    assert(ndrive_labels==1&&streq(drive_labels[0].name,visible));
+    assert(drive_labels[0].x>200&&drive_labels[0].x<280);
+    nltxt=nlbox=0;
+    drive_label_render(9);
+    assert(nltxt==1&&label_text_seen(visible));
+  }
+  /* A route passing near the opposite corner of a box is not an overlap. */
+  drive_route_segs[0]=(struct DriveRouteSeg){0,0,300,200};ndrive_route_segs=1;
+  assert(!drive_label_hits_route(150,30,200,45,1));
+  assert(drive_label_hits_route(150,90,200,105,1));
+  puts("Cropped labels: road crossing an off-screen anchor, visible placement, long-name dedup and precise route clearance.");
+}
 static unsigned synthetic(void){
   FILE*f=tmpfile();assert(f);mapfd=fileno(f);
   memzero(&mh,sizeof(mh));memcpy(mh.magic,"CPM5",4);mh.ver=5;mh.maxlvl=6;
@@ -104,6 +138,7 @@ int main(int argc,char**argv){
     }
     map_mask_end();
   }
+  cropped_labels();
   unsigned failures=synthetic();
   if(argc>1){
     mapfd=open(argv[1],O_RDONLY);assert(mapfd>=0);

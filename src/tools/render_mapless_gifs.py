@@ -172,10 +172,19 @@ def encode(captures, path):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--output', type=Path, default=ROOT/'docs/demo')
-    p.add_argument('--only', nargs='*', choices=tuple(STORIES), help='Regenerate only selected animations')
+    p.add_argument('--only', '--gif', dest='only', nargs='+', metavar='GIF',
+                   help='Regenerate only selected animations (with or without .gif suffix)')
+    p.add_argument('--list', action='store_true', help='List available mapless GIF names and exit')
     args = p.parse_args()
+    if args.list:
+        for name in sorted(STORIES):
+            print(name)
+        return
     if args.only:
-        chosen=set(args.only)
+        chosen = {n if n.endswith('.gif') else f'{n}.gif' for n in args.only}
+        unknown = sorted(chosen - set(STORIES))
+        if unknown:
+            raise SystemExit(f"Unknown mapless GIF(s): {', '.join(unknown)}\nAvailable: {', '.join(sorted(STORIES))}")
         for name in tuple(STORIES):
             if name not in chosen: del STORIES[name]
     with tempfile.TemporaryDirectory(prefix='clioplay-mapless-') as temporary:

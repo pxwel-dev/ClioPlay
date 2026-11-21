@@ -79,12 +79,42 @@ static void driving_info(void){
  }
  camera_clear();roadctx=(struct RoadCtx){0};
 }
+static void auto_zoom_bands(void){
+ /* Default initial bands (Z9-Z4) when auto_zoom_level is unset. */
+ const struct {int mph10,zoom;} initial[]={
+  {0,9},{49,9},{50,8},{119,8},{120,7},{249,7},{250,6},{449,6},{450,5},{649,5},{650,4},{800,4}
+ };
+ for(unsigned i=0;i<sizeof(initial)/sizeof(initial[0]);i++){
+  baseline();gps.mph10=initial[i].mph10;auto_zoom_level=-1;
+  assert(speed_auto_zoom()==initial[i].zoom&&active_zoom()==initial[i].zoom);
+ }
+ /* Hysteresis when speeding up (Z9->Z4). */
+ baseline();gps.mph10=0;auto_zoom_level=-1;assert(speed_auto_zoom()==9);
+ gps.mph10=59;assert(speed_auto_zoom()==9);gps.mph10=60;assert(speed_auto_zoom()==8);
+ gps.mph10=139;assert(speed_auto_zoom()==8);gps.mph10=140;assert(speed_auto_zoom()==7);
+ gps.mph10=269;assert(speed_auto_zoom()==7);gps.mph10=270;assert(speed_auto_zoom()==6);
+ gps.mph10=479;assert(speed_auto_zoom()==6);gps.mph10=480;assert(speed_auto_zoom()==5);
+ gps.mph10=679;assert(speed_auto_zoom()==5);gps.mph10=680;assert(speed_auto_zoom()==4);
+ /* Hysteresis when slowing down (Z4->Z9). */
+ gps.mph10=621;assert(speed_auto_zoom()==4);gps.mph10=620;assert(speed_auto_zoom()==5);
+ gps.mph10=421;assert(speed_auto_zoom()==5);gps.mph10=420;assert(speed_auto_zoom()==6);
+ gps.mph10=231;assert(speed_auto_zoom()==6);gps.mph10=230;assert(speed_auto_zoom()==7);
+ gps.mph10=101;assert(speed_auto_zoom()==7);gps.mph10=100;assert(speed_auto_zoom()==8);
+ gps.mph10=41;assert(speed_auto_zoom()==8);gps.mph10=40;assert(speed_auto_zoom()==9);
+ /* Large speed jumps step directly to the matching band in one call. */
+ gps.mph10=700;assert(speed_auto_zoom()==4);
+ gps.mph10=0;assert(speed_auto_zoom()==9);
+ /* Manual driving zoom reaches Z9 on standard Z6 map packs. */
+ baseline();pref.autozoom=0;manual_zoom=6;
+ for(int i=0;i<5;i++)key_handle(K_SR);
+ assert(manual_zoom==MAX_EXPLORE_ZOOM&&active_zoom()==MAX_EXPLORE_ZOOM);
+}
 int main(void){
  baseline();prepare(10100);key_handle(K_MAP);prepare(10100);
  assert(freecam&&hud_navigation.kind==HUD_EXPLORE&&streq(card()->title,"Explore"));
  u32 term=hud_navigation.until,entrance=hud_tween[HC_STATUS].position_at;
  prepare(10450);pref.debug=1;key_handle(K_SR);prepare(10450);
- assert(freecam_zoom==6&&hud_navigation.until==term&&streq(card()->title,"Explore"));
+ assert(freecam_zoom==8&&hud_navigation.until==term&&streq(card()->title,"Explore"));
  assert(hud_tween[HC_STATUS].position_at==entrance);
  for(int i=0;i<20;i++){key_handle(K_SR);prepare(10450);}
  assert(freecam_zoom==MAX_EXPLORE_ZOOM&&hud_navigation.until==term);
@@ -111,12 +141,12 @@ int main(void){
  assert(!pref.autozoom&&hud_navigation.kind==HUD_MANUAL_ZOOM&&!streq(card()->title,"Auto zoom"));
  /* Temporary manual override: MAP restores Auto, and only the next MAP explores. */
  baseline();key_handle(K_SR);prepare(10000);
- assert(pref.autozoom&&zoom_override==6&&!freecam&&streq(card()->title,"Manual zoom"));
+ assert(pref.autozoom&&zoom_override==8&&!freecam&&streq(card()->title,"Manual zoom"));
  term=hud_navigation.until;entrance=hud_tween[HC_STATUS].position_at;
  prepare(10400);key_handle(K_ESC);prepare(10400);
- assert(zoom_override==5&&streq(card()->title,"Manual zoom")&&hud_navigation.until>term);
+ assert(zoom_override==7&&streq(card()->title,"Manual zoom")&&hud_navigation.until>term);
  assert(hud_tween[HC_STATUS].position_at==entrance);
- key_handle(K_ENTER);prepare(10400);assert(zoom_override==5&&hud_navigation.kind==HUD_JOURNEY);
+ key_handle(K_ENTER);prepare(10400);assert(zoom_override==7&&hud_navigation.kind==HUD_JOURNEY);
  key_handle(K_MAP);prepare(10400);assert(zoom_override==-1&&!freecam&&streq(card()->title,"Auto zoom"));
  key_handle(K_MAP);prepare(10400);assert(freecam&&streq(card()->title,"Explore"));
  /* Arrows still enter Explore directly from an override, clearing that override. */
@@ -127,9 +157,9 @@ int main(void){
  assert(!pref.autozoom&&zoom_override==-1&&streq(card()->title,"Manual zoom"));
  key_handle(K_MAP);prepare(10000);assert(freecam);
  /* A clamp with no zoom change cannot invent a temporary override or notice. */
- baseline();gps.mph10=0;auto_zoom_level=6;key_handle(K_SR);prepare(10000);
+ baseline();gps.mph10=0;auto_zoom_level=MAX_EXPLORE_ZOOM;key_handle(K_SR);prepare(10000);
  assert(zoom_override==-1&&!hud_navigation.kind);
- point_confirmation();driving_info();
+ auto_zoom_bands();point_confirmation();driving_info();
  puts("Selected-point routing: direct animated return, mid-entry reversal, stops, persistent time/temperature and cancellation passed.");
  puts("Zoom notices: one Explore entry, silent pan/zoom and limits, stable Debug text, MAP restores Auto before Explore, OK retains ETA, arrows enter from overrides, manual setting and transition guards passed.");
 }

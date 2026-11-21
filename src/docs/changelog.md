@@ -3,6 +3,19 @@
 This history records implemented changes. Entries marked **Unreleased** are prepared locally and have not been published.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
 
+## Version 2.2.5 — Unreleased
+
+- Expanded **Auto zoom** from Z6–Z4 to **Z9–Z4** (and allowed manual driving zoom and persisted `manualzoom` up to Z9 on standard Z6 map packs), widening the Adaptive Auto-zoom clamp to Z4–Z9. Default speed bands and hysteresis thresholds (`mph` / approx. `km/h`):
+  - **Z9:** `< 5 mph` (`< 8 km/h`), zooms out to Z8 at `≥ 6 mph` (`10 km/h`).
+  - **Z8:** `5 to < 12 mph` (`8–19 km/h`), zooms out to Z7 at `≥ 14 mph` (`23 km/h`), zooms in to Z9 at `≤ 4 mph` (`6 km/h`).
+  - **Z7:** `12 to < 25 mph` (`19–40 km/h`), zooms out to Z6 at `≥ 27 mph` (`43 km/h`), zooms in to Z8 at `≤ 10 mph` (`16 km/h`).
+  - **Z6:** `25 to < 45 mph` (`40–72 km/h`), zooms out to Z5 at `≥ 48 mph` (`77 km/h`), zooms in to Z7 at `≤ 23 mph` (`37 km/h`).
+  - **Z5:** `45 to < 65 mph` (`72–105 km/h`), zooms out to Z4 at `≥ 68 mph` (`109 km/h`), zooms in to Z6 at `≤ 42 mph` (`68 km/h`).
+  - **Z4:** `≥ 65 mph` (`≥ 105 km/h`), zooms in to Z5 at `≤ 62 mph` (`100 km/h`).
+- Preserved full sub-unit vertex precision at cropped zooms **Z7–Z9** (retaining all four fractional bits of Z6’s 12-bit road vertices) and placed street names beside visible screen-clipped road segments where there is room, avoiding the car marker, HUD cards, clipped route geometry and temporary bottom street-name pill (refreshing once on handoff) and deduplicating full-length road names. Works with existing map packs.
+- Tightened **View diversion** / **View route** Explore framing to use the full `480 × 272` viewport (`448 × 240` fit box up to Z9, visually centred vertically) instead of dropping out prematurely.
+- Added `--only` / `--gif` and `--list` support to `tools/regenerate_gifs.py`, `tools/render_previews.py` and `tools/render_mapless_gifs.py` so individual demo GIFs can be re-rendered in seconds (merging cleanly into `docs/demo/manifest.json`), and regenerated all 33 demo GIFs with Auto zoom enabled at road-matched driving speeds (or `0 mph` / Z9 for stationary workflows).
+
 ## Version 2.2.4 — Release
 
 - Added **expanded local on-device machine learning** in a fixed-capacity, integer-only companion model (`clio843/mobility-ml.dat`, `MML1`, ~26 KiB, FNV-1a checksummed atomic saves, strictly opt-in under **Learn driving history** and wiped by **Clear driving history**, with zero cloud or telemetry):

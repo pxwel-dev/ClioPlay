@@ -80,13 +80,20 @@ Build and copy the current executables as described in [BUILDING.md](../../BUILD
 With Pillow and a host C/C++ compiler, run from `src/`:
 
 ```sh
+# Regenerate all published GIFs
 python3 tools/regenerate_gifs.py --maps /path/to/clio843/maps
+
+# Regenerate one or more individual GIFs (updates manifest.json in place)
+python3 tools/regenerate_gifs.py --maps /path/to/clio843/maps --only v223-view-diversion
+python3 tools/regenerate_gifs.py --maps /path/to/clio843/maps --list
+
 python3 tools/refresh_latest.py
 ```
 
-Without maps, `python3 tools/regenerate_gifs.py` produces only seven quick
-mapless previews. Use the full map-backed command above before publication;
-it refreshes all GIFs and the provenance manifest.
+Without maps, `python3 tools/regenerate_gifs.py` produces only the mapless
+previews (also supporting `--only` and `--list`). Use the full map-backed
+command above before publication; it refreshes all GIFs and the provenance
+manifest.
 
 The [manifest](manifest.json) records preview, source and executable hashes.
 The map bundle is read in place. Captured PNGs, raw framebuffers and host
