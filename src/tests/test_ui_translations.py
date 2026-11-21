@@ -47,6 +47,7 @@ class TranslationCoverage(unittest.TestCase):
                              r'const char\*names\[\]\s*=\s*\{("Itinerary"[^}]+)\}',
                              r'options\[\d+\]\s*=([^;]+);'],
             'popups.h': [r'const char\*options\[\]\s*=\s*\{([^}]+)\}'],
+            'gps_panel.h': [r'const char\*titles\[3\]\s*=\s*\{([^}]+)\}'],
         }
         for file, patterns in indirect.items():
             for pattern in patterns:

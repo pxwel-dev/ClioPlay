@@ -182,6 +182,8 @@ The example contains the contributor’s conservative bindings; it disables LIGH
 and REPEAT and maps DEST to Menu. Change `btn6=THEME`, `btn7=INFO`, `btn8=TRIP`
 and `btn4=INFO` to keep the integrated defaults. Actions accept upper/lower case;
 `ROTNEXT`/`ROTPREV` or `knob+`/`knob-` select contextual knob movement.
+`GPS` opens the GPS panel and closes it again; for example, `btn7=GPS` puts it
+on REPEAT.
 `NONE` disables a control. Add `verbose=1` for interpreted console-field logging
 while Debug is enabled. File edits, including same-size edits, reload within
 five seconds; invalid/oversize files keep the last valid bindings. Deleting the
@@ -283,7 +285,7 @@ At **Z7–Z9**, roads preserve all four fractional bits of Z6’s 12-bit tile co
 
 ### Menu, Trip and Bluetooth
 
-- **Menu:** use **Up / Down** to choose Trip, Bluetooth or Settings. Press **OK**
+- **Menu:** use **Up / Down** to choose Trip, Bluetooth, Settings or GPS. Press **OK**
   to open it or **BACK** to return to driving. From a page, **MENU** or **BACK**
   returns to Menu. **MAP** goes directly to the driving map.
 - **Trip:** always opens **Itinerary** first. Use **Left / Right** to cycle
@@ -309,6 +311,18 @@ At **Z7–Z9**, roads preserve all four fractional bits of Z6’s 12-bit tile co
   select it and press **OK** to start pairing. **Up / Down** or the knob
   selects a device, **OK** opens its Connect/Disconnect and Forget actions, and
   **Up / Down** selects the action. **OK** confirms; **BACK** returns to the list.
+- **GPS:** a live information panel. A large compass on the left shows the
+  heading as a light red arrow. Beside it are the GPS time to the second and
+  three columns: **Heading** in degrees with N/NE/E…, estimated horizontal
+  **Accuracy** with the satellite count, and **Altitude** above sea level. The
+  position runs along the bottom in marine degrees and decimal minutes, for
+  example `47° 29.887' N   019° 02.420' E`. When the car stops, the heading and
+  arrow hold the last course, as the map does; without a fix the values show
+  `--` and the bottom row reads **No fix**. Accuracy uses the receiver's `$GPGST` error estimate when present,
+  otherwise HDOP × 5 m; green, amber and red mark up to 5 m, up to 15 m and
+  worse. Accuracy and altitude follow the Metric/Imperial setting. **BACK**
+  returns to Menu. A console button mapped to `GPS` opens the panel directly;
+  the same button or **BACK** then closes it.
 
 All these pages are animated frosted-glass sheets over the live map. Menu,
 Settings, Bluetooth, Trip, coordinates and review use compact sheets between

@@ -45,6 +45,10 @@ static void console_protocol(void){
  write_text(CSW_MAP_PATH,"btn5=OK\n");csw_config_load();assert(csw.map[4]==K_ENTER);
  write_text(CSW_MAP_PATH,"btn5=NOPE\n");csw_config_load();assert(csw.map[4]==K_ENTER);
  s_unlink(CSW_MAP_PATH);csw_config_load();assert(csw.map[4]==K_MENU);
+ /* The GPS panel action can be bound to any button, e.g. Repeat (BTN7). */
+ char gps_map[]="btn7=gps\n";assert(csw_parse_config(gps_map,map,&verbose)&&map[6]==K_CONSOLE_GPS);
+ write_text(CSW_MAP_PATH,"btn7=GPS\n");csw_config_load();memset(b,255,sizeof(b));put32(b,7);csw_record(b,9000);assert(csw_next()==K_CONSOLE_GPS&&!csw_next());
+ s_unlink(CSW_MAP_PATH);csw_config_load();assert(csw.map[6]==K_CONSOLE_INFO);
  puts("Console protocol: buttons with garbage tails, release/hold edges, neutral suppression, detents, framing, queue bounds and atomic same-size config reload passed.");
 }
 static void console_ui(void){
@@ -63,6 +67,11 @@ static void console_ui(void){
  hud_driver_prepare(hud_now_ms());
  assert(hud_tween[HC_ROAD_NAME].target.box.a&&streq(hud_tween[HC_ROAD_NAME].target.title,"Quayside"));
  gps.fix=roadctx.valid=0;
+ /* GPS action toggles its panel, BACK closes it, and it replaces an open sheet. */
+ key_handle(K_CONSOLE_GPS);assert(sheet_page==P_GPS&&screen==SCR_GPS);key_handle(K_CONSOLE_GPS);assert(screen==SCR_MAP);
+ key_handle(K_CONSOLE_GPS);key_handle(K_BACK);assert(screen==SCR_MAP);
+ key_handle(K_CONSOLE_TRIP);key_handle(K_CONSOLE_GPS);assert(sheet_page==P_GPS);key_handle(K_BACK);assert(screen==SCR_MAP);
+ modal=MOD_RESUME_TRIP;key_handle(K_CONSOLE_GPS);assert(modal==MOD_RESUME_TRIP&&screen==SCR_MAP);modal=MOD_NONE;
  modal=MOD_RESUME_TRIP;key_handle(K_CONSOLE_TRIP);assert(modal==MOD_RESUME_TRIP&&screen==SCR_MAP);modal=MOD_NONE;
  /* An evdev remote stays usable while the independent console queue runs. */
  int fds[2];assert(pipe(fds)==0);fcntl(fds[0],F_SETFL,O_NONBLOCK);

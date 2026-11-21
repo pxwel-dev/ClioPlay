@@ -20,15 +20,18 @@ static void test_hardware(void){
  hud_capture_clock=1;hud_capture_ms=10000;pref.language=0;
  screen=SCR_MAP;bt_control_mode=0;btui.connected=1;gps.fix=1;
  set_band("CD");assert(!bt_source_selected()&&!bt_controls_available());
- menu_reset(hud_now_ms());key_handle(K_MENU);assert(sheet_page==P_HOME&&menu_count(P_HOME)==2);
+ menu_reset(hud_now_ms());key_handle(K_MENU);assert(sheet_page==P_HOME&&menu_count(P_HOME)==3);
  key_handle(K_DOWN);assert(sheet_focus==1);key_handle(K_ENTER);assert(sheet_page==P_SETTINGS);
+ key_handle(K_BACK);key_handle(K_DOWN);assert(sheet_focus==2);key_handle(K_ENTER);assert(sheet_page==P_GPS);key_handle(K_BACK);assert(sheet_page==P_HOME);
  menu_open(P_PHONE,0,hud_now_ms());assert(sheet_page==P_HOME);
  screen=SCR_MAP;menu_sync(hud_now_ms());key_handle(K_BACK);assert(!bt_control_mode);
  pref.cameras=2;char b[96];assert(streq(setting_value(4,b),ui_tr("Visual")));
  set_focus=4;settings_key(K_RIGHT);assert(pref.cameras<2);
  hardware_file("  export hw_bluetooth='1'\n");
  hardware_load_bluetooth();assert(hw_bluetooth_enabled);
- menu_open(P_HOME,0,hud_now_ms());assert(menu_count(P_HOME)==3);
+ menu_open(P_HOME,0,hud_now_ms());assert(menu_count(P_HOME)==4);
+ /* GPS stays the last Home row with Bluetooth present. */
+ menu_open(P_HOME,3,hud_now_ms());key_handle(K_ENTER);assert(sheet_page==P_GPS&&screen==SCR_GPS);
 }
 static void test_clock_stays_outside(void){
  /* Mirror the time/temperature pairing when switching top HUD sides. */
