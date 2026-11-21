@@ -123,7 +123,7 @@ route recalculation clears route-local decisions. Normal off-route rerouting
 remains available. Verify road signs and conditions: historical travel times
 cannot predict incidents, closures, weather or current traffic.
 
-## Extended local learning (Version 2.2.4 — Unreleased)
+## Extended local learning (Version 2.2.4)
 
 When **Learn driving history** is enabled, ClioPlay also maintains a bounded,
 integer-only companion model (`clio843/mobility-ml.dat`, format `MML1`, ~26 KiB,
