@@ -3,7 +3,7 @@
 This history records implemented changes. Entries marked **Unreleased** are prepared locally and have not been published.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
 
-## Version 2.2.4 — Unreleased
+## Version 2.2.4 — Release
 
 - Added **expanded local on-device machine learning** in a fixed-capacity, integer-only companion model (`clio843/mobility-ml.dat`, `MML1`, ~26 KiB, FNV-1a checksummed atomic saves, strictly opt-in under **Learn driving history** and wiped by **Clear driving history**, with zero cloud or telemetry):
   - **Personal road-class & cold-weather ETA calibration:** learns per-road-class and roundabout travel-time multipliers with Bayesian shrinkage to calibrate unfamiliar roads, plus separate cold-weather profiles whenever vehicle exterior temperature is `<= 3 °C`.
