@@ -184,6 +184,7 @@ static void render_present(void){
   }
   for(int row=0;row<H;row++)current[row]=prepared->rows[row];
   hud_diversion_invited=prepared->diversion;hud_suggestion_invited=prepared->suggestion;
+  hud_parking_invited=prepared->parking;hud_stop_invited=prepared->stop;
   hud_suggestion_place=prepared->place;paint_at=prepared->at;
  }else render_paint_overlay(now,current);
  menu_note_presented(paint_at);popup.presented_at=paint_at;

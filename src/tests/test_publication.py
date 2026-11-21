@@ -56,6 +56,7 @@ class PublicationTest(unittest.TestCase):
             for name in ('src/docs/next-release/atlas-verification.json',
                          'src/build/fixture/private.txt', 'src/clio843/prefs.ini',
                          'src/clio843/mobility-places.dat', 'src/clio843/mobility-places.tmp',
+                         'src/clio843/mobility-ml.dat', 'src/clio843/mobility-ml.tmp',
                          '.env', 'src/navigation-builder/.cache/token'):
                 p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text('private fixture')
             (root/'src/navigation-builder/.build').symlink_to(root/'src/build', target_is_directory=True)

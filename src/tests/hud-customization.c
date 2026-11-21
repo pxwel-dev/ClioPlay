@@ -96,11 +96,83 @@ static void test_prefs_and_geometry(void){
  assert(hud_tween[HC_SPEED].target.box.x==HUD_BOTTOM_MARGIN);
  assert(hud_tween[HC_TURN].target.box.x==HUD_TURN_X);
  assert(hud_tween[HC_TURN_NEXT].target.box.x==HUD_TURN_X&&hud_tween[HC_TURN_NEXT].target.box.a==256);
+ assert(hud_tween[HC_TURN_NEXT].target.box.h==HUD_TURN_NEXT_H);
+ /* Settle compact secondary pill, then expand smoothly for a follow-up roundabout
+  * so the 35x35 roundabout icon and exit number fit legibly with locked bottom edge. */
+ hud_settle_for_capture(hud_capture_ms+500);
+ nav_next_type=MAN_ROUNDABOUT;nav_next_exit=2;nav_next_m=110;
+ hud_driver_prepare(hud_capture_ms+520);
+ assert(hud_tween[HC_TURN_NEXT].target.box.h==HUD_TURN_NEXT_RBT_H);
+ assert(hud_tween[HC_TURN_NEXT].target.box.y+hud_tween[HC_TURN_NEXT].target.box.h+HUD_TURN_NEXT_GAP==HUD_BOTTOM_Y);
+ assert(streq(hud_tween[HC_TURN_NEXT].target.detail,"Take exit 2"));
+ for(u32 step=0;step<=320;step+=40){
+  struct HudBox pose=hud_pose(&hud_tween[HC_TURN_NEXT],hud_capture_ms+520+step);
+  assert(pose.y+pose.h==HUD_BOTTOM_Y-HUD_TURN_NEXT_GAP);
+ }
+ /* Render the expanded roundabout pill and verify both cyan roundabout strokes
+  * and white exit-number pixels appear inside the icon area. */
+ {
+  apply_palette(1);fill(0,0,W,H,C_MAP_BG);
+  hud_settle_for_capture(hud_capture_ms+900);
+  hud_draw_card(HC_TURN_NEXT,hud_capture_ms+900);
+  struct HudBox rb=hud_tween[HC_TURN_NEXT].target.box;
+  int cyan_px=0,white_px=0;
+  for(int py=rb.y+2;py<rb.y+rb.h-2;py++)for(int px=rb.x+4;px<rb.x+42;px++){
+   u16 pix=fb[py*W+px];
+   if(pix==C_CYAN)cyan_px++;
+   if(pix==C_WHITE)white_px++;
+  }
+  assert(cyan_px>20&&white_px>4);
+ }
+ nav_next_type=MAN_LEFT;nav_next_exit=0;nav_next_m=90;
+ hud_driver_prepare(hud_capture_ms+920);
+ assert(hud_tween[HC_TURN_NEXT].target.box.h==HUD_TURN_NEXT_H);
  /* Render both Day and Night frames with the secondary pill active, and verify
   * enter/exit motion never collides with HC_TURN and draw() refreshes glass cache. */
  for(int night=0;night<2;night++){
   apply_palette(night);fill(0,0,W,H,C_MAP_BG);
-  hud_settle_for_capture(hud_capture_ms+500);hud_draw_all(hud_capture_ms+500,1);
+  hud_settle_for_capture(hud_capture_ms+950);hud_draw_all(hud_capture_ms+950,1);
+ }
+ /* Map endpoint markers paint route-coloured rings for both intermediate stops and final destinations. */
+ {
+  apply_palette(1);fill(0,0,W,H,C_MAP_BG);
+  gps.lat=track_lat=5497800;gps.lon=track_lon=-161700;track_valid=1;
+  gps.course=track_course=display_course=0;display_course_valid=1;
+  freecam=1;cam_lat=5497800;cam_lon=-161700;freecam_zoom=5;map_tilt_q8=0;
+  trip.active=1;trip.count=2;trip.active_idx=0;route_status=R_IDLE;
+  trip.target[0].lat=5497860;trip.target[0].lon=-161700;
+  trip.target[1].lat=5497760;trip.target[1].lon=-161700;
+  nlbox=0;npoi=poi_visible=0;
+  draw_trip_markers(5);
+  int sx0,sy0,sx1,sy1,ring0=0,ring1=0;
+  world_to_screen(trip.target[0].lat,trip.target[0].lon,5,&sx0,&sy0);
+  world_to_screen(trip.target[1].lat,trip.target[1].lon,5,&sx1,&sy1);
+  for(int dy=-4;dy<=4;dy++)for(int dx=-4;dx<=4;dx++){
+   if(fb[(sy0+dy)*W+(sx0+dx)]!=C_MAP_BG)ring0++;
+   if(fb[(sy1+dy)*W+(sx1+dx)]!=C_MAP_BG)ring1++;
+  }
+  assert(ring0>10&&ring1>10);
+  assert(fb[sy0*W+sx0]==C_MAP_BG); /* intermediate stop has hollow centre */
+  assert(fb[sy1*W+sx1]!=C_MAP_BG); /* final destination has filled bullseye dot */
+  /* When a stop or destination targets a visible map POI, tint the POI icon in route
+   * colour and suppress the redundant overlapping circle dot. */
+  fill(0,0,W,H,C_MAP_BG);
+  npoi=0;poi_offer_at(sx1,sy1,7,64,trip.target[1].lat,trip.target[1].lon,1);
+  poi_reserve();assert(poi_visible==1);
+  poi_trip_prepare(5);assert(poi_trip_tinted[0]==1);
+  poi_render();
+  u16 poi_snap[16*16];
+  for(int dy=-8;dy<8;dy++)for(int dx=-8;dx<8;dx++)poi_snap[(dy+8)*16+(dx+8)]=fb[(sy1+dy)*W+(sx1+dx)];
+  draw_trip_markers(5);
+  int same_after_dot=1,route_px=0;
+  for(int dy=-8;dy<8;dy++)for(int dx=-8;dx<8;dx++){
+   u16 p=fb[(sy1+dy)*W+(sx1+dx)];
+   if(p!=poi_snap[(dy+8)*16+(dx+8)])same_after_dot=0;
+   if(p==C_ROUTE)route_px++;
+  }
+  assert(same_after_dot&&route_px>20);
+  npoi=poi_visible=0;memzero(poi_trip_tinted,sizeof(poi_trip_tinted));
+  freecam=0;trip.count=1;route_status=R_READY;
  }
  {
   u32 bg_before=hud_glass_background;

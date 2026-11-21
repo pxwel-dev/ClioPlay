@@ -26,6 +26,11 @@
 #define MOB_FAVE_TEMP "./clio843/mobility-places.tmp"
 #endif
 struct MobPoint {s32 lat,lon;};
+static u32 ml_chain_factor(struct MobPoint origin,struct MobPoint dest,u32 epoch);
+static void ml_commit_road_variance(u32 key,unsigned bucket,u32 prev_mean,u32 obs_ds,int had_prev);
+static void ml_commit_session(void);
+static void ml_session_reset(void);
+static void ml_clear(void);
 struct MobJourney {
  struct MobPoint origin,dest;
  u32 depart,serial,distance,duration;
@@ -196,9 +201,10 @@ static void mob_session_begin(u32 now,int have,s32 lat,s32 lon){
  mob_live.origin=(struct MobPoint){lat,lon};mob_recording=1;mob_predict_ms=0;
  mob_seen_generation=mob_rmc_generation;mob_raw_open();
  mob_raw_record(MOB_BEGIN,MOB_UNKNOWN,now,mob_live.origin,0,0);
+ ml_session_reset();
 }
 static void mob_stop_recording(void){mob_raw_close();mob_recording=mob_started=mob_origin_valid=mob_suggest_valid=0;mob_stage_n=0;}
-static void mob_clear(void){mob_stop_recording();mob_declined_n=0;mob_model_reset();s_unlink(MOB_HISTORY);s_unlink(MOB_PREV);s_unlink(MOB_MODEL);s_unlink(MOB_TEMP);mob_fave_reset();s_unlink(MOB_FAVE_FILE);s_unlink(MOB_FAVE_TEMP);}
+static void mob_clear(void){mob_stop_recording();mob_declined_n=0;mob_model_reset();s_unlink(MOB_HISTORY);s_unlink(MOB_PREV);s_unlink(MOB_MODEL);s_unlink(MOB_TEMP);mob_fave_reset();s_unlink(MOB_FAVE_FILE);s_unlink(MOB_FAVE_TEMP);ml_clear();}
 /* Called exactly once per RMC sentence, even if its position is invalid.
  * A valid RMC time may arrive before satellite position lock. */
 static void mob_rmc(u32 now,u32 epoch,int fix,s32 lat,s32 lon,int speed,int heading){
@@ -273,11 +279,13 @@ static void mob_stage_road(u32 key,u32 epoch,u32 ds){
 }
 static void mob_road_commit(void){
  for(unsigned i=0;i<mob_stage_n;i++){struct MobRoad*s=&mob_stage[i],*r=mob_road_find(s->key,s->bucket,1);if(!r)continue;
+  int had=r->count>0;u32 prev=r->mean_ds;
   unsigned n=r->count;if(n>20)n=20;
   /* Bounded exponential-like recency; an obsolete observation cannot own
    * the profile forever. */
   if(r->stamp&&mob.serial-r->stamp>128u)n=n>4?4:n;
   r->mean_ds=(r->mean_ds*n+s->mean_ds)/(n+1u);r->count=(u16)(n+1u);r->stamp=mob.serial;
+  ml_commit_road_variance(s->key,s->bucket,prev,s->mean_ds,had);
  }
 }
 /* Pooled same-hour fallback with no hardcoded weekday/weekend assumption.
@@ -312,6 +320,7 @@ static int mob_finish(u32 now){
   mob.serial++;mob_live.serial=mob.serial;mob.journey[mob.head]=mob_live;
   mob.head=(mob.head+1u)%MOB_JOURNEYS;if(mob.n<MOB_JOURNEYS)mob.n++;
   mob_road_commit();ok=mob_save();
+  if(ok)ml_commit_session();
  }
  mob_stop_recording();return ok;
 }
@@ -399,6 +408,7 @@ static u32 mob_journey_weight(const struct MobJourney*j,u32 epoch,unsigned day_s
  }else if(epoch!=MOB_UNKNOWN)w/=3u;
  unsigned age=mob.serial-j->serial;w=w*128u/(128u+(age>1024u?1024u:age));
  if(mob_started)w=w*mob_trace_weight(j)/100u;
+ w=w*ml_chain_factor(mob_live.origin,j->dest,epoch)/100u;
  return w;
 }
 static int mob_predict(u32 now){

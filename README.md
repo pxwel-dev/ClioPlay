@@ -1,6 +1,6 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
-<h1 align="center">ClioPlay 2.2.3</h1>
+<h1 align="center">ClioPlay 2.2.4</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
 <p align="center">
   Created and maintained by <a href="https://github.com/pxwel-dev">Pawel (pxwel-dev)</a>.
@@ -9,14 +9,15 @@
 
 <p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases/tag/Release">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-## Version 2.2.3
+## Version 2.2.4 (Unreleased)
 
-- **Offline Nearby POIs:** browse nearby **Fuel**, **Parking** and **Hospital** places offline from the new **Nearby** tab in Trip (or inside **Add stop** / **Change destination**), scanned directly from installed map tiles with distance sorting and antialiased category badges.
-- **Secondary manoeuvre cue:** closely spaced follow-up turns or roundabouts appear in a compact **Then …** frosted-glass pill docked above the Turn card and promote smoothly as you complete the current manoeuvre.
-- **View diversion on the map:** the **Take diversion?** confirmation now includes a **View diversion** button that opens Explore framed over the proposed bypass; press **MAP** to return and re-open the same confirmation.
-- **Instant Bluetooth updates:** AVRCP 1.3 `RegisterNotification` delivers track, playback-status and ClioPlay Send updates immediately instead of waiting for 1-second polling, falling back automatically on phones that do not support it.
-- **Faster cold boot & diagnostics:** regional atlases validate `atlas.cpa` graphs lazily on first routing use; Debug `FRAME 5S` logs now report `RSS_KB` and `FREE_KB` memory telemetry.
-- **Cleaner Itinerary scrolling & desktop tools:** scrollable itineraries centre visible stops cleanly and connect only consecutive visible stops on the same page; a new `tools/favourites_tool.py` CLI imports and exports Favourites and Recents via CSV, JSON and GPX.
+- **Expanded local on-device ML (100% offline, opt-in):** builds on driving-history learning via a bounded integer-only companion model (`mobility-ml.dat`, wiped by **Clear driving history**) adding personal road-class and cold-weather (`<= 3 °C`) ETA calibration, **`~X-Y min`** ETA reliability ranges, and subtle amber **Frequent slowdown ahead** / **Cold-weather slowdown ahead** braking alerts.
+- **Unambiguous Traffic Diversion vs Usual Route recommendations:** traffic bypasses highlight the slow section in yellow and announce **Traffic diversion available** → **Take traffic diversion?** (**Likely traffic ahead**, **View diversion**, **Diversion selected**), while learned road preferences keep the active route in its normal colour alongside the dashed teal usual road and announce **Usual route available** → **Use usual route?** (**Based on your usual route**, **View route**, **Usual route selected**), with off-route detours during active congestion prevented from polluting permanent route preferences.
+- **Trip chains, recurring stops, usual parking & preferred POIs:** improves destination prediction with dwell-time and multi-leg trip chains across reboots; offers explicit **Usual stop available** (**Add usual stop?**) and **Usual parking available** (**Route to usual parking?**) reviews; and marks preferred Fuel/Parking/Hospital stations with a cyan star in **Trip → Nearby**.
+- **Map endpoint markers, route-coloured destination POIs & expandable roundabout secondary manoeuvre:** draws route-coloured endpoint rings on every active/upcoming stop and a bullseye ring on the final destination — and when heading directly to a map POI (Parking, Fuel or Hospital), tints the POI badge itself in the route colour instead of drawing a circle over it; expands the **Then …** secondary manoeuvre pill smoothly from `24 px` to `43 px` for follow-up roundabouts so the full roundabout icon and exit number stay legible while remaining compact for normal turns.
+- **Adaptive Auto-zoom & Day/Night brightness:** learns consistent per-speed-band Auto-zoom adjustments (`±1` level, clamped Z4–Z6) and remembers separate Day and Night brightness levels applied automatically on **Auto** theme switches.
+- **Offline history replay & map-rebuild migration:** new `tools/replay_history.py` desktop CLI replays raw `history.dat` traces onto newly rebuilt single-pack or multi-region `atlas.cpa` maps with pure-Python DBSCAN endpoint denoising while keeping all personal data strictly local.
+- **Carried forward from 2.2.3:** offline Nearby POIs, **View diversion** Explore preview, AVRCP 1.3 instant Bluetooth notifications, lazy regional atlas validation, centred scrollable Itinerary connectors and `tools/favourites_tool.py`.
 
 See [version history](CHANGELOG.md) for implemented changes by version.
 
@@ -26,9 +27,17 @@ See [intelligent navigation](src/docs/intelligent-navigation.md) for configurati
 
 See the [full preview index](src/docs/demo/README.md) for all animations.
 
-| Offline Nearby POIs | Secondary manoeuvre cue |
+| Usual route & calibrated ETA ranges | Frequent & cold-weather slowdown alerts |
 | --- | --- |
-| ![Browse nearby hospitals and fuel stations offline in Newcastle and add a stop to the itinerary](src/docs/demo/v223-nearby-pois.gif) | ![Chained roundabout and follow-up right turn showing the compact Then pill and smooth promotion](src/docs/demo/v223-secondary-manoeuvre.gif) |
+| ![Clear-road Durham route showing calibrated ETA reliability range, Usual route available with normal active route colour plus dashed teal alternative, and Use usual route? confirmation](src/docs/demo/v224-ml-eta-and-habits.gif) | ![Real York route showing warm Frequent slowdown ahead alert, deduplication, silence on a cold-only spot at 18 C, Cold-weather slowdown ahead at 1 C and winter-calibrated ETA](src/docs/demo/v224-ml-slowdowns.gif) |
+
+| Usual parking, recurring stops & preferred POIs | Adaptive Auto-zoom & Day/Night brightness |
+| --- | --- |
+| ![Usual parking review with route-coloured Parking POI highlight, recurring intermediate stop ring and preferred Fuel POI star ranking in Newcastle](src/docs/demo/v224-ml-parking-and-pois.gif) | ![Adaptive Auto-zoom learning speed-band preferences and Auto Day-to-Night theme transition automatically applying learned brightness levels](src/docs/demo/v224-ml-adaptive-hud.gif) |
+
+| Offline Nearby POIs | Expandable secondary manoeuvre cue |
+| --- | --- |
+| ![Browse nearby hospitals and fuel stations offline in Newcastle and add a stop to the itinerary](src/docs/demo/v223-nearby-pois.gif) | ![Secondary Then pill expanding for a follow-up roundabout with exit number visible and staying compact for normal turns](src/docs/demo/v223-secondary-manoeuvre.gif) |
 
 | View and take a diversion | Destination prediction |
 | --- | --- |

@@ -232,5 +232,21 @@
   "Fuel": "給油所",
   "Parking": "駐車場",
   "Hospital": "病院",
-  "No nearby places found": "周辺に場所がありません"
+  "No nearby places found": "周辺に場所がありません",
+  "Usual route available": "いつものルートあり",
+  "Based on your usual route": "いつものルートに基づく",
+  "Usual parking available": "いつもの駐車場あり",
+  "Route to usual parking?": "いつもの駐車場へ案内？",
+  "Usual parking selected": "いつもの駐車場を選択",
+  "Usual stop available": "いつもの経由地あり",
+  "Add usual stop?": "いつもの経由地を追加？",
+  "Frequent slowdown ahead": "この先減速が多い地点",
+  "Cold-weather slowdown ahead": "低温時は減速が多い地点",
+  "Traffic diversion available": "渋滞迂回ルートあり",
+  "Take traffic diversion?": "渋滞迂回ルートにしますか？",
+  "Usual route": "いつものルート",
+  "Use usual route?": "いつものルートを使いますか？",
+  "View route": "ルートを表示",
+  "Usual route selected": "いつものルートを選択",
+  "Route unavailable": "ルートを利用できません"
 }

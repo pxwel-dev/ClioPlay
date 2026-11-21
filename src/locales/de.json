@@ -232,5 +232,21 @@
   "Fuel": "Tankstelle",
   "Parking": "Parkplatz",
   "Hospital": "Krankenhaus",
-  "No nearby places found": "Keine Orte in der Nähe"
+  "No nearby places found": "Keine Orte in der Nähe",
+  "Usual route available": "Übliche Route verfügbar",
+  "Based on your usual route": "Basierend auf deiner üblichen Route",
+  "Usual parking available": "Üblicher Parkplatz verfügbar",
+  "Route to usual parking?": "Zum üblichen Parkplatz?",
+  "Usual parking selected": "Üblicher Parkplatz gewählt",
+  "Usual stop available": "Üblicher Stopp verfügbar",
+  "Add usual stop?": "Üblichen Stopp hinzufügen?",
+  "Frequent slowdown ahead": "Häufiges Abbremsen voraus",
+  "Cold-weather slowdown ahead": "Häufiges Abbremsen bei Kälte",
+  "Traffic diversion available": "Stauumfahrung verfügbar",
+  "Take traffic diversion?": "Stauumfahrung nehmen?",
+  "Usual route": "Übliche Route",
+  "Use usual route?": "Übliche Route nutzen?",
+  "View route": "Route zeigen",
+  "Usual route selected": "Übliche Route gewählt",
+  "Route unavailable": "Route nicht verfügbar"
 }

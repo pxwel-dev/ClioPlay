@@ -232,5 +232,21 @@
   "Fuel": "وقود",
   "Parking": "موقف سيارات",
   "Hospital": "مستشفى",
-  "No nearby places found": "لا توجد أماكن قريبة"
+  "No nearby places found": "لا توجد أماكن قريبة",
+  "Usual route available": "يتوفر مسارك المعتاد",
+  "Based on your usual route": "بناءً على مسارك المعتاد",
+  "Usual parking available": "يتوفر موقفك المعتاد",
+  "Route to usual parking?": "التوجيه للموقف المعتاد؟",
+  "Usual parking selected": "تم اختيار الموقف المعتاد",
+  "Usual stop available": "تتوفر محطة معتادة",
+  "Add usual stop?": "إضافة المحطة المعتادة؟",
+  "Frequent slowdown ahead": "تباطؤ متكرر أمامك",
+  "Cold-weather slowdown ahead": "تباطؤ متكرر بالطقس البارد",
+  "Traffic diversion available": "يتوفر مسار لتفادي الزحام",
+  "Take traffic diversion?": "اتخاذ مسار تفادي الزحام؟",
+  "Usual route": "المسار المعتاد",
+  "Use usual route?": "استخدام مسارك المعتاد؟",
+  "View route": "عرض المسار",
+  "Usual route selected": "تم اختيار المسار المعتاد",
+  "Route unavailable": "المسار غير متاح"
 }

@@ -8,7 +8,7 @@
 #define NEARBY_MAX 15
 #define NEARBY_MAX_DIST_M 12000u
 enum {NEARBY_CAT_FUEL=0,NEARBY_CAT_PARKING=1,NEARBY_CAT_HOSPITAL=2,NEARBY_CAT_COUNT=3};
-struct NearbyPoi {s32 lat,lon;u32 dist_m;u8 kind;char name[113];};
+struct NearbyPoi {s32 lat,lon;u32 dist_m;u8 kind,preferred;char name[113];};
 static struct NearbyPoi nearby_pois[NEARBY_MAX];
 static int nearby_count=0,nearby_category=0,nearby_status=0;
 
@@ -27,6 +27,9 @@ static int nearby_is_generic(const char*s){
  return !s||!s[0]||streq(s,"FUEL")||streq(s,"PARKING")||streq(s,"HOSPITAL");
 }
 static int nearby_before(const struct NearbyPoi*a,const struct NearbyPoi*b){
+ u32 ea=a->preferred?(a->dist_m>600u?a->dist_m-600u:0u):a->dist_m;
+ u32 eb=b->preferred?(b->dist_m>600u?b->dist_m-600u:0u):b->dist_m;
+ if(ea!=eb)return ea<eb;
  if(a->dist_m!=b->dist_m)return a->dist_m<b->dist_m;
  if(a->lat!=b->lat)return a->lat<b->lat;
  return a->lon<b->lon;
@@ -36,9 +39,12 @@ static void nearby_offer(s32 lat,s32 lon,u32 dist_m,u8 kind,const char*name){
  for(int i=0;i<nearby_count;i++){
   struct NearbyPoi*e=&nearby_pois[i];
   if(e->kind==kind&&iabs32(lat-e->lat)<=65&&iabs32(lon-e->lon)<=110&&geo_seg_m(lat,lon,e->lat,e->lon)<=65u){
-   if(nearby_is_generic(e->name)&&!nearby_is_generic(name))copystr(e->name,sizeof(e->name),name);
-   if(dist_m<e->dist_m){
-    e->lat=lat;e->lon=lon;e->dist_m=dist_m;
+   int changed=0;
+   if(nearby_is_generic(e->name)&&!nearby_is_generic(name)){copystr(e->name,sizeof(e->name),name);changed=1;}
+   if(dist_m<e->dist_m){e->lat=lat;e->lon=lon;e->dist_m=dist_m;changed=1;}
+   u8 np=ml_poi_affinity(kind,e->lat,e->lon,e->name)>=2u?1u:0u;
+   if(np!=e->preferred){e->preferred=np;changed=1;}
+   if(changed){
     while(i>0&&nearby_before(&nearby_pois[i],&nearby_pois[i-1])){
      struct NearbyPoi tmp=nearby_pois[i-1];nearby_pois[i-1]=nearby_pois[i];nearby_pois[i]=tmp;i--;
     }
@@ -48,6 +54,7 @@ static void nearby_offer(s32 lat,s32 lon,u32 dist_m,u8 kind,const char*name){
  }
  struct NearbyPoi p;p.lat=lat;p.lon=lon;p.dist_m=dist_m;p.kind=kind;
  copystr(p.name,sizeof(p.name),name&&name[0]?name:(kind==6?"FUEL":kind==7?"PARKING":"HOSPITAL"));
+ p.preferred=ml_poi_affinity(kind,lat,lon,p.name)>=2u?1u:0u;
  int at=0;
  while(at<nearby_count&&!nearby_before(&p,&nearby_pois[at]))at++;
  if(at>=NEARBY_MAX)return;
@@ -98,7 +105,7 @@ static void nearby_scan(int cat){
    u32 ew_u=(u32)lon_scale((s32)gap,cq);
    u32 ew_m=udiv32(ew_u*111u,100u);
    u32 min_ring_m=ns_m<ew_m?ns_m:ew_m;
-   if(min_ring_m>nearby_pois[NEARBY_MAX-1].dist_m)break;
+   if(min_ring_m>nearby_pois[NEARBY_MAX-1].dist_m+600u)break;
   }
   for(int dy=-r;dy<=r;dy++)for(int dx=-r;dx<=r;dx++){
    if(r>0&&dy>-r&&dy<r&&dx>-r&&dx<r)continue;
