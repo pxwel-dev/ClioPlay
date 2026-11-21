@@ -232,5 +232,21 @@
   "Fuel": "Пальне",
   "Parking": "Паркування",
   "Hospital": "Лікарня",
-  "No nearby places found": "Поблизу місць не знайдено"
+  "No nearby places found": "Поблизу місць не знайдено",
+  "Usual route available": "Доступний звичний маршрут",
+  "Based on your usual route": "На основі звичного маршруту",
+  "Usual parking available": "Доступна звична парковка",
+  "Route to usual parking?": "Їхати на звичну парковку?",
+  "Usual parking selected": "Вибрано звичну парковку",
+  "Usual stop available": "Доступна звична зупинка",
+  "Add usual stop?": "Додати звичну зупинку?",
+  "Frequent slowdown ahead": "Часте гальмування попереду",
+  "Cold-weather slowdown ahead": "Часте гальмування в холод",
+  "Traffic diversion available": "Доступний об'їзд заторів",
+  "Take traffic diversion?": "Обрати об'їзд заторів?",
+  "Usual route": "Звичний маршрут",
+  "Use usual route?": "Обрати звичний маршрут?",
+  "View route": "Показати маршрут",
+  "Usual route selected": "Звичний маршрут обрано",
+  "Route unavailable": "Маршрут недоступний"
 }

@@ -339,7 +339,7 @@ static void two_diversions(void){
  assert(hud_tween[HC_STATUS].target.flags&HUD_KEYS);assert(!hud_diversion_shortcut_ready());
  /* The one-line invitation does not grow, collapse or replay after time. */
  struct HudCard initial=hud_tween[HC_STATUS].target;
- assert(streq(initial.traffic_title,"Faster route available")&&!initial.traffic_detail[0]);
+ assert(streq(initial.traffic_title,"Traffic diversion available")&&!initial.traffic_detail[0]);
  hud_capture_ms+=60000u;hud_prepare(5,hud_now_ms(),1);
  assert(hud_tween[HC_STATUS].target.box.h==initial.box.h);
  assert(streq(hud_tween[HC_STATUS].target.traffic_hint,"BACK to review"));
@@ -353,7 +353,8 @@ static void two_diversions(void){
  assert(hud_diversion_shortcut_ready());
  key_handle(K_CONSOLE_INFO);assert(screen==SCR_MAP&&hud_navigation.kind==HUD_JOURNEY);
  pref.autozoom=1;zoom_override=5;
- key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&sheet_focus==0&&confirm_diversion_map);
+ key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&sheet_focus==0&&confirm_diversion_map&&confirm_diversion_kind==0);
+ assert(streq(menu_title(P_CONFIRM),"Take traffic diversion?"));
  assert(menu_count(P_CONFIRM)==3&&menu_box(P_CONFIRM).h==122);
  /* D-pad Down jumps from Yes/No to View diversion and Up restores the top row;
   * console rotary cycles all three choices. */
@@ -410,7 +411,7 @@ static void two_diversions(void){
  traffic_offer_serial++;key_handle(K_ENTER);assert(screen==SCR_MAP&&traffic_offer_valid()&&route_n==7);
  hud_capture_ms+=500;hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
  assert(hud_diversion_shortcut_ready());key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&sheet_focus==0);
- key_handle(K_ENTER);assert(screen==SCR_MAP&&zoom_override==5);assert(!traffic_offer_valid()&&route_n==8&&route_node[5]==8);
+ key_handle(K_ENTER);assert(screen==SCR_MAP&&zoom_override==5&&streq(notice_text,"Diversion selected"));assert(!traffic_offer_valid()&&route_n==8&&route_node[5]==8);
  assert(traffic_segment_declined(2)&&!traffic_segment_declined(3)&&traffic_segment_declined(5));
  traffic_scan(1200);assert(!traffic_searching&&!traffic_offer_valid());
  traffic_invalidate();assert(!traffic_segment_declined(2)&&!traffic_segment_declined(5));
@@ -429,4 +430,183 @@ static void shared_geometry(void){
  route_head=1;assert(traffic_offer_valid());route_head=2;assert(!traffic_offer_valid());
  traffic_invalidate();route_head=0;
 }
-int main(void){(void)load_font();learner();predictor_quality();prediction_names();prediction_ui();frequent_places();shared_geometry();tiny_graph();two_diversions();puts("Mobility recording, contextual predictor, session dismissal, startup and trajectory evidence, map confirmation, offline names, frequent-place prompts and persistence, road profiles and diversion regressions passed.");return 0;}
+static void ml_features(void){
+ mob_clear();ml_reset();
+ pref.learn_history=pref.destination_predictions=pref.diversions=1;
+ u32 ep=mob_epoch(2026,1,12,8,30,0);
+ mob_current_epoch=ep;mob_clock_ms=100;
+ /* 1 & 7: Per-road-class ETA calibration + cold-weather multiplier */
+ car.tempok=1;car.temp=18;assert(!ml_is_cold());
+ for(int i=0;i<5;i++){
+  mob_recording=mob_started=1;
+  ml_stage_class(3,0,1000,1250,0);
+  ml_commit_classes();ml_session_reset();
+ }
+ u32 warm_q8=ml_class_factor_q8(3,0,0);assert(warm_q8>270u&&warm_q8<340u);
+ car.temp=1;assert(ml_is_cold());
+ for(int i=0;i<4;i++){
+  mob_recording=mob_started=1;
+  ml_stage_class(3,0,1000,1450,1);
+  ml_commit_classes();ml_session_reset();
+ }
+ u32 cold_q8=ml_class_factor_q8(3,0,1);assert(cold_q8>warm_q8);
+ pref.learn_history=0;assert(ml_class_factor_q8(3,0,1)==256u);pref.learn_history=1;
+ /* 2: Dwell-time & multi-leg trip chains + recurring intermediate stops */
+ struct MobPoint home={5497000,-161000},shop={5497800,-161000},work={5499200,-161000};
+ mob.serial=10;
+ for(int i=0;i<4;i++)ml_record_chain(home,shop,work,ml_dwell_bucket(1200u));
+ mob_live.origin=shop;mob_ml.last_origin=home;mob_ml.last_dest=shop;
+ mob_ml.last_arrival=ep-1200u;mob_ml.last_valid=1;
+ assert(ml_chain_factor(shop,work,ep)>=140u);
+ mob_ml.last_arrival=ep-25000u; /* wrong dwell bucket (>5h) */
+ assert(ml_chain_factor(shop,work,ep)<=100u);
+ /* Recurring intermediate stop habit (optional extension to #2) */
+ for(int i=0;i<3;i++)ml_record_stop_habit(home,shop,work,ep,"COFFEE SHOP");
+ struct MobStopHabit sh;assert(ml_usual_stop_for(home,work,ep,&sh)&&streq(sh.name,"COFFEE SHOP"));
+ mob_origin_valid=1;mob_live.origin=home;gps.fix=1;gps.lat=track_lat=home.lat;gps.lon=track_lon=home.lon;track_valid=1;
+ hud_capture_clock=1;hud_capture_ms=100;
+ set_destination("WORK",work.lat,work.lon);
+ route_status=R_READY;screen=SCR_MAP;freecam=0;modal=MOD_NONE;bt_control_mode=0;
+ assert(ml_stop_valid&&!ml_park_valid);
+ hud_reset_animations();hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
+ assert(streq(hud_tween[HC_STATUS].target.title,"Usual stop available")&&hud_stop_shortcut_ready());
+ key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&confirm_kind==7&&sheet_focus==0);
+ key_handle(K_ENTER);assert(screen==SCR_MAP&&trip.count==2&&streq(trip.target[0].name,"COFFEE SHOP"));
+ /* Declining a usual stop suppresses it for the rest of the session. */
+ clear_trip();set_destination("WORK",work.lat,work.lon);route_status=R_READY;
+ assert(ml_stop_valid);hud_reset_animations();hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
+ key_handle(K_ENTER);key_handle(K_RIGHT);key_handle(K_ENTER);assert(!ml_stop_valid&&trip.count==1);
+ set_destination("WORK",work.lat,work.lon);assert(!ml_stop_valid);
+ clear_trip();
+ /* 4: Online MAD variance & ETA range formatting */
+ unsigned bk=mob_bucket(ep);
+ ml_commit_road_variance(777u,bk,3000u,5400u,1);
+ ml_commit_road_variance(777u,bk,3600u,5800u,1);
+ ml_commit_road_variance(777u,bk,4200u,6600u,1);
+ assert(ml_road_mad(777u,ep)>=2000u);
+ route_result_cost=6000u;route_result_m=3218u;atlas_future_cost=0;atlas_future_m=0;
+ ml_route_var_ds=2400u;traffic_eta_revision=0xffffffffu;
+ char jbuf[96];hud_journey_text(jbuf,sizeof(jbuf));
+ assert(strstr(jbuf,"-")!=0&&strstr(jbuf,"min")!=0);
+ pref.learn_history=0;hud_journey_text(jbuf,sizeof(jbuf));assert(strstr(jbuf,"-")==0);pref.learn_history=1;
+ ml_route_var_ds=0;
+ /* 5: Adaptive auto-zoom & Day/Night brightness */
+ pref.autozoom=1;
+ for(int i=0;i<4;i++){memzero(ml_zoom_nudged,sizeof(ml_zoom_nudged));ml_note_zoom_override(120,1);ml_note_zoom_override(500,-1);}
+ assert(ml_autozoom_offset(120)==1&&ml_autozoom_offset(500)==-1);
+ gps.mph10=500;auto_zoom_level=4;assert(speed_auto_zoom()==4); /* clamped at 4 */
+ gps.mph10=300;auto_zoom_level=5;assert(speed_auto_zoom()==5);
+ ml_note_brightness(0,90);ml_note_brightness(0,90);
+ ml_note_brightness(1,30);ml_note_brightness(1,30);
+ assert(ml_learned_brightness(0)==90&&ml_learned_brightness(1)==30);
+ pref.theme=THEME_AUTO;theme_resolved=0;pref.bright=80;
+ gps.hour=23;gps.min=0;pref.day_start=420;pref.night_start=1200;pref.hoff=0;pref.moff=0;
+ refresh_theme();assert(theme_resolved==1&&pref.bright==30);
+ gps.hour=12;refresh_theme();assert(theme_resolved==0&&pref.bright==90);
+ /* 6: Nearby POI affinity & Usual Parking spot */
+ ml_record_poi_use(6,5497200,-161000,"SHELL");
+ ml_record_poi_use(6,5497200,-161000,"SHELL");
+ assert(ml_poi_affinity(6,5497200,-161000,"SHELL")>=2u);
+ struct NearbyPoi p_shell={5497200,-161000,1400u,6,1,"SHELL"};
+ struct NearbyPoi p_bp={5497100,-161000,1000u,6,0,"BP"};
+ struct NearbyPoi p_esso={5497050,-161000,500u,6,0,"ESSO"};
+ assert(nearby_before(&p_shell,&p_bp)&&nearby_before(&p_esso,&p_shell));
+ struct MobPoint park={5499450,-161000}; /* ~275 m from work */
+ for(int i=0;i<3;i++)ml_record_parking(work,park);
+ set_destination("WORK",work.lat,work.lon);route_status=R_READY;
+ assert(ml_park_valid);
+ hud_reset_animations();hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
+ assert(streq(hud_tween[HC_STATUS].target.title,"Usual parking available")&&hud_parking_shortcut_ready());
+ key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&confirm_kind==6&&sheet_focus==0);
+ key_handle(K_ENTER);assert(screen==SCR_MAP&&trip.target[0].lat==park.lat&&trip.target[0].lon==park.lon);
+ clear_trip();
+ /* 8: Repeat hard-braking / slowdown detection (warm & cold) */
+ car.tempok=1;car.temp=15;
+ for(int i=0;i<3;i++){
+  mob_recording=mob_started=1;ml_prev_speed=-1;ml_prev_speed_ms=0;
+  ml_observe_decel(1000,280,991u,5497500,-161000);
+  ml_observe_decel(2000,140,991u,5497550,-161000);
+  ml_commit_hazards();ml_session_reset();
+ }
+ assert(ml_hazard_level(991u,0)==1);
+ car.temp=1;
+ for(int i=0;i<2;i++){
+  mob_recording=mob_started=1;ml_prev_speed=-1;ml_prev_speed_ms=0;
+  ml_observe_decel(1000,260,992u,5497600,-161000);
+  ml_observe_decel(2000,120,992u,5497650,-161000);
+  ml_commit_hazards();ml_session_reset();
+ }
+ assert(ml_hazard_level(992u,0)==0&&ml_hazard_level(992u,1)==2);
+ /* 3: Preferred-route ("Usual route available") diversion offer on small graph */
+ {
+  struct PrefGraph {
+   struct CprNode node[5];u32 edge[5];struct CprBase base[5];struct CprArc arc[5];struct CprPoint geom[10];u32 way[5][2];
+  } g;
+  memzero(&g,sizeof(g));
+  struct CprPoint pts[5]={{5497000,-161000},{5497200,-161000},{5497600,-161000},{5497900,-161000},{5497400,-160700}};
+  for(int i=0;i<5;i++){g.node[i].lat=pts[i].lat;g.node[i].lon=pts[i].lon;g.node[i].comp=1;}
+  u32 from[5]={0,1,2,1,4},to[5]={1,2,3,4,2},cost[5]={400,1000,400,600,600};
+  for(int i=0;i<5;i++){
+   g.geom[i*2]=pts[from[i]];g.geom[i*2+1]=pts[to[i]];
+   g.base[i]=(struct CprBase){cost[i],(u32)(i*2),0,to[i],2,0,3,0,0};
+   g.arc[i]=(struct CprArc){from[i],to[i],cost[i],(u32)i,0,3,0,0};
+   g.way[i][0]=300u+(u32)i;g.way[i][1]=0;
+  }
+  int en=0;for(int v=0;v<5;v++){g.node[v].first_edge=(u32)en;for(int i=0;i<5;i++)if(to[i]==(u32)v)g.edge[en++]=(u32)i;g.node[v].edge_count=(u16)((u32)en-g.node[v].first_edge);}
+  FILE*f=tmpfile();assert(f&&fwrite(&g,sizeof(g),1,f)==1&&!fflush(f));routefd=fileno(f);
+  memzero(&rh,sizeof(rh));routeok=1;rh.flags=2;rh.nodes=5;rh.route_edges=rh.base_edges=rh.ch_arcs=5;rh.geom_points=10;
+  rh.node_off=offsetof(struct PrefGraph,node);rh.edge_off=offsetof(struct PrefGraph,edge);
+  rh.base_off=offsetof(struct PrefGraph,base);rh.arc_off=offsetof(struct PrefGraph,arc);rh.geom_off=offsetof(struct PrefGraph,geom);
+  route_geom_map_ok=0;cpr_bcache_count=0;memzero(cpr_acache_count,sizeof(cpr_acache_count));memzero(cpr_gcache_count,sizeof(cpr_gcache_count));
+  traffic_invalidate();route_status=R_READY;route_head=0;route_n=4;route_dest_comp=1;route_result_cost=1800;route_result_m=990;
+  for(int i=0;i<4;i++){
+   route_lat[i]=pts[i].lat;route_lon[i]=pts[i].lon;route_node[i]=(u32)i;
+   route_seg_arc[i]=i?(u32)(i-1):ROUTE_NOARC;route_seg_cost[i]=i?cost[i-1]:0;
+   route_seg_m[i]=i?geo_seg_m(pts[i-1].lat,pts[i-1].lon,pts[i].lat,pts[i].lon):0;
+   route_seg_phys[i]=i?2u*(u32)(i-1):ROUTE_NOARC;
+  }
+  u32 k_avoid=traffic_key_for_arc(1,0),k_pref1=traffic_key_for_arc(3,0),k_pref2=traffic_key_for_arc(4,0);
+  assert(k_avoid&&k_pref1&&k_pref2);
+  for(int i=0;i<3;i++){
+   mob_recording=mob_started=1;
+   ml_stage_pref_arc(k_avoid,-10);ml_stage_pref_arc(k_pref1,10);ml_stage_pref_arc(k_pref2,10);
+   ml_commit_pref_arcs();ml_session_reset();
+  }
+  assert(ml_pref_score(k_avoid)<=-30&&ml_pref_score(k_pref1)>=30);
+  /* Off-route detours during an active traffic warning or known-slow arc must NOT pollute pref_arcs. */
+  mob_recording=mob_started=1;ml_session_reset();
+  gps.lat=route_lat[0];gps.lon=route_lon[0];gps.mph10=200;
+  gps.course=track_course=display_course=nav_heading10(route_lat[0],route_lon[0],route_lat[1],route_lon[1]);display_course_valid=1;
+  traffic_warn=1;traffic_slow_end=3;
+  traffic_note_offroute_avoidance();assert(ml_stage_pref_n==0);
+  traffic_warn=0;traffic_slow_end=-1;
+  traffic_note_offroute_avoidance();assert(ml_stage_pref_n>0&&ml_stage_pref[0].key==traffic_key_for_arc(0,0)&&ml_stage_pref[0].delta==-10);
+  ml_session_reset();
+  /* Usual-route offer uses dedicated non-ambiguous wording throughout popup, preview, and toasts. */
+  traffic_scan(100);assert(traffic_searching&&traffic_search_kind==1);
+  for(int i=0;i<50&&traffic_searching;i++)traffic_search_step(100u+(u32)i*10u);
+  assert(traffic_offer_valid()&&ml_offer_kind==1);
+  /* Usual-route proposals keep the active route in normal colour (no yellow traffic slot). */
+  for(int i=1;i<route_n;i++)assert(route_overlay_slot(i,1)==0);
+  ml_offer_kind=0;assert(route_overlay_slot(traffic_begin_idx+1,1)==1);ml_offer_kind=1;
+  hud_reset_animations();hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
+  assert(streq(hud_tween[HC_STATUS].target.title,"Usual route available")&&hud_diversion_shortcut_ready());
+  key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&confirm_kind==3&&confirm_diversion_kind==1&&streq(menu_title(P_CONFIRM),"Use usual route?"));
+  key_handle(K_DOWN);assert(sheet_focus==2);key_handle(K_ENTER);
+  assert(freecam&&diversion_preview_active&&diversion_preview_kind==1);
+  traffic_offer_serial++;key_handle(K_MAP);
+  assert(!freecam&&!diversion_preview_active&&streq(notice_text,"Route unavailable"));
+  hud_reset_animations();hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
+  key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&confirm_kind==3&&confirm_diversion_kind==1);
+  key_handle(K_ENTER);assert(screen==SCR_MAP&&streq(notice_text,"Usual route selected"));
+  fclose(f);routefd=-1;routeok=0;traffic_invalidate();
+ }
+ /* MML1 persistence round-trip, corrupt rejection, and full wipe on mob_clear() */
+ assert(ml_save());
+ ml_reset();assert(mob_ml.road_cls[3].count==0&&ml_hazard_level(991u,0)==0);
+ ml_load();assert(mob_ml.road_cls[3].count==9&&mob_ml.road_cls[3].cold_count==4&&ml_hazard_level(991u,0)==1&&ml_learned_brightness(1)==30);
+ FILE*cf=fopen(MOB_ML_FILE,"r+b");assert(cf);fseek(cf,64,SEEK_SET);fputc(0xff,cf);fclose(cf);
+ ml_load();assert(mob_ml.road_cls[3].count==0&&ml_hazard_level(991u,0)==0);
+ assert(ml_save());mob_clear();assert(fopen(MOB_ML_FILE,"rb")==0);
+}
+int main(void){(void)load_font();learner();predictor_quality();prediction_names();prediction_ui();frequent_places();shared_geometry();tiny_graph();two_diversions();ml_features();puts("Mobility recording, contextual predictor, session dismissal, startup and trajectory evidence, map confirmation, offline names, frequent-place prompts and persistence, road profiles, diversion regressions and extended local ML features passed.");return 0;}

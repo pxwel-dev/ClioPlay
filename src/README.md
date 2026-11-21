@@ -1,11 +1,16 @@
-# ClioPlay version 2.2.3
+# ClioPlay version 2.2.4 (Unreleased)
 
-Version 2.2.3 adds offline Nearby POIs (Fuel, Parking and Hospital), a compact
-**Then …** secondary manoeuvre cue above the Turn card, a **View diversion**
-map-preview flow on diversion confirmations, instant Bluetooth AVRCP
-notifications, lazy regional atlas validation, centred scrollable Itinerary
-layout with visible-only connectors, Debug memory telemetry and a desktop
-favourites import/export CLI. See the [changelog](docs/changelog.md).
+Version 2.2.4 (Unreleased) expands ClioPlay's opt-in, strictly offline local
+learning with personal road-class and cold-weather (`<= 3 °C`) ETA calibration,
+`~X-Y min` ETA reliability ranges, dwell-time trip chains and recurring
+intermediate stop prompts, non-ambiguous **Traffic diversion available** vs
+**Usual route available** recommendations, **Usual parking** reviews, learned
+Nearby-POI affinity badges, adaptive Auto-zoom and Day/Night brightness
+personalisation, repeat hard-braking slowdown alerts, route-coloured stop and
+destination map endpoints, an expandable roundabout secondary manoeuvre pill,
+and the desktop `tools/replay_history.py` map-rebuild migration tool. See
+[intelligent navigation](docs/intelligent-navigation.md) and the
+[changelog](docs/changelog.md).
 
 ## Set up a card
 
@@ -57,9 +62,14 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
   briefly in the centre when you enter a named road or press **OK**. It shares
   its pill with any camera warning. The speed and turn pills flank it. When a
   follow-up turn or roundabout occurs within 250 m of the next manoeuvre, a
-  compact **Then …** pill docks above the turn pill and promotes automatically
-  as you complete the current turn. Exceeding a confirmed limit pulses the speed
-  pill red.
+  **Then …** pill docks above the turn pill — staying compact (`24 px`) for
+  normal turns and smoothly expanding (`43 px`) for roundabouts so the full
+  roundabout diagram with centred exit number and **Take exit N** label fits
+  clearly — and promotes automatically as you complete the current turn. Active
+  and upcoming stops draw route-coloured endpoint rings on the map, with a
+  route-coloured bullseye ring marking the final destination (or a
+  route-coloured POI badge when heading directly to a mapped Fuel, Parking or
+  Hospital POI). Exceeding a confirmed limit pulses the speed pill red.
 - **Menus:** each page title shares the top row with the clock and temporary
   audio or connection notices. In Bluetooth control mode, Left and Right skip
   tracks, and OK toggles playback. The selected control briefly highlights.

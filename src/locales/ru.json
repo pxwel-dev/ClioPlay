@@ -232,5 +232,21 @@
   "Fuel": "Топливо",
   "Parking": "Парковка",
   "Hospital": "Больница",
-  "No nearby places found": "Поблизости мест не найдено"
+  "No nearby places found": "Поблизости мест не найдено",
+  "Usual route available": "Доступен привычный маршрут",
+  "Based on your usual route": "На основе привычного маршрута",
+  "Usual parking available": "Доступна привычная парковка",
+  "Route to usual parking?": "Ехать на привычную парковку?",
+  "Usual parking selected": "Выбрана привычная парковка",
+  "Usual stop available": "Доступна привычная остановка",
+  "Add usual stop?": "Добавить привычную остановку?",
+  "Frequent slowdown ahead": "Частое торможение впереди",
+  "Cold-weather slowdown ahead": "Частое торможение в холод",
+  "Traffic diversion available": "Доступен объезд пробок",
+  "Take traffic diversion?": "Выбрать объезд пробок?",
+  "Usual route": "Привычный путь",
+  "Use usual route?": "Выбрать привычный маршрут?",
+  "View route": "Показать маршрут",
+  "Usual route selected": "Привычный путь выбран",
+  "Route unavailable": "Маршрут недоступен"
 }

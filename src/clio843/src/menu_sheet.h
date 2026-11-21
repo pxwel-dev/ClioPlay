@@ -14,14 +14,24 @@ static int sheet_page,sheet_focus,sheet_old_page,sheet_old_focus,sheet_stack_pag
 static int places_tab,place_index,place_from_nearby,stop_index,flow_action,language_keyboard,trip_tab_focus[4];
 static int keyboard_origin,phone_index,confirm_kind,confirm_top_focus;
 static u32 confirm_diversion_revision,confirm_diversion_serial;
-static int confirm_diversion_map;
+static int confirm_diversion_map,confirm_diversion_kind;
 static struct SavedPlace confirm_suggestion;
 static struct MobPoint confirm_frequent;
+static u32 confirm_parking_serial,confirm_stop_serial;
+static struct MobPoint confirm_parking_point;
+static char confirm_parking_name[113];
+static struct MobStopHabit confirm_stop;
 /* Menu-only origin: the keyboard still uses the normal Favourite save action. */
 enum {KBD_NAME_FREQUENT=3};
 static u32 confirm_suggestion_serial;
 static int menu_suggestion_current(void){
  struct SavedPlace p;return confirm_suggestion_serial==mob_suggest_serial&&suggested_place(&p)&&suggestion_same(&p,&confirm_suggestion);
+}
+static int menu_parking_current(void){
+ return trip.active&&route_status==R_READY&&ml_park_valid&&confirm_parking_serial&&confirm_parking_serial==ml_park_serial;
+}
+static int menu_stop_current(void){
+ return trip.active&&trip.count==1&&route_status==R_READY&&ml_stop_valid&&confirm_stop_serial&&confirm_stop_serial==ml_stop_serial;
 }
 static int confirm_diversion_begin,confirm_diversion_join;
 /* A delayed response must never act on a replacement offer. */
@@ -85,6 +95,7 @@ static struct HudBox menu_box_at_top(int p,int top){
  if(p==P_PAIR){w=316;h=128;}
  if(p==P_CONFIRM){w=280;h=confirm_has_view()?122:92;
   if(confirm_kind==4&&width(place_display_name(confirm_suggestion.name),0)>252){w=356;h=106;}
+  if(confirm_kind==6||confirm_kind==7){w=312;h=96;}
  }
  if(p==P_SOURCE){w=356;h=174;}
  if(h>bottom-top)h=bottom-top;
@@ -123,7 +134,7 @@ static void menu_back(u32 now){if(sheet_depth){sheet_depth--;menu_change(sheet_s
 static void menu_open_diversion(int from_map,u32 now){
  if(!traffic_offer_valid())return;
  confirm_kind=3;confirm_top_focus=0;confirm_diversion_revision=traffic_offer_revision;confirm_diversion_serial=traffic_offer_serial;
- confirm_diversion_begin=traffic_begin_idx;confirm_diversion_join=traffic_join_idx;confirm_diversion_map=from_map;
+ confirm_diversion_begin=traffic_begin_idx;confirm_diversion_join=traffic_join_idx;confirm_diversion_map=from_map;confirm_diversion_kind=ml_offer_kind;
  if(from_map){sheet_depth=0;menu_change(P_CONFIRM,0,now);}
  else if(sheet_page==P_CLOSED){sheet_stack_page[0]=P_HOME;sheet_stack_focus[0]=0;sheet_stack_page[1]=P_TRIP;sheet_stack_focus[1]=trip.active_idx;sheet_depth=2;menu_change(P_CONFIRM,0,now);}
  else menu_push(P_CONFIRM,0,now);
@@ -132,6 +143,30 @@ static void menu_open_diversion(int from_map,u32 now){
 static void menu_open_suggestion(u32 now){
  if(!suggested_place(&confirm_suggestion))return;
  confirm_suggestion_serial=mob_suggest_serial;confirm_kind=4;sheet_depth=0;menu_change(P_CONFIRM,0,now);menu_pending=1;
+}
+static void ml_resolve_point_name(struct MobPoint p,const char*hint,char*out,unsigned cap){
+ out[0]=0;
+ if(hint&&hint[0]){copystr(out,cap,hint);return;}
+ u32 best=151u;const struct SavedPlace*chosen=0;
+ for(int i=0;i<nfaves;i++){u32 d=mob_dist(p,(struct MobPoint){faves[i].lat,faves[i].lon});if(d<best&&faves[i].name[0]&&!fave_needs_name(faves[i].name)){best=d;chosen=&faves[i];}}
+ if(!chosen)for(int i=0;i<nrecents;i++){u32 d=mob_dist(p,(struct MobPoint){recents[i].lat,recents[i].lon});if(d<best&&recents[i].name[0]&&!fave_needs_name(recents[i].name)&&!streq(recents[i].name,"PHONE DESTINATION")){best=d;chosen=&recents[i];}}
+ if(chosen){copystr(out,cap,chosen->name);return;}
+ (void)suggested_road_name(p,out,cap);
+}
+static void menu_open_parking(u32 now){
+ if(!trip.active||route_status!=R_READY||!ml_park_valid)return;
+ confirm_parking_serial=ml_park_serial;confirm_parking_point=ml_park_point;
+ ml_resolve_point_name(ml_park_point,0,confirm_parking_name,sizeof(confirm_parking_name));
+ confirm_kind=6;sheet_depth=0;menu_change(P_CONFIRM,0,now);menu_pending=1;
+}
+static void menu_open_stop(u32 now){
+ if(!trip.active||trip.count!=1||route_status!=R_READY||!ml_stop_valid)return;
+ confirm_stop_serial=ml_stop_serial;confirm_stop=ml_stop_habit;
+ if(!confirm_stop.name[0]){
+  char nm[48];ml_resolve_point_name(confirm_stop.stop,0,nm,sizeof(nm));
+  copystr(confirm_stop.name,sizeof(confirm_stop.name),nm);
+ }
+ confirm_kind=7;sheet_depth=0;menu_change(P_CONFIRM,0,now);menu_pending=1;
 }
 static void frequent_startup_service(u32 now,int fresh){
  if(!frequent_boot_pending)return;
@@ -188,6 +223,7 @@ static void menu_view_diversion(u32 now){
  }
  diversion_preview_active=1;
  diversion_preview_from_map=confirm_diversion_map;
+ diversion_preview_kind=confirm_diversion_kind;
  diversion_preview_revision=confirm_diversion_revision;
  diversion_preview_serial=confirm_diversion_serial;
  diversion_preview_begin=confirm_diversion_begin;
@@ -227,7 +263,7 @@ static void menu_key(int code,u32 now){
   }
   code=d>0?K_DOWN:K_UP;
  }
- if(code==K_MAP){int keep=sheet_page==P_CONFIRM&&((confirm_kind==3&&confirm_diversion_map)||confirm_kind==4);menu_close(now);if(!keep)recenter_map();return;}
+ if(code==K_MAP){int keep=sheet_page==P_CONFIRM&&((confirm_kind==3&&confirm_diversion_map)||confirm_kind==4||confirm_kind==6||confirm_kind==7);menu_close(now);if(!keep)recenter_map();return;}
  if(code==K_MENU){coordinates_active=0;kbd_picker=0;sheet_depth=0;bt_control_mode=0;menu_change(P_HOME,0,now);return;}
  if(sheet_page==P_NAME){
   pk_prepare();
@@ -379,14 +415,26 @@ static void menu_key(int code,u32 now){
   struct SavedPlace point;
   if(place_from_nearby){point.lat=nearby_pois[place_index].lat;point.lon=nearby_pois[place_index].lon;copystr(point.name,sizeof(point.name),nearby_pois[place_index].name);}
   else point=places_tab?faves[place_index]:recents[place_index];
-  if(sheet_focus==0){set_destination(point.name,point.lat,point.lon);menu_close(now);recenter_map();}
-  else if(sheet_focus==1){int index=trip.count-1;if(trip_add_stop(point.name,point.lat,point.lon)){add_recent(point.name,point.lat,point.lon);menu_return_trip(index,now);}else notice_fail(ui_tr(trip.active?"Trip full - stop not added":"No active route"));}return;
+  if(sheet_focus==0){
+   if(place_from_nearby)ml_record_poi_use(nearby_pois[place_index].kind,nearby_pois[place_index].lat,nearby_pois[place_index].lon,nearby_pois[place_index].name);
+   set_destination(point.name,point.lat,point.lon);menu_close(now);recenter_map();
+  }else if(sheet_focus==1){
+   int index=trip.count-1;
+   if(trip_add_stop(point.name,point.lat,point.lon)){
+    if(place_from_nearby)ml_record_poi_use(nearby_pois[place_index].kind,nearby_pois[place_index].lat,nearby_pois[place_index].lon,nearby_pois[place_index].name);
+    add_recent(point.name,point.lat,point.lon);menu_return_trip(index,now);
+   }else notice_fail(ui_tr(trip.active?"Trip full - stop not added":"No active route"));
+  }return;
  }
  if(sheet_page==P_REVIEW){
   if(sheet_focus==1){if(sheet_depth>=12)return;coord_before_edit=coordinates;coordinates.step=COORD_LAT;coordinates.focus=0;coordinates.error=0;menu_push(P_COORD,0,now);}
   else if(sheet_focus==2){review_from_place=0;coordinates_open_name();keyboard_origin=KBD_NAME_COORDINATES;pk_reset();pk_prepare();menu_change(P_NAME,0,now);}
   else if(sheet_focus==3){coordinates_active=0;menu_return_trip(0,now);}
-  else{int action=coordinates.action,index=trip.count-1;coordinates_submit();
+  else{int action=coordinates.action,index=trip.count-1;
+   if(place_from_nearby&&place_index>=0&&place_index<nearby_count){
+    ml_record_poi_use(nearby_pois[place_index].kind,nearby_pois[place_index].lat,nearby_pois[place_index].lon,nearby_pois[place_index].name);
+   }
+   coordinates_submit();
    if(!coordinates_active){if(screen==SCR_MAP)menu_close(now);else menu_return_trip(action==DEST_PICK_ADD_STOP?index:trip.count-1,now);}
   }return;
  }
@@ -399,6 +447,26 @@ static void menu_key(int code,u32 now){
  }
  if(sheet_page==P_CONFIRM){
   if(confirm_kind==2){if(sheet_focus==0){mob_clear();traffic_invalidate();traffic_learning_reset();notice_success(ui_tr("History cleared"));}menu_back(now);return;}
+  if(confirm_kind==7){
+   if(menu_stop_current()){
+    if(sheet_focus==0){
+     const char*nm=confirm_stop.name[0]?confirm_stop.name:"MAP POINT";
+     ml_stop_valid=0;
+     if(trip_add_stop(nm,confirm_stop.stop.lat,confirm_stop.stop.lon))add_recent(nm,confirm_stop.stop.lat,confirm_stop.stop.lon);
+    }else ml_decline_stop_offer();
+   }
+   menu_close(now);return;
+  }
+  if(confirm_kind==6){
+   if(menu_parking_current()){
+    if(sheet_focus==0){
+     const char*nm=confirm_parking_name[0]?confirm_parking_name:"PARKING";
+     ml_guided_target_valid=0;ml_park_valid=0;
+     trip_change_destination_notice(nm,confirm_parking_point.lat,confirm_parking_point.lon,ui_tr("Usual parking selected"));
+    }else ml_decline_parking_offer();
+   }
+   menu_close(now);return;
+  }
   if(confirm_kind==5){
    struct MobPoint p=confirm_frequent;
    if(sheet_focus==0&&frequent_current(p,now)){
@@ -421,7 +489,8 @@ static void menu_key(int code,u32 now){
    if(sheet_focus==2){
     if(menu_diversion_current()){menu_view_diversion(now);return;}
    }else if(menu_diversion_current()){
-    if(sheet_focus==0){if(traffic_accept()){notice_success(ui_tr("Diversion selected"));menu_close(now);if(freecam)recenter_map();return;}}
+    int is_usual=confirm_diversion_kind==1;
+    if(sheet_focus==0){if(traffic_accept()){notice_success(ui_tr(is_usual?"Usual route selected":"Diversion selected"));menu_close(now);if(freecam)recenter_map();return;}}
     else traffic_reject();
    }
    if(confirm_diversion_map)menu_close(now);else menu_return_trip(trip.active_idx,now);return;
@@ -435,7 +504,7 @@ static void menu_tile(int x,int y,int w,int h,int chosen,int opacity){
  round_rect(x,y,w,h,5,chosen?C_ACTIVE:C_PANEL2,chosen?15:5);hud_ink_alpha=old;
 }
 static void text_value(int x,int y,int w,const char*s,int opacity){hud_ink_alpha=opacity;box_text(x,y,w,15,0,s,C_MUTED);}
-static const char*menu_title(int p){return p==P_HOME?"Menu":p==P_SETTINGS?"Settings":p==P_TRIP||p==P_PLACES?"Trip":p==P_NEARBY?"Nearby":p==P_NEARBY_LIST?(nearby_category==0?"Fuel":nearby_category==1?"Parking":"Hospital"):p==P_STOP?"Stop":p==P_DEST?"Destination":p==P_PLACE?"Saved place":p==P_NAME?"Rename":p==P_COORD?"Coordinates":p==P_REVIEW?"Review":p==P_LANG?(language_keyboard?"Keyboard language":"Language"):p==P_CONFIRM?(confirm_kind==5?"Add to favourites?":confirm_kind==4?"Start suggested trip?":confirm_kind==3?"Take diversion?":confirm_kind==2?"Clear driving history?":confirm_kind?"Remove stop?":"Cancel route?"):p==P_PHONE_ACTIONS?"Device":p==P_PAIR?"Pair new phone":p==P_SOURCE?(source_action==DEST_PICK_ADD_STOP?"Add stop":source_action==DEST_PICK_CHANGE_DEST?"Change destination":"Choose source"):"Bluetooth";}
+static const char*menu_title(int p){return p==P_HOME?"Menu":p==P_SETTINGS?"Settings":p==P_TRIP||p==P_PLACES?"Trip":p==P_NEARBY?"Nearby":p==P_NEARBY_LIST?(nearby_category==0?"Fuel":nearby_category==1?"Parking":"Hospital"):p==P_STOP?"Stop":p==P_DEST?"Destination":p==P_PLACE?"Saved place":p==P_NAME?"Rename":p==P_COORD?"Coordinates":p==P_REVIEW?"Review":p==P_LANG?(language_keyboard?"Keyboard language":"Language"):p==P_CONFIRM?(confirm_kind==7?"Add usual stop?":confirm_kind==6?"Route to usual parking?":confirm_kind==5?"Add to favourites?":confirm_kind==4?"Start suggested trip?":confirm_kind==3?(confirm_diversion_kind==1?"Use usual route?":"Take traffic diversion?"):confirm_kind==2?"Clear driving history?":confirm_kind?"Remove stop?":"Cancel route?"):p==P_PHONE_ACTIONS?"Device":p==P_PAIR?"Pair new phone":p==P_SOURCE?(source_action==DEST_PICK_ADD_STOP?"Add stop":source_action==DEST_PICK_CHANGE_DEST?"Change destination":"Choose source"):"Bluetooth";}
 /* Scroll by screen pixels so a one-pixel resize cannot move the list
  * by a whole row. The viewport clips rows as they enter or leave it. */
 struct MenuRows {int first,end,offset,top,height,previous_top,previous_bottom;};
@@ -497,7 +566,7 @@ static void trip_content(struct HudBox b,int selected,int opacity){
   row_text(b,b.y+actions_y,0,selected,ui_tr("Coordinates"),"",opacity,1,row_h);
   return;
  }
- appendstr(total,sizeof(total),ui_tr(trip.active_idx==trip.count-1?"Destination: ":"Next: "));append_miles(total,sizeof(total),route_path_m());appendstr(total,sizeof(total),"  ~");append_eta(total,sizeof(total),sat_add32(traffic_remaining_cost(),atlas_future_cost));
+ appendstr(total,sizeof(total),ui_tr(trip.active_idx==trip.count-1?"Destination: ":"Next: "));append_miles(total,sizeof(total),route_path_m());appendstr(total,sizeof(total),"  ~");append_eta_range(total,sizeof(total),sat_add32(traffic_remaining_cost(),atlas_future_cost),ml_route_var_ds);
  int remaining=(int)trip.count-1-(int)trip.active_idx;if(remaining>0){appendstr(total,sizeof(total),"  /  ");append_int(total,sizeof(total),remaining);appendstr(total,sizeof(total),ui_tr(" stops left"));}
  /* Reserve a full target row before making room for the route summary. */
  int summary=b.h-100;
@@ -532,7 +601,7 @@ static void trip_content(struct HudBox b,int selected,int opacity){
   disclosure(b,text_cy,active?C_ACTIVE_TEXT:C_MUTED);
  }
  menu_rows_end(rows,b.x+b.w-6,step,trip.count,opacity);
- const char*actions[]={"+ Add stop","Cancel route","Diversion"};int action_n=2+traffic_offer_valid(),w=(b.w-20-(action_n-1)*8)/action_n;
+ const char*actions[]={"+ Add stop","Cancel route",ml_offer_kind==1?"Usual route":"Diversion"};int action_n=2+traffic_offer_valid(),w=(b.w-20-(action_n-1)*8)/action_n;
  for(int i=0;i<action_n;i++){int x=b.x+10+i*(w+8),s=selected==trip.count+i;menu_tile(x,b.y+b.h-25,w,21,s,opacity);
   hud_ink_alpha=opacity;box_text(x,b.y+b.h-25,w,21,0,ui_tr(actions[i]),i==0&&trip.count>=TRIP_MAX_TARGETS?C_BORDER:s?C_ACTIVE_TEXT:C_MUTED);}
 }
@@ -564,6 +633,18 @@ static void nearby_content(struct HudBox b,int selected,int opacity){
   disclosure(b,cy,active?C_ACTIVE_TEXT:C_MUTED);
  }
 }
+static void nearby_star_icon(int cx,int cy,u16 col){
+ static const u8 m[7][7]={
+  { 0, 0, 0,14, 0, 0, 0},
+  { 0, 0, 7,15, 7, 0, 0},
+  { 0, 7,15,15,15, 7, 0},
+  {14,15,15,15,15,15,14},
+  { 0, 7,15,15,15, 7, 0},
+  { 0, 0, 7,15, 7, 0, 0},
+  { 0, 0, 0,14, 0, 0, 0},
+ };
+ for(int j=0;j<7;j++)for(int i=0;i<7;i++)if(m[j][i])blend_pixel(cx+i-3,cy+j-3,col,m[j][i]);
+}
 static void nearby_list_content(struct HudBox b,int selected,int opacity){
  hud_ink_alpha=opacity;title_draw(b,nearby_cat_title(nearby_category));
  poi_icon(nearby_kind_for_cat(nearby_category),b.x+25,b.y+15);
@@ -571,11 +652,12 @@ static void nearby_list_content(struct HudBox b,int selected,int opacity){
  for(int i=rows.first;i<rows.end;i++){
   int y=rows.top+i*22-rows.offset,alpha=menu_row_opacity(rows,y,22,opacity);
   if(!alpha)continue;
-  int active=i==selected;
+  int active=i==selected,preferred=nearby_pois[i].preferred;
   char dist[24]="";append_nearby_distance(dist,sizeof(dist),nearby_pois[i].dist_m);
   row_selection(b,y,i,selected,alpha,21,22);
   hud_ink_alpha=alpha;
-  int cy=pair_text(b,y,21,1,place_display_name(nearby_pois[i].name),dist,active?C_ACTIVE_TEXT:C_WHITE,active?C_ACTIVE_TEXT:C_MUTED);
+  int cy=pair_text(b,y,21,1,place_display_name(nearby_pois[i].name),dist,active?C_ACTIVE_TEXT:C_WHITE,active?C_ACTIVE_TEXT:(preferred?C_CYAN:C_MUTED));
+  if(preferred)nearby_star_icon(b.x+23,cy,active?C_ACTIVE_TEXT:C_CYAN);
   disclosure(b,cy,active?C_ACTIVE_TEXT:C_MUTED);
  }
  menu_rows_end(rows,b.x+b.w-6,22,nearby_count,opacity);
@@ -731,9 +813,16 @@ static void menu_contents(int p,int selected,struct HudBox b,int opacity,u32 now
  if(p==P_PHONE_ACTIONS){int index=menu_phone_index();if(index<0)return;text_value(b.x+18,b.y+31,b.w-36,bt_display_name(index),opacity);options[0]=btdev[index].connected?"Disconnect":"Connect";options[1]="Forget";count=2;}
  if(p==P_CONFIRM){
   char detail[193]="";
-  if(confirm_kind==5)copystr(detail,sizeof(detail),ui_tr("You come here often"));
+  if(confirm_kind==7)copystr(detail,sizeof(detail),menu_stop_current()?(confirm_stop.name[0]?place_display_name(confirm_stop.name):ui_tr("Map point")):ui_tr("Suggestion unavailable"));
+  else if(confirm_kind==6)copystr(detail,sizeof(detail),menu_parking_current()?(confirm_parking_name[0]?place_display_name(confirm_parking_name):ui_tr("Usual parking available")):ui_tr("Suggestion unavailable"));
+  else if(confirm_kind==5)copystr(detail,sizeof(detail),ui_tr("You come here often"));
   else if(confirm_kind==4)copystr(detail,sizeof(detail),menu_suggestion_current()?place_display_name(confirm_suggestion.name):ui_tr("Suggestion unavailable"));
-  else if(confirm_kind==3){if(menu_diversion_current()){copystr(detail,sizeof(detail),ui_tr("Save approximately "));append_eta(detail,sizeof(detail),traffic_saving);}else copystr(detail,sizeof(detail),ui_tr("Diversion unavailable"));}
+  else if(confirm_kind==3){
+   if(menu_diversion_current()){
+    if(confirm_diversion_kind==1&&traffic_saving<600u)copystr(detail,sizeof(detail),ui_tr("Based on your usual route"));
+    else{copystr(detail,sizeof(detail),ui_tr("Save approximately "));append_eta(detail,sizeof(detail),traffic_saving);}
+   }else copystr(detail,sizeof(detail),ui_tr(confirm_diversion_kind==1?"Route unavailable":"Diversion unavailable"));
+  }
   else if(confirm_kind==2)copystr(detail,sizeof(detail),ui_tr("Delete learned journeys and traffic"));
   else copystr(detail,sizeof(detail),place_display_name(confirm_kind?context_name:trip.count?trip.target[trip.count-1].name:""));
   int detail_y=b.y+29;
@@ -745,14 +834,18 @@ static void menu_contents(int p,int selected,struct HudBox b,int opacity,u32 now
    }
   }
   box_text(b.x+14,detail_y,b.w-28,14,0,detail,C_MUTED);
-  if(b.h>=92&&((confirm_kind==3&&menu_diversion_current())||(confirm_kind==4&&menu_suggestion_current())))box_text(b.x+14,detail_y+14,b.w-28,14,0,ui_tr("Based on driving history"),C_MUTED);
+  if(b.h>=92&&((confirm_kind==3&&menu_diversion_current())||(confirm_kind==4&&menu_suggestion_current())||
+     (confirm_kind==6&&menu_parking_current())||(confirm_kind==7&&menu_stop_current()))){
+   const char*sub=confirm_kind==3?(confirm_diversion_kind==0?ui_tr("Likely traffic ahead"):traffic_saving>=600u?ui_tr("Based on your usual route"):ui_tr("Based on driving history")):ui_tr("Based on driving history");
+   box_text(b.x+14,detail_y+14,b.w-28,14,0,sub,C_MUTED);
+  }
   int has_view=confirm_has_view()&&b.h>=114;
   int w=(b.w-40)/2,row1_y=b.y+b.h-(has_view?62:34);const char*choices[]={"Yes","No"};
   for(int i=0;i<2;i++){int x=b.x+14+i*(w+12);menu_tile(x,row1_y,w,24,selected==i,opacity);hud_ink_alpha=opacity;box_text(x,row1_y,w,24,CONFIRMATION_FACE,ui_tr(choices[i]),selected==i?C_ACTIVE_TEXT:C_WHITE);}
   if(has_view){
    int vy=b.y+b.h-32,vw=b.w-28;
    menu_tile(b.x+14,vy,vw,24,selected==2,opacity);hud_ink_alpha=opacity;
-   box_text(b.x+14,vy,vw,24,CONFIRMATION_FACE,ui_tr("View diversion"),selected==2?C_ACTIVE_TEXT:C_WHITE);
+   box_text(b.x+14,vy,vw,24,CONFIRMATION_FACE,ui_tr(confirm_diversion_kind==1?"View route":"View diversion"),selected==2?C_ACTIVE_TEXT:C_WHITE);
   }
   return;
  }

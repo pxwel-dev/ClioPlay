@@ -1,7 +1,7 @@
 /* HUD presentation. The route, camera and audio services own their data. */
 #define HUD_CLOCK_X 354
 enum {HUD_BOTTOM_MARGIN=8,HUD_SIDE_W=128,HUD_TURN_X=W-HUD_BOTTOM_MARGIN-HUD_SIDE_W,
- HUD_TURN_NEXT_H=24,HUD_TURN_NEXT_GAP=4,
+ HUD_TURN_NEXT_H=24,HUD_TURN_NEXT_RBT_H=43,HUD_TURN_NEXT_GAP=4,
  HUD_BOTTOM_GAP=4,HUD_ROAD_PAD=12,HUD_CAMERA_PAD=10,HUD_CAMERA_ICON_W=11,HUD_CAMERA_GAP=8};
 
 #include "hud_glass.h"
@@ -97,7 +97,21 @@ static const char* hud_route_error(void){
 static void hud_journey_text(char*b,unsigned cap){
  b[0]=0;
  appendstr(b,cap,"~");
- u32 minutes=udiv32(sat_add32(sat_add32(traffic_remaining_cost(),atlas_future_cost),300u),600u);
+ u32 total_ds=sat_add32(traffic_remaining_cost(),atlas_future_cost);
+ u32 var_ds=pref.learn_history?ml_route_var_ds:0u;
+ if(var_ds>=1800u){
+  u32 lo_ds=total_ds>var_ds/3u?total_ds-var_ds/3u:total_ds;
+  u32 hi_ds=sat_add32(total_ds,var_ds);
+  u32 lo_m=udiv32(lo_ds+300u,600u),hi_m=udiv32(hi_ds+300u,600u);
+  if(hi_m>=lo_m+3u&&lo_m<60u&&hi_m<120u){
+   append_int(b,cap,(int)lo_m);appendstr(b,cap,"-");append_int(b,cap,(int)hi_m);appendstr(b,cap," min  /  ");
+   unsigned distance=slen(b);
+   append_miles_hud(b,cap,route_path_m());
+   for(char*p=b+distance;*p;p++)if(*p>='A'&&*p<='Z')*p+=32;
+   return;
+  }
+ }
+ u32 minutes=udiv32(sat_add32(total_ds,300u),600u);
  if(minutes>=60u){append_int(b,cap,minutes/60u);appendstr(b,cap,"h ");minutes%=60u;}
  append_int(b,cap,minutes);appendstr(b,cap," min  /  ");
  unsigned distance=slen(b);
@@ -184,11 +198,13 @@ static void hud_nav_text(struct HudCard*c,int z,int kind,int tag){
  case HUD_AUTO_ZOOM:copystr(c->title,sizeof(c->title),ui_tr("Auto zoom"));break;
  case HUD_EXPLORE:copystr(c->title,sizeof(c->title),ui_tr("Explore"));break;
  case HUD_MANUAL_ZOOM:copystr(c->title,sizeof(c->title),ui_tr("Manual zoom"));break;
+ case HUD_SLOWDOWN:copystr(c->title,sizeof(c->title),ui_tr(ml_slowdown_cold?"Cold-weather slowdown ahead":"Frequent slowdown ahead"));break;
  }
 }
 /* An OK shortcut is armed only by a drawn invitation for this exact
  * offer. A stale/fading card, Explore or BT CTRL can never steal OK. */
-static u32 hud_diversion_invited,hud_suggestion_invited;
+enum {HUD_INV_DIVERSION=0,HUD_INV_SUGGESTION=1,HUD_INV_PARKING=2,HUD_INV_STOP=3};
+static u32 hud_diversion_invited,hud_suggestion_invited,hud_parking_invited,hud_stop_invited;
 static struct SavedPlace hud_suggestion_place;
 static int suggestion_same(const struct SavedPlace*a,const struct SavedPlace*b){return a->lat==b->lat&&a->lon==b->lon&&streq(a->name,b->name);}
 static void hud_suggestion_title(char*out,unsigned cap,const struct SavedPlace*p){
@@ -199,13 +215,21 @@ static int hud_suggestion_shortcut_ready(void){
  return screen==SCR_MAP&&!freecam&&modal==MOD_NONE&&!(bt_control_mode&&bt_controls_available())&&hud_suggestion_invited&&
   hud_suggestion_invited==mob_suggest_serial&&suggested_place(&p)&&suggestion_same(&p,&hud_suggestion_place);
 }
+static int hud_parking_shortcut_ready(void){
+ return screen==SCR_MAP&&!freecam&&modal==MOD_NONE&&!(bt_control_mode&&bt_controls_available())&&
+  trip.active&&route_status==R_READY&&ml_park_valid&&hud_parking_invited&&hud_parking_invited==ml_park_serial;
+}
+static int hud_stop_shortcut_ready(void){
+ return screen==SCR_MAP&&!freecam&&modal==MOD_NONE&&!(bt_control_mode&&bt_controls_available())&&
+  trip.active&&trip.count==1&&route_status==R_READY&&ml_stop_valid&&hud_stop_invited&&hud_stop_invited==ml_stop_serial;
+}
 /* The invitation is always one row. Measure the two independently shaped
  * phrases so the green announcement and blue control hint share a baseline. */
 #define HUD_DIVERSION_GAP 6
 static int hud_diversion_line_width(const char*title,const char*hint){
  return width(title,0)+HUD_DIVERSION_GAP+width(hint,0);
 }
-static void hud_draw_invitation_line(int x,int y,int w,const char*title,int media,int suggestion){
+static void hud_draw_invitation_line(int x,int y,int w,const char*title,int media,int inv_kind){
  const char*hint=ui_tr(media?"BACK to review":"OK to review");
  int tw=width(title,0),hw=width(hint,0);
  /* During the normal entrance tween the full actionable line may not yet
@@ -214,14 +238,16 @@ static void hud_draw_invitation_line(int x,int y,int w,const char*title,int medi
   /* For a long destination, reserve the complete control hint and ellipsise
    * only the destination/title, never hide the actionable affordance. */
   int room=w-HUD_DIVERSION_GAP-hw;
-  if(!suggestion||room<width(ui_tr("Suggested: "),0)+width("…",0)){compact_fit(x,y,w,0,title,hud_status_colour(HUD_SUCCESS,C_WHITE));return;}
+  if(inv_kind!=HUD_INV_SUGGESTION||room<width(ui_tr("Suggested: "),0)+width("…",0)){compact_fit(x,y,w,0,title,hud_status_colour(HUD_SUCCESS,C_WHITE));return;}
   tw=room;
  }
  int rtl=ui_language_rtl();
  compact_fit(x+(rtl?hw+HUD_DIVERSION_GAP:0),y,tw,0,title,hud_status_colour(HUD_SUCCESS,C_WHITE));
  compact_fit(x+(rtl?0:tw+HUD_DIVERSION_GAP),y,hw,0,hint,C_ACCENT);
  if(hud_ink_alpha>=8&&!media){
-  if(suggestion){struct SavedPlace p;if(suggested_place(&p)){hud_suggestion_place=p;hud_suggestion_invited=mob_suggest_serial;}}
+  if(inv_kind==HUD_INV_SUGGESTION){struct SavedPlace p;if(suggested_place(&p)){hud_suggestion_place=p;hud_suggestion_invited=mob_suggest_serial;}}
+  else if(inv_kind==HUD_INV_PARKING)hud_parking_invited=ml_park_serial;
+  else if(inv_kind==HUD_INV_STOP)hud_stop_invited=ml_stop_serial;
   else hud_diversion_invited=traffic_offer_serial;
  }
 }
@@ -232,12 +258,28 @@ static int hud_diversion_shortcut_ready(void){
 static void hud_traffic_compose(struct HudCard*c,int map,int media){
  if(!map||screen!=SCR_MAP||freecam||modal!=MOD_NONE||!pref.learn_history||!pref.diversions||route_status!=R_READY)return;
  int offered=traffic_offer_valid();if(!offered&&!traffic_warn)return;
- const char*title=ui_tr(offered?"Faster route available":"Likely traffic ahead");
+ const char*title=ui_tr(offered?(ml_offer_kind==1?"Usual route available":"Traffic diversion available"):"Likely traffic ahead");
  if(!c->kind){c->kind=HUD_TRAFFIC;copystr(c->title,sizeof(c->title),title);c->ink|=offered?HUD_SUCCESS:HUD_WARNING;}
  else copystr(c->traffic_title,sizeof(c->traffic_title),title);
  if(offered){
   copystr(c->traffic_hint,sizeof(c->traffic_hint),ui_tr(media?"BACK to review":"OK to review"));c->traffic_serial=traffic_offer_serial;
  }else copystr(c->traffic_detail,sizeof(c->traffic_detail),ui_tr("Based on driving history"));
+}
+static void hud_parking_compose(struct HudCard*c,int map,int media){
+ if(!map||screen!=SCR_MAP||freecam||modal!=MOD_NONE||!trip.active||route_status!=R_READY||!pref.learn_history||!pref.destination_predictions||!ml_park_valid)return;
+ const char*title=ui_tr("Usual parking available");
+ if(!c->kind){c->kind=HUD_TRAFFIC;copystr(c->title,sizeof(c->title),title);c->ink|=HUD_SUCCESS;}
+ else copystr(c->traffic_title,sizeof(c->traffic_title),title);
+ copystr(c->traffic_hint,sizeof(c->traffic_hint),ui_tr(media?"BACK to review":"OK to review"));
+ c->parking_serial=ml_park_serial;
+}
+static void hud_stop_compose(struct HudCard*c,int map,int media){
+ if(!map||screen!=SCR_MAP||freecam||modal!=MOD_NONE||!trip.active||trip.count!=1||route_status!=R_READY||!pref.learn_history||!pref.destination_predictions||!ml_stop_valid)return;
+ const char*title=ui_tr("Usual stop available");
+ if(!c->kind){c->kind=HUD_TRAFFIC;copystr(c->title,sizeof(c->title),title);c->ink|=HUD_SUCCESS;}
+ else copystr(c->traffic_title,sizeof(c->traffic_title),title);
+ copystr(c->traffic_hint,sizeof(c->traffic_hint),ui_tr(media?"BACK to review":"OK to review"));
+ c->stop_serial=ml_stop_serial;
 }
 static void hud_suggestion_compose(struct HudCard*c,int map,int media){
  struct SavedPlace p;
@@ -297,6 +339,7 @@ static void hud_prepare(int z,u32 now,int map){
  }else if(nav&&(!hud_source.kind||!time_before_u32(hud_navigation.changed,hud_source.changed))){
   c.kind=nav;hud_nav_text(&c,z,nav,1);
   if(nav==HUD_FAILURE)c.ink|=HUD_ERROR;
+  else if(nav==HUD_SLOWDOWN)c.ink|=HUD_WARNING;
   if(hud_source.kind){copystr(c.detail,sizeof(c.detail),hud_audio_tag());appendstr(c.detail,sizeof(c.detail),"  ");char source[96];hud_source_text(source,sizeof(source));appendstr(c.detail,sizeof(c.detail),source);}
  }else if(hud_source.kind){
   c.kind=HUD_SOURCE;copystr(c.tag,sizeof(c.tag),hud_audio_tag());hud_source_text(c.title,sizeof(c.title));
@@ -324,23 +367,30 @@ static void hud_prepare(int z,u32 now,int map){
  hud_status_observe(map,now);
  hud_status_compose(&c,now);
  hud_traffic_compose(&c,map,media);
- if(!c.traffic_serial&&!c.traffic_title[0]&&c.kind!=HUD_TRAFFIC)hud_suggestion_compose(&c,map,media);
+ if(!c.traffic_serial&&!c.traffic_title[0]&&c.kind!=HUD_TRAFFIC){
+  hud_parking_compose(&c,map,media);
+  if(!c.parking_serial)hud_stop_compose(&c,map,media);
+  if(!c.parking_serial&&!c.stop_serial)hud_suggestion_compose(&c,map,media);
+ }
  if(!c.suggestion_serial||media||hud_suggestion_invited!=c.suggestion_serial)hud_suggestion_invited=0;
  if(!c.traffic_serial||media||hud_diversion_invited!=c.traffic_serial)hud_diversion_invited=0;
+ if(!c.parking_serial||media||hud_parking_invited!=c.parking_serial)hud_parking_invited=0;
+ if(!c.stop_serial||media||hud_stop_invited!=c.stop_serial)hud_stop_invited=0;
  if(!c.tag[0]&&!c.title[0]&&!c.badge[0]&&!c.flags)c.kind=HUD_NONE;
  hud_kind=c.kind;
  if(c.kind){
+  int has_inv=c.traffic_serial||c.suggestion_serial||c.parking_serial||c.stop_serial;
   int y=8,h=27+(c.detail[0]?16:0)+(c.connection[0]?14:0)+(c.feedback[0]?14:0)+
    (c.flags&HUD_KEYS?17:0)+(c.flags&HUD_PROGRESS?7:0)+
    (c.traffic_title[0]?15:0)+(c.traffic_detail[0]?14:0);
-  int w=20+width(c.title,c.kind==HUD_TRAFFIC&&(c.traffic_serial||c.suggestion_serial)?0:1)+(c.tag[0]?width(c.tag,0)+12:0)+(c.badge[0]?width(c.badge,0)+18:0);
+  int w=20+width(c.title,c.kind==HUD_TRAFFIC&&has_inv?0:1)+(c.tag[0]?width(c.tag,0)+12:0)+(c.badge[0]?width(c.badge,0)+18:0);
   int detail_w=width(c.detail,0)+20;
   int connection_w=width(c.connection,0)+20,feedback_w=width(c.feedback,0)+20;
   int minw=c.flags&HUD_KEYS?282:c.flags&HUD_PROGRESS?174:c.kind==HUD_VOLUME?128:62;
   if(w<detail_w)w=detail_w;if(w<minw)w=minw;
   if(w<connection_w)w=connection_w;if(w<feedback_w)w=feedback_w;
   int tw=width(c.traffic_title,0)+20;if(w<tw)w=tw;tw=width(c.traffic_detail,0)+20;if(w<tw)w=tw;
-  if(c.traffic_serial||c.suggestion_serial){tw=hud_diversion_line_width(c.kind==HUD_TRAFFIC?c.title:c.traffic_title,c.traffic_hint)+20;if(w<tw)w=tw;}
+  if(has_inv){tw=hud_diversion_line_width(c.kind==HUD_TRAFFIC?c.title:c.traffic_title,c.traffic_hint)+20;if(w<tw)w=tw;}
   int x=8;
   if(pref.top_swap){
    int clock_right=hud_tween[HC_CLOCK].target.box.a?
@@ -429,16 +479,22 @@ static void hud_driver_prepare(u32 now){
   append_nav_distance(turn.title,sizeof(turn.title),nav_man_m);
   copystr(turn.detail,sizeof(turn.detail),nav_man_text());
   if(nav_next_type!=MAN_NONE&&nav_man_m<=ROUTE_NEXT_SHOW_M&&screen==SCR_MAP&&modal==MOD_NONE){
-   turn_next.box=hud_box(turn.box.x,HUD_BOTTOM_Y-HUD_TURN_NEXT_GAP-HUD_TURN_NEXT_H,HUD_SIDE_W,HUD_TURN_NEXT_H);
+   int is_rbt=nav_next_type==MAN_ROUNDABOUT;
+   int next_h=is_rbt?HUD_TURN_NEXT_RBT_H:HUD_TURN_NEXT_H;
+   turn_next.box=hud_box(turn.box.x,HUD_BOTTOM_Y-HUD_TURN_NEXT_GAP-next_h,HUD_SIDE_W,next_h);
    turn_next.kind=nav_next_type;turn_next.flags=region_flags&4;turn_next.value=nav_next_exit;
    const char*then_word=ui_tr("Then");
    char combined[96];copystr(combined,sizeof(combined),then_word);
-   if(nav_next_type==MAN_ROUNDABOUT&&nav_next_exit>0&&nav_next_exit<100){
-    appendstr(combined,sizeof(combined)," ");append_int(combined,sizeof(combined),nav_next_exit);
-   }else if(nav_next_m>=70u){
+   if(nav_next_m>=70u){
     appendstr(combined,sizeof(combined)," ");append_nav_distance(combined,sizeof(combined),nav_next_m);
    }
    copystr(turn_next.title,sizeof(turn_next.title),width(combined,0)<=HUD_SIDE_W-53?combined:then_word);
+   if(is_rbt){
+    if(nav_next_exit>0&&nav_next_exit<100){
+     copystr(turn_next.detail,sizeof(turn_next.detail),ui_tr("Take exit "));
+     append_int(turn_next.detail,sizeof(turn_next.detail),nav_next_exit);
+    }else copystr(turn_next.detail,sizeof(turn_next.detail),ui_tr("Roundabout"));
+   }
   }
  }
  if(camera||show_name){
@@ -566,8 +622,15 @@ static void hud_draw_status(struct HudBox b,const struct HudCard*c,u32 now){
  int suggestion_live=next->suggestion_serial&&next->suggestion_serial==mob_suggest_serial&&suggested_place(&suggested)&&screen==SCR_MAP&&!freecam&&modal==MOD_NONE;
  int suggestion_current=suggestion_live&&c->suggestion_serial==next->suggestion_serial;
  if(suggestion_current){char title[193];hud_suggestion_title(title,sizeof(title),&suggested);suggestion_current=streq(c->kind==HUD_TRAFFIC?c->title:c->traffic_title,title);}
- if(c->kind==HUD_TRAFFIC&&(c->traffic_serial||c->suggestion_serial)){
-  if(current||suggestion_current)hud_draw_invitation_line(tx,small_y,end-tx,c->title,media,suggestion_current);
+ int parking_live=next->parking_serial&&next->parking_serial==ml_park_serial&&ml_park_valid&&trip.active&&route_status==R_READY&&screen==SCR_MAP&&!freecam&&modal==MOD_NONE;
+ int parking_current=parking_live&&c->parking_serial==next->parking_serial;
+ int stop_live=next->stop_serial&&next->stop_serial==ml_stop_serial&&ml_stop_valid&&trip.active&&trip.count==1&&route_status==R_READY&&screen==SCR_MAP&&!freecam&&modal==MOD_NONE;
+ int stop_current=stop_live&&c->stop_serial==next->stop_serial;
+ int inv_current=current||suggestion_current||parking_current||stop_current;
+ int inv_kind=current?HUD_INV_DIVERSION:suggestion_current?HUD_INV_SUGGESTION:parking_current?HUD_INV_PARKING:HUD_INV_STOP;
+ int any_inv=c->traffic_serial||c->suggestion_serial||c->parking_serial||c->stop_serial;
+ if(c->kind==HUD_TRAFFIC&&any_inv){
+  if(inv_current)hud_draw_invitation_line(tx,small_y,end-tx,c->title,media,inv_kind);
  }else compact_fit(tx,title_y,end-tx,1,c->title,hud_status_colour(c->ink&3,c->flags&HUD_PROGRESS?C_CYAN:C_WHITE));
  if(badge){
   hud_ink_alpha=streq(old->badge,next->badge)?full:fade;
@@ -614,10 +677,10 @@ static void hud_draw_status(struct HudBox b,const struct HudCard*c,u32 now){
  for(int i=0;i<2;i++){
   int height=layout[HUD_STATUS_TRAFFIC_TITLE+i],room=bottom-row-12;
   if(room>height-11)room=height-11;
-  if(traffic_lines[i][0]&&(!c->traffic_serial||current)&&(!c->suggestion_serial||suggestion_current)){
+  if(traffic_lines[i][0]&&(!c->traffic_serial||current)&&(!c->suggestion_serial||suggestion_current)&&(!c->parking_serial||parking_current)&&(!c->stop_serial||stop_current)){
    hud_ink_alpha=hud_status_row_ink(streq(traffic_old[i],traffic_next[i])?full:fade,room);
    if(hud_ink_alpha){
-    if(i==0&&(current||suggestion_current))hud_draw_invitation_line(x+10,row-2,w-20,traffic_lines[i],media,suggestion_current);
+    if(i==0&&inv_current)hud_draw_invitation_line(x+10,row-2,w-20,traffic_lines[i],media,inv_kind);
     else compact_fit(x+10,row-2,w-20,0,traffic_lines[i],i==0?C_WARN:C_MUTED);
    }
   }
@@ -686,7 +749,7 @@ static struct HudClockLayout hud_clock_content_layout(struct HudBox b){
  };
 }
 static void hud_draw_card(int id,u32 now){
- if(id==HC_STATUS)hud_diversion_invited=hud_suggestion_invited=0;
+ if(id==HC_STATUS)hud_diversion_invited=hud_suggestion_invited=hud_parking_invited=hud_stop_invited=0;
  struct HudTween*t=&hud_tween[id];if(!t->seen)return;
  struct HudBox b=id==HC_STATUS?hud_status_pose(now):hud_pose(t,now);if(b.a<=0)return;
  int alpha,shift;
@@ -741,8 +804,17 @@ static void hud_draw_card(int id,u32 now){
   compact_fit(x+46,y+4,w-53,1,c->title,C_WHITE);
   compact_fit(x+46,y+23,w-53,0,c->detail,C_MUTED);break;
  case HC_TURN_NEXT:
-  hud_draw_turn_small(x+23,y+b.h/2,c);
-  compact_fit(x+46,y+5,w-53,0,c->title,C_WHITE);break;
+  if(c->kind==MAN_ROUNDABOUT){
+   hud_draw_turn(x+23,y+b.h/2,c);
+   if(c->detail[0]){
+    compact_fit(x+46,y+6,w-53,0,c->title,C_WHITE);
+    compact_fit(x+46,y+23,w-53,0,c->detail,C_MUTED);
+   }else compact_fit(x+46,y+(b.h-14)/2,w-53,0,c->title,C_WHITE);
+  }else{
+   hud_draw_turn_small(x+23,y+b.h/2,c);
+   compact_fit(x+46,y+(b.h-14)/2,w-53,0,c->title,C_WHITE);
+  }
+  break;
  }
  hud_ink_alpha=16;clip_x=ox;clip_y=oy;clip_right=or;clip_bottom=ob;
 }
@@ -789,7 +861,7 @@ static void hud_reset_animations(void){
  menu_reset(hud_now_ms());popup_reset();
  memzero(hud_tween,sizeof(hud_tween));hud_last_road[0]=0;hud_road_at=0;hud_road_live=0;
  hud_status_reset();hud_playback_reset();
- hud_speed_over=hud_speed_from=0;hud_speed_at=0;hud_status_map=hud_status_page=-1;hud_status_frame_at=0;hud_diversion_invited=hud_suggestion_invited=0;
+ hud_speed_over=hud_speed_from=0;hud_speed_at=0;hud_status_map=hud_status_page=-1;hud_status_frame_at=0;hud_diversion_invited=hud_suggestion_invited=hud_parking_invited=hud_stop_invited=0;
  bt_transport_press.kind=0;bt_playback_request=-1;
 }
 static void hud_settle_for_capture(u32 now){

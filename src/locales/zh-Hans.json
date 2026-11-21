@@ -232,5 +232,21 @@
   "Fuel": "加油站",
   "Parking": "停车场",
   "Hospital": "医院",
-  "No nearby places found": "附近未找到地点"
+  "No nearby places found": "附近未找到地点",
+  "Usual route available": "有常用路线可用",
+  "Based on your usual route": "基于您的常用路线",
+  "Usual parking available": "有常用停车点",
+  "Route to usual parking?": "导航至常用停车点？",
+  "Usual parking selected": "已选择常用停车点",
+  "Usual stop available": "有常用经停点",
+  "Add usual stop?": "添加常用经停点？",
+  "Frequent slowdown ahead": "前方常有减速",
+  "Cold-weather slowdown ahead": "低温天气前方常有减速",
+  "Traffic diversion available": "有避堵绕行路线",
+  "Take traffic diversion?": "采用避堵绕行路线？",
+  "Usual route": "常用路线",
+  "Use usual route?": "使用常用路线？",
+  "View route": "查看路线",
+  "Usual route selected": "已选择常用路线",
+  "Route unavailable": "路线不可用"
 }

@@ -955,6 +955,70 @@
     "No nearby places found": [
       "Aucun lieu à proximité",
       "No hay lugares cercanos"
+    ],
+    "Usual route available": [
+      "Itinéraire habituel",
+      "Ruta habitual disponible"
+    ],
+    "Based on your usual route": [
+      "Selon votre itinéraire habituel",
+      "Según tu ruta habitual"
+    ],
+    "Usual parking available": [
+      "Parking habituel disponible",
+      "Parking habitual disponible"
+    ],
+    "Route to usual parking?": [
+      "Aller au parking habituel ?",
+      "¿Ir al parking habitual?"
+    ],
+    "Usual parking selected": [
+      "Parking habituel sélectionné",
+      "Parking habitual seleccionado"
+    ],
+    "Usual stop available": [
+      "Étape habituelle disponible",
+      "Parada habitual disponible"
+    ],
+    "Add usual stop?": [
+      "Ajouter l'étape habituelle ?",
+      "¿Añadir parada habitual?"
+    ],
+    "Frequent slowdown ahead": [
+      "Ralentissement fréquent",
+      "Frenada frecuente delante"
+    ],
+    "Cold-weather slowdown ahead": [
+      "Ralentissement par temps froid",
+      "Frenada frecuente con frío"
+    ],
+    "Traffic diversion available": [
+      "Déviation trafic disponible",
+      "Desvío por tráfico"
+    ],
+    "Take traffic diversion?": [
+      "Prendre la déviation trafic ?",
+      "¿Tomar desvío por tráfico?"
+    ],
+    "Usual route": [
+      "Route habituelle",
+      "Ruta habitual"
+    ],
+    "Use usual route?": [
+      "Prendre l'itinéraire habituel ?",
+      "¿Usar la ruta habitual?"
+    ],
+    "View route": [
+      "Voir l'itinéraire",
+      "Ver ruta"
+    ],
+    "Usual route selected": [
+      "Route habituelle choisie",
+      "Ruta habitual elegida"
+    ],
+    "Route unavailable": [
+      "Itinéraire indisponible",
+      "Ruta no disponible"
     ]
   },
   "language_names": {

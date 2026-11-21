@@ -7,7 +7,7 @@ struct HudCard {
  int kind, flags, value;
  u16 ink;
  char title[193], detail[112], tag[24], badge[24], connection[96], feedback[112], traffic_title[193], traffic_detail[112], traffic_hint[160];
- u32 traffic_serial,suggestion_serial;
+ u32 traffic_serial,suggestion_serial,parking_serial,stop_serial;
 };
 struct HudTween {
  struct HudBox from;
@@ -20,7 +20,7 @@ static struct HudTween hud_tween[HC_COUNT];
 
 static int hud_ease(u32 elapsed,u32 duration){return frame_ease(elapsed,duration);}
 
-static int hud_lerp(int a,int b,int t){return a+((b-a)*t+128)/256;}
+static int hud_lerp(int a,int b,int t){int d=(b-a)*t;return a+(d>=0?(d+128)/256:(d-128)/256);}
 static int hud_box_eq(struct HudBox a,struct HudBox b){
  return a.x==b.x&&a.y==b.y&&a.w==b.w&&a.h==b.h&&a.a==b.a;
 }
@@ -28,13 +28,15 @@ static int hud_content_eq(const struct HudCard*a,const struct HudCard*b){
  return a->kind==b->kind&&a->flags==b->flags&&a->value==b->value&&a->ink==b->ink&&
   streq(a->title,b->title)&&streq(a->detail,b->detail)&&streq(a->tag,b->tag)&&streq(a->badge,b->badge)&&
   streq(a->connection,b->connection)&&streq(a->feedback,b->feedback)&&
-  streq(a->traffic_title,b->traffic_title)&&streq(a->traffic_detail,b->traffic_detail)&&streq(a->traffic_hint,b->traffic_hint)&&a->traffic_serial==b->traffic_serial&&a->suggestion_serial==b->suggestion_serial;
+  streq(a->traffic_title,b->traffic_title)&&streq(a->traffic_detail,b->traffic_detail)&&streq(a->traffic_hint,b->traffic_hint)&&
+  a->traffic_serial==b->traffic_serial&&a->suggestion_serial==b->suggestion_serial&&a->parking_serial==b->parking_serial&&a->stop_serial==b->stop_serial;
 }
 static int hud_same_status_except_volume(const struct HudCard*a,const struct HudCard*b){
  return a->kind==b->kind&&a->flags==b->flags&&a->value==b->value&&a->ink==b->ink&&streq(a->tag,b->tag)&&
   (a->kind==HUD_VOLUME||streq(a->title,b->title))&&streq(a->detail,b->detail)&&
   streq(a->connection,b->connection)&&streq(a->feedback,b->feedback)&&
-  streq(a->traffic_title,b->traffic_title)&&streq(a->traffic_hint,b->traffic_hint)&&a->traffic_serial==b->traffic_serial&&a->suggestion_serial==b->suggestion_serial;
+  streq(a->traffic_title,b->traffic_title)&&streq(a->traffic_hint,b->traffic_hint)&&
+  a->traffic_serial==b->traffic_serial&&a->suggestion_serial==b->suggestion_serial&&a->parking_serial==b->parking_serial&&a->stop_serial==b->stop_serial;
 }
 /* Existing numeric channels crossfade on the live clock. New labels,
  * notification rows, symbols and geometry can also request prepared frames. */

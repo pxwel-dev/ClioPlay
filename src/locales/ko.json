@@ -232,5 +232,21 @@
   "Fuel": "주유소",
   "Parking": "주차장",
   "Hospital": "병원",
-  "No nearby places found": "주변 장소 없음"
+  "No nearby places found": "주변 장소 없음",
+  "Usual route available": "자주 가는 경로 있음",
+  "Based on your usual route": "자주 가는 경로 기준",
+  "Usual parking available": "자주 쓰는 주차장 있음",
+  "Route to usual parking?": "자주 쓰는 주차장으로 안내?",
+  "Usual parking selected": "자주 쓰는 주차장 선택됨",
+  "Usual stop available": "자주 들르는 경유지 있음",
+  "Add usual stop?": "자주 들르는 경유지 추가?",
+  "Frequent slowdown ahead": "전방 잦은 감속 구간",
+  "Cold-weather slowdown ahead": "추운 날씨 잦은 감속 구간",
+  "Traffic diversion available": "정체 우회 경로 있음",
+  "Take traffic diversion?": "정체 우회로로 갈까요?",
+  "Usual route": "자주 가는 경로",
+  "Use usual route?": "자주 가는 경로로 갈까요?",
+  "View route": "경로 보기",
+  "Usual route selected": "자주 가는 경로 선택됨",
+  "Route unavailable": "경로 이용 불가"
 }

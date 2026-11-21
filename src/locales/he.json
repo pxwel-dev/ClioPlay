@@ -232,5 +232,21 @@
   "Fuel": "דלק",
   "Parking": "חניה",
   "Hospital": "בית חולים",
-  "No nearby places found": "לא נמצאו מקומות קרובים"
+  "No nearby places found": "לא נמצאו מקומות קרובים",
+  "Usual route available": "מסלול קבוע זמין",
+  "Based on your usual route": "על סמך המסלול הקבוע שלך",
+  "Usual parking available": "חניה קבועה זמינה",
+  "Route to usual parking?": "לנווט לחניה הקבועה?",
+  "Usual parking selected": "נבחרה חניה קבועה",
+  "Usual stop available": "עצירה קבועה זמינה",
+  "Add usual stop?": "להוסיף עצירה קבועה?",
+  "Frequent slowdown ahead": "האטה תכופה לפניך",
+  "Cold-weather slowdown ahead": "האטה תכופה במזג אוויר קר",
+  "Traffic diversion available": "זמין מעקף עומס",
+  "Take traffic diversion?": "לבחור במעקף העומס?",
+  "Usual route": "מסלול קבוע",
+  "Use usual route?": "להשתמש במסלול הקבוע?",
+  "View route": "הצג מסלול",
+  "Usual route selected": "נבחר המסלול הקבוע",
+  "Route unavailable": "המסלול אינו זמין"
 }
