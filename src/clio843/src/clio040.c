@@ -493,8 +493,12 @@ static void apply_brightness(void){int mx=read_int_file(BL_MAX,100);if(mx<1)mx=1
 
 static u32 udiv32(u32 n,u32 d);
 
-struct GPS {int fix,sats; s32 lat,lon; int mph10,course; int hour,min,sec,day,mon,year;};
-static struct GPS gps;static u32 gps_fix_ms=0;
+struct GPS {int fix,sats; s32 lat,lon; int mph10,course; int hour,min,sec,day,mon,year; int hdop10,gst_dm,alt_valid,alt_dm;};
+static struct GPS gps;static u32 gps_fix_ms=0,gps_gst_ms=0;
+/* Horizontal accuracy for the GPS panel. $GPGST error estimates win while
+ * fresh; otherwise the GGA HDOP is scaled by a typical 5 m range error. */
+#define GPS_GST_FRESH_MS 3000u
+#define GPS_HDOP_UERE_DM 50
 #define DISPLAY_COURSE_UPDATE_MPH10 30 /* >=3.0 mph: GPS course is useful; below this freeze the last moving orientation. */
 
 /* persist one tiny trusted last-fix record so a cold start can show
@@ -518,6 +522,7 @@ static long theme_wall_clock_utc(void){
 static void seed_boot_theme(void){apply_palette(clio_boot_night(pref.theme,theme_wall_clock_utc(),pref.hoff*60+pref.moff,pref.day_start,pref.night_start,read_theme_state_raw()));}
 static int save_last_fix(void){if(!lastfix_valid)return 0;struct LastFixDisk d;d.magic[0]='L';d.magic[1]='G';d.magic[2]='P';d.magic[3]='1';d.lat=lastfix_lat;d.lon=lastfix_lon;d.course=(u16)(lastfix_course>=0&&lastfix_course<=359?lastfix_course:0);d.pad=0;d.check=lastfix_check(d.lat,d.lon,d.course);long fd=s_open(LASTGPS_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd<0)return-1;long n=s_write((int)fd,&d,sizeof(d));s_close((int)fd);return n==(long)sizeof(d)?1:-1;}
 static void remember_live_fix(void){if(!gps.fix)return;lastfix_lat=gps.lat;lastfix_lon=gps.lon;/* Preserve the last trustworthy moving orientation instead of overwriting it with stationary GPS-course noise. */if(!lastfix_valid||gps.mph10>=DISPLAY_COURSE_UPDATE_MPH10)lastfix_course=gps.course;lastfix_valid=1;if(!lastfix_live_seen){save_last_fix();lastfix_live_seen=1;}}
+static u32 isqrt32(u32 v){u32 r=0,bit=1u<<30;while(bit>v)bit>>=2;while(bit){if(v>=r+bit){v-=r+bit;r=(r>>1)+bit;}else r>>=1;bit>>=2;}return r;}
 static int parse_dec10(const char*s){int v=0,frac=0,neg=0;if(*s=='-'){neg=1;s++;}while(*s>='0'&&*s<='9'){v=v*10+(*s-'0');s++;}if(*s=='.'&&s[1]>='0'&&s[1]<='9')frac=s[1]-'0';return neg?-(v*10+frac):(v*10+frac);}
 static s32 nmea_coord_e5(const char*s,int islon,char hemi){int deg=0;int digs=islon?3:2;for(int i=0;i<digs;i++){if(s[i]<'0'||s[i]>'9')return 0;deg=deg*10+s[i]-'0';}s+=digs;int min10k=0;int whole=0;while(*s>='0'&&*s<='9'){whole=whole*10+(*s-'0');s++;}min10k=whole*10000;if(*s=='.'){s++;int m=1000;while(*s>='0'&&*s<='9'&&m){min10k+=(*s-'0')*m;m/=10;s++;}}s32 e5=(s32)deg*100000+(s32)(min10k/6);if(hemi=='S'||hemi=='W')e5=-e5;return e5;}
 static void parse_hhmmss(const char*s){
@@ -542,7 +547,16 @@ static int auto_is_night(void){
 static void refresh_theme(void){int night=pref.theme==THEME_NIGHT?1:(pref.theme==THEME_DAY?0:auto_is_night());if(night!=theme_resolved)apply_palette(night);}
 static int split_csv(char*s,char**f,int max){int n=0;f[n++]=s;while(*s&&n<max){if(*s==','){*s=0;f[n++]=s+1;}s++;}return n;}
 static void parse_nmea(char*ln){char*f[20];int n;if(starts(ln,"$GPRMC,")||starts(ln,"$GNRMC,")){n=split_csv(ln,f,20);if(n>9){parse_hhmmss(f[1]);if(f[2][0]=='A'){gps.fix=1;gps_fix_ms=s_now_ms();gps.lat=nmea_coord_e5(f[3],0,f[4][0]);gps.lon=nmea_coord_e5(f[5],1,f[6][0]);int k10=parse_dec10(f[7]);gps.mph10=(k10*1151+500)/1000;gps.course=parse_dec10(f[8])/10;if(gps.course<0)gps.course=0;if(gps.course>359)gps.course%=360;}else{gps.fix=0;gps.mph10=0;}parse_ddmmyy(f[9]);}}
-else if(starts(ln,"$GPGGA,")||starts(ln,"$GNGGA,")){n=split_csv(ln,f,20);if(n>7){parse_hhmmss(f[1]);int q=atoi0(f[6]);gps.sats=atoi0(f[7]);if(q>0){gps.fix=1;gps.lat=nmea_coord_e5(f[2],0,f[3][0]);gps.lon=nmea_coord_e5(f[4],1,f[5][0]);}else gps.fix=0;}}
+else if(starts(ln,"$GPGGA,")||starts(ln,"$GNGGA,")){n=split_csv(ln,f,20);if(n>7){parse_hhmmss(f[1]);int q=atoi0(f[6]);gps.sats=atoi0(f[7]);gps.hdop10=q>0&&n>8&&f[8][0]>='0'&&f[8][0]<='9'?parse_dec10(f[8]):0;gps.alt_valid=q>0&&n>9&&((f[9][0]>='0'&&f[9][0]<='9')||(f[9][0]=='-'&&f[9][1]>='0'&&f[9][1]<='9'));gps.alt_dm=gps.alt_valid?parse_dec10(f[9]):0;if(q>0){gps.fix=1;gps.lat=nmea_coord_e5(f[2],0,f[3][0]);gps.lon=nmea_coord_e5(f[4],1,f[5][0]);}else gps.fix=0;}}
+else if(starts(ln,"$GPGST,")||starts(ln,"$GNGST,")){n=split_csv(ln,f,20);if(n>7&&f[6][0]>='0'&&f[6][0]<='9'&&f[7][0]>='0'&&f[7][0]<='9'){int a=parse_dec10(f[6]),b=parse_dec10(f[7]);if(a>9999)a=9999;if(b>9999)b=9999;gps.gst_dm=(int)isqrt32((u32)(a*a+b*b));if(!gps.gst_dm)gps.gst_dm=1;gps_gst_ms=s_now_ms();}}
+}
+/* Estimated horizontal error in decimetres, or -1 when unknown. GST age is
+ * measured on the same clock that stamped the sentence. */
+static int gps_accuracy_dm(void){
+ u32 now=s_now_ms();if(!gps.fix)return -1;
+ if(gps.gst_dm>0&&now-gps_gst_ms<GPS_GST_FRESH_MS)return gps.gst_dm;
+ if(gps.hdop10>0)return gps.hdop10*GPS_HDOP_UERE_DM/10;
+ return -1;
 }
 
 static char gpsbuf[1024],gpsline[256];static unsigned gpsused=0;static int gpsfd=-1;
@@ -728,7 +742,7 @@ static void poll_car(void){
  *   /tmp/clbtmeta  : KEY=VALUE lines (DEVICE/TITLE/ARTIST/ALBUM/...)
  *   /tmp/clbtcmd   : monotonically sequenced "<n> <COMMAND>" command record
  */
-enum {SCR_MAP=0,SCR_MENU=1,SCR_TRIP=2,SCR_BT=3,SCR_SET=4,SCR_KEY=5,SCR_COORDINATES=6};static int screen=SCR_MAP;
+enum {SCR_MAP=0,SCR_MENU=1,SCR_TRIP=2,SCR_BT=3,SCR_SET=4,SCR_KEY=5,SCR_COORDINATES=6,SCR_GPS=7};static int screen=SCR_MAP;
 enum {MENU_BODY_Y=42};
 struct BtUi {
   char status[28],device[33],title[193],artist[161],album[161];
@@ -2578,6 +2592,7 @@ static s32 kbd_place_lat=0,kbd_place_lon=0;static int kbd_fave_idx=-1;
 #define K_CONSOLE_INFO 4096
 #define K_CONSOLE_TRIP 4097
 #define K_CONSOLE_THEME 4098
+#define K_CONSOLE_GPS 4099
 static int menu_blocks_phone(void);
 static void menu_reset(u32 now);
 #include "keyboard.h"
@@ -2843,6 +2858,7 @@ static int modal_action_count(void){if(modal==MOD_RECENT)return trip.active?3:2;
 #include "popups.h"
 #include "menu_keyboard.h"
 #include "menu_layout.h"
+#include "gps_panel.h"
 #include "menu_sheet.h"
 
 static void draw(void){
@@ -2972,6 +2988,7 @@ static void key_handle(int code){
  if(code==K_CONSOLE_THEME){pref.theme=(pref.theme+1)%3;prefs_mark_dirty();refresh_theme();render_background_dirty=1;return;}
  if(code==K_CONSOLE_INFO){if(screen==SCR_MAP&&modal==MOD_NONE)hud_pulse(&hud_navigation,route_status==R_READY?HUD_JOURNEY:HUD_HEADING,route_status==R_READY?4200:2300);return;}
  if(code==K_CONSOLE_TRIP){if(modal!=MOD_NONE)return;coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;menu_open(P_TRIP,trip.active_idx,hud_now_ms());return;}
+ if(code==K_CONSOLE_GPS){if(modal!=MOD_NONE)return;coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;gps_panel_toggle(hud_now_ms());return;}
  menu_sync(hud_now_ms());
  if(modal==MOD_NONE&&(code==K_MENU||screen!=SCR_MAP)){
   keydiag(code);if(code==K_MENU&&screen==SCR_MAP)menu_open(P_HOME,0,hud_now_ms());else menu_dispatch(code,hud_now_ms());return;
@@ -3021,8 +3038,8 @@ static void csw_defaults(u16*map){
  for(int i=0;i<17;i++)map[i]=defaults[i];
 }
 static int csw_action(const char*name){
- static const char*names[]={"UP","DOWN","LEFT","RIGHT","OK","ENTER","BACK","ESC","ZOOMOUT","ZOOMIN","SR","MAP","MENU","ROTNEXT","ROTPREV","KNOB+","KNOB-","INFO","TRIP","THEME","NONE","IGNORE"};
- static const u16 codes[]={K_UP,K_DOWN,K_LEFT,K_RIGHT,K_ENTER,K_ENTER,K_BACK,K_ESC,K_ESC,K_SR,K_SR,K_MAP,K_MENU,K_ROTCW,K_ROTCCW,K_ROTCW,K_ROTCCW,K_CONSOLE_INFO,K_CONSOLE_TRIP,K_CONSOLE_THEME,0,0};
+ static const char*names[]={"UP","DOWN","LEFT","RIGHT","OK","ENTER","BACK","ESC","ZOOMOUT","ZOOMIN","SR","MAP","MENU","ROTNEXT","ROTPREV","KNOB+","KNOB-","INFO","TRIP","THEME","GPS","NONE","IGNORE"};
+ static const u16 codes[]={K_UP,K_DOWN,K_LEFT,K_RIGHT,K_ENTER,K_ENTER,K_BACK,K_ESC,K_ESC,K_SR,K_SR,K_MAP,K_MENU,K_ROTCW,K_ROTCCW,K_ROTCW,K_ROTCCW,K_CONSOLE_INFO,K_CONSOLE_TRIP,K_CONSOLE_THEME,K_CONSOLE_GPS,0,0};
  for(unsigned i=0;i<sizeof(codes)/sizeof(codes[0]);i++)if(streq(name,names[i]))return codes[i];return -1;
 }
 /* Parse into a temporary map. A bad/truncated edit cannot half-apply bindings. */

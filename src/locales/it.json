@@ -187,5 +187,12 @@
   "Move earlier": "Sposta prima",
   "Move later": "Sposta dopo",
   "Save favourite": "Salva preferito",
-  "Connect": "Connetti"
+  "Connect": "Connetti",
+  "Heading": "Direzione",
+  "Accuracy": "Precisione",
+  "No fix": "Nessun segnale",
+  "Satellites: ": "Satelliti: ",
+  "Lat": "Lat",
+  "Lon": "Lon",
+  "Alt": "Alt"
 }

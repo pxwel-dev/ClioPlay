@@ -187,5 +187,12 @@
   "Move earlier": "前へ移動",
   "Move later": "後ろへ移動",
   "Save favourite": "お気に入りに保存",
-  "Connect": "接続"
+  "Connect": "接続",
+  "Heading": "方位",
+  "Accuracy": "精度",
+  "No fix": "信号なし",
+  "Satellites: ": "衛星: ",
+  "Lat": "緯度",
+  "Lon": "経度",
+  "Alt": "標高"
 }

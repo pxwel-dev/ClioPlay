@@ -187,5 +187,12 @@
   "Move earlier": "Naar voren",
   "Move later": "Naar achteren",
   "Save favourite": "Favoriet opslaan",
-  "Connect": "Verbinden"
+  "Connect": "Verbinden",
+  "Heading": "Koers",
+  "Accuracy": "Nauwkeurigheid",
+  "No fix": "Geen signaal",
+  "Satellites: ": "Satellieten: ",
+  "Lat": "Br.",
+  "Lon": "Lg.",
+  "Alt": "Hoogte"
 }

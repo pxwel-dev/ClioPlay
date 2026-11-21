@@ -187,5 +187,12 @@
   "Move earlier": "تقديم",
   "Move later": "تأخير",
   "Save favourite": "حفظ في المفضلة",
-  "Connect": "اتصال"
+  "Connect": "اتصال",
+  "Heading": "الاتجاه",
+  "Accuracy": "الدقة",
+  "No fix": "لا توجد إشارة",
+  "Satellites: ": "الأقمار: ",
+  "Lat": "عرض",
+  "Lon": "طول",
+  "Alt": "ارتفاع"
 }

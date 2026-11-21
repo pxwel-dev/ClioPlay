@@ -187,5 +187,12 @@
   "Move earlier": "पहले ले जाएँ",
   "Move later": "बाद में ले जाएँ",
   "Save favourite": "पसंदीदा सहेजें",
-  "Connect": "कनेक्ट करें"
+  "Connect": "कनेक्ट करें",
+  "Heading": "दिशा",
+  "Accuracy": "सटीकता",
+  "No fix": "सिग्नल नहीं",
+  "Satellites: ": "उपग्रह: ",
+  "Lat": "अक्षांश",
+  "Lon": "देशांतर",
+  "Alt": "ऊँचाई"
 }

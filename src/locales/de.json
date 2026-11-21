@@ -187,5 +187,12 @@
   "Move earlier": "Nach vorn",
   "Move later": "Nach hinten",
   "Save favourite": "Favorit speichern",
-  "Connect": "Verbinden"
+  "Connect": "Verbinden",
+  "Heading": "Richtung",
+  "Accuracy": "Genauigkeit",
+  "No fix": "Kein Signal",
+  "Satellites: ": "Satelliten: ",
+  "Lat": "Br.",
+  "Lon": "Lg.",
+  "Alt": "Höhe"
 }

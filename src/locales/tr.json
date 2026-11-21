@@ -187,5 +187,12 @@
   "Move earlier": "Öne taşı",
   "Move later": "Arkaya taşı",
   "Save favourite": "Favori kaydet",
-  "Connect": "Bağlan"
+  "Connect": "Bağlan",
+  "Heading": "Yön",
+  "Accuracy": "Doğruluk",
+  "No fix": "Sinyal yok",
+  "Satellites: ": "Uydu: ",
+  "Lat": "Enl.",
+  "Lon": "Boy.",
+  "Alt": "Rakım"
 }

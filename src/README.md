@@ -149,6 +149,8 @@ The example contains the contributor’s conservative bindings; it disables LIGH
 and REPEAT and maps DEST to Menu. Change `btn6=THEME`, `btn7=INFO`, `btn8=TRIP`
 and `btn4=INFO` to keep the integrated defaults. Actions accept upper/lower case;
 `ROTNEXT`/`ROTPREV` or `knob+`/`knob-` select contextual knob movement.
+`GPS` opens the GPS panel and closes it again; for example, `btn7=GPS` puts it
+on REPEAT.
 `NONE` disables a control. Add `verbose=1` for interpreted console-field logging
 while Debug is enabled. File edits, including same-size edits, reload within
 five seconds; invalid/oversize files keep the last valid bindings. Deleting the
@@ -235,7 +237,7 @@ calculation uses the existing five-frame-per-second cap. Declining keeps Explore
 
 ### Menu, Trip and Bluetooth
 
-- **Menu:** use **Up / Down** to choose Trip, Bluetooth or Settings. Press **OK**
+- **Menu:** use **Up / Down** to choose Trip, Bluetooth, Settings or GPS. Press **OK**
   to open it or **BACK** to return to driving. From a page, **MENU** or **BACK**
   returns to Menu. **MAP** goes directly to the driving map.
 - **Trip:** always opens **Itinerary** first. **Left / Right** or the left/right
@@ -250,6 +252,17 @@ calculation uses the existing five-frame-per-second cap. Declining keeps Explore
   soft key** starts pairing from anywhere in that list. **Up / Down** or the knob
   selects a device, **OK** opens its Connect/Disconnect and Forget actions, and
   **Up / Down** selects the action. **OK** confirms; **BACK** returns to the list.
+- **GPS:** a live information panel. The GPS time (to the second) is shown large
+  at the top; below it a compass dial sits beside three columns: **Heading** in
+  degrees with N/NE/E…, estimated horizontal **Accuracy** with the satellite
+  count, and **Altitude** above sea level. Latitude/longitude with N/S/E/W run
+  along the bottom. The heading shows `--` below about 3 mph, where GPS course is
+  unreliable; without a fix the values show `--` and the bottom row reads
+  **No fix**. Accuracy uses the receiver's `$GPGST` error estimate when present,
+  otherwise HDOP × 5 m; green, amber and red mark up to 5 m, up to 15 m and
+  worse. Accuracy and altitude follow the Metric/Imperial setting. **BACK**
+  returns to Menu. A console button mapped to `GPS` opens the panel directly;
+  the same button or **BACK** then closes it.
 
 All these pages are animated frosted-glass sheets over the live map. Menu,
 Settings and Bluetooth retain the lower driving pills when there is enough room;

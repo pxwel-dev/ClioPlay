@@ -1,7 +1,7 @@
 /* Animated map-based menu sheet. All mutations use the canonical persisted
  * trip, saved-place, coordinate and Bluetooth models below. */
 enum {P_CLOSED,P_HOME,P_SETTINGS,P_TRIP,P_PLACES,P_STOP,P_DEST,P_PLACE,
- P_NAME,P_COORD,P_REVIEW,P_LANG,P_PHONE,P_PHONE_ACTIONS,P_PAIR,P_CONFIRM,P_SOURCE};
+ P_NAME,P_COORD,P_REVIEW,P_LANG,P_PHONE,P_PHONE_ACTIONS,P_PAIR,P_CONFIRM,P_SOURCE,P_GPS};
 static int sheet_page,sheet_focus,sheet_old_page,sheet_old_focus,sheet_stack_page[12],sheet_stack_focus[12],sheet_depth;
 static int places_tab,place_index,stop_index,flow_action,language_keyboard,trip_tab_focus[3];
 static int keyboard_origin,phone_index,confirm_kind,coord_nav_y=-1;
@@ -12,7 +12,7 @@ static int menu_pending;
 static u32 menu_at,focus_at,bottom_at,menu_presented_at,menu_interaction_at;
 static int sheet_old_tab,menu_pair_waited,menu_pair_before;
 static char menu_pair_name[33];
-static int menu_screen(int p){return p==P_CLOSED?SCR_MAP:p==P_HOME?SCR_MENU:p==P_SETTINGS||(p==P_LANG&&!language_keyboard)?SCR_SET:p==P_PHONE||p==P_PHONE_ACTIONS||p==P_PAIR?SCR_BT:p==P_NAME||p==P_LANG?SCR_KEY:p==P_COORD||p==P_REVIEW?SCR_COORDINATES:SCR_TRIP;}
+static int menu_screen(int p){return p==P_CLOSED?SCR_MAP:p==P_GPS?SCR_GPS:p==P_HOME?SCR_MENU:p==P_SETTINGS||(p==P_LANG&&!language_keyboard)?SCR_SET:p==P_PHONE||p==P_PHONE_ACTIONS||p==P_PAIR?SCR_BT:p==P_NAME||p==P_LANG?SCR_KEY:p==P_COORD||p==P_REVIEW?SCR_COORDINATES:SCR_TRIP;}
 static int bottom_from=256,bottom_to=256;
 /* Only the actual typing grid can borrow the lower HUD area.  The language
  * picker, including the picker opened from the keyboard, is an ordinary
@@ -34,7 +34,7 @@ static struct HudBox menu_box(int p){
    if(b.a&&b.y-8<bottom)bottom=b.y-8;
   }
  }
- if(p==P_TRIP||p==P_PLACES){w=456;h=220;}
+ if(p==P_TRIP||p==P_PLACES||p==P_GPS){w=456;h=220;}
  if(p==P_SETTINGS||p==P_PHONE){w=372;h=210;}
  if(p==P_NAME){w=456;h=220;}
  if(p==P_COORD){w=432;h=220;}
@@ -68,7 +68,7 @@ static void menu_back(u32 now){if(sheet_depth){sheet_depth--;menu_change(sheet_s
 static int place_count(void){return places_tab?nfaves:nrecents;}
 static int places_visible(struct HudBox b){int n=(b.h-67)/22;return n<1?1:n;}
 static int menu_count(int p){
- return p==P_HOME?(hw_bluetooth_enabled?3:2):p==P_SOURCE?3:p==P_SETTINGS?SETTING_COUNT:p==P_TRIP?(trip.count?trip.count+2:1):p==P_PLACES?place_count():
+ return p==P_HOME?(hw_bluetooth_enabled?4:3):p==P_SOURCE?3:p==P_SETTINGS?SETTING_COUNT:p==P_TRIP?(trip.count?trip.count+2:1):p==P_PLACES?place_count():
  p==P_STOP?3:p==P_DEST?3:p==P_PLACE?(places_tab?4:3):p==P_PHONE?nbtdev+1:
  p==P_PHONE_ACTIONS?2:p==P_REVIEW?4:p==P_CONFIRM?2:0;
 }
@@ -173,7 +173,7 @@ static void menu_key(int code,u32 now){
  if(code==K_UP&&sheet_focus){if(sheet_page==P_SETTINGS)theme_time_part=0;selected_focus(sheet_focus-1,now);return;}
  if(code==K_DOWN&&sheet_focus+1<menu_count(sheet_page)){if(sheet_page==P_SETTINGS)theme_time_part=0;selected_focus(sheet_focus+1,now);return;}
  if(code!=K_ENTER)return;
- if(sheet_page==P_HOME){menu_push(sheet_focus==0?P_TRIP:hw_bluetooth_enabled&&sheet_focus==1?P_PHONE:P_SETTINGS,0,now);return;}
+ if(sheet_page==P_HOME){int last=menu_count(P_HOME)-1;menu_push(sheet_focus==0?P_TRIP:sheet_focus==last?P_GPS:hw_bluetooth_enabled&&sheet_focus==1?P_PHONE:P_SETTINGS,0,now);return;}
  if(sheet_page==P_SETTINGS){
   if(sheet_focus==7){language_keyboard=0;menu_push(P_LANG,pref.language,now);}
   else setting_adjust(K_ENTER,now);return;
@@ -244,7 +244,7 @@ static void menu_tile(int x,int y,int w,int h,int chosen,int opacity){
  round_rect(x,y,w,h,5,chosen?C_ACTIVE:C_PANEL2,chosen?15:5);hud_ink_alpha=old;
 }
 static void text_value(int x,int y,int w,const char*s,int opacity){hud_ink_alpha=opacity;box_text(x,y,w,15,0,s,C_MUTED);}
-static const char*menu_title(int p){return p==P_HOME?"Menu":p==P_SETTINGS?"Settings":p==P_TRIP||p==P_PLACES?"Trip":p==P_STOP?"Stop":p==P_DEST?"Destination":p==P_PLACE?"Saved place":p==P_NAME?"Rename":p==P_COORD?"Coordinates":p==P_REVIEW?"Review":p==P_LANG?(language_keyboard?"Keyboard language":"Language"):p==P_CONFIRM?(confirm_kind?"Remove stop?":"Cancel route?"):p==P_PHONE_ACTIONS?"Device":p==P_PAIR?"Pair new phone":p==P_SOURCE?(source_action==DEST_PICK_ADD_STOP?"Add stop":source_action==DEST_PICK_CHANGE_DEST?"Change destination":"Choose source"):"Bluetooth";}
+static const char*menu_title(int p){return p==P_HOME?"Menu":p==P_GPS?"GPS":p==P_SETTINGS?"Settings":p==P_TRIP||p==P_PLACES?"Trip":p==P_STOP?"Stop":p==P_DEST?"Destination":p==P_PLACE?"Saved place":p==P_NAME?"Rename":p==P_COORD?"Coordinates":p==P_REVIEW?"Review":p==P_LANG?(language_keyboard?"Keyboard language":"Language"):p==P_CONFIRM?(confirm_kind?"Remove stop?":"Cancel route?"):p==P_PHONE_ACTIONS?"Device":p==P_PAIR?"Pair new phone":p==P_SOURCE?(source_action==DEST_PICK_ADD_STOP?"Add stop":source_action==DEST_PICK_CHANGE_DEST?"Change destination":"Choose source"):"Bluetooth";}
 static void row_selection(struct HudBox b,int y,int index,int selected,int opacity,int height,int pitch){
  if(index!=selected)return;int offset=sheet_old_page==sheet_page?(sheet_old_focus-selected)*pitch:0;
  if(offset>height*3||offset< -height*3)offset=0;
@@ -420,12 +420,13 @@ static void menu_contents(int p,int selected,struct HudBox b,int opacity,u32 now
  if(p==P_REVIEW){review_content(b,selected,opacity);return;}
  if(p==P_SETTINGS){settings_content(b,selected,opacity,now);return;}
  if(p==P_PHONE){phone_content(b,selected,opacity);return;}
+ if(p==P_GPS){gps_content(b,opacity,now);return;}
  title_draw(b,menu_title(p));
  const char*options[6]={0};int count=0;
  if(p==P_SOURCE){options[0]="Recents";options[1]="Favourites";options[2]="Coordinates";count=3;}
  if(p==P_HOME){options[0]="Trip";options[1]=hw_bluetooth_enabled?"Bluetooth":"Settings";
   if(hw_bluetooth_enabled)options[2]="Settings";
-  count=hw_bluetooth_enabled?3:2;}
+  count=hw_bluetooth_enabled?3:2;options[count++]="GPS";}
  if(p==P_STOP){options[0]="Move earlier";options[1]="Move later";options[2]="Remove stop";count=3;}
  if(p==P_DEST){options[0]="Change destination";options[1]=trip.count&&fave_contains(trip.target[trip.count-1].lat,trip.target[trip.count-1].lon)>=0?"Remove favourite":"Save favourite";options[2]="Cancel route";count=3;}
  if(p==P_PLACE){options[0]="Route as new";options[1]="Add as stop";options[2]=places_tab?"Rename":"Save favourite";options[3]="Remove favourite";count=places_tab?4:3;}
@@ -480,11 +481,18 @@ static void menu_sync(u32 now){
  }
  /* Imports are used by startup/phone/coordinate services and native captures;
   * physical input normally enters through menu_open/menu_change. */
- int p=screen==SCR_MENU?P_HOME:screen==SCR_TRIP?P_TRIP:screen==SCR_BT?P_PHONE:screen==SCR_SET?P_SETTINGS:screen==SCR_KEY?(kbd_picker?P_LANG:P_NAME):coordinates.step==COORD_REVIEW?P_REVIEW:P_COORD;
+ int p=screen==SCR_MENU?P_HOME:screen==SCR_GPS?P_GPS:screen==SCR_TRIP?P_TRIP:screen==SCR_BT?P_PHONE:screen==SCR_SET?P_SETTINGS:screen==SCR_KEY?(kbd_picker?P_LANG:P_NAME):coordinates.step==COORD_REVIEW?P_REVIEW:P_COORD;
  int selected=p==P_HOME?menu_focus:p==P_SETTINGS?set_focus:p==P_PHONE?bt_page_focus:p==P_TRIP?trip.active_idx:0;
  if(p==P_NAME||p==P_LANG){keyboard_origin=kbd_action;pk_reset();pk_prepare();language_keyboard=p==P_LANG;}
  sheet_depth=p==P_HOME?0:1;sheet_stack_page[0]=P_HOME;sheet_stack_focus[0]=0;
  menu_change(p,selected,now);
+}
+/* The GPS action toggles the panel. Opened directly it has no parent sheet,
+ * so BACK closes it; opened from the Home menu, BACK returns there. */
+static void gps_panel_toggle(u32 now){
+ menu_sync(now);
+ if(sheet_page==P_GPS){menu_close(now);return;}
+ menu_open(P_GPS,0,now);sheet_depth=0;
 }
 static void menu_prepare(u32 now){
  menu_sync(now);struct HudBox wanted=menu_box(sheet_page);

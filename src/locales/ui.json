@@ -775,6 +775,34 @@
     "Connect": [
       "Connecter",
       "Conectar"
+    ],
+    "Heading": [
+      "Cap",
+      "Rumbo"
+    ],
+    "Accuracy": [
+      "Précision",
+      "Precisión"
+    ],
+    "No fix": [
+      "Pas de signal",
+      "Sin señal"
+    ],
+    "Satellites: ": [
+      "Satellites : ",
+      "Satélites: "
+    ],
+    "Lat": [
+      "Lat",
+      "Lat"
+    ],
+    "Lon": [
+      "Lon",
+      "Lon"
+    ],
+    "Alt": [
+      "Alt",
+      "Alt"
     ]
   },
   "language_names": {

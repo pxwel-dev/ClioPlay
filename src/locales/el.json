@@ -187,5 +187,12 @@
   "Move earlier": "Νωρίτερα",
   "Move later": "Αργότερα",
   "Save favourite": "Αποθήκευση αγαπημένου",
-  "Connect": "Σύνδεση"
+  "Connect": "Σύνδεση",
+  "Heading": "Πορεία",
+  "Accuracy": "Ακρίβεια",
+  "No fix": "Χωρίς σήμα",
+  "Satellites: ": "Δορυφόροι: ",
+  "Lat": "Πλ.",
+  "Lon": "Μήκ.",
+  "Alt": "Υψ."
 }

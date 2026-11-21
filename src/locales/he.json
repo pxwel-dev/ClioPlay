@@ -187,5 +187,12 @@
   "Move earlier": "הזזה מוקדם יותר",
   "Move later": "הזזה מאוחר יותר",
   "Save favourite": "שמירה במועדפים",
-  "Connect": "התחברות"
+  "Connect": "התחברות",
+  "Heading": "כיוון",
+  "Accuracy": "דיוק",
+  "No fix": "אין אות",
+  "Satellites: ": "לוויינים: ",
+  "Lat": "רוחב",
+  "Lon": "אורך",
+  "Alt": "גובה"
 }

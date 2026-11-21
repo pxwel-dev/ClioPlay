@@ -194,4 +194,11 @@ static const char*ui_tr(const char*s){static const char*const rows[][UI_LANGUAGE
  {"Move later","Reculer","Mover después","Nach hinten","Sposta dopo","Mover depois","Naar achteren","Przenieś później","Arkaya taşı","Αργότερα","Перемістити пізніше","Переместить позже","تأخير","向后移","後ろへ移動","뒤로 이동","बाद में ले जाएँ","הזזה מאוחר יותר"},
  {"Save favourite","Enregistrer un favori","Guardar favorito","Favorit speichern","Salva preferito","Guardar favorito","Favoriet opslaan","Zapisz ulubione","Favori kaydet","Αποθήκευση αγαπημένου","Зберегти в обране","Сохранить в избранное","حفظ في المفضلة","保存收藏","お気に入りに保存","즐겨찾기 저장","पसंदीदा सहेजें","שמירה במועדפים"},
  {"Connect","Connecter","Conectar","Verbinden","Connetti","Ligar","Verbinden","Połącz","Bağlan","Σύνδεση","Підключити","Подключить","اتصال","连接","接続","연결","कनेक्ट करें","התחברות"},
+ {"Heading","Cap","Rumbo","Richtung","Direzione","Direção","Koers","Kurs","Yön","Πορεία","Курс","Курс","الاتجاه","航向","方位","방향","दिशा","כיוון"},
+ {"Accuracy","Précision","Precisión","Genauigkeit","Precisione","Precisão","Nauwkeurigheid","Dokładność","Doğruluk","Ακρίβεια","Точність","Точность","الدقة","精度","精度","정확도","सटीकता","דיוק"},
+ {"No fix","Pas de signal","Sin señal","Kein Signal","Nessun segnale","Sem sinal","Geen signaal","Brak sygnału","Sinyal yok","Χωρίς σήμα","Немає сигналу","Нет сигнала","لا توجد إشارة","无信号","信号なし","신호 없음","सिग्नल नहीं","אין אות"},
+ {"Satellites: ","Satellites : ","Satélites: ","Satelliten: ","Satelliti: ","Satélites: ","Satellieten: ","Satelity: ","Uydu: ","Δορυφόροι: ","Супутники: ","Спутники: ","الأقمار: ","卫星: ","衛星: ","위성: ","उपग्रह: ","לוויינים: "},
+ {"Lat","Lat","Lat","Br.","Lat","Lat","Br.","Szer.","Enl.","Πλ.","Шир.","Шир.","عرض","纬度","緯度","위도","अक्षांश","רוחב"},
+ {"Lon","Lon","Lon","Lg.","Lon","Lon","Lg.","Dł.","Boy.","Μήκ.","Довг.","Долг.","طول","经度","経度","경도","देशांतर","אורך"},
+ {"Alt","Alt","Alt","Höhe","Alt","Alt","Hoogte","Wys.","Rakım","Υψ.","Вис.","Выс.","ارتفاع","海拔","標高","고도","ऊँचाई","גובה"},
  };if(!s||pref.language<1||pref.language>=UI_LANGUAGE_COUNT)return s;for(unsigned i=0;i<sizeof(rows)/sizeof(rows[0]);i++)if(streq(s,rows[i][0]))return rows[i][pref.language];return s;}
