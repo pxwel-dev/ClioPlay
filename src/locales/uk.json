@@ -225,5 +225,12 @@
   "Start suggested trip?": "Почати запропоновану поїздку?",
   "Suggestion unavailable": "Пропозиція недоступна",
   "You come here often": "Ви часто буваєте тут",
-  "Add to favourites?": "Додати до обраного?"
+  "Add to favourites?": "Додати до обраного?",
+  "Then": "Потім",
+  "View diversion": "Показати об'їзд",
+  "Nearby": "Поруч",
+  "Fuel": "Пальне",
+  "Parking": "Паркування",
+  "Hospital": "Лікарня",
+  "No nearby places found": "Поблизу місць не знайдено"
 }

@@ -11,6 +11,8 @@ static int mock_running,mock_source=1,mock_debug=0,mock_alert=0;
 static unsigned mock_alert_words[4];
 static unsigned char mock_ring[65536] __attribute__((aligned(4)));
 static char mock_nav[512];
+static unsigned char mock_avrcp_tx[16][80];
+static unsigned mock_avrcp_tx_len[16],mock_avrcp_tx_n;
 static struct MockFile{const char*path;unsigned char data[1280];unsigned size;} mock_files[]={
  {"./clio843/btnames.dat",{0},0},{"./clio843/btbonds.dat",{0},0},
  {"/tmp/clbtdevices",{0},0},{"/tmp/clbtdevices.tmp",{0},0},
@@ -40,6 +42,7 @@ static long s_read(int fd,void*p,unsigned n){
 }
 static long s_write(int fd,const void*p,unsigned n){
  if(fd>=20&&fd<26){struct MockFile*f=&mock_files[fd-20];assert(n<sizeof(f->data));memcpy(f->data,p,n);f->data[n]=0;f->size=n;return n;}
+ if(fd==30){assert(mock_avrcp_tx_n<16&&n<=sizeof(mock_avrcp_tx[0]));memcpy(mock_avrcp_tx[mock_avrcp_tx_n],p,n);mock_avrcp_tx_len[mock_avrcp_tx_n]=n;mock_avrcp_tx_n++;return n;}
  if(fd==9){unsigned size=n<sizeof(mock_nav)-1?n:sizeof(mock_nav)-1;memcpy(mock_nav,p,size);mock_nav[size]=0;}
  if(fd==11)mock_logs++;
  return n;
@@ -185,4 +188,55 @@ static void bluetooth_identity_checks(void){
  assert(strstr((char*)mock_files[2].data,"DEV=06:05:04:03:02:02|1|Second phone\n"));
  assert(strstr((char*)mock_files[2].data,"DEV=06:05:04:03:02:01|0|First renamed\n"));
 }
-int main(void){bluetooth_identity_checks();rate_checks();source_checks();idle_checks();cue_checks();copy_checks();snd_close();puts("Playback: three rates, gated decode/fresh resume, AVRCP/destination handoff, bounded idle drain, transport suspend, paused cues and PCM copies passed.");return 0;}
+static void avrcp_notify_checks(void){
+ reset(44100);avrcp_close();avrcp_tl=0;mock_avrcp_tx_n=0;
+ avrcpfd=30;avrcp_state=2;
+ avrcp_on_ready();
+ /* Expect initial GetPlayStatus (0x30), GetElementAttributes (0x20),
+  * RegisterNotification(PLAYBACK=1) and RegisterNotification(TRACK=2). */
+ assert(mock_avrcp_tx_n==4);
+ assert(mock_avrcp_tx[0][3]==0x01&&mock_avrcp_tx[0][9]==0x30);
+ assert(mock_avrcp_tx[1][3]==0x01&&mock_avrcp_tx[1][9]==0x20);
+ assert(mock_avrcp_tx[2][3]==0x03&&mock_avrcp_tx[2][9]==0x31&&mock_avrcp_tx_len[2]==18&&mock_avrcp_tx[2][13]==AVRCP_EVT_PLAYBACK);
+ assert(mock_avrcp_tx[3][3]==0x03&&mock_avrcp_tx[3][9]==0x31&&mock_avrcp_tx_len[3]==18&&mock_avrcp_tx[3][13]==AVRCP_EVT_TRACK);
+ assert(avrcp_notify_state[AVRCP_EVT_PLAYBACK]==1&&avrcp_notify_state[AVRCP_EVT_TRACK]==1);
+ u8 tl_pb=(u8)(mock_avrcp_tx[2][0]>>4),tl_tr=(u8)(mock_avrcp_tx[3][0]>>4);
+ /* INTERIM arms playback & updates meta_playing immediately. */
+ mock_avrcp_tx_n=0;meta_playing=1;meta_dirty=0;
+ u8 interim_pb[]={(u8)((tl_pb<<4)|2),0x11,0x0e,0x0f,0x48,0,0,0x19,0x58,0x31,0,0,2,AVRCP_EVT_PLAYBACK,2};
+ avrcp_parse(interim_pb,sizeof(interim_pb));
+ assert(avrcp_notify_state[AVRCP_EVT_PLAYBACK]==2&&!meta_playing&&meta_dirty&&mock_avrcp_tx_n==0);
+ u8 interim_tr[]={(u8)((tl_tr<<4)|2),0x11,0x0e,0x0f,0x48,0,0,0x19,0x58,0x31,0,0,9,AVRCP_EVT_TRACK,0,0,0,0,0,0,0,1};
+ avrcp_parse(interim_tr,sizeof(interim_tr));
+ assert(avrcp_notify_state[AVRCP_EVT_TRACK]==2&&mock_avrcp_tx_n==0);
+ /* Duplicate registration while armed is suppressed. */
+ avrcp_register_notify(AVRCP_EVT_TRACK);assert(mock_avrcp_tx_n==0);
+ /* TRACK_CHANGED fires immediate metadata + status fetch and re-arms track notify. */
+ u8 changed_tr[]={(u8)((tl_tr<<4)|2),0x11,0x0e,0x0d,0x48,0,0,0x19,0x58,0x31,0,0,9,AVRCP_EVT_TRACK,0,0,0,0,0,0,0,2};
+ avrcp_parse(changed_tr,sizeof(changed_tr));
+ assert(mock_avrcp_tx_n==3);
+ assert(mock_avrcp_tx[0][9]==0x20&&mock_avrcp_tx[1][9]==0x30&&mock_avrcp_tx[2][3]==0x03&&mock_avrcp_tx[2][9]==0x31&&mock_avrcp_tx[2][13]==AVRCP_EVT_TRACK);
+ assert(avrcp_notify_state[AVRCP_EVT_TRACK]==1);
+ /* PLAYBACK_STATUS_CHANGED updates playing flag, requests status, and re-arms playback notify. */
+ mock_avrcp_tx_n=0;meta_dirty=0;
+ u8 changed_pb[]={(u8)((tl_pb<<4)|2),0x11,0x0e,0x0d,0x48,0,0,0x19,0x58,0x31,0,0,2,AVRCP_EVT_PLAYBACK,1};
+ avrcp_parse(changed_pb,sizeof(changed_pb));
+ assert(meta_playing&&meta_dirty&&mock_avrcp_tx_n==2);
+ assert(mock_avrcp_tx[0][9]==0x30&&mock_avrcp_tx[1][3]==0x03&&mock_avrcp_tx[1][9]==0x31&&mock_avrcp_tx[1][13]==AVRCP_EVT_PLAYBACK);
+ /* REJECTED / NOT_IMPLEMENTED marks event unsupported using transaction label and suppresses retry spam. */
+ u8 tl_pb2=(u8)(mock_avrcp_tx[1][0]>>4);
+ mock_avrcp_tx_n=0;
+ u8 rejected_pb[]={(u8)((tl_pb2<<4)|2),0x11,0x0e,0x0a,0x48,0,0,0x19,0x58,0x31,0,0,1,0x01};
+ avrcp_parse(rejected_pb,sizeof(rejected_pb));
+ assert(avrcp_notify_state[AVRCP_EVT_PLAYBACK]==3);
+ avrcp_register_notify(AVRCP_EVT_PLAYBACK);assert(mock_avrcp_tx_n==0);
+ /* REJECTED status response does not clobber valid metadata. */
+ meta_dur=210;meta_pos=42;meta_playing=1;
+ u8 rejected_status[]={2,0x11,0x0e,0x0a,0x48,0,0,0x19,0x58,0x30,0,0,1,0x00};
+ avrcp_parse(rejected_status,sizeof(rejected_status));
+ assert(meta_dur==210&&meta_pos==42&&meta_playing==1);
+ /* Closing AVRCP resets notification state so reconnects re-negotiate cleanly. */
+ avrcp_close();
+ assert(avrcp_notify_state[AVRCP_EVT_PLAYBACK]==0&&avrcp_notify_state[AVRCP_EVT_TRACK]==0);
+}
+int main(void){bluetooth_identity_checks();avrcp_notify_checks();rate_checks();source_checks();idle_checks();cue_checks();copy_checks();snd_close();puts("Playback: three rates, gated decode/fresh resume, AVRCP notifications/destination handoff, bounded idle drain, transport suspend, paused cues and PCM copies passed.");return 0;}

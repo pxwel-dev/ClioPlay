@@ -225,5 +225,12 @@
   "Start suggested trip?": "Έναρξη προτεινόμενης διαδρομής;",
   "Suggestion unavailable": "Η πρόταση δεν είναι διαθέσιμη",
   "You come here often": "Έρχεστε συχνά εδώ",
-  "Add to favourites?": "Προσθήκη στα αγαπημένα;"
+  "Add to favourites?": "Προσθήκη στα αγαπημένα;",
+  "Then": "Μετά",
+  "View diversion": "Προβολή παράκαμψης",
+  "Nearby": "Κοντά",
+  "Fuel": "Καύσιμα",
+  "Parking": "Στάθμευση",
+  "Hospital": "Νοσοκομείο",
+  "No nearby places found": "Δεν βρέθηκαν κοντινά"
 }

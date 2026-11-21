@@ -1,6 +1,6 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
-<h1 align="center">ClioPlay 2.2.2</h1>
+<h1 align="center">ClioPlay 2.2.3</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
 <p align="center">
   Created and maintained by <a href="https://github.com/pxwel-dev">Pawel (pxwel-dev)</a>.
@@ -9,12 +9,14 @@
 
 <p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases/tag/Release">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-## Version 2.2.2 (Major Performance Optimisation)
+## Version 2.2.3
 
-- Bluetooth playback now uses a 200 ms prefill.
-- Animations and steady HUD updates target 20 FPS. ClioPlay prepares Explore rotation and parked overlay transitions ahead of playback; the menu resizes alongside taller notices. Routing calculations still temporarily cap ClioPlay to 5 FPS to allow the single core 400mhz CPU maximum headroom for calculations. 
-- Trip footer buttons, menu lists, dialogs and keyboards wrap around. Use the arrows to change Trip tabs or select Cancel route on the footer.
-- Press Centre / OK to briefly show the current road name and, during guidance, your ETA.
+- **Offline Nearby POIs:** browse nearby **Fuel**, **Parking** and **Hospital** places offline from the new **Nearby** tab in Trip (or inside **Add stop** / **Change destination**), scanned directly from installed map tiles with distance sorting and antialiased category badges.
+- **Secondary manoeuvre cue:** closely spaced follow-up turns or roundabouts appear in a compact **Then …** frosted-glass pill docked above the Turn card and promote smoothly as you complete the current manoeuvre.
+- **View diversion on the map:** the **Take diversion?** confirmation now includes a **View diversion** button that opens Explore framed over the proposed bypass; press **MAP** to return and re-open the same confirmation.
+- **Instant Bluetooth updates:** AVRCP 1.3 `RegisterNotification` delivers track, playback-status and ClioPlay Send updates immediately instead of waiting for 1-second polling, falling back automatically on phones that do not support it.
+- **Faster cold boot & diagnostics:** regional atlases validate `atlas.cpa` graphs lazily on first routing use; Debug `FRAME 5S` logs now report `RSS_KB` and `FREE_KB` memory telemetry.
+- **Cleaner Itinerary scrolling & desktop tools:** scrollable itineraries centre visible stops cleanly and connect only consecutive visible stops on the same page; a new `tools/favourites_tool.py` CLI imports and exports Favourites and Recents via CSV, JSON and GPX.
 
 See [version history](CHANGELOG.md) for implemented changes by version.
 
@@ -24,9 +26,13 @@ See [intelligent navigation](src/docs/intelligent-navigation.md) for configurati
 
 See the [full preview index](src/docs/demo/README.md) for all animations.
 
-| Destination prediction | Intelligent diversions |
+| Offline Nearby POIs | Secondary manoeuvre cue |
 | --- | --- |
-| ![Learned destination in the driving HUD with explicit review](src/docs/demo/v220-destination-prediction.gif) | ![Historical traffic and alternative route selection, controlled fixture](src/docs/demo/v220-intelligent-diversions.gif) |
+| ![Browse nearby hospitals and fuel stations offline in Newcastle and add a stop to the itinerary](src/docs/demo/v223-nearby-pois.gif) | ![Chained roundabout and follow-up right turn showing the compact Then pill and smooth promotion](src/docs/demo/v223-secondary-manoeuvre.gif) |
+
+| View and take a diversion | Destination prediction |
+| --- | --- |
+| ![Preview a proposed real-map diversion in Explore, inspect the junction, return via MAP and accept](src/docs/demo/v223-view-diversion.gif) | ![Learned destination in the driving HUD with explicit review](src/docs/demo/v220-destination-prediction.gif) |
 
 | Frequent-place suggestion | Send a destination with [ClioPlay Send](https://pxwel-dev.github.io/ClioPlay-Send/) |
 | --- | --- |
@@ -87,11 +93,11 @@ BT CTRL also requires a connected phone. Unavailable radio/volume readings stay 
 
 ## Features
 
-- Offline OpenStreetMap navigation, routing and rerouting.
-- Browse the map and route to a selected point, send destination from a connected phone, or manually enter named decimal-degree lat/long coordinates
-- Manage stops, recents and favourites.
-- Optional offline destination learning, historical traffic-aware ETAs and local diversions based on personal GPS history.
-- Bluetooth phone audio with track information and remote playback controls.
+- Offline OpenStreetMap navigation, routing, rerouting and chained secondary manoeuvre cues.
+- Browse the map and route to a selected point, search offline **Nearby** Fuel/Parking/Hospital POIs, send destinations from a connected phone, or manually enter named decimal-degree lat/long coordinates.
+- Manage stops, recents and favourites on the head unit or import/export them on desktop (`tools/favourites_tool.py` — CSV, JSON, GPX).
+- Optional offline destination learning, historical traffic-aware ETAs and local diversions with on-map Explore preview based on personal GPS history.
+- Bluetooth phone audio with instant AVRCP track updates and remote playback controls.
 - Vehicle audio controls remain responsible for physical volume and mute.
 - Full-screen maps with animated, semi-transparent frosted glass notices for road names, camera alerts, route progress and audio changes.
 - Day/Night themes with custom daily switch times in Auto, automatic units and time zones, and 18 interface languages.
@@ -133,7 +139,7 @@ upper-right console buttons act as the remote's soft keys.
 
 | Remote control | Console equivalent | Action |
 | --- | --- | --- |
-| **MAP** | **MAP** | Restore Auto zoom after temporary manual zoom; otherwise switch between driving and map browsing, or return to driving from a menu. |
+| **MAP** | **MAP** | Restore Auto zoom after temporary manual zoom; return from **View diversion** to re-open the confirmation; otherwise switch between driving and map browsing, or return to driving from a menu. |
 | **MENU** | **MENU** | Open the menu for Trip, Bluetooth and Settings. |
 | **BACK** | **BACK** | Go back or dismiss a dialog. On the driving map with Bluetooth audio selected and a phone connected, toggle **BT CTRL**. |
 | **Centre / OK** | **Press the knob** | On the driving map, briefly show the current road name and, during guidance, the estimated time and distance remaining. In map browsing, select the crosshair point. In **BT CTRL**, play/pause. In menus, select or confirm. |
@@ -165,7 +171,7 @@ Menus now open as animated glass panels over the map. Menu, Bluetooth and
 Settings retain the bottom driving pills when there is room; Trip and its entry
 pages use a taller panel. Time and active status notices remain in place. Trip
 always opens on **Itinerary**. **Left / Right** cycles through **Itinerary →
-Recents → Favourites**. On the itinerary's bottom row, **Left / Right** wraps
+Recents → Favourites → Nearby**. On the itinerary's bottom row, **Left / Right** wraps
 between action buttons, including **Cancel route**. Use **Up / Down** or the
 console knob to move between rows and wrap at the ends. Press **OK** to open an
 item, **BACK** to return one level,

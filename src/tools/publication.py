@@ -17,7 +17,8 @@ PREVIEW_GIFS = ('boot-day.gif', 'boot-night.gif', 'popups.gif', 'driving.gif', '
                 'speed-warning.gif', 'map-browsing.gif', 'roundabout-eta.gif', 'add-stop.gif', 'status-notifications.gif', 'metadata-updates.gif', 'coordinates.gif', 'coordinate-route.gif', 'map-point-route.gif',
                 'v216-coordinates.gif', 'v216-hud-settings.gif', 'v216-bluetooth-hidden.gif', 'v216-itinerary.gif',
                 'trips-layout.gif', 'trips-empty-layout.gif', 'popups-layout.gif',
-                'v220-destination-prediction.gif', 'v220-intelligent-diversions.gif', 'v220-frequent-place.gif')
+                'v220-destination-prediction.gif', 'v220-intelligent-diversions.gif', 'v220-frequent-place.gif',
+                'v223-nearby-pois.gif', 'v223-secondary-manoeuvre.gif', 'v223-view-diversion.gif')
 
 def source_files(root, reports):
     files = {}

@@ -30,6 +30,17 @@ int main(int argc,char**argv){assert(argc==3&&load_font()&&cliou_load(argv[1]));
   const char*confirm_titles[]={"Add to favourites?","Start suggested trip?","Take diversion?","Cancel route?","Remove stop?","Clear driving history?","Route to point?","Add point as stop?","Cancel current route?","Resume saved trip?"};
   for(unsigned i=0;i<sizeof(confirm_titles)/sizeof(confirm_titles[0]);i++)assert(width(ui_tr(confirm_titles[i]),CONFIRMATION_FACE)<=252);
   assert(width(ui_tr("Yes"),CONFIRMATION_FACE)<=104&&width(ui_tr("No"),CONFIRMATION_FACE)<=104);
+  assert(width(ui_tr("View diversion"),CONFIRMATION_FACE)<=236);
+  assert(width(ui_tr("Then"),0)<=75);
+  const char*trip_tabs[]={"Itinerary","Recents","Favourites","Nearby"};
+  for(unsigned i=0;i<sizeof(trip_tabs)/sizeof(trip_tabs[0]);i++){
+   int tw=width(ui_tr(trip_tabs[i]),0);
+   if(tw>99)fprintf(stderr,"Trip tab overflow %s %s: %s (%d)\n",ui_language_codes[lang],trip_tabs[i],ui_tr(trip_tabs[i]),tw);
+   assert(tw<=99);
+  }
+  const char*nearby_cats[]={"Fuel","Parking","Hospital"};
+  for(unsigned i=0;i<sizeof(nearby_cats)/sizeof(nearby_cats[0]);i++)assert(width(ui_tr(nearby_cats[i]),1)<=340);
+  assert(streq(place_display_name("FUEL"),ui_tr("Fuel"))&&streq(place_display_name("PARKING"),ui_tr("Parking"))&&streq(place_display_name("HOSPITAL"),ui_tr("Hospital")));
   /* The action hint must always fit an available status HUD column. */
   assert(width(ui_tr("BACK to review"),0)<=220&&width(ui_tr("OK to review"),0)<=220);
   assert(width(ui_tr("Faster route available"),0)<=280);

@@ -1,6 +1,7 @@
 /* HUD presentation. The route, camera and audio services own their data. */
 #define HUD_CLOCK_X 354
 enum {HUD_BOTTOM_MARGIN=8,HUD_SIDE_W=128,HUD_TURN_X=W-HUD_BOTTOM_MARGIN-HUD_SIDE_W,
+ HUD_TURN_NEXT_H=24,HUD_TURN_NEXT_GAP=4,
  HUD_BOTTOM_GAP=4,HUD_ROAD_PAD=12,HUD_CAMERA_PAD=10,HUD_CAMERA_ICON_W=11,HUD_CAMERA_GAP=8};
 
 #include "hud_glass.h"
@@ -400,7 +401,7 @@ static void hud_show_driving_info(void){
  if(route_status==R_READY)hud_pulse_at(&hud_navigation,HUD_JOURNEY,now,4200);
 }
 static void hud_driver_prepare(u32 now){
- struct HudCard speed={0},road={0},road_name={0},turn={0};
+ struct HudCard speed={0},road={0},road_name={0},turn={0},turn_next={0};
  int camera=gps.fix&&camera_visible;
  int show_speed=gps.fix&&(!freecam||camera);
  const char*name=hud_current_road_name();
@@ -427,6 +428,18 @@ static void hud_driver_prepare(u32 now){
   turn.flags=region_flags&4;turn.value=nav_man_exit;
   append_nav_distance(turn.title,sizeof(turn.title),nav_man_m);
   copystr(turn.detail,sizeof(turn.detail),nav_man_text());
+  if(nav_next_type!=MAN_NONE&&nav_man_m<=ROUTE_NEXT_SHOW_M&&screen==SCR_MAP&&modal==MOD_NONE){
+   turn_next.box=hud_box(turn.box.x,HUD_BOTTOM_Y-HUD_TURN_NEXT_GAP-HUD_TURN_NEXT_H,HUD_SIDE_W,HUD_TURN_NEXT_H);
+   turn_next.kind=nav_next_type;turn_next.flags=region_flags&4;turn_next.value=nav_next_exit;
+   const char*then_word=ui_tr("Then");
+   char combined[96];copystr(combined,sizeof(combined),then_word);
+   if(nav_next_type==MAN_ROUNDABOUT&&nav_next_exit>0&&nav_next_exit<100){
+    appendstr(combined,sizeof(combined)," ");append_int(combined,sizeof(combined),nav_next_exit);
+   }else if(nav_next_m>=70u){
+    appendstr(combined,sizeof(combined)," ");append_nav_distance(combined,sizeof(combined),nav_next_m);
+   }
+   copystr(turn_next.title,sizeof(turn_next.title),width(combined,0)<=HUD_SIDE_W-53?combined:then_word);
+  }
  }
  if(camera||show_name){
   int max_w=W-2*(HUD_BOTTOM_MARGIN+HUD_SIDE_W+HUD_BOTTOM_GAP);
@@ -443,7 +456,7 @@ static void hud_driver_prepare(u32 now){
   road.box=hud_box((W-w)/2,HUD_BOTTOM_Y+43-h,w,h);
  }
  hud_set_card(HC_SPEED,speed,now);hud_set_card(HC_ROAD,road,now);hud_set_card(HC_TURN,turn,now);
- hud_set_card(HC_ROAD_NAME,road_name,now);
+ hud_set_card(HC_TURN_NEXT,turn_next,now);hud_set_card(HC_ROAD_NAME,road_name,now);
 }
 
 static void hud_rect_ink(int x,int y,int w,int h,u16 ink){
@@ -484,6 +497,19 @@ static void hud_draw_turn(int x,int y,const struct HudCard*c){
  }
  if(t==MAN_ROUNDABOUT&&c->value>0&&c->value<100){
   char b[4]="";append_int(b,sizeof(b),c->value);compact_center(x,y-10,17,c->value>=10?0:1,b,C_WHITE);
+ }
+}
+static void hud_draw_turn_small(int x,int y,const struct HudCard*c){
+ int t=c->kind,idx=0,mirror=0;
+ if(t==MAN_ROUNDABOUT){idx=4;mirror=!c->flags;}
+ else if(t==MAN_UTURN){idx=3;mirror=!c->flags;}
+ else{
+  mirror=t==MAN_LEFT||t==MAN_SLIGHT_LEFT||t==MAN_SHARP_LEFT;
+  idx=t==MAN_SLIGHT_LEFT||t==MAN_SLIGHT_RIGHT?1:t==MAN_SHARP_LEFT||t==MAN_SHARP_RIGHT?2:0;
+ }
+ for(int j=0;j<HUD_TURN_SMALL_ICON;j++)for(int i=0;i<HUD_TURN_SMALL_ICON;i++){
+  int a=hud_turn_small_masks[idx][j*HUD_TURN_SMALL_ICON+(mirror?HUD_TURN_SMALL_ICON-1-i:i)];
+  if(a)blend_pixel(x-HUD_TURN_SMALL_ICON/2+i,y-HUD_TURN_SMALL_ICON/2+j,C_CYAN,a);
  }
 }
 static void hud_draw_transport(int x,int w,int y,u32 now,int playing,int play_fade){
@@ -714,11 +740,14 @@ static void hud_draw_card(int id,u32 now){
   hud_draw_turn(x+23,y+21,c);
   compact_fit(x+46,y+4,w-53,1,c->title,C_WHITE);
   compact_fit(x+46,y+23,w-53,0,c->detail,C_MUTED);break;
+ case HC_TURN_NEXT:
+  hud_draw_turn_small(x+23,y+b.h/2,c);
+  compact_fit(x+46,y+5,w-53,0,c->title,C_WHITE);break;
  }
  hud_ink_alpha=16;clip_x=ox;clip_y=oy;clip_right=or;clip_bottom=ob;
 }
 static void hud_draw_all(u32 now,int map){
- if(map){hud_draw_card(HC_SPEED,now);hud_draw_card(HC_ROAD,now);hud_draw_card(HC_TURN,now);}
+ if(map){hud_draw_card(HC_SPEED,now);hud_draw_card(HC_ROAD,now);hud_draw_card(HC_TURN,now);hud_draw_card(HC_TURN_NEXT,now);}
  hud_draw_card(HC_CLOCK,now);hud_draw_card(HC_STATUS,now);
 }
 /* New content and geometry may request buffering. Include the final frame

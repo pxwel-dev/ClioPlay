@@ -225,5 +225,12 @@
   "Start suggested trip?": "Önerilen yolculuk başlatılsın mı?",
   "Suggestion unavailable": "Öneri kullanılamıyor",
   "You come here often": "Buraya sık geliyorsunuz",
-  "Add to favourites?": "Favorilere eklensin mi?"
+  "Add to favourites?": "Favorilere eklensin mi?",
+  "Then": "Sonra",
+  "View diversion": "Alternatif yolu gör",
+  "Nearby": "Yakında",
+  "Fuel": "Yakıt",
+  "Parking": "Otopark",
+  "Hospital": "Hastane",
+  "No nearby places found": "Yakında yer bulunamadı"
 }

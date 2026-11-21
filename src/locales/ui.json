@@ -927,6 +927,34 @@
     "Add to favourites?": [
       "Ajouter aux favoris ?",
       "¿Añadir a favoritos?"
+    ],
+    "Then": [
+      "Puis",
+      "Luego"
+    ],
+    "View diversion": [
+      "Voir la déviation",
+      "Ver desvío"
+    ],
+    "Nearby": [
+      "À proximité",
+      "Cerca"
+    ],
+    "Fuel": [
+      "Carburant",
+      "Combustible"
+    ],
+    "Parking": [
+      "Parking",
+      "Aparcamiento"
+    ],
+    "Hospital": [
+      "Hôpital",
+      "Hospital"
+    ],
+    "No nearby places found": [
+      "Aucun lieu à proximité",
+      "No hay lugares cercanos"
     ]
   },
   "language_names": {

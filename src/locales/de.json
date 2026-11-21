@@ -225,5 +225,12 @@
   "Start suggested trip?": "Vorgeschlagene Fahrt starten?",
   "Suggestion unavailable": "Vorschlag nicht verfügbar",
   "You come here often": "Sie sind oft hier",
-  "Add to favourites?": "Zu Favoriten hinzufügen?"
+  "Add to favourites?": "Zu Favoriten hinzufügen?",
+  "Then": "Danach",
+  "View diversion": "Umleitung zeigen",
+  "Nearby": "Umgebung",
+  "Fuel": "Tankstelle",
+  "Parking": "Parkplatz",
+  "Hospital": "Krankenhaus",
+  "No nearby places found": "Keine Orte in der Nähe"
 }

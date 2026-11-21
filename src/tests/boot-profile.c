@@ -33,6 +33,6 @@ int main(int argc,char**argv){
  STAGE("First framebuffer",draw());
  STAGE("Second framebuffer",draw());
  printf("Atlas: %u mapped bytes, %u regions, %u nodes, %u edges, %u members; QAD%d.\n",atlas_bytes,atlas_nr,atlas_nn,atlas_ne,atlas_nm,qadjmode);
- puts("Atlas loading validates every graph record; QAD7 loading maps the file and reads its header, not the whole packet/index data.");
+ puts("Atlas loading validates header and region table; full graph records validate lazily on first cross-region route; QAD7 loading maps the file and reads its header, not the whole packet/index data.");
  return 0;
 }

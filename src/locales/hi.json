@@ -225,5 +225,12 @@
   "Start suggested trip?": "सुझाई गई यात्रा शुरू करें?",
   "Suggestion unavailable": "सुझाव उपलब्ध नहीं है",
   "You come here often": "आप यहाँ अक्सर आते हैं",
-  "Add to favourites?": "पसंदीदा में जोड़ें?"
+  "Add to favourites?": "पसंदीदा में जोड़ें?",
+  "Then": "फिर",
+  "View diversion": "वैकल्पिक मार्ग देखें",
+  "Nearby": "आस-पास",
+  "Fuel": "ईंधन",
+  "Parking": "पार्किंग",
+  "Hospital": "अस्पताल",
+  "No nearby places found": "आस-पास कोई स्थान नहीं"
 }

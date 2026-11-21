@@ -75,13 +75,18 @@ static void test_prefs_and_geometry(void){
  gps.fix=1;gps.hour=12;gps.min=35;car.tempok=1;car.temp=18;
  trip.active=1;trip.count=1;trip.paused=0;
  route_status=R_READY;nav_man_type=MAN_RIGHT;nav_man_idx=0;nav_man_m=220;
+ nav_next_type=MAN_LEFT;nav_next_exit=0;nav_next_m=90;
  hud_reset_animations();
  notice_success("Test");hud_prepare(5,hud_capture_ms,1);hud_driver_prepare(hud_capture_ms);
  assert(hud_tween[HC_CLOCK].target.box.x==8);
  assert(hud_tween[HC_STATUS].target.box.x>=W/2);
  assert(hud_tween[HC_SPEED].target.box.x==HUD_TURN_X);
  assert(hud_tween[HC_TURN].target.box.x==HUD_BOTTOM_MARGIN);
- menu_open_setting(10,hud_now_ms());hud_prepare(5,hud_capture_ms,0);
+ assert(hud_tween[HC_TURN_NEXT].target.box.a==256);
+ assert(hud_tween[HC_TURN_NEXT].target.box.x==HUD_BOTTOM_MARGIN);
+ assert(hud_tween[HC_TURN_NEXT].target.box.y+hud_tween[HC_TURN_NEXT].target.box.h+HUD_TURN_NEXT_GAP==HUD_BOTTOM_Y);
+ menu_open_setting(10,hud_now_ms());hud_prepare(5,hud_capture_ms,0);hud_driver_prepare(hud_capture_ms);
+ assert(hud_tween[HC_TURN_NEXT].target.box.a==0);
  assert(hud_status_pose(hud_capture_ms).x>=W/2);
  assert(sheet_to_box.y+sheet_to_box.h<=HUD_BOTTOM_Y);
 
@@ -90,6 +95,26 @@ static void test_prefs_and_geometry(void){
  assert(hud_tween[HC_CLOCK].target.box.x>=HUD_CLOCK_X);
  assert(hud_tween[HC_SPEED].target.box.x==HUD_BOTTOM_MARGIN);
  assert(hud_tween[HC_TURN].target.box.x==HUD_TURN_X);
+ assert(hud_tween[HC_TURN_NEXT].target.box.x==HUD_TURN_X&&hud_tween[HC_TURN_NEXT].target.box.a==256);
+ /* Render both Day and Night frames with the secondary pill active, and verify
+  * enter/exit motion never collides with HC_TURN and draw() refreshes glass cache. */
+ for(int night=0;night<2;night++){
+  apply_palette(night);fill(0,0,W,H,C_MAP_BG);
+  hud_settle_for_capture(hud_capture_ms+500);hud_draw_all(hud_capture_ms+500,1);
+ }
+ {
+  u32 bg_before=hud_glass_background;
+  pref.theme=THEME_NIGHT;apply_palette(1);mapok=0;
+  hud_capture_ms+=600;draw();
+  assert(hud_glass_background!=bg_before);
+ }
+ /* Secondary pill exit animation stays clear of HC_TURN's top border. */
+ nav_next_type=MAN_NONE;nav_next_m=0;
+ hud_driver_prepare(hud_capture_ms+1000);
+ for(u32 step=0;step<=320;step+=40){
+  struct HudBox pose=hud_pose(&hud_tween[HC_TURN_NEXT],hud_capture_ms+1000+step);
+  assert(pose.y+pose.h<HUD_BOTTOM_Y);
+ }
 }
 int main(void){test_hardware();test_prefs_and_geometry();test_clock_stays_outside();test_speed_stays_outside();
  unlink(CLIO_HW_EXPORT_PATH);unlink(PREF_PATH);

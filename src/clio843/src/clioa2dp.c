@@ -68,31 +68,8 @@ static s32 sdiv32(s32 n,s32 d){int neg=(n<0)^(d<0);u32 a=n<0?(u32)(-(n+1))+1u:(u
 #ifndef HOST_TEST
 /* Prevent LLVM loop idiom lowering from creating libc dependencies. */
 void *memset(void*d,int c,u32 n){u8*p=(u8*)d;while(n--)*p++=(u8)c;return d;}
-void *memcpy(void*d,const void*s,u32 n){memcopy(d,s,n);return d;}
-/* ARM EABI compiler helper: quotient in r0, remainder in r1. */
-__attribute__((naked)) void __aeabi_uidivmod(void){__asm__ volatile(
-  "cmp r1,#0\n"
-  "beq 2f\n"
-  "mov r2,#0\n"
-  "mov r3,#0\n"
-  "mov r12,#32\n"
-  "1:\n"
-  "mov r3,r3,lsl #1\n"
-  "orr r3,r3,r0,lsr #31\n"
-  "mov r0,r0,lsl #1\n"
-  "cmp r3,r1\n"
-  "subcs r3,r3,r1\n"
-  "adc r2,r2,r2\n"
-  "subs r12,r12,#1\n"
-  "bne 1b\n"
-  "mov r0,r2\n"
-  "mov r1,r3\n"
-  "bx lr\n"
-  "2:\n"
-  "mov r0,#0\n"
-  "mov r1,#0\n"
-  "bx lr\n");}
 #endif
+#include "arm_runtime.h"
 
 #include "audio_schedule.h"
 #include "audio_playback.h"
@@ -477,7 +454,7 @@ static void hci_request(const char*verb,const u8*a){char b[64];b[0]=0;append_str
 #define IO_MUTE_NAV 0x00005320u
 #define IO_UNMUTE_NAV 0x00005321u
 struct SndFmt{u32 rate,channels,bits,frames,mode;};struct SndPair{u32 handle,pos;};
-/* Playback buffering: existing 64 KiB device ring, with an explicit 150 ms prefill
+/* Playback buffering: existing 64 KiB device ring, with an explicit 200 ms prefill
  * and byte-accurate validity tracking between successive hardware cursor reads.
  * The driver does not expose an underrun flag; clock elapsed since the last
  * cursor sample also guards against cursor wrap or freeze during starvation. */
@@ -544,7 +521,7 @@ static int snd_push(const u8*data,u32 n){
   snd_write=(snd_write+n)&(SND_RING-1u);
   if(snd_started){snd_used+=n;snd_feed_at=snd_feed_now;snd_feed_bytes=snd_used;snd_feed_valid=1;return 1;}
   snd_queued+=n;
-  /* 150 ms at 44.1k or at the lower driver fallback rate. */
+  /* 200 ms at 44.1k or at the lower driver fallback rate. */
   if(snd_queued>=udiv32(SND_PREFILL_44K_BYTES,(u32)snd_div)){
     snd_mix_on();
     if(s_ioctl(sndfd,IO_START,(long)sndhandle)<0){snd_close();return 0;}
@@ -739,7 +716,7 @@ static void alert_service(void){u32 now=alert_now_ms(),msg[4];snd_feed_now=now;l
  if((s32)(now-alert_idle_until)>=0){alert_idle_until=0;if(now-alert_last_media>200&&sndfd>=0)snd_close();return;}
  if(now-alert_last_media<=200)return; /* Incoming PCM owns the same ring. */
  if(!snd_open())return;if(snd_started)snd_sample_playback();u32 target=udiv32(snd_output_bps,5u);
- /* At most 250ms of PCM per poll, including the initial 150ms prefill. */
+ /* At most 250ms of PCM per poll, including the initial 200ms prefill. */
  for(unsigned block=0;block<88&&(snd_started?snd_used:snd_queued)<target;block++){
   for(int i=0;i<128;i++){int gain,tone=chime_sample(&camera_chime,&gain);s16 v=(s16)tone;pcm_out[i]=pcm_word(v,v);}if(!snd_push((const u8*)pcm_out,sizeof(pcm_out)))break;
  }
@@ -751,19 +728,39 @@ static void pcm_pack(void){int q=0,d=snd_div;
  }else{if(d<1)d=1;for(int i=0;i<128;i+=d){s32 l=0,r=0;for(int j=0;j<d;j++){l+=decfr.pcm[0][i+j];r+=decfr.pcm[1][i+j];}if(d==2){l>>=1;r>>=1;}else if(d==4){l>>=2;r>>=2;}int gain,tone=chime_sample(&camera_chime,&gain);s16 ls=(s16)chime_mix(l,gain,tone),rs=(s16)chime_mix(r,gain,tone);pcm_out[q++]=pcm_word(ls,rs);}}if(!snd_push((const u8*)pcm_out,(u32)q*4u))status_set("BT BUFFERING");else status_set(snd_started?"BT STREAMING":"BT BUFFERING");}
 static void media_packet(const u8*b,int n){if(!av_started||n<14)return;alert_last_media=alert_now_ms();snd_feed_now=alert_last_media;if(source_active&&snd_started)snd_sample_playback();media_packets++;media_bytes+=(u32)n;int cc=b[0]&15,off=12+4*cc;if(b[0]&0x10){if(off+4>n){media_decode_errors++;return;}int ext=((int)b[off+2]<<8)|b[off+3];off+=4+ext*4;}if(off>=n){media_decode_errors++;return;}u8 ph=b[off++];if(ph&0xe0){media_decode_errors++;return;}int frames=ph&15;if(frames<1){media_decode_errors++;return;}if(!source_active){sbc_resume_reset=1;return;}media_audio_idle=0;if(sbc_resume_reset){memzero(&decst,sizeof(decst));sbc_resume_reset=0;}int decoded=0;for(int k=0;k<frames&&off<n;k++){int used=sbc_decode(b+off,(u32)(n-off),&decst,&decfr);if(used<=0){media_decode_errors++;break;}off+=used;decoded++;media_frames++;if(sndfd<0&&!snd_open())return;pcm_pack();}u32 finished=alert_now_ms();if(decoded&&snd_feed_valid)snd_feed_at=finished;if(audio_profile_on){u32 elapsed=finished-alert_last_media;if(elapsed>audio_packet_max_ms)audio_packet_max_ms=elapsed;}if(media_packets==1||media_packets==10||(media_packets%100u)==0||decoded!=frames)av_log_media();}
 
-/* ---------------- AVRCP Controller: metadata + 4 transport commands ----- */
+/* ---------------- AVRCP Controller: metadata + notifications + 4 transport commands */
+#define AVRCP_EVT_PLAYBACK 0x01u
+#define AVRCP_EVT_TRACK    0x02u
 static int avrcpfd=-1,avrcp_state=0;/*0 none,1 connecting,2 ready*/static u8 avrcp_tl=0;static u32 avrcp_retry_at=0;
+/* Per-event notification state: 0=unregistered, 1=sent, 2=interim(armed), 3=unsupported. */
+static u8 avrcp_notify_state[3],avrcp_notify_tl[16];
 static u16 be16(const u8*p){return(u16)(((u16)p[0]<<8)|p[1]);}static u32 be32(const u8*p){return((u32)p[0]<<24)|((u32)p[1]<<16)|((u32)p[2]<<8)|p[3];}
 static void put_be32(u8*p,u32 v){p[0]=(u8)(v>>24);p[1]=(u8)(v>>16);p[2]=(u8)(v>>8);p[3]=(u8)v;}
-static void avrcp_close(void){if(avrcpfd>=0)s_close(avrcpfd);avrcpfd=-1;avrcp_state=0;}
-static void reconnect_profile_ready(const u8*peer){if(reconnect_wait_ticks<0)return;if(peer){memcopy(live_peer,peer,6);live_peer_valid=1;meta_device_set_addr(live_peer);}meta_connected=1;meta_dirty=1;reconnect_wait_ticks=-1;reconnect_profile_ticks=-1;status_set("BT CONNECTED");hci_log("PHONE RECONNECT PROFILE READY",peer,-1);}
-static void avrcp_open(u32 tick){if(avrcp_state||manual_block||tick<avrcp_retry_at)return;const u8*peer=live_peer_valid?live_peer:(saved_peer_valid?saved_peer:0);if(!peer)return;hci_log("AVRCP CONNECT TRY",peer,-1);int fd=bt_socket();if(fd<0){hci_log("AVRCP SOCKET FAIL",peer,(int)(-fd));avrcp_retry_at=tick+50;return;}/* ACL is already authenticated/encrypted by A2DP.  Do not trigger a second legacy security negotiation here. */int r=bt_connect_nb(fd,PSM_AVRCP,peer);if(r==0){avrcpfd=fd;avrcp_state=2;avrcp_retry_at=tick+50;hci_log("AVRCP CONNECTED",peer,-1);reconnect_profile_ready(peer);return;}/* EINPROGRESS/EALREADY on old Linux. */if(r==-115||r==-114||r==-11){avrcpfd=fd;avrcp_state=1;hci_log("AVRCP CONNECT PENDING",peer,(int)(-r));return;}hci_log("AVRCP CONNECT IMMEDIATE FAIL",peer,(int)(-r));s_close(fd);avrcp_retry_at=tick+50;}
-static void avrcp_connect_finish(u32 tick){if(avrcp_state!=1||avrcpfd<0)return;int e=bt_so_error(avrcpfd);const u8*peer=live_peer_valid?live_peer:(saved_peer_valid?saved_peer:0);if(e==0){avrcp_state=2;avrcp_retry_at=tick+50;hci_log("AVRCP CONNECTED",peer,-1);reconnect_profile_ready(peer);}else if(e==11||e==114||e==115){return;}else{hci_log("AVRCP CONNECT FAIL",peer,e<0?-e:e);avrcp_close();avrcp_retry_at=tick+50;if(reconnect_wait_ticks>=0)reconnect_profile_ticks=20;}}
+static void avrcp_notify_reset(void){memzero(avrcp_notify_state,sizeof(avrcp_notify_state));memzero(avrcp_notify_tl,sizeof(avrcp_notify_tl));}
+static void avrcp_close(void){if(avrcpfd>=0)s_close(avrcpfd);avrcpfd=-1;avrcp_state=0;avrcp_notify_reset();}
 static int avrcp_write(const u8*b,u32 n){return avrcp_state==2&&avrcpfd>=0&&s_write(avrcpfd,b,n)==(long)n;}
 static void avrcp_passthrough(u8 op){if(avrcp_state!=2)return;for(int rel=0;rel<2;rel++){u8 b[8];u8 tl=avrcp_tl++&15;b[0]=(u8)(tl<<4);b[1]=0x11;b[2]=0x0e;b[3]=0x00;b[4]=0x48;b[5]=0x7c;b[6]=(u8)(op|(rel?0x80:0));b[7]=0;avrcp_write(b,sizeof(b));}}
-static void avrcp_vendor(u8 pdu,const u8*params,u16 plen){u8 b[80];if(plen>67||avrcp_state!=2)return;u8 tl=avrcp_tl++&15;b[0]=(u8)(tl<<4);b[1]=0x11;b[2]=0x0e;b[3]=0x01;/* STATUS */b[4]=0x48;b[5]=0x00;b[6]=0x00;b[7]=0x19;b[8]=0x58;b[9]=pdu;b[10]=0;b[11]=(u8)(plen>>8);b[12]=(u8)plen;for(u16 i=0;i<plen;i++)b[13+i]=params[i];avrcp_write(b,(u32)(13+plen));}
+static int avrcp_vendor_cmd(u8 ctype,u8 pdu,const u8*params,u16 plen){u8 b[80];if(plen>67||avrcp_state!=2)return-1;u8 tl=avrcp_tl++&15;b[0]=(u8)(tl<<4);b[1]=0x11;b[2]=0x0e;b[3]=ctype;b[4]=0x48;b[5]=0x00;b[6]=0x00;b[7]=0x19;b[8]=0x58;b[9]=pdu;b[10]=0;b[11]=(u8)(plen>>8);b[12]=(u8)plen;for(u16 i=0;i<plen;i++)b[13+i]=params[i];return avrcp_write(b,(u32)(13+plen))?(int)tl:-1;}
+static void avrcp_vendor(u8 pdu,const u8*params,u16 plen){(void)avrcp_vendor_cmd(0x01/* STATUS */,pdu,params,plen);}
 static void avrcp_get_status(void){avrcp_vendor(0x30,0,0);}
 static void avrcp_get_meta(void){u8 p[25];memzero(p,sizeof(p));p[8]=4;put_be32(p+9,1);put_be32(p+13,2);put_be32(p+17,3);put_be32(p+21,7);avrcp_vendor(0x20,p,sizeof(p));}
+static void avrcp_register_notify(u8 event_id){
+  if(avrcp_state!=2||event_id<1||event_id>2)return;
+  if(avrcp_notify_state[event_id])return;
+  u8 p[5]={event_id,0,0,0,0};
+  int tl=avrcp_vendor_cmd(0x03/* NOTIFY */,0x31,p,sizeof(p));
+  if(tl>=0){avrcp_notify_tl[tl]=event_id;avrcp_notify_state[event_id]=1;}
+}
+static void avrcp_on_ready(void){
+  avrcp_notify_reset();
+  avrcp_get_status();
+  avrcp_get_meta();
+  avrcp_register_notify(AVRCP_EVT_PLAYBACK);
+  avrcp_register_notify(AVRCP_EVT_TRACK);
+}
+static void reconnect_profile_ready(const u8*peer){if(reconnect_wait_ticks<0)return;if(peer){memcopy(live_peer,peer,6);live_peer_valid=1;meta_device_set_addr(live_peer);}meta_connected=1;meta_dirty=1;reconnect_wait_ticks=-1;reconnect_profile_ticks=-1;status_set("BT CONNECTED");hci_log("PHONE RECONNECT PROFILE READY",peer,-1);}
+static void avrcp_open(u32 tick){if(avrcp_state||manual_block||tick<avrcp_retry_at)return;const u8*peer=live_peer_valid?live_peer:(saved_peer_valid?saved_peer:0);if(!peer)return;hci_log("AVRCP CONNECT TRY",peer,-1);int fd=bt_socket();if(fd<0){hci_log("AVRCP SOCKET FAIL",peer,(int)(-fd));avrcp_retry_at=tick+50;return;}/* ACL is already authenticated/encrypted by A2DP.  Do not trigger a second legacy security negotiation here. */int r=bt_connect_nb(fd,PSM_AVRCP,peer);if(r==0){avrcpfd=fd;avrcp_state=2;avrcp_retry_at=tick+50;hci_log("AVRCP CONNECTED",peer,-1);reconnect_profile_ready(peer);avrcp_on_ready();return;}/* EINPROGRESS/EALREADY on old Linux. */if(r==-115||r==-114||r==-11){avrcpfd=fd;avrcp_state=1;hci_log("AVRCP CONNECT PENDING",peer,(int)(-r));return;}hci_log("AVRCP CONNECT IMMEDIATE FAIL",peer,(int)(-r));s_close(fd);avrcp_retry_at=tick+50;}
+static void avrcp_connect_finish(u32 tick){if(avrcp_state!=1||avrcpfd<0)return;int e=bt_so_error(avrcpfd);const u8*peer=live_peer_valid?live_peer:(saved_peer_valid?saved_peer:0);if(e==0){avrcp_state=2;avrcp_retry_at=tick+50;hci_log("AVRCP CONNECTED",peer,-1);reconnect_profile_ready(peer);avrcp_on_ready();}else if(e==11||e==114||e==115){return;}else{hci_log("AVRCP CONNECT FAIL",peer,e<0?-e:e);avrcp_close();avrcp_retry_at=tick+50;if(reconnect_wait_ticks>=0)reconnect_profile_ticks=20;}}
 /* Track-length attributes use milliseconds; the all-ones sentinel is unknown. */
 static int avrcp_duration_seconds(const u8*p,u16 n){
  if(!n)return 0;u32 ms=0;
@@ -773,7 +770,36 @@ static int avrcp_duration_seconds(const u8*p,u16 n){
  }
  return (int)udiv32(ms,1000);
 }
-static void avrcp_parse(const u8*b,int n){if(n<6||b[1]!=0x11||b[2]!=0x0e)return;if((b[0]&2)==0)return;/* only AVCTP responses */if(b[5]==0x7c)return;if(b[5]!=0x00||n<13)return;if(b[6]!=0||b[7]!=0x19||b[8]!=0x58)return;u8 pdu=b[9],pkt=b[10];u16 plen=be16(b+11);if(13+(int)plen>n)plen=(u16)(n-13);if(pkt!=0)return;const u8*p=b+13;
+static void avrcp_parse(const u8*b,int n){if(n<6||b[1]!=0x11||b[2]!=0x0e)return;if((b[0]&2)==0)return;/* only AVCTP responses */if(b[5]==0x7c)return;if(b[5]!=0x00||n<13)return;if(b[6]!=0||b[7]!=0x19||b[8]!=0x58)return;u8 ctype=b[3]&0x0f,tl=(b[0]>>4)&0x0f,pdu=b[9],pkt=b[10];u16 plen=be16(b+11);if(13+(int)plen>n)plen=(u16)(n-13);if(pkt!=0)return;const u8*p=b+13;
+  if(pdu==0x31){
+    if(ctype==0x08||ctype==0x0a){
+      u8 ev=avrcp_notify_tl[tl];avrcp_notify_tl[tl]=0;
+      if(ev>=1&&ev<=2)avrcp_notify_state[ev]=3;
+      return;
+    }
+    if(plen<1)return;
+    u8 ev=p[0];
+    if(ctype==0x0f){
+      if(ev>=1&&ev<=2)avrcp_notify_state[ev]=2;
+      if(ev==AVRCP_EVT_PLAYBACK&&plen>=2){meta_playing=p[1]==1;meta_dirty=1;}
+      return;
+    }
+    if(ctype==0x0d){
+      if(avrcp_notify_tl[tl]==ev)avrcp_notify_tl[tl]=0;
+      if(ev>=1&&ev<=2)avrcp_notify_state[ev]=0;
+      if(ev==AVRCP_EVT_PLAYBACK){
+        if(plen>=2){meta_playing=p[1]==1;meta_dirty=1;}
+        avrcp_get_status();
+        avrcp_register_notify(AVRCP_EVT_PLAYBACK);
+      }else if(ev==AVRCP_EVT_TRACK){
+        avrcp_get_meta();
+        avrcp_get_status();
+        avrcp_register_notify(AVRCP_EVT_TRACK);
+      }
+    }
+    return;
+  }
+  if(ctype==0x08||ctype==0x0a)return;
   if(pdu==0x30&&plen>=9){u32 dur=be32(p),pos=be32(p+4);int play=p[8]==1;meta_dur=dur==0xffffffffu?0:(int)udiv32(dur,1000);meta_pos=(pos==0xffffffffu)?-1:(int)udiv32(pos,1000);meta_playing=play;meta_dirty=1;return;}
   if(pdu==0x20&&plen>=1){char previous_title[sizeof(meta_title)];copystr(previous_title,sizeof(previous_title),meta_title);int has_duration=0;u32 off=1,count=p[0];meta_title[0]=meta_artist[0]=meta_album[0]=0;for(u32 k=0;k<count&&off+8<=plen;k++){u32 id=be32(p+off);u16 cs=be16(p+off+4),ln=be16(p+off+6);off+=8;if(off+ln>plen)break;if(cs==106){if(id==1)meta_text(meta_title,sizeof(meta_title),p+off,ln);else if(id==2)meta_text(meta_artist,sizeof(meta_artist),p+off,ln);else if(id==3)meta_text(meta_album,sizeof(meta_album),p+off,ln);else if(id==7){has_duration=1;meta_dur=avrcp_duration_seconds(p+off,ln);}}off+=ln;}if(streq(meta_album,"CLIOPLAY-NAV")){char action=0;s32 lat=0,lon=0;u16 seq=0;if(nav_packet_parse(meta_title,&action,&lat,&lon,&seq))nav_publish(action,lat,lon,seq,meta_artist);else bt_log_append("NAV RX REJECTED\n");meta_hide_track();return;}if(nav_sender_fallback_meta()){bt_log_append("NAV SENDER FALLBACK METADATA HIDDEN\n");meta_hide_track();return;}if(!streq(previous_title,meta_title)){meta_pos=-1;if(!has_duration)meta_dur=0;}meta_dirty=1;return;}
 }
@@ -831,7 +857,7 @@ static void auto_boot_service(u32 tick){
   status_set("BT RECONNECTING");
   hci_log(auto_attempts==1?"AUTO RECONNECT PROFILE-FIRST":"AUTO RECONNECT SECOND TRY",saved_peer,-1);
 }
-static void session_close(int keep_status){snd_close();avrcp_close();avrcp_delay_ticks=-1;reconnect_profile_ticks=-1;reconnect_wait_ticks=-1;if(mediafd>=0)s_close(mediafd);if(sigfd>=0)s_close(sigfd);mediafd=sigfd=-1;av_reset_stream();live_peer_valid=0;meta_connected=0;meta_playing=0;if(saved_peer_valid)meta_device_set_addr(saved_peer);else meta_device_addr[0]=meta_device[0]=0;meta_dirty=1;if(!keep_status)status_set(meta_paired?"BT WAIT PHONE":"BT WAIT PHONE");}
+static void session_close(int keep_status){snd_close();avrcp_close();avrcp_delay_ticks=-1;reconnect_profile_ticks=-1;reconnect_wait_ticks=-1;if(mediafd>=0)s_close(mediafd);if(sigfd>=0)s_close(sigfd);mediafd=sigfd=-1;av_reset_stream();live_peer_valid=0;meta_connected=0;meta_playing=0;if(saved_peer_valid)meta_device_set_addr(saved_peer);else meta_device_addr[0]=meta_device[0]=0;meta_dirty=1;if(!keep_status)status_set("BT WAIT PHONE");}
 
 /* clio040 command file is a single latest-command record; sequence prevents repeats. */
 static void process_command(void){char b[96]={0};long fd=s_open(BT_CMD_PATH,O_RDONLY_,0);if(fd<0)return;long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n<=0)return;b[n]=0;u32 seq=0;if(!parse_uint0(b,&seq)||seq==command_seq_seen)return;command_seq_seen=seq;char*p=b;while(*p>='0'&&*p<='9')p++;while(*p==' '||*p=='\t')p++;
@@ -851,7 +877,7 @@ static void accept_avdtp(void){u8 peer[6];int c=bt_accept_peer(listenfd,peer);if
   if(mediafd<0&&av_opened&&live_peer_valid&&addr_eq(peer,live_peer)){mediafd=c;hci_log("AVDTP MEDIA ACCEPT",peer,-1);return;}
   hci_log("AVDTP EXTRA CHANNEL REJECT",peer,av_opened?1:0);s_close(c);
 }
-static void accept_avrcp(void){u8 peer[6];int c=bt_accept_peer(ctrllistenfd,peer);if(c<0)return;if(manual_block){s_close(c);return;}int known=bond_find(peer,0,0);int ok=(live_peer_valid&&addr_eq(peer,live_peer))||(!live_peer_valid&&((saved_peer_valid&&addr_eq(peer,saved_peer))||known));if(!ok){s_close(c);return;}if(!live_peer_valid){memcopy(live_peer,peer,6);live_peer_valid=1;peer_save(peer);meta_connected=1;meta_dirty=1;}hci_remote_name_request(peer);if(avrcpfd>=0)s_close(avrcpfd);avrcpfd=c;s_fcntl(avrcpfd,F_SETFL,O_NONBLOCK_);avrcp_state=2;avrcp_retry_at=0;hci_log("AVRCP ACCEPTED",peer,-1);reconnect_profile_ready(peer);}
+static void accept_avrcp(void){u8 peer[6];int c=bt_accept_peer(ctrllistenfd,peer);if(c<0)return;if(manual_block){s_close(c);return;}int known=bond_find(peer,0,0);int ok=(live_peer_valid&&addr_eq(peer,live_peer))||(!live_peer_valid&&((saved_peer_valid&&addr_eq(peer,saved_peer))||known));if(!ok){s_close(c);return;}if(!live_peer_valid){memcopy(live_peer,peer,6);live_peer_valid=1;peer_save(peer);meta_connected=1;meta_dirty=1;}hci_remote_name_request(peer);if(avrcpfd>=0)s_close(avrcpfd);avrcpfd=c;s_fcntl(avrcpfd,F_SETFL,O_NONBLOCK_);avrcp_state=2;avrcp_retry_at=0;hci_log("AVRCP ACCEPTED",peer,-1);reconnect_profile_ready(peer);avrcp_on_ready();}
 
 static void audio_source_refresh(void){
  int en=source_enabled();if(en!=source_active)sbc_resume_reset=1;
@@ -936,7 +962,7 @@ static void serve(void){long prio=s_audio_priority();bt_log_append("CLIOPLAY " C
     if(im>=0&&mediafd>=0&&(pf[im].revents&(POLLERR|POLLHUP|POLLNVAL))){hci_log("AVDTP MEDIA POLL CLOSE",live_peer_valid?live_peer:0,(int)pf[im].revents);s_close(mediafd);mediafd=-1;av_started=0;snd_close();meta_playing=0;meta_dirty=1;status_set("BT CONNECTED");}
     if(ic>=0&&avrcpfd>=0){
       if(avrcp_state==1&&(pf[ic].revents&POLLOUT))avrcp_connect_finish(tick);
-      if(avrcp_state==2&&(pf[ic].revents&POLLIN)){u8 b[512];long n=s_read(avrcpfd,b,sizeof(b));if(n<=0){hci_log("AVRCP READ CLOSE",live_peer_valid?live_peer:0,(int)(n<0?-n:0));avrcp_close();avrcp_retry_at=tick+50;}else avrcp_parse(b,(int)n);}
+      if(avrcp_state==2&&(pf[ic].revents&POLLIN)){u8 b[512];long n=s_read(avrcpfd,b,sizeof(b));if(n<=0){hci_log("AVRCP READ CLOSE",live_peer_valid?live_peer:0,(int)(n<0?-n:0));avrcp_close();avrcp_retry_at=tick+50;}else{avrcp_parse(b,(int)n);if(meta_dirty)meta_write();}}
       if(avrcpfd>=0&&(pf[ic].revents&(POLLERR|POLLHUP|POLLNVAL))){hci_log("AVRCP POLL CLOSE",live_peer_valid?live_peer:0,(int)pf[ic].revents);avrcp_close();avrcp_retry_at=tick+50;}
     }
   }}

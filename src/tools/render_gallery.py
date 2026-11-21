@@ -136,6 +136,52 @@ V216_ITINERARY_EVENTS = ((0, ITINERARY_SETUP),) + tuple(
     (8800, 'key_handle(K_BACK);assert(sheet_page==P_TRIP&&trip.active);'))
 V216_ITINERARY_SAMPLES = sorted({at+step for at,_ in V216_ITINERARY_EVENTS for step in TWEEN_STEPS} | {9800})
 
+# ClioPlay 2.2.3 real-map feature previews (Newcastle upon Tyne).
+V223_NEARBY_EVENTS = (
+    (700, 'key_handle(K_MENU);assert(sheet_page==P_HOME);'),
+    (1300, 'key_handle(K_ENTER);assert(sheet_page==P_TRIP);'),
+    (2100, 'key_handle(K_LEFT);assert(sheet_page==P_NEARBY&&sheet_focus==0);'),
+    (3000, 'key_handle(K_DOWN);assert(sheet_focus==1);'),
+    (3500, 'key_handle(K_DOWN);assert(sheet_focus==2);'),
+    (4200, 'key_handle(K_ENTER);assert(sheet_page==P_NEARBY_LIST&&nearby_category==NEARBY_CAT_HOSPITAL&&nearby_count>0);'),
+    (5600, 'key_handle(K_BACK);assert(sheet_page==P_NEARBY&&sheet_focus==2);'),
+    (6200, 'key_handle(K_UP);key_handle(K_UP);assert(sheet_focus==0);'),
+    (6800, 'key_handle(K_ENTER);assert(sheet_page==P_NEARBY_LIST&&nearby_category==NEARBY_CAT_FUEL&&nearby_count>0);'),
+    (8100, 'key_handle(K_ENTER);assert(sheet_page==P_PLACE&&place_from_nearby);'),
+    (8900, 'key_handle(K_DOWN);assert(sheet_focus==1);'),
+    (9500, 'key_handle(K_ENTER);assert(sheet_page==P_TRIP&&trip.count==3&&streq(trip.target[1].name,nearby_pois[0].name));'),
+)
+V223_NEARBY_SAMPLES = sorted({0} | {at+step for at,_ in V223_NEARBY_EVENTS for step in TWEEN_STEPS} | {10900})
+
+V223_SECONDARY_MANOEUVRE_EVENTS = (
+    (1200, 'preview_chained_step(102);'),
+    (1800, 'preview_chained_step(104);'),
+    (2400, 'preview_chained_step(105);'),
+    (3000, 'preview_chained_step(106);'),
+    (3600, 'preview_chained_step(112);'),
+    (4200, 'preview_chained_step(118);'),
+    (4800, 'preview_chained_step(123);'),
+    (5400, 'preview_chained_step(126);assert(nav_man_type==MAN_RIGHT&&nav_next_type==MAN_NONE);'),
+    (6400, 'preview_chained_step(127);assert(nav_man_type==MAN_RIGHT&&nav_next_type==MAN_NONE);'),
+)
+V223_SECONDARY_MANOEUVRE_SAMPLES = sorted({0} | {at+step for at,_ in V223_SECONDARY_MANOEUVRE_EVENTS for step in TWEEN_STEPS} | {7700})
+
+V223_VIEW_DIVERSION_EVENTS = (
+    (1300, 'assert(hud_diversion_shortcut_ready());key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&confirm_kind==3&&sheet_focus==0);'),
+    (2300, 'key_handle(K_DOWN);assert(sheet_page==P_CONFIRM&&sheet_focus==2);'),
+    (3100, 'key_handle(K_ENTER);assert(sheet_page==P_CLOSED&&freecam&&diversion_preview_active);'),
+    (4500, 'key_handle(K_SR);assert(freecam&&diversion_preview_active);'),
+    (5500, 'key_handle(K_SR);assert(freecam&&diversion_preview_active);'),
+    (6700, 'key_handle(K_MAP);assert(!freecam&&!diversion_preview_active&&sheet_page==P_CONFIRM&&confirm_kind==3&&sheet_focus==0);'),
+    (8300,
+     'int expected_n=route_n+traffic_offer_n-1-'
+     '(traffic_join_idx-traffic_begin_idx);'
+     'key_handle(K_ENTER);'
+     'assert(mapok&&route_status==R_READY&&route_n==expected_n'
+     '&&!traffic_offer_valid());'),
+)
+V223_VIEW_DIVERSION_SAMPLES = sorted({0} | {at+step for at,_ in V223_VIEW_DIVERSION_EVENTS for step in TWEEN_STEPS} | {10300})
+
 
 
 def add(group, name, title, setup='', action='', check='', note=''):
@@ -677,6 +723,30 @@ def modern_menus():
         MAP_DIVERSION_EVENTS,
         V220_DIVERSION_SAMPLES
     )
+    motion(
+        'Version 2.2.3',
+        'preview-v223-nearby-pois',
+        'Offline Nearby POIs (Hospital and Fuel) and adding a stop to the itinerary',
+        'preview_nearby_seed();settle();',
+        V223_NEARBY_EVENTS,
+        V223_NEARBY_SAMPLES
+    )
+    motion(
+        'Version 2.2.3',
+        'preview-v223-secondary-manoeuvre',
+        'Secondary Then manoeuvre cue above Turn card promoting on roundabout exit',
+        'preview_chained_seed();settle();',
+        V223_SECONDARY_MANOEUVRE_EVENTS,
+        V223_SECONDARY_MANOEUVRE_SAMPLES
+    )
+    motion(
+        'Version 2.2.3',
+        'preview-v223-view-diversion',
+        'View diversion in Explore, inspect junction, return via MAP and accept',
+        'preview_map_diversion_seed();settle();',
+        V223_VIEW_DIVERSION_EVENTS,
+        V223_VIEW_DIVERSION_SAMPLES
+    )
     add('Menu sheets','empty-receive','Empty itinerary receives phone destinations automatically','trip.active=trip.count=0;menu_open(P_TRIP,0,hud_now_ms());')
     add_stop='key_handle(K_MENU);key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_DOWN);'
     source=add_stop+'key_handle(K_ENTER);key_handle(K_DOWN);'
@@ -974,6 +1044,99 @@ static void preview_map_diversion_seed(void)
 
     assert(mapok && traffic_warn && traffic_offer_valid());
 }
+static int demo_chain_n;
+static u32 demo_chain_m, demo_chain_cost;
+static s32 demo_chain_lat[ROUTE_PATH_MAX], demo_chain_lon[ROUTE_PATH_MAX];
+static u32 demo_chain_node[ROUTE_PATH_MAX], demo_chain_arc[ROUTE_PATH_MAX], demo_chain_phys[ROUTE_PATH_MAX];
+static u32 demo_chain_seg_m[ROUTE_PATH_MAX], demo_chain_seg_cost[ROUTE_PATH_MAX];
+static void preview_nearby_seed(void)
+{
+    assert(mapok && routeok);
+    gps.lat = track_lat = 5497830;
+    gps.lon = track_lon = -161780;
+    track_valid = 1;
+    gps.fix = 1;
+    gps.course = track_course = display_course = 35;
+    display_course_valid = 1;
+    pref.autozoom = 0;
+    manual_zoom = 5;
+    zoom_override = -1;
+    hud_road_live = 0;
+    hud_last_road[0] = 0;
+    roadctx.street[0] = 0;
+    render_background_dirty = 1;
+}
+static void preview_chained_step(int idx)
+{
+    assert(idx >= route_head && idx + 1 < route_n);
+    if (idx > route_head)
+        route_trim_prefix(idx);
+    gps.lat = track_lat = route_lat[idx];
+    gps.lon = track_lon = route_lon[idx];
+    track_valid = 1;
+    int ahead = idx + 2 < route_n ? idx + 2 : idx + 1;
+    int heading = nav_heading10(route_lat[idx], route_lon[idx], route_lat[ahead], route_lon[ahead]);
+    if (heading >= 0 && heading < 360)
+        gps.course = track_course = display_course = heading;
+    display_course_valid = 1;
+    nav_maneuver_find();
+    render_background_dirty = 1;
+}
+static void preview_chained_seed(void)
+{
+    assert(mapok && routeok);
+    if (!demo_chain_n) {
+        gps.lat = track_lat = 5497370;
+        gps.lon = track_lon = -161331;
+        track_valid = 1;
+        gps.fix = 1;
+        assert(route_start(5498400, -161900));
+        u32 deadline = s_now_ms() + 120000u;
+        while (route_status == R_CALC && time_before_u32(s_now_ms(), deadline))
+            route_service_until(s_now_ms() + 12u);
+        assert(route_status == R_READY && route_n > 128);
+        demo_chain_n = route_n;
+        demo_chain_m = route_result_m;
+        demo_chain_cost = route_result_cost;
+        memcpy(demo_chain_lat, route_lat, sizeof(demo_chain_lat));
+        memcpy(demo_chain_lon, route_lon, sizeof(demo_chain_lon));
+        memcpy(demo_chain_node, route_node, sizeof(demo_chain_node));
+        memcpy(demo_chain_arc, route_seg_arc, sizeof(demo_chain_arc));
+        memcpy(demo_chain_phys, route_seg_phys, sizeof(demo_chain_phys));
+        memcpy(demo_chain_seg_m, route_seg_m, sizeof(demo_chain_seg_m));
+        memcpy(demo_chain_seg_cost, route_seg_cost, sizeof(demo_chain_seg_cost));
+    }
+    route_n = demo_chain_n;
+    route_head = 0;
+    route_result_m = demo_chain_m;
+    route_result_cost = demo_chain_cost;
+    route_status = R_READY;
+    memcpy(route_lat, demo_chain_lat, sizeof(route_lat));
+    memcpy(route_lon, demo_chain_lon, sizeof(route_lon));
+    memcpy(route_node, demo_chain_node, sizeof(route_node));
+    memcpy(route_seg_arc, demo_chain_arc, sizeof(route_seg_arc));
+    memcpy(route_seg_phys, demo_chain_phys, sizeof(route_seg_phys));
+    memcpy(route_seg_m, demo_chain_seg_m, sizeof(route_seg_m));
+    memcpy(route_seg_cost, demo_chain_seg_cost, sizeof(route_seg_cost));
+    trip.active = 1;
+    trip.paused = 0;
+    trip.count = 1;
+    trip.active_idx = 0;
+    trip.target[0].lat = route_target_lat = 5498400;
+    trip.target[0].lon = route_target_lon = -161900;
+    copystr(trip.target[0].name, sizeof(trip.target[0].name), "Royal Victoria Infirmary");
+    pref.autozoom = 0;
+    manual_zoom = 5;
+    zoom_override = -1;
+    gps.fix = 1;
+    gps.mph10 = 260;
+    region_flags |= 4;
+    hud_road_live = 0;
+    hud_last_road[0] = 0;
+    roadctx.street[0] = 0;
+    preview_chained_step(100);
+    assert(nav_man_type == MAN_ROUNDABOUT && nav_next_type == MAN_RIGHT);
+}
 static void preview_enter_explore(void){enter_freecam();explore_sample(500);}
 static void name_keyboard(void){screen=SCR_KEY;keyboard_open_fave_name(5497370,-161331);}
 static void coordinate_digits(const char*s){while(*s){char c=*s++;coordinates.focus=c=='-'?COORD_SIGN:c=='.'?COORD_DOT:c=='0'?COORD_ZERO:c-'1';key_handle(K_ENTER);}}
@@ -1056,7 +1219,7 @@ static void boot_preview(unsigned elapsed){
  hud_reset_animations();draw();hud_capture_ms+=elapsed;
 }
 static void gallery_reset(int night){
- hud_capture_clock=1;hud_capture_ms=s_now_ms();gallery_motion=0;
+ hud_capture_clock=1;hud_capture_ms=s_now_ms();gallery_motion=0;diversion_preview_clear();
  bt_hud_link=0;bt_hud_peer[0]=0;bt_active_written=-1;coordinates_active=0;memzero(&coordinates,sizeof(coordinates));
  route_cancel();fixture();restore_route();atlas_active=0;atlas_future_m=atlas_future_cost=0;
  pref=(struct Prefs){50,1,0,0,0,night?THEME_NIGHT:THEME_DAY,0,1,0,0,CLIO_DAY_START,CLIO_NIGHT_START};apply_palette(night);

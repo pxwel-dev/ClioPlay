@@ -1,7 +1,11 @@
-# ClioPlay version 2.2.2
+# ClioPlay version 2.2.3
 
-Version 2.2.2 raises the Bluetooth prefill to 200 ms, makes animation and steady
-HUD updates smoother, and adds wraparound to menu controls. See the [changelog](docs/changelog.md).
+Version 2.2.3 adds offline Nearby POIs (Fuel, Parking and Hospital), a compact
+**Then …** secondary manoeuvre cue above the Turn card, a **View diversion**
+map-preview flow on diversion confirmations, instant Bluetooth AVRCP
+notifications, lazy regional atlas validation, centred scrollable Itinerary
+layout with visible-only connectors, Debug memory telemetry and a desktop
+favourites import/export CLI. See the [changelog](docs/changelog.md).
 
 ## Set up a card
 
@@ -51,8 +55,11 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
   temperature when a valid reading is available. Audio, volume, connection and
   navigation updates animate in as temporary notices. The road name appears
   briefly in the centre when you enter a named road or press **OK**. It shares
-  its pill with any camera warning. The speed and turn pills flank it. Exceeding
-  a confirmed limit pulses the speed pill red.
+  its pill with any camera warning. The speed and turn pills flank it. When a
+  follow-up turn or roundabout occurs within 250 m of the next manoeuvre, a
+  compact **Then …** pill docks above the turn pill and promotes automatically
+  as you complete the current turn. Exceeding a confirmed limit pulses the speed
+  pill red.
 - **Menus:** each page title shares the top row with the clock and temporary
   audio or connection notices. In Bluetooth control mode, Left and Right skip
   tracks, and OK toggles playback. The selected control briefly highlights.
@@ -60,6 +67,9 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
   audio, phone destinations and related controls are unavailable. On equipped units,
   selecting another audio source suspends decoding while
   keeping the phone connection, controls and destination reception available.
+  AVRCP 1.3 `RegisterNotification` delivers track, playback-status and ClioPlay
+  Send updates immediately when supported by the phone, with automatic fallback
+  to periodic polling otherwise.
   If a media stream stalls without suspending its transport, playback closes
   after queued audio has had time to drain and restarts when packets return.
   Phone-audio camera cues keep their own playback window, including while paused.
@@ -80,7 +90,9 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
   all-times public graph. Roundabouts count legal exits where data permits, and
   their icons follow the country's driving side.
 - **Regional maps:** CPA1 connects exact shared OSM default routing states across
-  packs, preserving arrival restrictions. Planning is scheduled in small slices;
+  packs, preserving arrival restrictions. Atlas graph records are validated
+  lazily on first routing use so cold boot stays fast on large multi-region
+  atlases. Planning is scheduled in small slices;
   QAD7 endpoint sweeps share work across gateways, with ordered fallback for
   unreachable destination roads; geometry is built only for selected legs.
   Deviations can repair the current leg while retaining its exact gateway
@@ -250,19 +262,24 @@ calculation uses the existing five-frame-per-second cap. Declining keeps Explore
   to open it or **BACK** to return to driving. From a page, **MENU** or **BACK**
   returns to Menu. **MAP** goes directly to the driving map.
 - **Trip:** always opens **Itinerary** first. Use **Left / Right** to cycle
-  **Itinerary → Recents → Favourites**. Each tab remembers its selection.
+  **Itinerary → Recents → Favourites → Nearby**. Each tab remembers its selection.
   **Up / Down** or knob rotation moves between rows and wraps at the ends.
   On the Itinerary footer, **Left / Right** wraps between **Add stop**,
   **Cancel route** and **Diversion** when offered. Move **Up / Down** to a
   target to switch tabs again. **OK** opens the highlighted action. A trip holds up to **10 targets** (9 stops plus the final
   destination), including stops already visited. Scroll to see targets beyond the
-  visible rows; connector lines end at the last visible marker. **Add stop** is
+  visible rows; visible rows stay vertically centred and connector lines join
+  only consecutive visible markers on the current page. **Add stop** is
   disabled at capacity; remove an unvisited stop or start a new trip to free space.
   The itinerary includes **Add stop** and **Cancel route**;
-  an empty itinerary offers **Coordinates**. Add stop and Change destination let
-  you choose Recents, Favourites or Coordinates, then review before confirmation.
+  an empty itinerary offers **Coordinates**. **Nearby** scans installed map tiles
+  offline for **Fuel**, **Parking** and **Hospital** POIs around your current
+  position, sorted by distance. Add stop and Change destination let
+  you choose Recents, Favourites, Nearby or Coordinates, then review before confirmation.
   **BACK** returns one level without applying a draft. Phone destinations arrive
   automatically, with no receive option to open.
+  On desktop, `python3 tools/favourites_tool.py` inspects, exports and imports
+  `faves.dat` and `recent.dat` (`CLP2`) via CSV, JSON and GPX.
 - **Bluetooth:** **Pair new phone** stays at the top of the saved-phone list;
   select it and press **OK** to start pairing. **Up / Down** or the knob
   selects a device, **OK** opens its Connect/Disconnect and Forget actions, and
@@ -277,7 +294,11 @@ position and notice timers across page changes.
 
 ### Intelligent navigation
 
-Optional offline learning uses completed Barcelona power-off driving sessions, even without an active route. Enable **Learn driving history** in Settings → Driving history. The empty Itinerary retains the original destination-entry layout. With no active trip and sufficient evidence, the map status pill displays a green Suggested destination and blue OK to review (BACK to review during BT CTRL). OK opens a default-Yes confirmation; No suppresses that destination for the recording session, Back leaves it eligible, and ignoring it never changes the route. On a later stationary startup, five completed visits across three distinct dates in the last 90 days can prompt Add to favourites? for the current place. No is the safe default. Yes opens the existing Favourite naming keyboard with an editable inferred name (or an empty field); only Save adds the Favourite and returns to the map. The prompt is shown at most once per place until driving history is cleared, and never starts navigation. The predictor reconciles the stored starting point with live GPS, combines day/time, recency and early trajectory evidence, and resolves destinations via named Favourites/Recents, nearby offline map names or coordinates. During guidance, a historical traffic warning may appear and a **Diversion** action is available in Trip if a beneficial legal local alternative is found. Shared geometry stays solid magenta, bypassed geometry is yellow/gold and the distinct proposed diversion is dashed aqua/teal. The glass status pill continuously displays a single line with the success-green Faster route available announcement and blue OK to review (BACK to review when BT CTRL is active). A centred, anti-aliased frosted-glass badge near the actual decision point shows the approximate saving when space permits. The invitation disappears at the decision point if ignored. Press OK twice from the driving map to accept; with BT CTRL active, press Back first. Normal zoom and Bluetooth controls are preserved. The confirmation opens on Yes; declining it keeps the original route, warning and adjusted ETA, and only suppresses alternative offers overlapping that section. Later independent diversions remain eligible. No live traffic or automatic route selection is used. Learning still relies only on completed power-off sessions, not arrival prompts. Destination suggestions and diversions can be enabled separately; **Clear driving history** removes the private learned data after confirmation. Raw GPS time is independent of the UI clock adjustment. See [intelligent navigation](docs/intelligent-navigation.md) for the complete behavior and limitations.
+Optional offline learning uses completed Barcelona power-off driving sessions, even without an active route. Enable **Learn driving history** in Settings → Driving history. The empty Itinerary retains the original destination-entry layout. With no active trip and sufficient evidence, the map status pill displays a green Suggested destination and blue OK to review (BACK to review during BT CTRL). OK opens a default-Yes confirmation; No suppresses that destination for the recording session, Back leaves it eligible, and ignoring it never changes the route. On a later stationary startup, five completed visits across three distinct dates in the last 90 days can prompt Add to favourites? for the current place. No is the safe default. Yes opens the existing Favourite naming keyboard with an editable inferred name (or an empty field); only Save adds the Favourite and returns to the map. The prompt is shown at most once per place until driving history is cleared, and never starts navigation. The predictor reconciles the stored starting point with live GPS, combines day/time, recency and early trajectory evidence, and resolves destinations via named Favourites/Recents, nearby offline map names or coordinates. During guidance, a historical traffic warning may appear and a **Diversion** action is available in Trip if a beneficial legal local alternative is found. Shared geometry stays solid magenta, bypassed geometry is yellow/gold and the distinct proposed diversion is dashed aqua/teal. The glass status pill continuously displays a single line with the success-green Faster route available announcement and blue OK to review (BACK to review when BT CTRL is active). A centred, anti-aliased frosted-glass badge near the actual decision point shows the approximate saving when space permits. The invitation disappears at the decision point if ignored. Press OK twice from the driving map to accept; with BT CTRL active, press Back first. Normal zoom and Bluetooth controls are preserved. The confirmation opens on Yes, alongside No and a **View diversion** button.
+Selecting **View diversion** closes the popup and opens Explore framed around
+the proposed bypass so you can pan and zoom to inspect it; pressing **MAP**
+returns to the driving view and re-opens the same confirmation (if still valid).
+Declining it keeps the original route, warning and adjusted ETA, and only suppresses alternative offers overlapping that section. Later independent diversions remain eligible. No live traffic or automatic route selection is used. Learning still relies only on completed power-off sessions, not arrival prompts. Destination suggestions and diversions can be enabled separately; **Clear driving history** removes the private learned data after confirmation. Raw GPS time is independent of the UI clock adjustment. See [intelligent navigation](docs/intelligent-navigation.md) for the complete behavior and limitations.
 
 ### Settings
 
@@ -453,7 +474,8 @@ Slow SD reads or drawing can delay presentation. Live transitions sample the
 current time. Prepared sequences keep every frame in order and take longer when
 the unit is busy. With Debug enabled, five-second `FRAME 5S` summaries in the
 existing `state.log` report presentations, scheduled map frames, extra camera
-passes, lateness, drawing/routing time and animation preparation time. No frame log is written with Debug off.
+passes, lateness, drawing/routing time, animation preparation time and
+`RSS_KB`/`FREE_KB` memory telemetry. No frame log is written with Debug off.
 
 ### Radio and Bluetooth source selection
 

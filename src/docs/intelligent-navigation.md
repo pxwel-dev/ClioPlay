@@ -97,8 +97,15 @@ Back closes Bluetooth controls, then the hint changes to OK to review. OK
 still controls playback while BT CTRL is active; track, volume, Explore,
 console Info and existing modal controls keep their ordinary behaviour.
 Trip → Itinerary → **Diversion** remains another way to open the same
-confirmation. No temporary zoom, map overview, countdown, sound or automatic
-route acceptance is used. The confirmation leaves the bottom HUD visible.
+confirmation. The confirmation opens with **Yes** selected alongside **No**
+and a **View diversion** button below them (use **Up / Down** or the console
+knob to focus **View diversion**). Selecting **View diversion** closes the
+popup and opens north-up Explore framed around the proposed diversion split,
+bypass and rejoin points so you can pan and zoom to review it; pressing
+**MAP** returns to the driving view and automatically re-opens the same
+**Take diversion?** confirmation if the offer is still valid (or shows
+**Diversion unavailable** if it expired). No automatic zoom, countdown, sound
+or automatic route acceptance is used. The confirmation leaves the bottom HUD visible.
 Back closes a map-opened confirmation without rejecting it; No rejects only
 that bypassed section, and returns to the map (or Itinerary when opened there).
 The original route, warning and adjusted ETA remain; independent alternatives

@@ -47,10 +47,15 @@ static u32 overlay_model(void){
   const u32 remaining[]={route_path_m(),traffic_remaining_cost(),atlas_future_cost,
    (u32)menu_suggestion_current(),(u32)menu_diversion_current()};
   OVERLAY_HASH(remaining);
+  const int sheet_extra[]={confirm_kind,place_from_nearby,places_picker,nearby_category,nearby_count,nearby_status};
+  OVERLAY_HASH(sheet_extra);
   if(sheet_page==P_PLACES||sheet_old_page==P_PLACES||sheet_page==P_DEST||sheet_old_page==P_DEST){
    OVERLAY_HASH(nrecents);OVERLAY_HASH(nfaves);
    hash=mob_hash(hash,recents,(unsigned)nrecents*sizeof(*recents));
    hash=mob_hash(hash,faves,(unsigned)nfaves*sizeof(*faves));
+  }
+  if(sheet_page==P_NEARBY_LIST||sheet_old_page==P_NEARBY_LIST){
+   hash=mob_hash(hash,nearby_pois,(unsigned)nearby_count*sizeof(*nearby_pois));
   }
   if(screen==SCR_BT||sheet_old_page==P_PHONE||sheet_old_page==P_PHONE_ACTIONS||sheet_old_page==P_PAIR){
    OVERLAY_HASH(nbtdev);OVERLAY_HASH(btui.status);OVERLAY_HASH(nbtname_cache);

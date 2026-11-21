@@ -15,7 +15,7 @@ struct HudTween {
  u32 position_at, content_at, fast_content_at;
  int seen;
 };
-enum {HC_STATUS,HC_CLOCK,HC_SPEED,HC_ROAD,HC_TURN,HC_ROAD_NAME,HC_COUNT};
+enum {HC_STATUS,HC_CLOCK,HC_SPEED,HC_ROAD,HC_TURN,HC_TURN_NEXT,HC_ROAD_NAME,HC_COUNT};
 static struct HudTween hud_tween[HC_COUNT];
 
 static int hud_ease(u32 elapsed,u32 duration){return frame_ease(elapsed,duration);}
@@ -44,7 +44,7 @@ static int hud_value_update(int id,const struct HudCard*a,const struct HudCard*b
  if(id==HC_STATUS)return hud_same_status_except_volume(a,b)&&!!a->badge[0]==!!b->badge[0]&&
    (a->kind!=HUD_VOLUME||!!a->title[0]==!!b->title[0]);
  if(id==HC_CLOCK)return !!a->title[0]==!!b->title[0]&&!!a->detail[0]==!!b->detail[0]&&streq(a->badge,b->badge);
- if(id==HC_SPEED||id==HC_TURN)return streq(a->detail,b->detail)&&streq(a->badge,b->badge);
+ if(id==HC_SPEED||id==HC_TURN||id==HC_TURN_NEXT)return streq(a->detail,b->detail)&&streq(a->badge,b->badge);
  if(id==HC_ROAD)return streq(a->title,b->title)&&streq(a->detail,b->detail);
  return 0;
 }
@@ -59,6 +59,7 @@ static void hud_set_card(int id,struct HudCard target,u32 now){
  if(!t->seen){t->seen=1;t->content_at=t->fast_content_at=now-220u;t->position_at=now-320u;}
  int dy=id==HC_STATUS?-6:6;
  if(id==HC_CLOCK)dy=-4;
+ if(id==HC_TURN_NEXT)dy=3;
  if(!target.box.a){
   if(!t->target.box.a)return;
   /* Keep the outgoing contents while fading and moving off their anchor. */

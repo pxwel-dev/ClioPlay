@@ -225,5 +225,12 @@
   "Start suggested trip?": "بدء الرحلة المقترحة؟",
   "Suggestion unavailable": "الاقتراح غير متاح",
   "You come here often": "أنت تأتي إلى هنا كثيراً",
-  "Add to favourites?": "إضافة إلى المفضلة؟"
+  "Add to favourites?": "إضافة إلى المفضلة؟",
+  "Then": "ثم",
+  "View diversion": "عرض المسار البديل",
+  "Nearby": "بالقرب",
+  "Fuel": "وقود",
+  "Parking": "موقف سيارات",
+  "Hospital": "مستشفى",
+  "No nearby places found": "لا توجد أماكن قريبة"
 }

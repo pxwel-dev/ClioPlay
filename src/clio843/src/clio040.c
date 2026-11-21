@@ -469,7 +469,7 @@ static void hardware_load_bluetooth(void){
 }
 #include "ui_translations.h"
 /* Internal unnamed-place sentinels are translated only at presentation. */
-static const char*place_display_name(const char*s){if(!s)return "";if(streq(s,"MAP POINT"))return ui_tr("Map point");if(streq(s,"PHONE DESTINATION"))return ui_tr("Phone destination");return s;}
+static const char*place_display_name(const char*s){if(!s)return "";if(streq(s,"MAP POINT"))return ui_tr("Map point");if(streq(s,"PHONE DESTINATION"))return ui_tr("Phone destination");if(streq(s,"FUEL"))return ui_tr("Fuel");if(streq(s,"PARKING"))return ui_tr("Parking");if(streq(s,"HOSPITAL"))return ui_tr("Hospital");return s;}
 /* The source badge is BT in every language. Page titles and status messages
  * retain their translated phone wording outside English. */
 static const char*bt_label(void){return pref.language==0?"Bluetooth":ui_tr("Phone connection");}
@@ -1054,6 +1054,10 @@ static int map_course(void){if(display_course_valid)return display_course;return
 #define FC_ANIM_TO_NORTH 1
 #define FC_ANIM_TO_CAR 2
 static int freecam=0,freecam_zoom=5,auto_zoom_level=-1,zoom_override=-1;static s32 cam_lat=0,cam_lon=0;
+static int diversion_preview_active=0,diversion_preview_from_map=0;
+static u32 diversion_preview_revision=0,diversion_preview_serial=0;
+static int diversion_preview_begin=0,diversion_preview_join=0;
+static void diversion_preview_clear(void){diversion_preview_active=0;}
 /* Camera interpolation has its own elapsed-time clock, independent of map
  * and HUD frame counts. MAP toggles are guarded; confirming a selected point
  * may reverse an unfinished entry from its current pose. */
@@ -1690,9 +1694,13 @@ enum {MAN_NONE=0,MAN_SLIGHT_LEFT,MAN_LEFT,MAN_SHARP_LEFT,MAN_SLIGHT_RIGHT,MAN_RI
 #define ROUTE_MAN_SCAN_POINTS 4096
 #define ROUTE_MAN_RESCAN_POINTS 128
 #define ROUTE_MAN_SHOW_M 3000u
+#define ROUTE_NEXT_MAN_MIN_M 15u
+#define ROUTE_NEXT_MAN_MAX_M 250u
+#define ROUTE_NEXT_SHOW_M 1500u
 static int nav_man_type=MAN_NONE,nav_man_idx=-1,nav_man_scan_head=0,nav_man_exit=0;static u32 nav_man_m=0;
+static int nav_next_type=MAN_NONE,nav_next_exit=0;static u32 nav_next_m=0;
 static void nav_maneuver_find(void);
-static void nav_maneuver_reset(void){nav_man_exit=0;nav_man_type=MAN_NONE;nav_man_idx=-1;nav_man_m=0;nav_man_scan_head=route_head;}
+static void nav_maneuver_reset(void){nav_man_exit=0;nav_man_type=MAN_NONE;nav_man_idx=-1;nav_man_m=0;nav_next_type=MAN_NONE;nav_next_exit=0;nav_next_m=0;nav_man_scan_head=route_head;}
 static struct RouteSnapCandidate route_start_snap,route_dest_cand[ROUTE_DEST_CAND_MAX];static int route_dest_count=0,route_dest_idx=0;
 
 /* local CH repair.
@@ -2161,14 +2169,41 @@ static u32 geo_seg_m(s32 la0,s32 lo0,s32 la1,s32 lo1){int cq=coslat_q15((la0+la1
  * rounds away. */
 static u32 nav_seg_m(s32 la0,s32 lo0,s32 la1,s32 lo1){int cq=coslat_q15((la0+la1)/2);u32 dx=(u32)iabs32(lon_scale(lo1-lo0,cq)),dy=(u32)iabs32(la1-la0);u32 hi=dx>dy?dx:dy,lo=dx>dy?dy:dx;u32 q=hi+((lo*3u)>>3);return q+(q>>3)-(q>>6);}
 static int nav_heading10(s32 la0,s32 lo0,s32 la1,s32 lo1){int cq=coslat_q15((la0+la1)/2);s32 x=lon_scale(lo1-lo0,cq),y=la1-la0;if(!x&&!y)return-1;int bi=0;s32 bd=(s32)0x80000000u;for(int k=0;k<36;k++){s32 d=x*(s32)SIN36[k]+y*(s32)COS36[k];if(d>bd){bd=d;bi=k;}}return bi*10;}
-static int nav_turn_delta(int i){int a=i-1,b=i+1;u32 m=nav_seg_m(route_lat[a],route_lon[a],route_lat[i],route_lon[i]);while(a>route_head&&m<30u){m+=nav_seg_m(route_lat[a-1],route_lon[a-1],route_lat[a],route_lon[a]);a--;}m=nav_seg_m(route_lat[i],route_lon[i],route_lat[b],route_lon[b]);while(b+1<route_n&&m<30u){m+=nav_seg_m(route_lat[b],route_lon[b],route_lat[b+1],route_lon[b+1]);b++;}int h0=nav_heading10(route_lat[a],route_lon[a],route_lat[i],route_lon[i]),h1=nav_heading10(route_lat[i],route_lon[i],route_lat[b],route_lon[b]);if(h0<0||h1<0)return 0;int d=h1-h0;while(d>180)d-=360;while(d<-180)d+=360;return d;}
+static int nav_turn_delta_from(int i,int min_idx){int a=i-1,b=i+1;if(a<min_idx)a=min_idx;u32 m=nav_seg_m(route_lat[a],route_lon[a],route_lat[i],route_lon[i]);while(a>min_idx&&m<30u){m+=nav_seg_m(route_lat[a-1],route_lon[a-1],route_lat[a],route_lon[a]);a--;}m=nav_seg_m(route_lat[i],route_lon[i],route_lat[b],route_lon[b]);while(b+1<route_n&&m<30u){m+=nav_seg_m(route_lat[b],route_lon[b],route_lat[b+1],route_lon[b+1]);b++;}int h0=nav_heading10(route_lat[a],route_lon[a],route_lat[i],route_lon[i]),h1=nav_heading10(route_lat[i],route_lon[i],route_lat[b],route_lon[b]);if(h0<0||h1<0)return 0;int d=h1-h0;while(d>180)d-=360;while(d<-180)d+=360;return d;}
+static int nav_turn_delta(int i){return nav_turn_delta_from(i,route_head);}
 static int nav_turn_type(int d){int a=d<0?-d:d;if(a<25)return MAN_NONE;if(a>=160)return MAN_UTURN;if(d<0)return a>=110?MAN_SHARP_LEFT:(a>=45?MAN_LEFT:MAN_SLIGHT_LEFT);return a>=110?MAN_SHARP_RIGHT:(a>=45?MAN_RIGHT:MAN_SLIGHT_RIGHT);}
 /* BASE flag 4 identifies roundabout arcs; pad marks an outgoing public exit
  * at the directed arc endpoint. Count junctions, not geometry points/lanes. */
 static int nav_round_info(int i,struct CprBase*b){return i>=0&&i<route_n&&route_seg_arc[i]!=ROUTE_NOARC&&route_read_base(route_seg_arc[i],b);}
 static int nav_round_exit_legal(int i,const struct CprBase*b){if(i<0||i>=route_n||route_node[i]==ROUTE_NOARC)return b->pad!=0;u32 state=route_node[i];struct CprNode n;struct CprTile tile;if(!route_read_node(state,&n)||!route_find_tile(tile_div(n.lon,6),tile_div(n.lat,6),&tile))return 0;for(u32 j=0;j<tile.count;j++){u32 id;struct CprBase a;if(!route_read_ref(2,tile.first+j,&id)||!route_read_base(id,&a))return 0;if(a.flags&4)continue;for(u32 k=0;k<a.src_count;k++){u32 source;if(!route_read_srcref(a.src_first+k,&source))return 0;if(source==state)return 1;}}return 0;}
-static int nav_round_scan(int entry,u32 distance,int joined_midway){int exits=0;int end=entry+ROUTE_MAN_SCAN_POINTS;if(end>route_n-1)end=route_n-1;for(int j=entry+1;j<end;j++){if(route_seg_arc[j]==route_seg_arc[j+1])continue;struct CprBase in,out;if(!nav_round_info(j,&in)||!nav_round_info(j+1,&out)||!(in.flags&4))return 0;if(nav_round_exit_legal(j,&in))exits++;if(!(out.flags&4)){nav_man_type=MAN_ROUNDABOUT;nav_man_exit=joined_midway?0:(exits?exits:1);nav_man_idx=j;nav_man_m=distance;return 1;}}return 0;}
-static void nav_maneuver_find(void){nav_maneuver_reset();if(route_status!=R_READY||route_n-route_head<3)return;nav_man_scan_head=route_head;u32 dist=0;int end=route_head+ROUTE_MAN_SCAN_POINTS;if(end>route_n-1)end=route_n-1;struct CprBase first;if(nav_round_info(route_head+1,&first)&&(first.flags&4)&&nav_round_scan(route_head,0,1))return;for(int i=route_head+1;i<end;i++){dist=sat_add32(dist,nav_seg_m(route_lat[i-1],route_lon[i-1],route_lat[i],route_lon[i]));u32 in=route_seg_phys[i],out=route_seg_phys[i+1];if(in==ROUTE_NOARC||out==ROUTE_NOARC)continue;if(route_seg_arc[i]!=route_seg_arc[i+1]){struct CprBase a,b;if(nav_round_info(i,&a)&&nav_round_info(i+1,&b)){if(!(a.flags&4)&&(b.flags&4)&&nav_round_scan(i,dist,0))return;if((a.flags|b.flags)&4)continue;}}int t=nav_turn_type(nav_turn_delta(i));if(in==out&&t!=MAN_UTURN)continue;if(t!=MAN_NONE){nav_man_type=t;nav_man_idx=i;nav_man_m=dist;return;}}}
+static int nav_round_scan_ex(int entry,int joined_midway,int*out_exit,int*out_idx){int exits=0;int end=entry+ROUTE_MAN_SCAN_POINTS;if(end>route_n-1)end=route_n-1;for(int j=entry+1;j<end;j++){if(route_seg_arc[j]==route_seg_arc[j+1])continue;struct CprBase in,out;if(!nav_round_info(j,&in)||!nav_round_info(j+1,&out)||!(in.flags&4))return 0;if(nav_round_exit_legal(j,&in))exits++;if(!(out.flags&4)){if(out_exit)*out_exit=joined_midway?0:(exits?exits:1);if(out_idx)*out_idx=j;return 1;}}return 0;}
+static void nav_next_maneuver_find(int after_idx){
+ nav_next_type=MAN_NONE;nav_next_exit=0;nav_next_m=0;
+ if(after_idx<0||after_idx+2>=route_n)return;
+ u32 dist=0;int end=after_idx+512;if(end>route_n-1)end=route_n-1;
+ for(int k=after_idx+1;k<end;k++){
+  dist=sat_add32(dist,nav_seg_m(route_lat[k-1],route_lon[k-1],route_lat[k],route_lon[k]));
+  if(dist>ROUTE_NEXT_MAN_MAX_M)return;
+  u32 in=route_seg_phys[k],out=route_seg_phys[k+1];
+  if(in==ROUTE_NOARC||out==ROUTE_NOARC)continue;
+  if(route_seg_arc[k]!=route_seg_arc[k+1]){
+   struct CprBase a,b;
+   if(nav_round_info(k,&a)&&nav_round_info(k+1,&b)){
+    int exits=0,idx=0;
+    if(!(a.flags&4)&&(b.flags&4)&&nav_round_scan_ex(k,0,&exits,&idx)){
+     nav_next_type=MAN_ROUNDABOUT;nav_next_exit=exits;nav_next_m=dist;return;
+    }
+    if((a.flags|b.flags)&4)continue;
+   }
+  }
+  if(dist<ROUTE_NEXT_MAN_MIN_M)continue;
+  int t=nav_turn_type(nav_turn_delta_from(k,after_idx));
+  if(in==out&&t!=MAN_UTURN)continue;
+  if(t!=MAN_NONE){nav_next_type=t;nav_next_exit=0;nav_next_m=dist;return;}
+ }
+}
+static int nav_round_scan(int entry,u32 distance,int joined_midway){int exits=0,idx=0;if(!nav_round_scan_ex(entry,joined_midway,&exits,&idx))return 0;nav_man_type=MAN_ROUNDABOUT;nav_man_exit=exits;nav_man_idx=idx;nav_man_m=distance;nav_next_maneuver_find(idx);return 1;}
+static void nav_maneuver_find(void){nav_maneuver_reset();if(route_status!=R_READY||route_n-route_head<3)return;nav_man_scan_head=route_head;u32 dist=0;int end=route_head+ROUTE_MAN_SCAN_POINTS;if(end>route_n-1)end=route_n-1;struct CprBase first;if(nav_round_info(route_head+1,&first)&&(first.flags&4)&&nav_round_scan(route_head,0,1))return;for(int i=route_head+1;i<end;i++){dist=sat_add32(dist,nav_seg_m(route_lat[i-1],route_lon[i-1],route_lat[i],route_lon[i]));u32 in=route_seg_phys[i],out=route_seg_phys[i+1];if(in==ROUTE_NOARC||out==ROUTE_NOARC)continue;if(route_seg_arc[i]!=route_seg_arc[i+1]){struct CprBase a,b;if(nav_round_info(i,&a)&&nav_round_info(i+1,&b)){if(!(a.flags&4)&&(b.flags&4)&&nav_round_scan(i,dist,0))return;if((a.flags|b.flags)&4)continue;}}int t=nav_turn_type(nav_turn_delta(i));if(in==out&&t!=MAN_UTURN)continue;if(t!=MAN_NONE){nav_man_type=t;nav_man_idx=i;nav_man_m=dist;nav_next_maneuver_find(i);return;}}}
 #include "mobility.h"
 #include "traffic.h"
 static const char* nav_man_text(void){static char exit_text[64];if(nav_man_type==MAN_ROUNDABOUT){if(!nav_man_exit)return ui_tr("Roundabout");copystr(exit_text,sizeof(exit_text),ui_tr("Take exit "));append_int(exit_text,sizeof(exit_text),nav_man_exit);return exit_text;}switch(nav_man_type){case MAN_SLIGHT_LEFT:return ui_tr("Slight left");case MAN_LEFT:return ui_tr("Turn left");case MAN_SHARP_LEFT:return ui_tr("Sharp left");case MAN_SLIGHT_RIGHT:return ui_tr("Slight right");case MAN_RIGHT:return ui_tr("Turn right");case MAN_SHARP_RIGHT:return ui_tr("Sharp right");case MAN_UTURN:return ui_tr("U-turn");default:return"";}}
@@ -2341,6 +2376,21 @@ static void freecam_orientation_anim_update(u32 now);
  * User MAP toggling uses leave_freecam() below so it gets the reverse animation. */
 static void recenter_map(void){freecam=0;map_tilt_q8=256;freecam_course_valid=0;freecam_anim_mode=FC_ANIM_NONE;freecam_anim_at=0;freecam_anim_serial++;freecam_buffered=0;freecam_anim_tilt_from=256;zoom_override=-1;if(pref.autozoom)auto_zoom_level=-1;}
 static void enter_freecam(void){if(freecam||freecam_transition_active()||(!gps.fix&&!track_valid))return;int z=active_zoom();int c=map_course();if(c<0||c>=360)c=0;freecam_course=c;freecam_course_valid=1;/* Tilt still animates even when already facing north. */freecam_anim_mode=FC_ANIM_TO_NORTH;freecam_anim_serial++;freecam_buffered=0;freecam_anim_from=c;freecam_anim_at=hud_now_ms();freecam_anim_tilt_from=256;map_tilt_q8=256;freecam=1;freecam_zoom=z;zoom_override=-1;/* MAP entry begins exactly at the car's current/last tracked position. */cam_lat=car_lat();cam_lon=car_lon();}
+static void enter_freecam_at(s32 lat,s32 lon,int z){
+ int lo=mapok?(int)mh.minlvl:0;
+ if(z<lo)z=lo;if(z>MAX_EXPLORE_ZOOM)z=MAX_EXPLORE_ZOOM;
+ freecam=1;freecam_zoom=z;zoom_override=-1;
+ freecam_course=0;freecam_course_valid=1;map_tilt_q8=0;
+ freecam_anim_mode=FC_ANIM_NONE;freecam_anim_at=0;freecam_anim_serial++;freecam_buffered=0;
+ cam_lat=lat;cam_lon=lon;render_background_dirty=1;
+}
+static int diversion_preview_matches(void){
+ return diversion_preview_active&&traffic_offer_valid()&&
+  diversion_preview_revision==traffic_offer_revision&&
+  diversion_preview_serial==traffic_offer_serial&&
+  diversion_preview_begin==traffic_begin_idx&&
+  diversion_preview_join==traffic_join_idx;
+}
 static void leave_freecam(void){
  if(!freecam)return;
  /* Confirmation may arrive before Explore has finished entering. Reverse from
@@ -2569,6 +2619,8 @@ static int diversion_saving_box(int z,int w,struct HudBox*b){
  for(unsigned i=0;i<sizeof(xs)/sizeof(xs[0]);i++){
   int l=xs[i],t=ys[i];
   if(t<40||t+h>HUD_BOTTOM_Y-8||l<4||l+w>W-4)continue;
+  struct HudBox next_turn=hud_tween[HC_TURN_NEXT].target.box;
+  if(next_turn.a&&l<next_turn.x+next_turn.w+4&&l+w>next_turn.x-4&&t<next_turn.y+next_turn.h+4&&t+h>next_turn.y-4)continue;
   if(l<carx+19&&l+w>carx-19&&t<cary+19&&t+h>cary-19)continue;
   if(l<joinx+6&&l+w>joinx-6&&t<joiny+6&&t+h>joiny-6)continue;
   if(!label_free(l-2,t-2,l+w+2,t+h+2))continue;
@@ -2628,7 +2680,7 @@ static void add_recent(const char*name,s32 lat,s32 lon){int found=-1;for(int i=0
 static int fave_contains(s32 lat,s32 lon){for(int i=0;i<nfaves;i++)if(same_place(&faves[i],lat,lon))return i;return-1;}
 static void notice_success(const char*s);
 static void add_fave_place(const char*name,s32 lat,s32 lon){struct SavedPlace p;p.lat=lat;p.lon=lon;copystr(p.name,sizeof(p.name),name&&name[0]?name:"MAP POINT");if(fave_contains(lat,lon)>=0)return;if(nfaves<FAVE_MAX)faves[nfaves++]=p;else{for(int i=1;i<FAVE_MAX;i++)faves[i-1]=faves[i];faves[FAVE_MAX-1]=p;}write_places(FAVES_PATH,faves,nfaves);notice_success(ui_tr("Favourite saved"));}
-static int fave_needs_name(const char*name){return !name||!name[0]||streq(name,"MAP POINT");}
+static int fave_needs_name(const char*name){return !name||!name[0]||streq(name,"MAP POINT")||streq(name,"FUEL")||streq(name,"PARKING")||streq(name,"HOSPITAL");}
 static void add_fave_or_name(const char*name,s32 lat,s32 lon){if(fave_needs_name(name)){keyboard_open_fave_name(lat,lon);screen=SCR_KEY;}else add_fave_place(name,lat,lon);}
 static void add_fave(const struct SavedPlace*p){if(p)add_fave_or_name(p->name,p->lat,p->lon);}
 static void remove_fave(int idx){if(idx<0||idx>=nfaves)return;for(int i=idx+1;i<nfaves;i++)faves[i-1]=faves[i];nfaves--;write_places(FAVES_PATH,faves,nfaves);notice_success(ui_tr("Favourite removed"));}
@@ -2966,6 +3018,7 @@ static void settings_key(int code){
 }
 
 static int modal_action_count(void){if(modal==MOD_RECENT)return trip.active?3:2;if(modal==MOD_FAVE)return trip.active?4:3;if(modal==MOD_TARGET){if(modal_index>=0&&modal_index<trip.count-1)return 3;return 2;}if(modal==MOD_SOURCE_PICK)return 4;return 0;}
+#include "nearby_pois.h"
 #include "popups.h"
 #include "menu_keyboard.h"
 #include "menu_layout.h"
@@ -2974,6 +3027,7 @@ static int modal_action_count(void){if(modal==MOD_RECENT)return trip.active?3:2;
 static void draw(void){
  u32 now=hud_now_ms();freecam_orientation_anim_update(now);clock_service();region_service();camera_service();refresh_theme();
  hud_prepare(active_zoom(),now,1);hud_driver_prepare(now);menu_prepare(now);draw_map_background();
+ hud_glass_background_changed();
  hud_glass_frame_begin();menu_draw(hud_now_ms());draw_modal();hud_glass_frame_end();boot_fade_apply(hud_now_ms());fb_flush();
 }
 
@@ -3007,6 +3061,7 @@ if(modal!=MOD_NONE){
           if(accepted)add_recent("MAP POINT",pending_lat,pending_lon);else notice_fail(ui_tr("Stop not added"));
         }else set_destination("MAP POINT",pending_lat,pending_lon);
         if(accepted){
+          diversion_preview_clear();
           screen=SCR_MAP;trip_pane=1;trip_right_focus=0;leave_freecam();
           if(hud_navigation.kind==HUD_EXPLORE)hud_navigation.kind=HUD_NONE;
         }
@@ -3051,6 +3106,13 @@ if(screen==SCR_MAP){
     if(code==K_UP||code==K_DOWN)return;
   }
   if(code==K_MAP){bt_control_mode=0;
+    if(freecam&&diversion_preview_active){
+      int valid=diversion_preview_matches(),from_map=diversion_preview_from_map;
+      diversion_preview_clear();recenter_map();
+      if(valid)menu_open_diversion(from_map,hud_now_ms());
+      else notice_fail(ui_tr("Diversion unavailable"));
+      return;
+    }
     if(!freecam&&pref.autozoom&&zoom_override>=0){zoom_override=-1;auto_zoom_level=-1;hud_pulse(&hud_navigation,HUD_AUTO_ZOOM,1800);return;}
     int was=freecam;toggle_freecam();if(was!=freecam)hud_pulse(&hud_navigation,freecam?HUD_EXPLORE:(pref.autozoom?HUD_AUTO_ZOOM:HUD_MANUAL_ZOOM),1800);return;}
   if(code==K_ENTER){if(freecam){pending_lat=cam_lat;pending_lon=cam_lon;pending_point_stop=trip.active?1:0;modal=MOD_ROUTE_POINT;modal_choice=0;}else hud_show_driving_info();return;}
@@ -3100,10 +3162,10 @@ static void key_handle(int code){
  boot_fade_cancel();
  if(code==K_CONSOLE_THEME){pref.theme=(pref.theme+1)%3;prefs_mark_dirty();refresh_theme();render_background_dirty=1;return;}
  if(code==K_CONSOLE_INFO){if(screen==SCR_MAP&&modal==MOD_NONE)hud_show_driving_info();return;}
- if(code==K_CONSOLE_TRIP){if(modal!=MOD_NONE)return;coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;menu_open(P_TRIP,trip.active_idx,hud_now_ms());return;}
+ if(code==K_CONSOLE_TRIP){if(modal!=MOD_NONE)return;diversion_preview_clear();coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;menu_open(P_TRIP,trip.active_idx,hud_now_ms());return;}
  menu_sync(hud_now_ms());
  if(modal==MOD_NONE&&(code==K_MENU||screen!=SCR_MAP)){
-  keydiag(code);if(code==K_MENU&&screen==SCR_MAP)menu_open(P_HOME,0,hud_now_ms());else menu_dispatch(code,hud_now_ms());return;
+  keydiag(code);if(code==K_MENU&&screen==SCR_MAP){diversion_preview_clear();menu_open(P_HOME,0,hud_now_ms());}else menu_dispatch(code,hud_now_ms());return;
  }
  if(code==K_ENTER&&hud_suggestion_shortcut_ready()){
   hud_suggestion_invited=0;bt_control_mode=0;menu_open_suggestion(hud_now_ms());return;
@@ -3450,45 +3512,4 @@ screen=SCR_MAP;
 #endif
 draw();return 0;}
 #endif
-#ifndef HOST_TEST
-/* Freestanding ARM EABI compiler-runtime shims for the device build. */
-void *memcpy(void *d0,const void *s0,unsigned n){u8*d=(u8*)d0;const u8*s=(const u8*)s0;while(n--)*d++=*s++;return d0;}
-__attribute__((naked)) void __aeabi_uidivmod(void){__asm__ volatile(
-  "cmp r1,#0\n"
-  "beq 2f\n"
-  "mov r2,#0\n"
-  "mov r3,#0\n"
-  "mov r12,#32\n"
-  "1:\n"
-  "mov r3,r3,lsl #1\n"
-  "orr r3,r3,r0,lsr #31\n"
-  "mov r0,r0,lsl #1\n"
-  "cmp r3,r1\n"
-  "subcs r3,r3,r1\n"
-  "adc r2,r2,r2\n"
-  "subs r12,r12,#1\n"
-  "bne 1b\n"
-  "mov r0,r2\n"
-  "mov r1,r3\n"
-  "bx lr\n"
-  "2:\n"
-  "mov r0,#0\n"
-  "mov r1,#0\n"
-  "bx lr\n");}
-__attribute__((naked)) void __aeabi_uidiv(void){__asm__ volatile("b __aeabi_uidivmod\n");}
-__attribute__((naked)) void __aeabi_idivmod(void){__asm__ volatile(
-  "push {r4,r5,lr}\n"
-  "mov r4,r0\n"
-  "eor r5,r0,r1\n"
-  "cmp r0,#0\n"
-  "rsblt r0,r0,#0\n"
-  "cmp r1,#0\n"
-  "rsblt r1,r1,#0\n"
-  "bl __aeabi_uidivmod\n"
-  "cmp r5,#0\n"
-  "rsblt r0,r0,#0\n"
-  "cmp r4,#0\n"
-  "rsblt r1,r1,#0\n"
-  "pop {r4,r5,pc}\n");}
-__attribute__((naked)) void __aeabi_idiv(void){__asm__ volatile("b __aeabi_idivmod\n");}
-#endif
+#include "arm_runtime.h"

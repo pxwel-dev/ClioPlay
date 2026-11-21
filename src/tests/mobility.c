@@ -354,6 +354,42 @@ static void two_diversions(void){
  key_handle(K_CONSOLE_INFO);assert(screen==SCR_MAP&&hud_navigation.kind==HUD_JOURNEY);
  pref.autozoom=1;zoom_override=5;
  key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&sheet_focus==0&&confirm_diversion_map);
+ assert(menu_count(P_CONFIRM)==3&&menu_box(P_CONFIRM).h==122);
+ /* D-pad Down jumps from Yes/No to View diversion and Up restores the top row;
+  * console rotary cycles all three choices. */
+ key_handle(K_RIGHT);assert(sheet_focus==1);
+ key_handle(K_DOWN);assert(sheet_focus==2);
+ key_handle(K_UP);assert(sheet_focus==1);
+ key_handle(K_ROTCW);assert(sheet_focus==2);
+ key_handle(K_ROTCW);assert(sheet_focus==0);
+ key_handle(K_ROTCCW);assert(sheet_focus==2);
+ /* Selecting View diversion closes the popup and frames the diversion in Explore. */
+ key_handle(K_ENTER);
+ assert(screen==SCR_MAP&&sheet_page==P_CLOSED&&freecam&&diversion_preview_active);
+ assert(cam_lat>=route_lat[traffic_begin_idx]&&cam_lat<=route_lat[traffic_join_idx]);
+ assert(cam_lon>=route_lon[traffic_begin_idx]&&cam_lon<=traffic_path[1].lon);
+ /* Panning and zooming while inspecting keeps preview active; MAP returns and re-opens. */
+ key_handle(K_UP);key_handle(K_ESC);assert(freecam&&diversion_preview_active);
+ key_handle(K_MAP);
+ assert(!freecam&&!diversion_preview_active&&sheet_page==P_CONFIRM&&confirm_kind==3&&sheet_focus==0&&confirm_diversion_map);
+ /* Opening from Trip, viewing, then pressing MAP preserves Trip as the Back target. */
+ key_handle(K_BACK);assert(screen==SCR_MAP);
+ menu_open(P_TRIP,trip.count+2,hud_now_ms());key_handle(K_ENTER);
+ assert(sheet_page==P_CONFIRM&&confirm_kind==3&&!confirm_diversion_map);
+ key_handle(K_DOWN);assert(sheet_focus==2);key_handle(K_ENTER);
+ assert(screen==SCR_MAP&&freecam&&diversion_preview_active&&!diversion_preview_from_map);
+ key_handle(K_MAP);
+ assert(!freecam&&sheet_page==P_CONFIRM&&confirm_kind==3&&!confirm_diversion_map);
+ key_handle(K_BACK);assert(sheet_page==P_TRIP);
+ /* If the offer expires during preview, MAP returns to driving map without reopening. */
+ menu_close(hud_now_ms());hud_capture_ms+=500;hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
+ key_handle(K_ENTER);assert(sheet_page==P_CONFIRM);
+ key_handle(K_DOWN);key_handle(K_ENTER);assert(freecam&&diversion_preview_active);
+ traffic_offer_serial++;
+ key_handle(K_MAP);assert(!freecam&&!diversion_preview_active&&screen==SCR_MAP&&sheet_page==P_CLOSED);
+ /* Restore zoom_override check on ordinary Back without previewing. */
+ zoom_override=5;hud_capture_ms+=500;hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
+ key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&sheet_focus==0&&confirm_diversion_map);
  key_handle(K_BACK);assert(screen==SCR_MAP&&traffic_offer_valid()&&zoom_override==5);
  hud_capture_ms+=500;hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
  assert(hud_diversion_shortcut_ready());key_handle(K_ENTER);assert(sheet_page==P_CONFIRM);

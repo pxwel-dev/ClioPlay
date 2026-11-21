@@ -28,7 +28,7 @@ static void location(const char*lat,const char*lon,const char*title){digits(lat)
  assert(screen==SCR_KEY);name(title);}
 static void source(int action){
  menu_open(P_TRIP,0,hud_now_ms());open_sources(action,hud_now_ms());
- key_handle(K_DOWN);key_handle(K_DOWN);key_handle(K_ENTER);
+ key_handle(K_DOWN);key_handle(K_DOWN);key_handle(K_DOWN);key_handle(K_ENTER);
  assert(coordinates_active&&coordinates.action==action&&sheet_page==P_COORD);
 }
 static void parser(void){
@@ -76,11 +76,11 @@ static void entry_and_cancel(void){
  key_handle(K_MENU);assert(screen==SCR_MENU&&!coordinates_active);
  /* BACK leaves either axis, even if a populated draft would validate. */
  source(DEST_PICK_ADD_STOP);digits("12");key_handle(K_SR);digits("34");key_handle(K_BACK);
- assert(sheet_page==P_SOURCE&&sheet_focus==2&&!coordinates_active&&!trip.active&&!nrecents);
+ assert(sheet_page==P_SOURCE&&sheet_focus==3&&!coordinates_active&&!trip.active&&!nrecents);
  key_handle(K_ENTER);assert(sheet_page==P_COORD&&!coordinates.value[0][0]&&!coordinates.value[1][0]);
  digits("12");key_handle(K_BACK);assert(sheet_page==P_SOURCE&&!coordinates_active);
  baseline();key_handle(K_ENTER);digits("12");key_handle(K_BACK);assert(sheet_page==P_TRIP&&!coordinates_active);
- source(DEST_PICK_ADD_STOP);key_handle(K_BACK);assert(sheet_page==P_SOURCE&&sheet_focus==2&&!coordinates_active);
+ source(DEST_PICK_ADD_STOP);key_handle(K_BACK);assert(sheet_page==P_SOURCE&&sheet_focus==3&&!coordinates_active);
  key_handle(K_BACK);coordinates_open(DEST_PICK_NONE);digits("-");key_handle(K_ENTER); /* +/- toggles sign */
  assert(!coordinates.value[0][0]);coordinates.focus=COORD_DOT;key_handle(K_ENTER);assert(streq(coordinates.value[0],"0."));
  key_handle(K_ENTER);assert(streq(coordinates.value[0],"0."));key_handle(K_ESC);assert(streq(coordinates.value[0],"0"));
@@ -137,14 +137,14 @@ static void save_and_reuse(void){
  /* Choose the real itinerary Add stop action, then Coordinates. */
  menu_open(P_TRIP,0,hud_now_ms());key_handle(K_DOWN);key_handle(K_ENTER);
  assert(sheet_page==P_SOURCE&&source_action==DEST_PICK_ADD_STOP);
- for(int i=0;i<2;i++)key_handle(K_DOWN);key_handle(K_ENTER);location("54.98000","-1.64000","");
+ for(int i=0;i<3;i++)key_handle(K_DOWN);key_handle(K_ENTER);location("54.98000","-1.64000","");
  assert(nrecents==1&&trip.count==1);key_handle(K_ENTER);
  assert(sheet_page==P_TRIP&&trip.count==2&&trip.target[0].lat==5498000);
  assert(streq(trip.target[0].name,"54.98000, -1.64000")&&streq(trip.target[1].name,"QUAYSIDE")&&nrecents==2);
  /* Replace only the final destination through its real action menu. */
  sheet_focus=1;key_handle(K_ENTER);assert(sheet_page==P_DEST);key_handle(K_ENTER);
  assert(sheet_page==P_SOURCE&&source_action==DEST_PICK_CHANGE_DEST);
- for(int i=0;i<2;i++)key_handle(K_DOWN);key_handle(K_ENTER);location("54.99000","-1.65000","GOSFORTH");key_handle(K_ENTER);
+ for(int i=0;i<3;i++)key_handle(K_DOWN);key_handle(K_ENTER);location("54.99000","-1.65000","GOSFORTH");key_handle(K_ENTER);
  assert(trip.count==2&&trip.target[0].lat==5498000&&trip.target[1].lat==5499000&&streq(trip.target[1].name,"GOSFORTH")&&nrecents==3);
  source(DEST_PICK_CHANGE_DEST);location("54.99000","-1.65000","RENAMED");key_handle(K_ENTER);
  assert(nrecents==3&&streq(recents[0].name,"RENAMED"));

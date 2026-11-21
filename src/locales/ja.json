@@ -225,5 +225,12 @@
   "Start suggested trip?": "提案されたルートを開始？",
   "Suggestion unavailable": "提案は利用できません",
   "You come here often": "よくここに来ています",
-  "Add to favourites?": "お気に入りに追加しますか？"
+  "Add to favourites?": "お気に入りに追加しますか？",
+  "Then": "次に",
+  "View diversion": "迂回を表示",
+  "Nearby": "周辺",
+  "Fuel": "給油所",
+  "Parking": "駐車場",
+  "Hospital": "病院",
+  "No nearby places found": "周辺に場所がありません"
 }

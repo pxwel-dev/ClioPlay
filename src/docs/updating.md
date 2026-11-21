@@ -94,9 +94,9 @@ The update backup contains its own checksums and version information.
 ## 4. Compatibility
 
 File preservation and format compatibility are different things. The updater
-does not migrate old data. ClioPlay 2.2.2 uses CTR4 trips, CLP2 saved places,
+does not migrate old data. ClioPlay 2.2.3 uses CTR4 trips, CLP2 saved places,
 CPM5 display maps, CPR2 v5 routing and optional QAD7, with version-2 navigation
-bundle manifests. Current 2.1.8 and 2.2.0 maps and state remain usable without
+bundle manifests. Current 2.1.8–2.2.2 maps and state remain usable without
 rebuilding. To add map coverage with multiple extracts, use the fresh
 installation workflow.
 

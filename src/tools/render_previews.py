@@ -15,7 +15,8 @@ from render_gallery import (ANIMATION_SAMPLE_MS, BLUETOOTH_SAMPLES, MENU_ENTRY_S
                             TRIPS_LAYOUT_SAMPLES, TRIPS_EMPTY_SAMPLES, POPUPS_LAYOUT_SAMPLES,
                             V216_COORDINATES_SAMPLES, V216_HUD_SETTINGS_SAMPLES,
                             V216_BLUETOOTH_HIDDEN_SAMPLES, V216_ITINERARY_SAMPLES,
-                            V220_DESTINATION_SAMPLES, V220_DIVERSION_SAMPLES, V220_FREQUENT_PLACE_SAMPLES, ROOT, sha)
+                            V220_DESTINATION_SAMPLES, V220_DIVERSION_SAMPLES, V220_FREQUENT_PLACE_SAMPLES,
+                            V223_NEARBY_SAMPLES, V223_SECONDARY_MANOEUVRE_SAMPLES, V223_VIEW_DIVERSION_SAMPLES, ROOT, sha)
 
 
 
@@ -36,6 +37,9 @@ def previews():
     boot += [('boot-fade-0500', 400), ('boot-fade-0900', 700)]
     boot[0] = (boot[0][0], 750)
     plans = {
+        'v223-nearby-pois.gif': timeline('night', timed_scenes('preview-v223-nearby-pois', V223_NEARBY_SAMPLES, 11000)),
+        'v223-secondary-manoeuvre.gif': timeline('night', timed_scenes('preview-v223-secondary-manoeuvre', V223_SECONDARY_MANOEUVRE_SAMPLES, 7800)),
+        'v223-view-diversion.gif': timeline('night', timed_scenes('preview-v223-view-diversion', V223_VIEW_DIVERSION_SAMPLES, 10400)),
         'v220-frequent-place.gif': timeline('night', timed_scenes('preview-v220-frequent-place', V220_FREQUENT_PLACE_SAMPLES, 5900)),
         'v220-destination-prediction.gif': timeline('night', timed_scenes('preview-v220-destination-prediction', V220_DESTINATION_SAMPLES, 6500)),
         'v220-intelligent-diversions.gif': timeline('night', timed_scenes('preview-v220-intelligent-diversions', V220_DIVERSION_SAMPLES, 6200)),
@@ -230,13 +234,25 @@ def main():
                 'runs to R_READY on the local map bundle; target coordinates and nonempty '
                 'route geometry are asserted. GPS is held stationary. The 1.3-second '
                 'calculation display is a controlled preview interval, not a timing benchmark.')
-        reports['v220-intelligent-diversions.gif']['routing_provenance'] = (
-            'Real Newcastle route and legal alternative geometry from '
-            'the installed CPR2 routing graph. Historical congestion '
-            'observations are controlled examples. The production traffic '
-            'search, shared-geometry rendering, BT CTRL and direct map '
-            'confirmation handler are used. This is '
-            'not a claim about actual traffic conditions.'
+        for name in ('v220-intelligent-diversions.gif', 'v223-view-diversion.gif'):
+            reports[name]['routing_provenance'] = (
+                'Real Newcastle route and legal alternative geometry from '
+                'the installed CPR2 routing graph. Historical congestion '
+                'observations are controlled examples. The production traffic '
+                'search, shared-geometry rendering, BT CTRL, Explore diversion '
+                'preview and direct map confirmation handler are used. This is '
+                'not a claim about actual traffic conditions.'
+            )
+        reports['v223-secondary-manoeuvre.gif']['routing_provenance'] = (
+            'Real Newcastle city-centre route calculated by production routing '
+            'from the installed CPR2 routing graph. Vehicle movement along route '
+            'vertices is simulated; production nav_maneuver_find() and '
+            'nav_next_maneuver_find() drive both Turn cards.'
+        )
+        reports['v223-nearby-pois.gif']['routing_provenance'] = (
+            'Real Newcastle POI tiles scanned offline by production nearby_scan() '
+            'from the installed CPM5 map bundle (Z5 3x3 inner pass plus Z3 expanding '
+            'rings), using production remote handlers to add a stop to the itinerary.'
         )
         generator_paths = ('tools/render_previews.py', 'tools/render_gallery.py', 'tools/text_engine.py', 'tools/mobility_stories.py',
                            'tests/native.c', 'tests/splash.c', 'tests/fixtures/route.h', 'clio843/font.bin')
