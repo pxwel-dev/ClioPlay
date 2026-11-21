@@ -132,7 +132,10 @@ static void bluetooth(void){
  reset();nbtdev=2;btui.connected=1;
  copystr(btdev[0].name,sizeof(btdev[0].name),"One");copystr(btdev[0].addr,18,"00:11:22:33:44:00");btdev[0].connected=0;
  copystr(btdev[1].name,sizeof(btdev[1].name),"Two");copystr(btdev[1].addr,18,"00:11:22:33:44:01");btdev[1].connected=1;
- menu_open(P_PHONE,2,hud_now_ms());key_handle(K_SR);assert(sheet_page==P_PAIR);key_handle(K_BACK);assert(sheet_page==P_PHONE);
+ menu_open(P_PHONE,2,hud_now_ms());key_handle(K_SR);assert(sheet_page==P_PHONE&&sheet_focus==2);
+ {FILE*none=fopen(BT_CMD_PATH,"r");assert(!none);}
+ key_handle(K_DOWN);assert(sheet_focus==0);key_handle(K_ENTER);assert(sheet_page==P_PAIR);key_handle(K_BACK);assert(sheet_page==P_PHONE&&sheet_focus==0);
+ key_handle(K_UP);assert(sheet_focus==2);
  key_handle(K_ENTER);assert(sheet_page==P_PHONE_ACTIONS);
  struct BtDeviceUi temp=btdev[0];btdev[0]=btdev[1];btdev[1]=temp;menu_sync(hud_now_ms());assert(phone_index==0);
  key_handle(K_ENTER);assert(sheet_page==P_PHONE);

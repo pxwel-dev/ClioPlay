@@ -26,7 +26,7 @@
     "clio843/src/global_regions.h": "00772a81c56fefdcf466ce0594c05a9d62983861a6f81be872fb7e474956d647",
     "clio843/src/overlay_frames.h": "65562ff71c209ab71564c7d0dfdb5d296ca66fdc575577de8855557c11521584",
     "clio843/src/boot_transition.h": "8ea391927a52cf8eaa9f010a70b8f8e012b768346ca9cd297110e40e6a850007",
-    "clio843/src/menu_sheet.h": "816e19d376e050be6def081f8c01224ba769155bc6986b97a34c7537e60b49b0",
+    "clio843/src/menu_sheet.h": "a444a932f357e53d9be3deb418ce0df3bb80ed46bc72dd0a573d643b7173ec63",
     "clio843/src/release_version.h": "e97e24a8a76d585c70c0afeafafefb885b3a7bbaa9e566442b000c704c047700",
     "clio843/src/vehicle_icon.h": "dfcb48775858684a323506e4cb6f61eba56ce3d8c7507a5ef86b58d917f24b4a",
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
@@ -509,7 +509,7 @@
     "clio843/src/vendor/sheenbidi/Headers/SheenBidi/SheenBidi.h": "44a644a72edf2300838d32c3e32aa14a7cb66b584fb9da643b8311aa21991cbe"
   },
   "executables": {
-    "clio040": "99688cd752d7f8b54316f58b42a91644df996c337d7526acdb690d7e7b7f5cd5",
+    "clio040": "57179dc04b8538e6e40f54fecc7465f9b84f145e282f2f2037a8ef5738a39a73",
     "cliospl": "dad8649c64b58b894a9914a151b8fc75e50c6b79b655e58e3439393b952d0a10",
     "clioa2dp": "89ea3c43741e144afad57d3d8969c5226979c4af3fe01a8b12efba4da775d203"
   },
@@ -5468,7 +5468,7 @@
       ]
     },
     "phone-destination.gif": {
-      "sha256": "cc477a4e0b30fbfb96d41b260d31201cd3e51756bd45d68bdb54b9ac050cb3f7",
+      "sha256": "cdc74ce1fed4084b546a6d639cd437a8d6cb2332c3e86113c563f33e21e25603",
       "frames": 11,
       "duration_ms": 7200,
       "reserved_pointer_colours": [
@@ -5557,7 +5557,7 @@
           "transfer-056.jpg": "01cd1bf92bb29e65bba8e31beb96ba341b0e206a675d3970ef29cbae5f85a5fc"
         },
         "ready_sha256": "93bc757770a4188a9de3234f4f0d4a60d8c77855b80e625fb949db06a93ee37c",
-        "previous_gif_sha256": "cdc74ce1fed4084b546a6d639cd437a8d6cb2332c3e86113c563f33e21e25603"
+        "previous_gif_sha256": "cc477a4e0b30fbfb96d41b260d31201cd3e51756bd45d68bdb54b9ac050cb3f7"
       },
       "source_frames": [
         {

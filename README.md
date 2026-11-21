@@ -140,7 +140,7 @@ upper-right console buttons act as the remote's soft keys.
 | **Up / Down** | **Joystick up / down** | Enter map browsing and pan, or move through menu rows. |
 | **Left / Right** | **Joystick left / right** | Enter map browsing and pan, change tabs/options/settings, or select dialog choices. In **BT CTRL**, previous/next track. |
 | **Left soft key** | **Upper-left button** | Zoom out; delete a character in coordinate/name entry. |
-| **Right soft key** | **Upper-right button** | Zoom in; pair a phone from Bluetooth; cycle latitude/longitude; insert a space in a name. |
+| **Right soft key** | **Upper-right button** | Zoom in; cycle latitude/longitude; insert a space in a name. |
 
 Turning the console knob also zooms the map, skips tracks in **BT CTRL**, scrolls
 lists and moves through keyboard/keypad buttons or dialog choices. In Settings,
@@ -170,7 +170,7 @@ between action buttons, including **Cancel route**. Use **Up / Down** or the
 console knob to move between rows and wrap at the ends. Press **OK** to open an
 item, **BACK** to return one level,
 or **MAP** to return directly to driving. **Pair new phone** stays at the top of
-Bluetooth and is also available with its right soft key.
+Bluetooth.
 
 ## Status and development
 

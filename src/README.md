@@ -263,8 +263,8 @@ calculation uses the existing five-frame-per-second cap. Declining keeps Explore
   you choose Recents, Favourites or Coordinates, then review before confirmation.
   **BACK** returns one level without applying a draft. Phone destinations arrive
   automatically, with no receive option to open.
-- **Bluetooth:** **Pair new phone** stays above the saved-phone list; the **right
-  soft key** starts pairing from anywhere in that list. **Up / Down** or the knob
+- **Bluetooth:** **Pair new phone** stays at the top of the saved-phone list;
+  select it and press **OK** to start pairing. **Up / Down** or the knob
   selects a device, **OK** opens its Connect/Disconnect and Forget actions, and
   **Up / Down** selects the action. **OK** confirms; **BACK** returns to the list.
 

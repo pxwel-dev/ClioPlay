@@ -230,7 +230,6 @@ static void menu_key(int code,u32 now){
   if(screen==SCR_KEY){keyboard_origin=KBD_NAME_COORDINATES;pk_reset();pk_prepare();menu_change(P_NAME,0,now);}
   screen=menu_screen(sheet_page);return;
  }
- if(sheet_page==P_PHONE&&code==K_SR){menu_pair(now);return;}
  if(sheet_page==P_REVIEW&&code==K_BACK){
   if(review_from_place){coordinates_active=0;menu_back(now);}
   else{coordinates_open_name();keyboard_origin=KBD_NAME_COORDINATES;pk_reset();pk_prepare();menu_change(P_NAME,0,now);screen=menu_screen(sheet_page);}return;

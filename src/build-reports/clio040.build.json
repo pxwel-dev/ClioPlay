@@ -2,19 +2,19 @@
   "machine": "ARM7TDMI / ARMv4T",
   "abi": "ELF32 EABI5 soft-float; Linux OABI syscalls",
   "entry": "0x8a234",
-  "bytes": 1105492,
-  "sha256": "99688cd752d7f8b54316f58b42a91644df996c337d7526acdb690d7e7b7f5cd5",
+  "bytes": 1105728,
+  "sha256": "57179dc04b8538e6e40f54fecc7465f9b84f145e282f2f2037a8ef5738a39a73",
   "sections": {
     ".text": {
       "address": "0x8a040",
-      "bytes": 497872
+      "bytes": 497880
     },
     ".rodata": {
       "address": "0x10108",
       "bytes": 433974
     },
     ".data": {
-      "address": "0x113910",
+      "address": "0x113918",
       "bytes": 1528
     },
     ".bss": {
@@ -24,7 +24,7 @@
   },
   "version": "2.2.2",
   "source": "clio843/src/clio040.c",
-  "source_tree_sha256": "a1901a4cbf0fb60ac7f2dfc7e7536e321c18cff4eb8f0c0d1ff2b82b4fae9a16",
+  "source_tree_sha256": "4885e80cf612afafb1cb309b79ac555a8344bd5644a27625dbc0acff5151b324",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "e68482414282efe29ca954b24778c89e03a3d70197bc9b29effd830dec97f8f0",
@@ -65,7 +65,7 @@
     "clio843/src/map_thin_coverage.h": "d4632a1dd789176be35ded06a21b84d272d69910532f31e05dc03fbfc092e5fb",
     "clio843/src/menu_keyboard.h": "394310c060e073c651cbc61a64c69d5ba61cfd4072e43277f70c40b8344e77f9",
     "clio843/src/menu_layout.h": "c413f261277151f8bd9be15f08cc896a41fc186619ec607501c1a18a463bd23e",
-    "clio843/src/menu_sheet.h": "816e19d376e050be6def081f8c01224ba769155bc6986b97a34c7537e60b49b0",
+    "clio843/src/menu_sheet.h": "a444a932f357e53d9be3deb418ce0df3bb80ed46bc72dd0a573d643b7173ec63",
     "clio843/src/mobility.h": "6e6391fe706de3c68ffb5e2c9dfe5c3b7301d6554832808e29aa181731c20738",
     "clio843/src/nav_roundabout.h": "470390303a8f18184a020710012ea0353d0425c26a1381bbaa4064ca2d7f39be",
     "clio843/src/overlay_frames.h": "65562ff71c209ab71564c7d0dfdb5d296ca66fdc575577de8855557c11521584",
