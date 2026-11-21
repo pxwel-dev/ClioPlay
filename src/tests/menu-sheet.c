@@ -43,8 +43,10 @@ static void tabs(void){
  key_handle(K_UP);assert(sheet_focus==nrecents-1);key_handle(K_DOWN);assert(sheet_focus==0);
  for(int i=0;i<10;i++)key_handle(K_DOWN);assert(sheet_focus==10);
  key_handle(K_RIGHT);assert(places_tab==1&&sheet_focus==0);key_handle(K_DOWN);
+ key_handle(K_RIGHT);assert(sheet_page==P_NEARBY&&sheet_focus==0);key_handle(K_DOWN);assert(sheet_focus==1);
  key_handle(K_RIGHT);assert(sheet_page==P_TRIP);key_handle(K_RIGHT);assert(!places_tab&&sheet_focus==10);
- key_handle(K_LEFT);assert(sheet_page==P_TRIP);key_handle(K_LEFT);assert(places_tab==1&&sheet_focus==1);
+ key_handle(K_LEFT);assert(sheet_page==P_TRIP);key_handle(K_LEFT);assert(sheet_page==P_NEARBY&&sheet_focus==1);
+ key_handle(K_LEFT);assert(sheet_page==P_PLACES&&places_tab==1&&sheet_focus==1);
  key_handle(K_MAP);key_handle(K_MENU);key_handle(K_ENTER);assert(sheet_page==P_TRIP);
 }
 static void saved_places(void){
@@ -119,13 +121,25 @@ static void itinerary_connector_bounds(void){
  reset();load_font();set_destination("Destination",100,200);for(int i=0;i<9;i++)assert(trip_add_stop("Stop",i,i));
  for(int night=0;night<2;night++)for(int h=150;h<=220;h++){
   apply_palette(night);struct HudBox b={12,44,456,h,256};
-  /* A partial row can show its marker, but the connector must stop at
-   * the last marker that enters the viewport, including at pixel boundaries. */
-  int first_y=b.y+69+10,viewport_end=b.y+h-30,last_y=first_y;
-  while(last_y+21-4<viewport_end)last_y+=21;
-  fill(0,0,W,H,C_BG);trip_content(b,0,16);
-  for(int y=last_y+5;y<b.y+b.h-25;y++)assert(fb[y*W+b.x+23]==C_BG);
-  assert(fb[(first_y+6)*W+b.x+23]!=C_BG);
+  int list_top=b.y+69,list_space=h-99,step=21;
+  int show=list_space/step,view_h=show*step;
+  int view_top=list_top+(list_space-view_h+(view_h<list_space))/2;
+  int first_cy=view_top+(step-1)/2,last_cy=first_cy+(show-1)*step;
+  /* Visible rows stay centred within the list viewport with equal margins (+/-1 px). */
+  int top_gap=view_top-list_top,bot_gap=(list_top+list_space)-(view_top+view_h-1);
+  assert(top_gap>=0&&bot_gap>=0&&top_gap-bot_gap>=-1&&top_gap-bot_gap<=1);
+  /* Check top, scrolled middle, bottom, and footer-focused states: no vertical
+   * connector may ever appear above the top visible marker or below the bottom one. */
+  const int selects[]={0,1,show,show+2,trip.count-1,trip.count};
+  for(unsigned s=0;s<sizeof(selects)/sizeof(selects[0]);s++){
+   int sel=selects[s];
+   fill(0,0,W,H,C_BG);trip_content(b,sel,16);
+   int top_limit=(sel==0)?view_top:first_cy-4;
+   for(int y=list_top;y<top_limit;y++)assert(fb[y*W+b.x+23]==C_BG);
+   int bot_start=(sel>=show-1&&sel<trip.count)?view_top+view_h-1:last_cy+5;
+   for(int y=bot_start;y<b.y+b.h-25;y++)assert(fb[y*W+b.x+23]==C_BG);
+   for(int k=0;k<show-1;k++)assert(fb[(first_cy+k*step+6)*W+b.x+23]!=C_BG);
+  }
  }
 }
 static void bluetooth(void){
@@ -178,8 +192,65 @@ static void gps_panel(void){
  key_handle(K_MENU);while(sheet_focus+1<menu_count(P_HOME))key_handle(K_DOWN);key_handle(K_ENTER);
  assert(sheet_page==P_GPS);key_handle(K_BACK);assert(sheet_page==P_HOME);key_handle(K_MAP);assert(screen==SCR_MAP);
 }
+static void seed_poi_tile(int slot,u8 lvl,s32 tx,s32 ty,const int*kinds,const s32*lats,const s32*lons,const char*const*names,int count){
+ struct Tile*t=&tc[slot];memzero(t,sizeof(*t));t->valid=1;t->lvl=lvl;t->tx=tx;t->ty=ty;t->age=++agec;
+ u8*p=t->data;p[0]=0;p[1]=0;p[2]=(u8)count;p[3]=(u8)(count>>8);p[4]=p[5]=p[6]=p[7]=0;p+=8;
+ int span=span_for_level((int)lvl);
+ for(int i=0;i<count;i++){
+  u32 lx=(u32)((lons[i]-tx*span)*4095LL/span),ly=(u32)((lats[i]-ty*span)*4095LL/span);
+  int tl=(int)slen(names[i]);
+  p[0]=(u8)kinds[i];p[1]=46;p[2]=(u8)lx;p[3]=(u8)(lx>>8);p[4]=(u8)ly;p[5]=(u8)(ly>>8);p[6]=(u8)tl;p[7]=0;p+=8;
+  memcpy(p,names[i],(size_t)tl);p+=tl;
+ }
+ t->len=(u32)(p-t->data);
+}
+static void nearby_pois_workflow(void){
+ reset();load_font();atlas_ready=0;memzero(tc,sizeof(tc));
+ /* Missing map and missing GPS produce clean empty states. */
+ mapok=0;gps.fix=0;track_valid=0;lastfix_valid=0;
+ nearby_scan(NEARBY_CAT_FUEL);assert(nearby_count==0&&nearby_status==1);
+ mapok=1;mh.minlvl=0;mh.maxlvl=6;mh.minlat=5490000;mh.maxlat=5510000;mh.minlon=-175000;mh.maxlon=-150000;
+ nearby_scan(NEARBY_CAT_FUEL);assert(nearby_count==0&&nearby_status==2);
+ /* Populate Z5 (inner city) and Z3 (regional) tiles with duplicate + distinct POIs. */
+ gps.fix=1;gps.lat=track_lat=5497800;gps.lon=track_lon=-161700;track_valid=1;
+ int cx5=tile_div(gps.lon,5),cy5=tile_div(gps.lat,5);
+ int cx3=tile_div(gps.lon,3),cy3=tile_div(gps.lat,3);
+ /* Fill empty negative entries only implicitly; seed two tiles with POIs. */
+ int k5[]={6,8};s32 la5[]={5498000,5497950};s32 lo5[]={-161650,-161500};const char*n5[]={"Shell","Royal Victoria Infirmary"};
+ seed_poi_tile(0,5,cx5,cy5,k5,la5,lo5,n5,2);
+ /* Z3 has a generic duplicate near Shell (~15 m away) plus a farther Esso and a Parking lot. */
+ int k3[]={6,6,7};s32 la3[]={5498010,5499200,5498300};s32 lo3[]={-161650,-161400,-161700};const char*n3[]={"FUEL","Esso","Grainger Car Park"};
+ seed_poi_tile(1,3,cx3,cy3,k3,la3,lo3,n3,3);
+ /* Fuel scan: Shell (closest, upgraded over generic FUEL dup) then Esso. */
+ nearby_scan(NEARBY_CAT_FUEL);
+ assert(nearby_count==2&&streq(nearby_pois[0].name,"Shell")&&streq(nearby_pois[1].name,"Esso"));
+ assert(nearby_pois[0].dist_m<nearby_pois[1].dist_m);
+ /* Hospital scan finds the inner-city Z5 hospital even when absent from Z3. */
+ nearby_scan(NEARBY_CAT_HOSPITAL);
+ assert(nearby_count==1&&streq(nearby_pois[0].name,"Royal Victoria Infirmary"));
+ /* Distance formatting in metric and imperial. */
+ char dist[24]="";pref.units=1;append_nearby_distance(dist,sizeof(dist),243);assert(streq(dist,"240 m"));
+ dist[0]=0;append_nearby_distance(dist,sizeof(dist),1450);assert(streq(dist,"1.5 km"));
+ dist[0]=0;pref.units=2;append_nearby_distance(dist,sizeof(dist),100);assert(streq(dist,"110 yd"));
+ dist[0]=0;append_nearby_distance(dist,sizeof(dist),1609);assert(streq(dist,"1.0 mi"));
+ pref.units=0;
+ /* Full sheet navigation: Trip -> Left -> Nearby -> Fuel -> Shell -> Route as new. */
+ key_handle(K_LEFT);assert(sheet_page==P_NEARBY&&sheet_focus==0);
+ key_handle(K_ENTER);assert(sheet_page==P_NEARBY_LIST&&nearby_count==2);
+ key_handle(K_ENTER);assert(sheet_page==P_PLACE&&place_from_nearby&&menu_count(P_PLACE)==3);
+ key_handle(K_ENTER);assert(screen==SCR_MAP&&trip.active&&trip.count==1&&streq(trip.target[0].name,"Shell"));
+ /* Add stop via P_SOURCE -> Nearby -> Parking -> Review -> Add stop. */
+ menu_open(P_TRIP,trip.count,hud_now_ms());key_handle(K_ENTER);assert(sheet_page==P_SOURCE);
+ choose(2);assert(sheet_page==P_NEARBY&&places_picker);
+ /* Left/Right in picker mode does not escape into Trip tabs. */
+ key_handle(K_LEFT);assert(sheet_page==P_NEARBY&&places_picker);
+ choose(1);assert(sheet_page==P_NEARBY_LIST&&nearby_count==1&&streq(nearby_pois[0].name,"Grainger Car Park"));
+ key_handle(K_ENTER);assert(sheet_page==P_REVIEW&&review_from_place&&streq(coordinates.name,"Grainger Car Park"));
+ key_handle(K_ENTER);assert(sheet_page==P_TRIP&&trip.count==2&&streq(trip.target[0].name,"Grainger Car Park"));
+ mapok=0;gps.fix=0;track_valid=0;memzero(tc,sizeof(tc));
+}
 static void bounds(void){
- reset();load_font();const int pages[]={P_HOME,P_SETTINGS,P_SET_DISPLAY,P_SET_HUD,P_SET_NAV,P_SET_HISTORY,P_SET_SYSTEM,P_PHONE,P_TRIP,P_COORD,P_NAME,P_REVIEW,P_CONFIRM,P_GPS};
+ reset();load_font();const int pages[]={P_HOME,P_SETTINGS,P_SET_DISPLAY,P_SET_HUD,P_SET_NAV,P_SET_HISTORY,P_SET_SYSTEM,P_PHONE,P_TRIP,P_NEARBY,P_NEARBY_LIST,P_SOURCE,P_COORD,P_NAME,P_REVIEW,P_CONFIRM,P_GPS};
  for(int night=0;night<2;night++)for(unsigned i=0;i<sizeof(pages)/sizeof(pages[0]);i++){
   apply_palette(night);menu_open(pages[i],0,hud_now_ms());hud_prepare(5,hud_now_ms(),1);hud_driver_prepare(hud_now_ms());menu_prepare(hud_now_ms());
   struct HudBox b=sheet_to_box;assert(b.x>=0&&b.x+b.w<=W&&b.y>=0&&b.y+b.h<=H);
@@ -249,4 +320,4 @@ static void input_wrap(void){
  }
  pref_keyboard_language=-1;
 }
-int main(void){input_wrap();tabs();saved_places();itinerary();long_itinerary();itinerary_connector_bounds();bluetooth();gps_panel();bounds();confirmation_typography();settings_categories();puts("Menu sheets: three tabs/remembered selections, compact scrolling places, naming/real coordinates, reviewed stops, ten-target persistence and unsupported-format rejection, reorder/remove/cancel, connector bounds, pinned pairing, address-stable phone actions, GPS panel accuracy/heading/toggle, theme/HUD bounds passed.");}
+int main(void){input_wrap();tabs();saved_places();nearby_pois_workflow();itinerary();long_itinerary();itinerary_connector_bounds();bluetooth();gps_panel();bounds();confirmation_typography();settings_categories();puts("Menu sheets: four tabs/remembered selections, nearby POIs, compact scrolling places, naming/real coordinates, reviewed stops, ten-target persistence and unsupported-format rejection, reorder/remove/cancel, connector bounds, pinned pairing, address-stable phone actions, GPS panel accuracy/heading/toggle, theme/HUD bounds passed.");}

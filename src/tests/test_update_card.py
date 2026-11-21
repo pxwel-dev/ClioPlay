@@ -81,7 +81,7 @@ class UpdateTest(unittest.TestCase):
         for name in (
             'prefs.ini', 'bond.dat', 'faves.dat', 'recent.dat', 'trip.dat',
             'audlast.dat', 'gpslast.dat', 'history.dat', 'history.prev.dat',
-            'mobility.dat', 'mobility.tmp', 'card-runtime.json', 'cswmap.ini',
+            'mobility.dat', 'mobility.tmp', 'mobility-ml.dat', 'mobility-ml.tmp', 'card-runtime.json', 'cswmap.ini',
             'maps/build.json', 'maps/region/route.cpr', 'user-file.txt'
         ):
             file = self.card/'clio843'/name

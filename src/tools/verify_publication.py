@@ -131,7 +131,7 @@ def verify_tree(folder):
                 raise ValueError('Unsafe publication path: '+name)
     paths = [folder / name for name in managed] if managed else [p for p in folder.rglob('*') if p.is_file()]
     vendor_hashes = {digest for _, digest in VENDOR.values()}
-    forbidden = {'history.dat', 'history.prev.dat', 'mobility.dat', 'mobility.tmp', 'mobility-places.dat', 'mobility-places.tmp', 'gpslast.dat', 'bond.dat', 'recent.dat', 'trip.dat', 'faves.dat', 'audlast.dat',
+    forbidden = {'history.dat', 'history.prev.dat', 'mobility.dat', 'mobility.tmp', 'mobility-places.dat', 'mobility-places.tmp', 'mobility-ml.dat', 'mobility-ml.tmp', 'gpslast.dat', 'bond.dat', 'recent.dat', 'trip.dat', 'faves.dat', 'audlast.dat',
                  'ttsystem', 'PNDNavigator', 'vehicledaemon'}
     for path in paths:
         cursor=folder

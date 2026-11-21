@@ -184,6 +184,7 @@ static void render_present(void){
   }
   for(int row=0;row<H;row++)current[row]=prepared->rows[row];
   hud_diversion_invited=prepared->diversion;hud_suggestion_invited=prepared->suggestion;
+  hud_parking_invited=prepared->parking;hud_stop_invited=prepared->stop;
   hud_suggestion_place=prepared->place;paint_at=prepared->at;
  }else render_paint_overlay(now,current);
  menu_note_presented(paint_at);popup.presented_at=paint_at;
@@ -329,11 +330,42 @@ static u32 render_runtime_deadline(u32 now){
  if(renderer.pending||renderer.model_pending||render_animation_active(now))next=frame_earlier(next,renderer.ui.next);
  return next;
 }
+static int render_parse_kb_field(const char*buf,const char*key,u32*out){
+ if(!buf||!key||!out)return 0;
+ unsigned klen=slen(key);if(!klen)return 0;
+ const char*p=buf;
+ while(*p){
+  const char*line=p;
+  while(*p&&*p!='\n')p++;
+  if((unsigned)(p-line)>=klen&&starts(line,key)){
+   const char*v=line+klen;
+   while(v<p&&(*v==' '||*v=='\t'))v++;
+   if(v<p&&*v>='0'&&*v<='9'){
+    u32 n=0;
+    while(v<p&&*v>='0'&&*v<='9'){
+     u32 d=(u32)(*v-'0');
+     if(n>(0xffffffffu-d)/10u){n=0xffffffffu;break;}
+     n=n*10u+d;v++;
+    }
+    *out=n;return 1;
+   }
+  }
+  if(*p=='\n')p++;
+ }
+ return 0;
+}
+static int render_read_kb_file(const char*path,const char*key,u32*out){
+ long fd=s_open(path,O_RDONLY_,0);if(fd<0)return 0;
+ char tmp[1536];long n=s_read((int)fd,tmp,sizeof(tmp)-1u);s_close((int)fd);
+ if(n<=0)return 0;
+ tmp[n]=0;
+ return render_parse_kb_field(tmp,key,out);
+}
 static void render_profile_service(u32 now){
  if(!pref.debug){memzero(&render_stats,sizeof(render_stats));return;}
  if(!render_stats.at){render_stats.at=now;return;}
  if(now-render_stats.at<5000u)return;
- char b[352]="FRAME 5S HUD=";append_int(b,sizeof(b),(int)render_stats.presents);
+ char b[448]="FRAME 5S HUD=";append_int(b,sizeof(b),(int)render_stats.presents);
  appendstr(b,sizeof(b)," MAP=");append_int(b,sizeof(b),(int)render_stats.maps);
  appendstr(b,sizeof(b)," CAMERA=");append_int(b,sizeof(b),(int)render_stats.rotations);
  appendstr(b,sizeof(b)," LATE=");append_int(b,sizeof(b),(int)render_stats.late);
@@ -349,5 +381,8 @@ static void render_profile_service(u32 now){
  appendstr(b,sizeof(b)," OVERLAY_READY=");append_int(b,sizeof(b),(int)render_stats.overlay_frames);
  appendstr(b,sizeof(b)," OVERLAY_PREP_MS=");append_int(b,sizeof(b),(int)render_stats.overlay_prep_ms);
  appendstr(b,sizeof(b)," OVERLAY_ABORT=");append_int(b,sizeof(b),(int)render_stats.overlay_aborts);
+ u32 rss_kb=0,free_kb=0;
+ if(render_read_kb_file("/proc/self/status","VmRSS:",&rss_kb)){appendstr(b,sizeof(b)," RSS_KB=");append_int(b,sizeof(b),(int)rss_kb);}
+ if(render_read_kb_file("/proc/meminfo","MemFree:",&free_kb)){appendstr(b,sizeof(b)," FREE_KB=");append_int(b,sizeof(b),(int)free_kb);}
  debug_log(STATE_LOG,b);memzero(&render_stats,sizeof(render_stats));render_stats.at=now;
 }

@@ -80,16 +80,18 @@ artificially increase their statistical confidence.
 
 During guidance, **Likely traffic ahead** means historical evidence suggests
 a delay, not that a real-time traffic incident was detected. Once a beneficial
-alternative is found, the animated glass status pill reads **Faster route
-available** and shows the next available control. The shared geometry
-stays solid magenta; only the bypassed original geometry is gold/yellow and
-only the distinct proposed geometry is dashed aqua/teal. Small junction
-markers identify the divergence and rejoin points when visible. A rounded, anti-aliased frosted-glass badge with centred approximate
-savings text sits beside the decision point when space permits; the confirmation always includes the saving. The invitation
-is a single line: the theme-aware success green announcement followed by the
-standard blue review instruction, in both driving and BT CTRL contexts.
-It remains actionable until acceptance, rejection or expiry at the matched
-decision point.
+alternative is found, the animated glass status pill reads **Traffic diversion
+available** and shows the next available control (distinguishing traffic-based
+bypasses unambiguously from learned **Usual route available** recommendations).
+The shared geometry stays solid magenta; only the bypassed original geometry is
+gold/yellow and only the distinct proposed geometry is dashed aqua/teal. Small
+junction markers identify the divergence and rejoin points when visible. A
+rounded, anti-aliased frosted-glass badge with centred approximate savings text
+sits beside the decision point when space permits; the confirmation always
+includes the saving. The invitation is a single line: the theme-aware success
+green announcement followed by the standard blue review instruction, in both
+driving and BT CTRL contexts. It remains actionable until acceptance, rejection
+or expiry at the matched decision point.
 
 On the driving map, press **OK to review**, then OK on the initially selected
 Yes to accept. In **BT CTRL**, the invitation instead reads **BACK to review**:
@@ -97,12 +99,21 @@ Back closes Bluetooth controls, then the hint changes to OK to review. OK
 still controls playback while BT CTRL is active; track, volume, Explore,
 console Info and existing modal controls keep their ordinary behaviour.
 Trip → Itinerary → **Diversion** remains another way to open the same
-confirmation. No temporary zoom, map overview, countdown, sound or automatic
-route acceptance is used. The confirmation leaves the bottom HUD visible.
-Back closes a map-opened confirmation without rejecting it; No rejects only
-that bypassed section, and returns to the map (or Itinerary when opened there).
-The original route, warning and adjusted ETA remain; independent alternatives
-can still be offered. Yes makes the new active route solid magenta.
+confirmation. The confirmation opens **Take traffic diversion?** (showing the
+approximate saving and **Likely traffic ahead**) with **Yes** selected
+alongside **No** and a **View diversion** button below them (use **Up / Down**
+or the console knob to focus **View diversion**). Selecting **View diversion**
+closes the popup and opens north-up Explore framed around the proposed
+diversion split, bypass and rejoin points so you can pan and zoom to review it;
+pressing **MAP** returns to the driving view and automatically re-opens the
+same **Take traffic diversion?** confirmation if the offer is still valid (or
+shows **Diversion unavailable** if it expired). No automatic zoom, countdown,
+sound or automatic route acceptance is used. The confirmation leaves the bottom
+HUD visible. Back closes a map-opened confirmation without rejecting it; No
+rejects only that bypassed section, and returns to the map (or Itinerary when
+opened there). The original route, warning and adjusted ETA remain; independent
+alternatives can still be offered. Yes emits **Diversion selected** and makes
+the new active route solid magenta.
 
 The candidate is trimmed at matching legal turn states before presentation,
 so the badge and offer expiry refer to the actual departure point from the
@@ -111,6 +122,111 @@ or reject a newer offer. Accepted sections are settled until passed; a full
 route recalculation clears route-local decisions. Normal off-route rerouting
 remains available. Verify road signs and conditions: historical travel times
 cannot predict incidents, closures, weather or current traffic.
+
+## Extended local learning (Version 2.2.4)
+
+When **Learn driving history** is enabled, ClioPlay also maintains a bounded,
+integer-only companion model (`clio843/mobility-ml.dat`, format `MML1`, ~26 KiB,
+FNV-1a checksummed atomic saves) alongside `mobility.dat`. Turning off **Learn
+driving history** suspends all of these behaviours, and **Clear driving history**
+deletes `mobility-ml.dat` completely. No data ever leaves the SD card.
+
+### Personal road-class and cold-weather ETA calibration
+
+For roads with no road-specific history yet, ClioPlay learns personal
+travel-time multipliers across the eight CPR2 road classes (roundabouts,
+motorways, trunk, primary, secondary, tertiary, residential and service roads)
+using Bayesian shrinkage toward the legal static estimate once at least four
+sessions have been observed. Whenever a valid Focus or VehicleStatus exterior
+temperature reading is `<= 3 °C`, a separate cold-weather multiplier is trained
+and blended (never predicting faster than the mild baseline) so winter ETAs stay
+realistic.
+
+### Dwell-time trip chains and recurring intermediate stops
+
+ClioPlay records the previous completed journey's `(origin, destination, arrival
+time)` across power cycles. When a new trip departs from near the previous
+destination, a bounded `(previous origin, current origin, dwell bucket) ->
+destination` chain table boosts matching multi-leg routines (e.g., short
+`<= 15 min` errand vs full work day `> 5 h`).
+
+When the driver repeatedly stops at the same intermediate point on a familiar
+origin-to-destination trip (either via short `<= 45 min` chained legs or by
+adding the stop explicitly via **Add stop** across at least three trips within a
+3-hour time-of-day window), starting that destination offers **Usual stop
+available · OK to review** in the status pill. Pressing **OK** opens **Add usual
+stop?** (`Yes` inserts the stop into the itinerary; `No` suppresses it for the
+session).
+
+### Preferred-route ("Usual route") recommendations
+
+On each completed session, traversed directed arcs accumulate positive
+preference scores while arcs voluntarily bypassed during forward off-route forks
+(ignoring U-turns) accumulate negative avoidance scores. Off-route detours taken
+while a historical traffic warning is active — or bypassing arcs already known
+to be congested in the current two-hour time bucket — do not stage permanent
+avoidance scores, keeping temporary traffic detours separate from permanent road
+preferences.
+
+If no historical-traffic diversion is active and an upcoming route arc has been
+consistently avoided (`score <= -30`), the bounded turn-state splice search
+looks for a time-competitive alternative using your positively preferred arcs.
+To avoid any ambiguity with traffic diversions, preferred-route recommendations
+use dedicated wording across every surface:
+
+| Surface | Traffic diversion | Usual route recommendation |
+| --- | --- | --- |
+| Map styling | Bypassed congested section in **yellow**, alternative in **dashed teal** + `Save ~X min` badge | Active route stays **normal route colour** (no yellow), usual road in **dashed teal** |
+| Status pill | **Traffic diversion available · OK to review** | **Usual route available · OK to review** |
+| Itinerary footer | **Diversion** | **Usual route** |
+| Confirmation title | **Take traffic diversion?** | **Use usual route?** |
+| Confirmation details | `Save approximately X min` / **Likely traffic ahead** | **Based on your usual route** / **Based on driving history** (or `Save approximately X min` / **Based on your usual route** when saving ≥ 1 min) |
+| Preview button | **View diversion** | **View route** |
+| Accepted / expired notice | **Diversion selected** / **Diversion unavailable** | **Usual route selected** / **Route unavailable** |
+
+### ETA reliability and uncertainty bands
+
+Alongside mean road travel times, ClioPlay tracks online integer Mean Absolute
+Deviation (MAD) per directed road and two-hour bucket. When the sub-additive
+spread across the remaining route is at least 3 minutes, both the **OK** HUD
+journey card and **Trip → Itinerary** display a realistic range (for example,
+`~9-14 min`) instead of a single optimistic number. Congestion diversion ranking
+also factors in reliability so volatile bottlenecks lose tie-breaks to steadier
+alternatives.
+
+### Adaptive Auto-zoom and Day/Night brightness
+
+- **Auto-zoom:** consistent manual zoom overrides while driving in **Auto zoom**
+  are tracked across three speed bands (`< 20 mph`, `20–40 mph`, `>= 40 mph`).
+  After at least three consistent sessions in a band, Auto-zoom gently shifts by
+  at most `±1` zoom level, always clamped to Z4–Z6.
+- **Brightness:** manual brightness changes in **Settings → Display** are
+  remembered separately for Day and Night palettes. Once at least two
+  adjustments are learned for a theme, **Auto** Day↔Night switches automatically
+  apply your preferred brightness level (rounded to 10% steps).
+
+### Learned Nearby-POI affinity and Usual Parking
+
+- **Preferred Nearby POIs:** routing to or adding a **Fuel**, **Parking** or
+  **Hospital** POI from **Trip → Nearby** builds a bounded affinity score. Once
+  chosen at least twice, that station or car park receives a gentle 600 m
+  effective ranking boost in **Trip → Nearby** and displays a crisp cyan star
+  indicator beside its highlighted distance.
+- **Usual parking:** if guided trips to a destination repeatedly finish at a
+  consistent parking spot 100–600 m away across at least three sessions, future
+  trips to that destination display **Usual parking available · OK to review**.
+  Pressing **OK** opens **Route to usual parking?** (`Yes` updates the
+  destination to the learned parking spot; `No` declines it for the session).
+
+### Repeat hard-braking and unmapped slowdown alerts
+
+On every snapped 1 Hz sample while driving at `>= 20 mph`, sharp deceleration
+events (`>= 9.0 mph/s`) are staged per directed arc and committed on clean
+shutdown. When an arc ahead (`40–350 m`) has triggered across at least three
+sessions (or two sessions in `<= 3 °C` cold weather), ClioPlay surfaces a
+non-intrusive amber **Frequent slowdown ahead** (or **Cold-weather slowdown
+ahead**) status cue at most once per arc per trip, and applies a virtual penalty
+against repeat-hazard rat-runs during diversion ranking.
 
 ## Recording and successful sessions
 
@@ -229,6 +345,8 @@ with a bug report or include them in Git/publication packages.
 | `clio843/mobility.tmp` | Temporary replacement model during a save. |
 | `clio843/mobility-places.dat` | Private, checksummed frequent-place prompt locations. |
 | `clio843/mobility-places.tmp` | Temporary replacement of the prompt record. |
+| `clio843/mobility-ml.dat` | Checksummed companion ML model (`MML1`: road classes, chains, stops, preferred arcs, variance, POI affinity, parking, hazards, zoom/brightness). |
+| `clio843/mobility-ml.tmp` | Temporary replacement companion model during a save. |
 
 The raw format is 28 bytes per little-endian record (approximately 101 kB
 per recorded hour, excluding markers); samples are buffered in blocks of
@@ -243,25 +361,43 @@ inspector below checks only complete sessions.
 
 The history and destination model do not reference map IDs. Road profiles are
 indexed by directed geometry and OSM way fingerprints, not mutable graph
-state IDs. Compatible unchanged geometry can retain learned statistics after
-a map replacement; changed geometry needs new observations. The current
-implementation does not remap old raw traces to replacement geometry.
+state IDs. Compatible unchanged geometry retains learned statistics across a map
+replacement. When rebuilding maps with fresh OSM extracts, the desktop replay
+tool below can re-snap raw `history.prev.dat` / `history.dat` traces onto the
+new map geometry offline.
 
 For development, see the [build guide](../BUILDING.md) and
 [release workflow](release-workflow.md). The standard host regression suite
-includes `mobility.c`, which checks time/day handling, complete-session
-learning, contextual prediction and confidence hysteresis, session dismissal,
-startup GPS reconciliation, frequent-place prompting and persistence,
-direction-specific profiles, exact-state candidate search and route splicing
-against a small directed fixture. A physical Carminat trial is
-needed to verify actual shutdown timing, GPS matching quality and performance.
+includes `mobility.c` and `test_replay_history.py`, which check time/day
+handling, complete-session learning, contextual prediction and confidence
+hysteresis, session dismissal, startup GPS reconciliation, frequent-place
+prompting and persistence, direction-specific profiles, exact-state candidate
+search and route splicing, all extended `MML1` local ML models, and byte-exact
+Python↔C binary parity. A physical Carminat trial is needed to verify actual
+shutdown timing, GPS matching quality and performance.
 
-The optional local tool `tools/inspect_history.py` reports counts and durations
-of complete sessions from raw history. It does not modify the logs or upload
-anything. Run it from `src/` with the file paths on a mounted SD card:
+### Local history tools
+
+- **Inspect complete sessions:** `tools/inspect_history.py` reports counts and
+  durations of complete sessions from raw history without modifying logs or
+  uploading anything:
 
 ```sh
 python3 tools/inspect_history.py /path/to/card/clio843/history.prev.dat /path/to/card/clio843/history.dat
+```
+
+- **Replay history & migrate across map rebuilds:** `tools/replay_history.py`
+  (Python stdlib only, strictly local, never prints raw coordinates) reads
+  `history.prev.dat` and `history.dat`, runs pure-Python DBSCAN endpoint
+  denoising, snaps 1 Hz traces onto a single CPR2 v5 `route.cpr` or multi-region
+  `atlas.cpa` maps folder, preserves existing UI preferences (Auto-zoom,
+  Day/Night brightness, POI affinity and usual parking) from `mobility-ml.dat`,
+  and writes verified `mobility.dat` (`MOB1`) and `mobility-ml.dat` (`MML1`):
+
+```sh
+python3 tools/replay_history.py --card /path/to/card --verify
+# Or preview aggregate counts without writing:
+python3 tools/replay_history.py --card /path/to/card --dry-run
 ```
 
 The [preview catalogue](demo/README.md) contains recordings made with controlled fixtures;

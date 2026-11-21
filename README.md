@@ -1,6 +1,6 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
-<h1 align="center">ClioPlay 2.2.2</h1>
+<h1 align="center">ClioPlay 2.2.4</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
 <p align="center">
   Created and maintained by <a href="https://github.com/pxwel-dev">Pawel (pxwel-dev)</a>.
@@ -9,12 +9,15 @@
 
 <p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases/tag/Release">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-## Version 2.2.2 (Major Performance Optimisation)
+## Version 2.2.4
 
-- Bluetooth playback now uses a 200 ms prefill.
-- Animations and steady HUD updates target 20 FPS. ClioPlay prepares Explore rotation and parked overlay transitions ahead of playback; the menu resizes alongside taller notices. Routing calculations still temporarily cap ClioPlay to 5 FPS to allow the single core 400mhz CPU maximum headroom for calculations. 
-- Trip footer buttons, menu lists, dialogs and keyboards wrap around. Use the arrows to change Trip tabs or select Cancel route on the footer.
-- Press Centre / OK to briefly show the current road name and, during guidance, your ETA.
+- **Expanded local on-device ML (100% offline, opt-in):** builds on driving-history learning via a bounded integer-only companion model (`mobility-ml.dat`, wiped by **Clear driving history**) adding personal road-class and cold-weather (`<= 3 °C`) ETA calibration, **`~X-Y min`** ETA reliability ranges, and subtle amber **Frequent slowdown ahead** / **Cold-weather slowdown ahead** braking alerts.
+- **Unambiguous Traffic Diversion vs Usual Route recommendations:** traffic bypasses highlight the slow section in yellow and announce **Traffic diversion available** → **Take traffic diversion?** (**Likely traffic ahead**, **View diversion**, **Diversion selected**), while learned road preferences keep the active route in its normal colour alongside the dashed teal usual road and announce **Usual route available** → **Use usual route?** (**Based on your usual route**, **View route**, **Usual route selected**), with off-route detours during active congestion prevented from polluting permanent route preferences.
+- **Trip chains, recurring stops, usual parking & preferred POIs:** improves destination prediction with dwell-time and multi-leg trip chains across reboots; offers explicit **Usual stop available** (**Add usual stop?**) and **Usual parking available** (**Route to usual parking?**) reviews; and marks preferred Fuel/Parking/Hospital stations with a cyan star in **Trip → Nearby**.
+- **Map endpoint markers, route-coloured destination POIs & expandable roundabout secondary manoeuvre:** draws route-coloured endpoint rings on every active/upcoming stop and a bullseye ring on the final destination — and when heading directly to a map POI (Parking, Fuel or Hospital), tints the POI badge itself in the route colour instead of drawing a circle over it; expands the **Then …** secondary manoeuvre pill smoothly from `24 px` to `43 px` for follow-up roundabouts so the full roundabout icon and exit number stay legible while remaining compact for normal turns.
+- **Adaptive Auto-zoom & Day/Night brightness:** learns consistent per-speed-band Auto-zoom adjustments (`±1` level, clamped Z4–Z6) and remembers separate Day and Night brightness levels applied automatically on **Auto** theme switches.
+- **Offline history replay & map-rebuild migration:** new `tools/replay_history.py` desktop CLI replays raw `history.dat` traces onto newly rebuilt single-pack or multi-region `atlas.cpa` maps with pure-Python DBSCAN endpoint denoising while keeping all personal data strictly local.
+- **Carried forward from 2.2.3:** offline Nearby POIs, **View diversion** Explore preview, AVRCP 1.3 instant Bluetooth notifications, lazy regional atlas validation, centred scrollable Itinerary connectors and `tools/favourites_tool.py`.
 
 See [version history](CHANGELOG.md) for implemented changes by version.
 
@@ -24,9 +27,21 @@ See [intelligent navigation](src/docs/intelligent-navigation.md) for configurati
 
 See the [full preview index](src/docs/demo/README.md) for all animations.
 
-| Destination prediction | Intelligent diversions |
+| Usual route & calibrated ETA ranges | Frequent & cold-weather slowdown alerts |
 | --- | --- |
-| ![Learned destination in the driving HUD with explicit review](src/docs/demo/v220-destination-prediction.gif) | ![Historical traffic and alternative route selection, controlled fixture](src/docs/demo/v220-intelligent-diversions.gif) |
+| ![Clear-road Durham route showing calibrated ETA reliability range, Usual route available with normal active route colour plus dashed teal alternative, and Use usual route? confirmation](src/docs/demo/v224-ml-eta-and-habits.gif) | ![Real York route showing warm Frequent slowdown ahead alert, deduplication, silence on a cold-only spot at 18 C, Cold-weather slowdown ahead at 1 C and winter-calibrated ETA](src/docs/demo/v224-ml-slowdowns.gif) |
+
+| Usual parking, recurring stops & preferred POIs | Adaptive Auto-zoom & Day/Night brightness |
+| --- | --- |
+| ![Usual parking review with route-coloured Parking POI highlight, recurring intermediate stop ring and preferred Fuel POI star ranking in Newcastle](src/docs/demo/v224-ml-parking-and-pois.gif) | ![Adaptive Auto-zoom learning speed-band preferences and Auto Day-to-Night theme transition automatically applying learned brightness levels](src/docs/demo/v224-ml-adaptive-hud.gif) |
+
+| Offline Nearby POIs | Expandable secondary manoeuvre cue |
+| --- | --- |
+| ![Browse nearby hospitals and fuel stations offline in Newcastle and add a stop to the itinerary](src/docs/demo/v223-nearby-pois.gif) | ![Secondary Then pill expanding for a follow-up roundabout with exit number visible and staying compact for normal turns](src/docs/demo/v223-secondary-manoeuvre.gif) |
+
+| View and take a diversion | Destination prediction |
+| --- | --- |
+| ![Preview a proposed real-map diversion in Explore, inspect the junction, return via MAP and accept](src/docs/demo/v223-view-diversion.gif) | ![Learned destination in the driving HUD with explicit review](src/docs/demo/v220-destination-prediction.gif) |
 
 | Frequent-place suggestion | Send a destination with [ClioPlay Send](https://pxwel-dev.github.io/ClioPlay-Send/) |
 | --- | --- |
@@ -87,11 +102,11 @@ BT CTRL also requires a connected phone. Unavailable radio/volume readings stay 
 
 ## Features
 
-- Offline OpenStreetMap navigation, routing and rerouting.
-- Browse the map and route to a selected point, send destination from a connected phone, or manually enter named decimal-degree lat/long coordinates
-- Manage stops, recents and favourites.
-- Optional offline destination learning, historical traffic-aware ETAs and local diversions based on personal GPS history.
-- Bluetooth phone audio with track information and remote playback controls.
+- Offline OpenStreetMap navigation, routing, rerouting and chained secondary manoeuvre cues.
+- Browse the map and route to a selected point, search offline **Nearby** Fuel/Parking/Hospital POIs, send destinations from a connected phone, or manually enter named decimal-degree lat/long coordinates.
+- Manage stops, recents and favourites on the head unit or import/export them on desktop (`tools/favourites_tool.py` — CSV, JSON, GPX).
+- Optional offline destination learning, historical traffic-aware ETAs and local diversions with on-map Explore preview based on personal GPS history.
+- Bluetooth phone audio with instant AVRCP track updates and remote playback controls.
 - Vehicle audio controls remain responsible for physical volume and mute.
 - Full-screen maps with animated, semi-transparent frosted glass notices for road names, camera alerts, route progress and audio changes.
 - Day/Night themes with custom daily switch times in Auto, automatic units and time zones, and 18 interface languages.
@@ -133,7 +148,7 @@ upper-right console buttons act as the remote's soft keys.
 
 | Remote control | Console equivalent | Action |
 | --- | --- | --- |
-| **MAP** | **MAP** | Restore Auto zoom after temporary manual zoom; otherwise switch between driving and map browsing, or return to driving from a menu. |
+| **MAP** | **MAP** | Restore Auto zoom after temporary manual zoom; return from **View diversion** to re-open the confirmation; otherwise switch between driving and map browsing, or return to driving from a menu. |
 | **MENU** | **MENU** | Open the menu for Trip, Bluetooth and Settings. |
 | **BACK** | **BACK** | Go back or dismiss a dialog. On the driving map with Bluetooth audio selected and a phone connected, toggle **BT CTRL**. |
 | **Centre / OK** | **Press the knob** | On the driving map, briefly show the current road name and, during guidance, the estimated time and distance remaining. In map browsing, select the crosshair point. In **BT CTRL**, play/pause. In menus, select or confirm. |
@@ -165,7 +180,7 @@ Menus now open as animated glass panels over the map. Menu, Bluetooth and
 Settings retain the bottom driving pills when there is room; Trip and its entry
 pages use a taller panel. Time and active status notices remain in place. Trip
 always opens on **Itinerary**. **Left / Right** cycles through **Itinerary →
-Recents → Favourites**. On the itinerary's bottom row, **Left / Right** wraps
+Recents → Favourites → Nearby**. On the itinerary's bottom row, **Left / Right** wraps
 between action buttons, including **Cancel route**. Use **Up / Down** or the
 console knob to move between rows and wrap at the ends. Press **OK** to open an
 item, **BACK** to return one level,

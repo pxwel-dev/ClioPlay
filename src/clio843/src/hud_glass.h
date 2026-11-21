@@ -7,7 +7,7 @@ struct HudCard {
  int kind, flags, value;
  u16 ink;
  char title[193], detail[112], tag[24], badge[24], connection[96], feedback[112], traffic_title[193], traffic_detail[112], traffic_hint[160];
- u32 traffic_serial,suggestion_serial;
+ u32 traffic_serial,suggestion_serial,parking_serial,stop_serial;
 };
 struct HudTween {
  struct HudBox from;
@@ -15,12 +15,12 @@ struct HudTween {
  u32 position_at, content_at, fast_content_at;
  int seen;
 };
-enum {HC_STATUS,HC_CLOCK,HC_SPEED,HC_ROAD,HC_TURN,HC_ROAD_NAME,HC_COUNT};
+enum {HC_STATUS,HC_CLOCK,HC_SPEED,HC_ROAD,HC_TURN,HC_TURN_NEXT,HC_ROAD_NAME,HC_COUNT};
 static struct HudTween hud_tween[HC_COUNT];
 
 static int hud_ease(u32 elapsed,u32 duration){return frame_ease(elapsed,duration);}
 
-static int hud_lerp(int a,int b,int t){return a+((b-a)*t+128)/256;}
+static int hud_lerp(int a,int b,int t){int d=(b-a)*t;return a+(d>=0?(d+128)/256:(d-128)/256);}
 static int hud_box_eq(struct HudBox a,struct HudBox b){
  return a.x==b.x&&a.y==b.y&&a.w==b.w&&a.h==b.h&&a.a==b.a;
 }
@@ -28,13 +28,15 @@ static int hud_content_eq(const struct HudCard*a,const struct HudCard*b){
  return a->kind==b->kind&&a->flags==b->flags&&a->value==b->value&&a->ink==b->ink&&
   streq(a->title,b->title)&&streq(a->detail,b->detail)&&streq(a->tag,b->tag)&&streq(a->badge,b->badge)&&
   streq(a->connection,b->connection)&&streq(a->feedback,b->feedback)&&
-  streq(a->traffic_title,b->traffic_title)&&streq(a->traffic_detail,b->traffic_detail)&&streq(a->traffic_hint,b->traffic_hint)&&a->traffic_serial==b->traffic_serial&&a->suggestion_serial==b->suggestion_serial;
+  streq(a->traffic_title,b->traffic_title)&&streq(a->traffic_detail,b->traffic_detail)&&streq(a->traffic_hint,b->traffic_hint)&&
+  a->traffic_serial==b->traffic_serial&&a->suggestion_serial==b->suggestion_serial&&a->parking_serial==b->parking_serial&&a->stop_serial==b->stop_serial;
 }
 static int hud_same_status_except_volume(const struct HudCard*a,const struct HudCard*b){
  return a->kind==b->kind&&a->flags==b->flags&&a->value==b->value&&a->ink==b->ink&&streq(a->tag,b->tag)&&
   (a->kind==HUD_VOLUME||streq(a->title,b->title))&&streq(a->detail,b->detail)&&
   streq(a->connection,b->connection)&&streq(a->feedback,b->feedback)&&
-  streq(a->traffic_title,b->traffic_title)&&streq(a->traffic_hint,b->traffic_hint)&&a->traffic_serial==b->traffic_serial&&a->suggestion_serial==b->suggestion_serial;
+  streq(a->traffic_title,b->traffic_title)&&streq(a->traffic_hint,b->traffic_hint)&&
+  a->traffic_serial==b->traffic_serial&&a->suggestion_serial==b->suggestion_serial&&a->parking_serial==b->parking_serial&&a->stop_serial==b->stop_serial;
 }
 /* Existing numeric channels crossfade on the live clock. New labels,
  * notification rows, symbols and geometry can also request prepared frames. */
@@ -44,7 +46,7 @@ static int hud_value_update(int id,const struct HudCard*a,const struct HudCard*b
  if(id==HC_STATUS)return hud_same_status_except_volume(a,b)&&!!a->badge[0]==!!b->badge[0]&&
    (a->kind!=HUD_VOLUME||!!a->title[0]==!!b->title[0]);
  if(id==HC_CLOCK)return !!a->title[0]==!!b->title[0]&&!!a->detail[0]==!!b->detail[0]&&streq(a->badge,b->badge);
- if(id==HC_SPEED||id==HC_TURN)return streq(a->detail,b->detail)&&streq(a->badge,b->badge);
+ if(id==HC_SPEED||id==HC_TURN||id==HC_TURN_NEXT)return streq(a->detail,b->detail)&&streq(a->badge,b->badge);
  if(id==HC_ROAD)return streq(a->title,b->title)&&streq(a->detail,b->detail);
  return 0;
 }
@@ -59,6 +61,7 @@ static void hud_set_card(int id,struct HudCard target,u32 now){
  if(!t->seen){t->seen=1;t->content_at=t->fast_content_at=now-220u;t->position_at=now-320u;}
  int dy=id==HC_STATUS?-6:6;
  if(id==HC_CLOCK)dy=-4;
+ if(id==HC_TURN_NEXT)dy=3;
  if(!target.box.a){
   if(!t->target.box.a)return;
   /* Keep the outgoing contents while fading and moving off their anchor. */

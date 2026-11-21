@@ -11,13 +11,17 @@ EXCLUDED_NAMES = {
     'audlast.dat', 'ui_translations 2.h', 'history.dat',
     'history.prev.dat', 'mobility.dat', 'mobility.tmp',
     'mobility-places.dat', 'mobility-places.tmp',
+    'mobility-ml.dat', 'mobility-ml.tmp',
     'gpslast.dat', 'prepare_minimal_release.py'
 }
 PREVIEW_GIFS = ('boot-day.gif', 'boot-night.gif', 'popups.gif', 'driving.gif', 'menus.gif', 'bluetooth.gif', 'phone-destination.gif',
                 'speed-warning.gif', 'map-browsing.gif', 'roundabout-eta.gif', 'add-stop.gif', 'status-notifications.gif', 'metadata-updates.gif', 'coordinates.gif', 'coordinate-route.gif', 'map-point-route.gif',
                 'v216-coordinates.gif', 'v216-hud-settings.gif', 'v216-bluetooth-hidden.gif', 'v216-itinerary.gif',
                 'trips-layout.gif', 'trips-empty-layout.gif', 'popups-layout.gif',
-                'v220-destination-prediction.gif', 'v220-intelligent-diversions.gif', 'v220-frequent-place.gif')
+                'v220-destination-prediction.gif', 'v220-intelligent-diversions.gif', 'v220-frequent-place.gif',
+                'v223-nearby-pois.gif', 'v223-secondary-manoeuvre.gif', 'v223-view-diversion.gif',
+                'v224-ml-eta-and-habits.gif', 'v224-ml-slowdowns.gif',
+                'v224-ml-parking-and-pois.gif', 'v224-ml-adaptive-hud.gif')
 
 def source_files(root, reports):
     files = {}
@@ -78,6 +82,8 @@ def gitignore():
 **/mobility.tmp
 **/mobility-places.dat
 **/mobility-places.tmp
+**/mobility-ml.dat
+**/mobility-ml.tmp
 **/cswmap.ini
 /csw
 /vstat

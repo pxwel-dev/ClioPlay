@@ -84,7 +84,7 @@ The original software files are copied into a dated
 - `clio843/maps/` and map build manifests.
 - `clio843/prefs.ini` and any custom console configuration.
 - `bond.dat`, `faves.dat`, `recent.dat`, `trip.dat`, `audlast.dat` and `gpslast.dat`.
-- `history.dat`, `history.prev.dat`, `mobility.dat`, `mobility-places.dat` and other learned data.
+- `history.dat`, `history.prev.dat`, `mobility.dat`, `mobility-places.dat`, `mobility-ml.dat` and other learned data.
 - Navcore firmware, other files and folders on the SD card.
 
 The existing `clio843/card-runtime.json`, if present, remains the record of the
@@ -94,11 +94,14 @@ The update backup contains its own checksums and version information.
 ## 4. Compatibility
 
 File preservation and format compatibility are different things. The updater
-does not migrate old data. ClioPlay 2.2.2 uses CTR4 trips, CLP2 saved places,
-CPM5 display maps, CPR2 v5 routing and optional QAD7, with version-2 navigation
-bundle manifests. Current 2.1.8 and 2.2.0 maps and state remain usable without
-rebuilding. To add map coverage with multiple extracts, use the fresh
-installation workflow.
+does not migrate old data. ClioPlay 2.2.4 (Unreleased) uses CTR4 trips, CLP2
+saved places, CPM5 display maps, CPR2 v5 routing and optional QAD7, with
+version-2 navigation bundle manifests, plus the optional companion
+`mobility-ml.dat` (`MML1`) learning file alongside unchanged `mobility.dat`
+(`MOB1`). Current 2.1.8–2.2.3 maps and state remain usable without rebuilding.
+When rebuilding maps with fresh OSM extracts, run `python3 tools/replay_history.py`
+locally to migrate raw driving history onto the new map geometry. To add map
+coverage with multiple extracts, use the fresh installation workflow.
 
 Earlier saved formats may remain on disk but will be ignored by a newer
 runtime. For obsolete maps, build/install compatible navigation data separately.

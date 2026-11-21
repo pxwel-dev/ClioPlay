@@ -27,15 +27,27 @@ int main(int argc,char**argv){assert(argc==3&&load_font()&&cliou_load(argv[1]));
   assert(streq(place_display_name("MAP POINT"),ui_tr("Map point"))&&streq(place_display_name("PHONE DESTINATION"),ui_tr("Phone destination"))&&streq(place_display_name("Settings"),"Settings"));
   copystr(btui.status,sizeof(btui.status),"BT DAEMON ERROR");pref.debug=0;assert(streq(bt_status_text(),lang?ui_tr("Phone connection unavailable"):"Bluetooth unavailable"));btui.status[0]=0;
   for(unsigned i=0;i<sizeof(locale_cases)/sizeof(locale_cases[0]);i++){assert(streq(ui_tr(locale_cases[i][0]),locale_cases[i][lang]));whole_utf8(locale_cases[i][lang]);assert(cliou_width(locale_cases[i][lang],1)>0);}
-  const char*confirm_titles[]={"Add to favourites?","Start suggested trip?","Take diversion?","Cancel route?","Remove stop?","Clear driving history?","Route to point?","Add point as stop?","Cancel current route?","Resume saved trip?"};
+  const char*confirm_titles[]={"Add to favourites?","Start suggested trip?","Take traffic diversion?","Use usual route?","Route to usual parking?","Add usual stop?","Cancel route?","Remove stop?","Clear driving history?","Route to point?","Add point as stop?","Cancel current route?","Resume saved trip?"};
   for(unsigned i=0;i<sizeof(confirm_titles)/sizeof(confirm_titles[0]);i++)assert(width(ui_tr(confirm_titles[i]),CONFIRMATION_FACE)<=252);
   assert(width(ui_tr("Yes"),CONFIRMATION_FACE)<=104&&width(ui_tr("No"),CONFIRMATION_FACE)<=104);
+  assert(width(ui_tr("View diversion"),CONFIRMATION_FACE)<=236&&width(ui_tr("View route"),CONFIRMATION_FACE)<=236);
+  assert(width(ui_tr("Then"),0)<=75);
+  const char*trip_tabs[]={"Itinerary","Recents","Favourites","Nearby"};
+  for(unsigned i=0;i<sizeof(trip_tabs)/sizeof(trip_tabs[0]);i++){
+   int tw=width(ui_tr(trip_tabs[i]),0);
+   if(tw>99)fprintf(stderr,"Trip tab overflow %s %s: %s (%d)\n",ui_language_codes[lang],trip_tabs[i],ui_tr(trip_tabs[i]),tw);
+   assert(tw<=99);
+  }
+  const char*nearby_cats[]={"Fuel","Parking","Hospital"};
+  for(unsigned i=0;i<sizeof(nearby_cats)/sizeof(nearby_cats[0]);i++)assert(width(ui_tr(nearby_cats[i]),1)<=340);
+  assert(streq(place_display_name("FUEL"),ui_tr("Fuel"))&&streq(place_display_name("PARKING"),ui_tr("Parking"))&&streq(place_display_name("HOSPITAL"),ui_tr("Hospital")));
   /* The action hint must always fit an available status HUD column. */
   assert(width(ui_tr("BACK to review"),0)<=220&&width(ui_tr("OK to review"),0)<=220);
-  assert(width(ui_tr("Faster route available"),0)<=280);
+  assert(width(ui_tr("Traffic diversion available"),0)<=280&&width(ui_tr("Usual route available"),0)<=280);
   char traffic_line[112];traffic_saving=3600;diversion_saving_text(traffic_line,sizeof(traffic_line));whole_utf8(traffic_line);assert(width(traffic_line,0)+18<=164);
-  for(int media=0;media<2;media++){
-   const char*title=ui_tr("Faster route available"),*hint=ui_tr(media?"BACK to review":"OK to review");
+  const char*offer_titles[]={"Traffic diversion available","Usual route available"};
+  for(unsigned k=0;k<2;k++)for(int media=0;media<2;media++){
+   const char*title=ui_tr(offer_titles[k]),*hint=ui_tr(media?"BACK to review":"OK to review");
    whole_utf8(title);whole_utf8(hint);
    assert(hud_diversion_line_width(title,hint)<=HUD_CLOCK_X-36);
   }

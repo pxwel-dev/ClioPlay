@@ -176,6 +176,33 @@ static void prepared_overlay_checks(void){
  assert(overlay.batch_count==9&&overlay.batch_count==OVERLAY_FRAME_COUNT&&overlay.batch_ms==BT_PRESS_MS);
 }
 
+static void memory_and_overlay_model_checks(void){
+ /* Pure /proc kB parser handles Linux 2.6 /proc/self/status and /proc/meminfo. */
+ const char*status_sample="Name:\tclio040\nState:\tR (running)\nVmPeak:\t   28416 kB\nVmSize:\t   26112 kB\nVmRSS:\t    7428 kB\nVmData:\t    6144 kB\n";
+ const char*meminfo_sample="MemTotal:        61440 kB\nMemFree:         24812 kB\nBuffers:          1024 kB\n";
+ u32 rss=0,memfree=0,missing=99;
+ assert(render_parse_kb_field(status_sample,"VmRSS:",&rss)&&rss==7428u);
+ assert(render_parse_kb_field(meminfo_sample,"MemFree:",&memfree)&&memfree==24812u);
+ assert(!render_parse_kb_field(status_sample,"MemFree:",&missing)&&missing==99u);
+ assert(!render_parse_kb_field("VmRSS:\tabc kB\n","VmRSS:",&missing)&&missing==99u);
+ assert(!render_parse_kb_field("","VmRSS:",&missing));
+
+ /* Regression guard: overlay_model() must change when key UI/HUD/sheet fields mutate. */
+ setup(R_READY,200000);gps.fix=1;trip.active=trip.count=1;
+ nav_man_type=MAN_RIGHT;nav_man_idx=2;nav_man_m=200;nav_next_type=MAN_LEFT;nav_next_m=80;
+ hud_prepare(5,200000,1);hud_driver_prepare(200000);
+ u32 base=overlay_model();
+ nav_next_type=MAN_UTURN;hud_driver_prepare(200000);
+ assert(overlay_model()!=base);
+ nav_next_type=MAN_LEFT;hud_driver_prepare(200000);
+ menu_open(P_CONFIRM,0,200000);confirm_kind=0;u32 m0=overlay_model();
+ confirm_kind=3;assert(overlay_model()!=m0);
+ menu_open(P_NEARBY_LIST,0,200000);nearby_count=1;nearby_pois[0].dist_m=120;copystr(nearby_pois[0].name,sizeof(nearby_pois[0].name),"Shell");
+ u32 n0=overlay_model();
+ nearby_pois[0].dist_m=340;assert(overlay_model()!=n0);
+ copystr(nearby_pois[0].name,sizeof(nearby_pois[0].name),"Esso");assert(overlay_model()!=n0);
+ nearby_count=0;menu_close(200000);nav_next_type=MAN_NONE;
+}
 int main(void){
  struct FrameClock clock={0};unsigned frames=0;
  for(u32 t=0;t<1000;t++)if(frame_due(t,clock.next)){frames++;frame_advance_ui(&clock,t,frame_ui_period(0));}
@@ -394,6 +421,7 @@ int main(void){
  assert(strstr(log,"FRAME 5S HUD=")&&strstr(log,"FB_PARTIAL=")&&strstr(log,"MAXFLUSH_MS=")&&strstr(log,"OVERLAY_ABORT="));s_unlink(STATE_LOG);pref.debug=0;
  framebuffer_checks();
  prepared_overlay_checks();
+ memory_and_overlay_model_checks();
  puts("Partial framebuffer output matches full presentation across pills, menus, popups, and map changes; a failed band restores the full frame.");
  puts("Prepared overlays and Explore play at 20 Hz without dropping queued frames, with immediate input, camera and route interrupts.");
  puts("Frame renderer: 20 Hz transitions and steady HUD, 10 Hz live maps, whole-UI 5 Hz calculation cap, routing budget, clean background yields, independent Explore and debug-only profiles passed.");

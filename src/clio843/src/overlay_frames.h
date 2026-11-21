@@ -5,7 +5,7 @@ enum {OVERLAY_MAX_TRANSITION_MS=BT_PRESS_MS,
 struct OverlayFrame {
  u16 pixels[FB_PIX];
  u8 rows[H];
- u32 at,diversion,suggestion;
+ u32 at,diversion,suggestion,parking,stop;
  struct SavedPlace place;
 };
 static struct {
@@ -31,7 +31,7 @@ static u32 overlay_model(void){
  u32 hash=2166136261u;
  const int context[]={screen,theme_resolved,pref.language,route_status,freecam,
   bt_control_mode,bt_controls_available(),hud_speed_over,hud_speed_from,
-  traffic_offer_valid(),mob_suggest_valid,hw_bluetooth_enabled,
+  traffic_offer_valid(),mob_suggest_valid,ml_park_valid,ml_stop_valid,ml_offer_kind,hw_bluetooth_enabled,
   sheet_page,sheet_old_page,sheet_focus,sheet_old_focus,places_tab,sheet_old_tab,
   bottom_from,bottom_to,modal,modal_choice};
  hash=mob_hash(hash,context,sizeof(context));
@@ -40,17 +40,23 @@ static u32 overlay_model(void){
  OVERLAY_HASH(hud_tween);OVERLAY_HASH(hud_status_layout);OVERLAY_HASH(hud_progress_at);
  OVERLAY_HASH(hud_playback);OVERLAY_HASH(bt_transport_press);OVERLAY_HASH(hud_speed_at);
  OVERLAY_HASH(traffic_offer_serial);OVERLAY_HASH(mob_suggest_serial);
+ OVERLAY_HASH(ml_park_serial);OVERLAY_HASH(ml_stop_serial);OVERLAY_HASH(ml_route_var_ds);
  if(sheet_page||sheet_old_page){
   OVERLAY_HASH(sheet_from_box);OVERLAY_HASH(sheet_to_box);
   OVERLAY_HASH(menu_at);OVERLAY_HASH(focus_at);OVERLAY_HASH(bottom_at);OVERLAY_HASH(menu_interaction_at);
   OVERLAY_HASH(pref);OVERLAY_HASH(trip);OVERLAY_HASH(traffic_saving);
   const u32 remaining[]={route_path_m(),traffic_remaining_cost(),atlas_future_cost,
-   (u32)menu_suggestion_current(),(u32)menu_diversion_current()};
+   (u32)menu_suggestion_current(),(u32)menu_diversion_current(),(u32)menu_parking_current(),(u32)menu_stop_current()};
   OVERLAY_HASH(remaining);
+  const int sheet_extra[]={confirm_kind,confirm_diversion_kind,place_from_nearby,places_picker,nearby_category,nearby_count,nearby_status};
+  OVERLAY_HASH(sheet_extra);
   if(sheet_page==P_PLACES||sheet_old_page==P_PLACES||sheet_page==P_DEST||sheet_old_page==P_DEST){
    OVERLAY_HASH(nrecents);OVERLAY_HASH(nfaves);
    hash=mob_hash(hash,recents,(unsigned)nrecents*sizeof(*recents));
    hash=mob_hash(hash,faves,(unsigned)nfaves*sizeof(*faves));
+  }
+  if(sheet_page==P_NEARBY_LIST||sheet_old_page==P_NEARBY_LIST){
+   hash=mob_hash(hash,nearby_pois,(unsigned)nearby_count*sizeof(*nearby_pois));
   }
   if(screen==SCR_BT||sheet_old_page==P_PHONE||sheet_old_page==P_PHONE_ACTIONS||sheet_old_page==P_PAIR){
    OVERLAY_HASH(nbtdev);OVERLAY_HASH(btui.status);OVERLAY_HASH(nbtname_cache);
@@ -114,13 +120,14 @@ static void overlay_build(u32 sample){
  memzero(f->rows,sizeof(f->rows));
  u16(*saved)[FB_PIX]=render_fb;
  int x=clip_x,y=clip_y,right=clip_right,bottom=clip_bottom,ink=hud_ink_alpha;
- u32 diversion=hud_diversion_invited,suggestion=hud_suggestion_invited;
+ u32 diversion=hud_diversion_invited,suggestion=hud_suggestion_invited,parking=hud_parking_invited,stop=hud_stop_invited;
  struct SavedPlace place=hud_suggestion_place;
  render_fb=&f->pixels;clip_x=clip_y=0;clip_right=W;clip_bottom=H;hud_ink_alpha=16;
  render_paint_overlay(f->at,f->rows);
  f->diversion=hud_diversion_invited;f->suggestion=hud_suggestion_invited;
+ f->parking=hud_parking_invited;f->stop=hud_stop_invited;
  f->place=hud_suggestion_place;
- hud_diversion_invited=diversion;hud_suggestion_invited=suggestion;hud_suggestion_place=place;
+ hud_diversion_invited=diversion;hud_suggestion_invited=suggestion;hud_parking_invited=parking;hud_stop_invited=stop;hud_suggestion_place=place;
  render_fb=saved;clip_x=x;clip_y=y;clip_right=right;clip_bottom=bottom;hud_ink_alpha=ink;
  overlay.built++;
 }

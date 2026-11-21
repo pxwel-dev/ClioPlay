@@ -61,6 +61,7 @@ static u32 *atlas_reverse_id=0,*atlas_reverse_next=0;static u16*atlas_reverse_fr
 static int atlas_target_started=0;
 static void atlas_index_release(void){if(atlas_reverse)s_munmap(atlas_reverse,atlas_reverse_bytes);atlas_reverse=0;atlas_reverse_bytes=atlas_reverse_n=0;}
 static int atlas_index_begin(void){
+ if(!atlas_validate_graph())return 0;
  atlas_index_release();for(u32 u=0;u<atlas_nn;u++){atlas_prev_edge[u]=ROUTE_NOARC;atlas_target_index[u]=65535;}
  for(u32 i=0;i<atlas_tn;i++)atlas_target_index[atlas_targets[i].global]=(u16)i;
  for(u32 i=0;i<atlas_ne;i++){const struct AtlasEdge*e=atlas_edge(i);if(e->region==(u32)atlas_target_region)atlas_reverse_n++;}
@@ -180,7 +181,7 @@ static int atlas_query(int phase,u32 idx){atlas_query_index=idx;atlas_phase=(u32
  atlas_probe=0;route_arena_release();atlas_phase=AP_SEARCH;atlas_search_init=0;route_status=R_CALC;return 1;
 }
 
-static int atlas_request(s32 lat,s32 lon){atlas_cancel();atlas_start_snap_region=atlas_dest_snap_region=-2;route_repair_reset();route_arena_release();route_exact_from=route_exact_to=ROUTE_NOARC;atlas_source_region=atlas_owner(car_lat(),car_lon());atlas_target_region=atlas_owner(lat,lon);
+static int atlas_request(s32 lat,s32 lon){atlas_cancel();if(!atlas_validate_graph()){route_status=R_ERROR;return 0;}atlas_start_snap_region=atlas_dest_snap_region=-2;route_repair_reset();route_arena_release();route_exact_from=route_exact_to=ROUTE_NOARC;atlas_source_region=atlas_owner(car_lat(),car_lon());atlas_target_region=atlas_owner(lat,lon);
  if(atlas_source_region<0||atlas_target_region<0){route_status=R_NOROAD;return 0;}
  atlas_active=1;atlas_target_started=0;atlas_target_skip=0;atlas_sweep_runs=0;atlas_sweeps_done=atlas_sweep_expanded=0;atlas_cost_queries=atlas_distance_queries=0;atlas_origin_lat=car_lat();atlas_origin_lon=car_lon();atlas_dest_lat=lat;atlas_dest_lon=lon;atlas_plan_n=atlas_plan_at=0;atlas_future_m=atlas_future_cost=0;atlas_sn=atlas_tn=0;atlas_direct_cost=ROUTE_INF;atlas_direct_m=0;
  atlas_started_ms=s_now_ms();atlas_report_status=-1;route_diag_qad7_expanded=route_diag_cpr_expanded=0;

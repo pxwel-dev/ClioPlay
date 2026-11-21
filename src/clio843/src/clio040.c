@@ -469,7 +469,7 @@ static void hardware_load_bluetooth(void){
 }
 #include "ui_translations.h"
 /* Internal unnamed-place sentinels are translated only at presentation. */
-static const char*place_display_name(const char*s){if(!s)return "";if(streq(s,"MAP POINT"))return ui_tr("Map point");if(streq(s,"PHONE DESTINATION"))return ui_tr("Phone destination");return s;}
+static const char*place_display_name(const char*s){if(!s)return "";if(streq(s,"MAP POINT"))return ui_tr("Map point");if(streq(s,"PHONE DESTINATION"))return ui_tr("Phone destination");if(streq(s,"FUEL"))return ui_tr("Fuel");if(streq(s,"PARKING"))return ui_tr("Parking");if(streq(s,"HOSPITAL"))return ui_tr("Hospital");return s;}
 /* The source badge is BT in every language. Page titles and status messages
  * retain their translated phone wording outside English. */
 static const char*bt_label(void){return pref.language==0?"Bluetooth":ui_tr("Phone connection");}
@@ -563,7 +563,19 @@ static int auto_is_night(void){
  int night=clio_schedule_night(minute,pref.day_start,pref.night_start);
  return night>=0?night:theme_resolved;
 }
-static void refresh_theme(void){int night=pref.theme==THEME_NIGHT?1:(pref.theme==THEME_DAY?0:auto_is_night());if(night!=theme_resolved)apply_palette(night);}
+static int ml_learned_brightness(int night);
+static int ml_autozoom_offset(int mph10);
+static void traffic_note_offroute_avoidance(void);
+static void refresh_theme(void){
+ int night=pref.theme==THEME_NIGHT?1:(pref.theme==THEME_DAY?0:auto_is_night());
+ if(night!=theme_resolved){
+  apply_palette(night);
+  if(pref.theme==THEME_AUTO){
+   int lb=ml_learned_brightness(night);
+   if(lb&&lb!=pref.bright){pref.bright=lb;apply_brightness();}
+  }
+ }
+}
 static int split_csv(char*s,char**f,int max){int n=0;f[n++]=s;while(*s&&n<max){if(*s==','){*s=0;f[n++]=s+1;}s++;}return n;}
 static u32 mob_epoch(int,int,int,int,int,int);
 static void mob_rmc(u32,u32,int,s32,s32,int,int);
@@ -590,7 +602,7 @@ static void poll_gps(void){if(gpsfd<0)gpsfd=(int)s_open(GPS_PATH,O_RDONLY_|O_NON
 
 /* One current transient per domain; repeated knob events replace the value
  * without replaying the entrance animation. Millisecond subtraction wraps. */
-enum {HUD_NONE,HUD_SOURCE,HUD_VOLUME,HUD_MANUAL_ZOOM,HUD_JOURNEY,HUD_FAILURE,HUD_MEDIA,HUD_CALC,HUD_NOTICE,HUD_CONNECTION,HUD_BT_FEEDBACK,HUD_SYSTEM,HUD_TRACK,HUD_EXPLORE,HUD_AUTO_ZOOM,HUD_TRAFFIC};
+enum {HUD_NONE,HUD_SOURCE,HUD_VOLUME,HUD_MANUAL_ZOOM,HUD_JOURNEY,HUD_FAILURE,HUD_MEDIA,HUD_CALC,HUD_NOTICE,HUD_CONNECTION,HUD_BT_FEEDBACK,HUD_SYSTEM,HUD_TRACK,HUD_EXPLORE,HUD_AUTO_ZOOM,HUD_TRAFFIC,HUD_SLOWDOWN};
 #ifdef HOST_TEST
 static int hud_capture_clock;
 static u32 hud_capture_ms;
@@ -1068,6 +1080,10 @@ static int map_course(void){if(display_course_valid)return display_course;return
 #define FC_ANIM_TO_NORTH 1
 #define FC_ANIM_TO_CAR 2
 static int freecam=0,freecam_zoom=5,auto_zoom_level=-1,zoom_override=-1;static s32 cam_lat=0,cam_lon=0;
+static int diversion_preview_active=0,diversion_preview_from_map=0,diversion_preview_kind=0;
+static u32 diversion_preview_revision=0,diversion_preview_serial=0;
+static int diversion_preview_begin=0,diversion_preview_join=0;
+static void diversion_preview_clear(void){diversion_preview_active=0;}
 /* Camera interpolation has its own elapsed-time clock, independent of map
  * and HUD frame counts. MAP toggles are guarded; confirming a selected point
  * may reverse an unfinished entry from its current pose. */
@@ -1080,7 +1096,17 @@ static int map_tilt_q8=256;
 
 /* Driving autozoom now uses only Z6/Z5/Z4.  Hysteresis keeps the existing
  * 18/22 mph low-speed headroom and adds a 38/42 mph Z5/Z4 boundary. */
-static int speed_auto_zoom(void){int s=gps.mph10;if(auto_zoom_level<4||auto_zoom_level>6){if(s>=400)auto_zoom_level=4;else if(s>=200)auto_zoom_level=5;else auto_zoom_level=6;return auto_zoom_level;}if(auto_zoom_level==6){if(s>=220)auto_zoom_level=5;}else if(auto_zoom_level==5){if(s<=180)auto_zoom_level=6;else if(s>=420)auto_zoom_level=4;}else{if(s<=380)auto_zoom_level=5;}return auto_zoom_level;}
+static int speed_auto_zoom(void){
+ int s=gps.mph10;
+ if(auto_zoom_level<4||auto_zoom_level>6){
+  if(s>=400)auto_zoom_level=4;else if(s>=200)auto_zoom_level=5;else auto_zoom_level=6;
+ }else if(auto_zoom_level==6){if(s>=220)auto_zoom_level=5;}
+ else if(auto_zoom_level==5){if(s<=180)auto_zoom_level=6;else if(s>=420)auto_zoom_level=4;}
+ else{if(s<=380)auto_zoom_level=5;}
+ int z=auto_zoom_level+ml_autozoom_offset(s);
+ if(z<4)z=4;if(z>6)z=6;
+ return z;
+}
 static int active_zoom(void){int z;if(freecam){int lo=mapok?(int)mh.minlvl:0;z=freecam_zoom;if(z<lo)z=lo;if(z>MAX_EXPLORE_ZOOM)z=MAX_EXPLORE_ZOOM;return z;}if(pref.autozoom)z=zoom_override>=0?zoom_override:speed_auto_zoom();else z=manual_zoom;return clamp_map_zoom(z);}
 static int span_for_view_zoom(int z){if(z<=6)return span_for_level(z);if(z>MAX_EXPLORE_ZOOM)z=MAX_EXPLORE_ZOOM;return 256>>(z-6);}
 static s32 car_lat(void){return track_valid?track_lat:gps.lat;}static s32 car_lon(void){return track_valid?track_lon:gps.lon;}
@@ -1381,50 +1407,58 @@ static int label_space_free(int x0,int y0,int x1,int y1,int avoid_status){
 }
 static int label_free(int x0,int y0,int x1,int y1){return label_space_free(x0,y0,x1,y1,1);}
 static u16 label_color(int kind){if(kind==3)return C_CYAN;if(kind==4)return C_WHITE;if(kind==5)return C_MUTED;if(kind>=6)return C_WARN;if(kind==1)return C_WHITE;return C_MUTED;}
+static int trip_matches_poi(s32 lat,s32 lon);
 #include "poi_icons.h"
-static void poi_icon(int kind,int x,int y){
+static void poi_icon_tinted(int kind,int x,int y,int route_tinted){
  if(kind<6||kind>8)return;
  int icon=kind==6?0:kind==7?1:2;
- u16 backing=theme_resolved?rgb(13,26,41):rgb(237,245,253);
- u16 rim=theme_resolved?rgb(83,111,143):rgb(158,182,208);
- u16 ink=icon==0?(theme_resolved?rgb(255,199,102):rgb(157,85,8)):
+ u16 backing=route_tinted?(theme_resolved?rgb(34,13,29):rgb(255,238,246)):(theme_resolved?rgb(13,26,41):rgb(237,245,253));
+ u16 rim=route_tinted?C_ROUTE:(theme_resolved?rgb(83,111,143):rgb(158,182,208));
+ u16 ink=route_tinted?C_ROUTE:(icon==0?(theme_resolved?rgb(255,199,102):rgb(157,85,8)):
   icon==1?(theme_resolved?rgb(120,181,255):rgb(0,99,207)):
-  (theme_resolved?rgb(97,218,187):rgb(0,116,96));
+  (theme_resolved?rgb(97,218,187):rgb(0,116,96)));
+ int rim_scale=route_tinted?15:10;
  /* Small translucent badges use precomputed coverage, not backdrop filtering.
   * Their full antialiased footprint stays inside the reserved 16x16 box. */
  for(int j=0;j<16;j++)for(int i=0;i<16;i++){
   int at=j*16+i,sx=x+i-8,sy=y+j-8;
   blend_pixel(sx,sy,backing,(poi_coverage[0][at]*13+7)/15);
-  blend_pixel(sx,sy,rim,(poi_coverage[1][at]*10+7)/15);
+  blend_pixel(sx,sy,rim,(poi_coverage[1][at]*rim_scale+7)/15);
   blend_pixel(sx,sy,ink,poi_coverage[2+icon][at]);
  }
 }
+static void poi_icon(int kind,int x,int y){poi_icon_tinted(kind,x,y,0);}
 #define POI_CANDIDATES 32
-struct PoiLabel {int x,y,kind,prio;};
-static struct PoiLabel poi_labels[POI_CANDIDATES];static int npoi,poi_visible;
+struct PoiLabel {int x,y,kind,prio;s32 lat,lon;u8 has_geo;};
+static struct PoiLabel poi_labels[POI_CANDIDATES];static u8 poi_trip_tinted[POI_CANDIDATES];static int npoi,poi_visible;
 static int poi_before(struct PoiLabel a,struct PoiLabel b){
  if(a.prio!=b.prio)return a.prio<b.prio;
  /* Stable ordering independent of tile/cache traversal. */
  if(a.y!=b.y)return a.y>b.y;return a.x<b.x;
 }
-static void poi_offer(int x,int y,int kind,int prio){
+static void poi_offer_at(int x,int y,int kind,int prio,s32 lat,s32 lon,int has_geo){
  if(x<12||x>W-12||y<MAP_TOP+12||y>HUD_BOTTOM_Y-11)return;
- for(int i=0;i<npoi;i++)if(poi_labels[i].kind==kind&&iabs32(poi_labels[i].x-x)<=2&&iabs32(poi_labels[i].y-y)<=2)return;
- struct PoiLabel p={x,y,kind,prio};int at=0;
+ if(has_geo&&trip_matches_poi(lat,lon))prio=0;
+ for(int i=0;i<npoi;i++)if(poi_labels[i].kind==kind&&iabs32(poi_labels[i].x-x)<=2&&iabs32(poi_labels[i].y-y)<=2){
+  if(prio<poi_labels[i].prio){poi_labels[i].prio=prio;if(has_geo){poi_labels[i].lat=lat;poi_labels[i].lon=lon;poi_labels[i].has_geo=1;}}
+  return;
+ }
+ struct PoiLabel p={x,y,kind,prio,lat,lon,(u8)(has_geo!=0)};int at=0;
  while(at<npoi&&!poi_before(p,poi_labels[at]))at++;
  if(at>=POI_CANDIDATES)return;
  if(npoi<POI_CANDIDATES)npoi++;
  for(int i=npoi-1;i>at;i--)poi_labels[i]=poi_labels[i-1];poi_labels[at]=p;
 }
+static void poi_offer(int x,int y,int kind,int prio){poi_offer_at(x,y,kind,prio,0,0,0);}
 static void poi_reserve(void){
- int count=npoi;poi_visible=0;
+ int count=npoi;poi_visible=0;memzero(poi_trip_tinted,sizeof(poi_trip_tinted));
  for(int i=0;i<count&&poi_visible<MAP_POI_LABELS;i++){
   struct PoiLabel p=poi_labels[i];
   if(label_space_free(p.x-8,p.y-8,p.x+8,p.y+8,0))poi_labels[poi_visible++]=p;
  }
 }
-static void poi_render(void){for(int i=0;i<poi_visible;i++)poi_icon(poi_labels[i].kind,poi_labels[i].x,poi_labels[i].y);}
-static void draw_tile_labels(struct Tile*t,int viewz,int plo,int phi){if(!t)return;const u8*p=t->data,*end=t->data+t->len;int hs=8;if(t->len<(u32)hs)return;u16 ng=rd16(p),nl=rd16(p+2);p+=hs;for(u16 f=0;f<ng&&p+4<=end;f++){int np=p[2];p+=4+(unsigned)np*4;if(p>end)return;}int span=span_for_level((int)t->lvl);for(u16 i=0;i<nl&&p+8<=end;i++){if(!(i&15))render_checkpoint();int kind=p[0],prio=p[1];u16 lx=rd16(p+2),ly=rd16(p+4);int tl=p[6];p+=8;if(p+tl>end)return;if(((plo==256&&kind>=6)||(plo!=256&&kind<6&&prio>=plo&&prio<=phi))&&tl>0&&tl<113){char b[113];int n=tl;for(int j=0;j<n;j++)b[j]=(char)p[j];b[n]=0;s32 lon=(s32)t->tx*span+map_tile_offset(lx,(u32)span);s32 lat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);int x,y;world_to_screen(lat,lon,viewz,&x,&y);if(kind>=6){if(plo==256)poi_offer(x,y,kind,prio);}else if(plo!=256){if(!freecam)drive_label_offer(x,y,kind,prio,b);else{int w=textw(b,1),x0=x-w/2,y0=y-6;if(!label_text_seen(b)&&label_free(x0-2,y0-2,x0+w+2,y0+14)){u16 c=label_color(kind);text(x0+1,y0+1,b,C_BG,1);text(x0,y0,b,c,1);label_text_add(b);}}}}p+=tl;}}
+static void poi_render(void){for(int i=0;i<poi_visible;i++)poi_icon_tinted(poi_labels[i].kind,poi_labels[i].x,poi_labels[i].y,poi_trip_tinted[i]);}
+static void draw_tile_labels(struct Tile*t,int viewz,int plo,int phi){if(!t)return;const u8*p=t->data,*end=t->data+t->len;int hs=8;if(t->len<(u32)hs)return;u16 ng=rd16(p),nl=rd16(p+2);p+=hs;for(u16 f=0;f<ng&&p+4<=end;f++){int np=p[2];p+=4+(unsigned)np*4;if(p>end)return;}int span=span_for_level((int)t->lvl);for(u16 i=0;i<nl&&p+8<=end;i++){if(!(i&15))render_checkpoint();int kind=p[0],prio=p[1];u16 lx=rd16(p+2),ly=rd16(p+4);int tl=p[6];p+=8;if(p+tl>end)return;if(((plo==256&&kind>=6)||(plo!=256&&kind<6&&prio>=plo&&prio<=phi))&&tl>0&&tl<113){char b[113];int n=tl;for(int j=0;j<n;j++)b[j]=(char)p[j];b[n]=0;s32 lon=(s32)t->tx*span+map_tile_offset(lx,(u32)span);s32 lat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);int x,y;world_to_screen(lat,lon,viewz,&x,&y);if(kind>=6){if(plo==256)poi_offer_at(x,y,kind,prio,lat,lon,1);}else if(plo!=256){if(!freecam)drive_label_offer(x,y,kind,prio,b);else{int w=textw(b,1),x0=x-w/2,y0=y-6;if(!label_text_seen(b)&&label_free(x0-2,y0-2,x0+w+2,y0+14)){u16 c=label_color(kind);text(x0+1,y0+1,b,C_BG,1);text(x0,y0,b,c,1);label_text_add(b);}}}}p+=tl;}}
 
 /* CPM5 directional speed/flag pairs and UTF-8 street names. */
 struct RoadCtx {int valid,speed,reverse_speed;u8 speed_flags,reverse_flags;char street[113];};static struct RoadCtx roadctx;
@@ -1704,9 +1738,13 @@ enum {MAN_NONE=0,MAN_SLIGHT_LEFT,MAN_LEFT,MAN_SHARP_LEFT,MAN_SLIGHT_RIGHT,MAN_RI
 #define ROUTE_MAN_SCAN_POINTS 4096
 #define ROUTE_MAN_RESCAN_POINTS 128
 #define ROUTE_MAN_SHOW_M 3000u
+#define ROUTE_NEXT_MAN_MIN_M 15u
+#define ROUTE_NEXT_MAN_MAX_M 250u
+#define ROUTE_NEXT_SHOW_M 1500u
 static int nav_man_type=MAN_NONE,nav_man_idx=-1,nav_man_scan_head=0,nav_man_exit=0;static u32 nav_man_m=0;
+static int nav_next_type=MAN_NONE,nav_next_exit=0;static u32 nav_next_m=0;
 static void nav_maneuver_find(void);
-static void nav_maneuver_reset(void){nav_man_exit=0;nav_man_type=MAN_NONE;nav_man_idx=-1;nav_man_m=0;nav_man_scan_head=route_head;}
+static void nav_maneuver_reset(void){nav_man_exit=0;nav_man_type=MAN_NONE;nav_man_idx=-1;nav_man_m=0;nav_next_type=MAN_NONE;nav_next_exit=0;nav_next_m=0;nav_man_scan_head=route_head;}
 static struct RouteSnapCandidate route_start_snap,route_dest_cand[ROUTE_DEST_CAND_MAX];static int route_dest_count=0,route_dest_idx=0;
 
 /* local CH repair.
@@ -2111,7 +2149,7 @@ static void route_progress_service(void){
     struct RouteSnapCandidate c;int idx=-1;if(!route_snap_car_adherence(route_dest_comp,&c,&idx))return;
     if(idx>=0){route_trim_prefix(idx);route_offroute_checks=0;return;}
     if(gps.mph10<20){route_offroute_checks=0;return;}
-    if(++route_offroute_checks>=ROUTE_OFFROUTE_CHECKS){route_offroute_checks=0;route_retarget_car(&c);}
+    if(++route_offroute_checks>=ROUTE_OFFROUTE_CHECKS){route_offroute_checks=0;traffic_note_offroute_avoidance();route_retarget_car(&c);}
 }
 static void route_calc_moving_start_service(void){if(atlas_probe||route_exact_from!=ROUTE_NOARC)return;/* A parked car cannot meaningfully stale the start. Avoid periodic CPR2 snapping (and cache pollution) while stationary. */if(gps.mph10<20){route_tick=0;return;}/* Once a repair prefix is being reconstructed the old route[] storage is no longer pristine. Finish the bounded build, then the normal stale-finish check can fall back safely if needed. */if(route_repair_active&&route_build_phase!=RB_IDLE)return;if(++route_tick<5)return;route_tick=0;struct RouteSnapCandidate c;if(!route_snap_car_component(route_dest_comp,&c))return;if(c.node==route_start_snap.node&&c.arc==route_start_snap.arc&&c.geom_seg==route_start_snap.geom_seg&&c.frac_q16==route_start_snap.frac_q16)return;if(route_point_d2(route_query_lat,route_query_lon,car_lat(),car_lon())>=ROUTE_CALC_STALE_D2)route_retarget_car(&c);}
 static void regional_service_until(u32 deadline_ms){
@@ -2175,15 +2213,43 @@ static u32 geo_seg_m(s32 la0,s32 lo0,s32 la1,s32 lo1){int cq=coslat_q15((la0+la1
  * rounds away. */
 static u32 nav_seg_m(s32 la0,s32 lo0,s32 la1,s32 lo1){int cq=coslat_q15((la0+la1)/2);u32 dx=(u32)iabs32(lon_scale(lo1-lo0,cq)),dy=(u32)iabs32(la1-la0);u32 hi=dx>dy?dx:dy,lo=dx>dy?dy:dx;u32 q=hi+((lo*3u)>>3);return q+(q>>3)-(q>>6);}
 static int nav_heading10(s32 la0,s32 lo0,s32 la1,s32 lo1){int cq=coslat_q15((la0+la1)/2);s32 x=lon_scale(lo1-lo0,cq),y=la1-la0;if(!x&&!y)return-1;int bi=0;s32 bd=(s32)0x80000000u;for(int k=0;k<36;k++){s32 d=x*(s32)SIN36[k]+y*(s32)COS36[k];if(d>bd){bd=d;bi=k;}}return bi*10;}
-static int nav_turn_delta(int i){int a=i-1,b=i+1;u32 m=nav_seg_m(route_lat[a],route_lon[a],route_lat[i],route_lon[i]);while(a>route_head&&m<30u){m+=nav_seg_m(route_lat[a-1],route_lon[a-1],route_lat[a],route_lon[a]);a--;}m=nav_seg_m(route_lat[i],route_lon[i],route_lat[b],route_lon[b]);while(b+1<route_n&&m<30u){m+=nav_seg_m(route_lat[b],route_lon[b],route_lat[b+1],route_lon[b+1]);b++;}int h0=nav_heading10(route_lat[a],route_lon[a],route_lat[i],route_lon[i]),h1=nav_heading10(route_lat[i],route_lon[i],route_lat[b],route_lon[b]);if(h0<0||h1<0)return 0;int d=h1-h0;while(d>180)d-=360;while(d<-180)d+=360;return d;}
+static int nav_turn_delta_from(int i,int min_idx){int a=i-1,b=i+1;if(a<min_idx)a=min_idx;u32 m=nav_seg_m(route_lat[a],route_lon[a],route_lat[i],route_lon[i]);while(a>min_idx&&m<30u){m+=nav_seg_m(route_lat[a-1],route_lon[a-1],route_lat[a],route_lon[a]);a--;}m=nav_seg_m(route_lat[i],route_lon[i],route_lat[b],route_lon[b]);while(b+1<route_n&&m<30u){m+=nav_seg_m(route_lat[b],route_lon[b],route_lat[b+1],route_lon[b+1]);b++;}int h0=nav_heading10(route_lat[a],route_lon[a],route_lat[i],route_lon[i]),h1=nav_heading10(route_lat[i],route_lon[i],route_lat[b],route_lon[b]);if(h0<0||h1<0)return 0;int d=h1-h0;while(d>180)d-=360;while(d<-180)d+=360;return d;}
+static int nav_turn_delta(int i){return nav_turn_delta_from(i,route_head);}
 static int nav_turn_type(int d){int a=d<0?-d:d;if(a<25)return MAN_NONE;if(a>=160)return MAN_UTURN;if(d<0)return a>=110?MAN_SHARP_LEFT:(a>=45?MAN_LEFT:MAN_SLIGHT_LEFT);return a>=110?MAN_SHARP_RIGHT:(a>=45?MAN_RIGHT:MAN_SLIGHT_RIGHT);}
 /* BASE flag 4 identifies roundabout arcs; pad marks an outgoing public exit
  * at the directed arc endpoint. Count junctions, not geometry points/lanes. */
 static int nav_round_info(int i,struct CprBase*b){return i>=0&&i<route_n&&route_seg_arc[i]!=ROUTE_NOARC&&route_read_base(route_seg_arc[i],b);}
 static int nav_round_exit_legal(int i,const struct CprBase*b){if(i<0||i>=route_n||route_node[i]==ROUTE_NOARC)return b->pad!=0;u32 state=route_node[i];struct CprNode n;struct CprTile tile;if(!route_read_node(state,&n)||!route_find_tile(tile_div(n.lon,6),tile_div(n.lat,6),&tile))return 0;for(u32 j=0;j<tile.count;j++){u32 id;struct CprBase a;if(!route_read_ref(2,tile.first+j,&id)||!route_read_base(id,&a))return 0;if(a.flags&4)continue;for(u32 k=0;k<a.src_count;k++){u32 source;if(!route_read_srcref(a.src_first+k,&source))return 0;if(source==state)return 1;}}return 0;}
-static int nav_round_scan(int entry,u32 distance,int joined_midway){int exits=0;int end=entry+ROUTE_MAN_SCAN_POINTS;if(end>route_n-1)end=route_n-1;for(int j=entry+1;j<end;j++){if(route_seg_arc[j]==route_seg_arc[j+1])continue;struct CprBase in,out;if(!nav_round_info(j,&in)||!nav_round_info(j+1,&out)||!(in.flags&4))return 0;if(nav_round_exit_legal(j,&in))exits++;if(!(out.flags&4)){nav_man_type=MAN_ROUNDABOUT;nav_man_exit=joined_midway?0:(exits?exits:1);nav_man_idx=j;nav_man_m=distance;return 1;}}return 0;}
-static void nav_maneuver_find(void){nav_maneuver_reset();if(route_status!=R_READY||route_n-route_head<3)return;nav_man_scan_head=route_head;u32 dist=0;int end=route_head+ROUTE_MAN_SCAN_POINTS;if(end>route_n-1)end=route_n-1;struct CprBase first;if(nav_round_info(route_head+1,&first)&&(first.flags&4)&&nav_round_scan(route_head,0,1))return;for(int i=route_head+1;i<end;i++){dist=sat_add32(dist,nav_seg_m(route_lat[i-1],route_lon[i-1],route_lat[i],route_lon[i]));u32 in=route_seg_phys[i],out=route_seg_phys[i+1];if(in==ROUTE_NOARC||out==ROUTE_NOARC)continue;if(route_seg_arc[i]!=route_seg_arc[i+1]){struct CprBase a,b;if(nav_round_info(i,&a)&&nav_round_info(i+1,&b)){if(!(a.flags&4)&&(b.flags&4)&&nav_round_scan(i,dist,0))return;if((a.flags|b.flags)&4)continue;}}int t=nav_turn_type(nav_turn_delta(i));if(in==out&&t!=MAN_UTURN)continue;if(t!=MAN_NONE){nav_man_type=t;nav_man_idx=i;nav_man_m=dist;return;}}}
+static int nav_round_scan_ex(int entry,int joined_midway,int*out_exit,int*out_idx){int exits=0;int end=entry+ROUTE_MAN_SCAN_POINTS;if(end>route_n-1)end=route_n-1;for(int j=entry+1;j<end;j++){if(route_seg_arc[j]==route_seg_arc[j+1])continue;struct CprBase in,out;if(!nav_round_info(j,&in)||!nav_round_info(j+1,&out)||!(in.flags&4))return 0;if(nav_round_exit_legal(j,&in))exits++;if(!(out.flags&4)){if(out_exit)*out_exit=joined_midway?0:(exits?exits:1);if(out_idx)*out_idx=j;return 1;}}return 0;}
+static void nav_next_maneuver_find(int after_idx){
+ nav_next_type=MAN_NONE;nav_next_exit=0;nav_next_m=0;
+ if(after_idx<0||after_idx+2>=route_n)return;
+ u32 dist=0;int end=after_idx+512;if(end>route_n-1)end=route_n-1;
+ for(int k=after_idx+1;k<end;k++){
+  dist=sat_add32(dist,nav_seg_m(route_lat[k-1],route_lon[k-1],route_lat[k],route_lon[k]));
+  if(dist>ROUTE_NEXT_MAN_MAX_M)return;
+  u32 in=route_seg_phys[k],out=route_seg_phys[k+1];
+  if(in==ROUTE_NOARC||out==ROUTE_NOARC)continue;
+  if(route_seg_arc[k]!=route_seg_arc[k+1]){
+   struct CprBase a,b;
+   if(nav_round_info(k,&a)&&nav_round_info(k+1,&b)){
+    int exits=0,idx=0;
+    if(!(a.flags&4)&&(b.flags&4)&&nav_round_scan_ex(k,0,&exits,&idx)){
+     nav_next_type=MAN_ROUNDABOUT;nav_next_exit=exits;nav_next_m=dist;return;
+    }
+    if((a.flags|b.flags)&4)continue;
+   }
+  }
+  if(dist<ROUTE_NEXT_MAN_MIN_M)continue;
+  int t=nav_turn_type(nav_turn_delta_from(k,after_idx));
+  if(in==out&&t!=MAN_UTURN)continue;
+  if(t!=MAN_NONE){nav_next_type=t;nav_next_exit=0;nav_next_m=dist;return;}
+ }
+}
+static int nav_round_scan(int entry,u32 distance,int joined_midway){int exits=0,idx=0;if(!nav_round_scan_ex(entry,joined_midway,&exits,&idx))return 0;nav_man_type=MAN_ROUNDABOUT;nav_man_exit=exits;nav_man_idx=idx;nav_man_m=distance;nav_next_maneuver_find(idx);return 1;}
+static void nav_maneuver_find(void){nav_maneuver_reset();if(route_status!=R_READY||route_n-route_head<3)return;nav_man_scan_head=route_head;u32 dist=0;int end=route_head+ROUTE_MAN_SCAN_POINTS;if(end>route_n-1)end=route_n-1;struct CprBase first;if(nav_round_info(route_head+1,&first)&&(first.flags&4)&&nav_round_scan(route_head,0,1))return;for(int i=route_head+1;i<end;i++){dist=sat_add32(dist,nav_seg_m(route_lat[i-1],route_lon[i-1],route_lat[i],route_lon[i]));u32 in=route_seg_phys[i],out=route_seg_phys[i+1];if(in==ROUTE_NOARC||out==ROUTE_NOARC)continue;if(route_seg_arc[i]!=route_seg_arc[i+1]){struct CprBase a,b;if(nav_round_info(i,&a)&&nav_round_info(i+1,&b)){if(!(a.flags&4)&&(b.flags&4)&&nav_round_scan(i,dist,0))return;if((a.flags|b.flags)&4)continue;}}int t=nav_turn_type(nav_turn_delta(i));if(in==out&&t!=MAN_UTURN)continue;if(t!=MAN_NONE){nav_man_type=t;nav_man_idx=i;nav_man_m=dist;nav_next_maneuver_find(i);return;}}}
 #include "mobility.h"
+#include "mobility_ml.h"
 #include "traffic.h"
 static const char* nav_man_text(void){static char exit_text[64];if(nav_man_type==MAN_ROUNDABOUT){if(!nav_man_exit)return ui_tr("Roundabout");copystr(exit_text,sizeof(exit_text),ui_tr("Take exit "));append_int(exit_text,sizeof(exit_text),nav_man_exit);return exit_text;}switch(nav_man_type){case MAN_SLIGHT_LEFT:return ui_tr("Slight left");case MAN_LEFT:return ui_tr("Turn left");case MAN_SHARP_LEFT:return ui_tr("Sharp left");case MAN_SLIGHT_RIGHT:return ui_tr("Slight right");case MAN_RIGHT:return ui_tr("Turn right");case MAN_SHARP_RIGHT:return ui_tr("Sharp right");case MAN_UTURN:return ui_tr("U-turn");default:return"";}}
 static void append_nav_distance(char*b,unsigned cap,u32 m){if(!display_imperial()){append_metric_distance(b,cap,m,1);return;}if(m<70u){appendstr(b,cap,ui_tr("Now"));return;}if(m<1000u){u32 yd=udiv32(m*1094u+500u,1000u);yd=udiv32(yd+5u,10u)*10u;append_int(b,cap,(int)yd);appendstr(b,cap," yd");return;}u32 mi10=udiv32(m*10u+804u,1609u);append_int(b,cap,(int)(mi10/10u));appendstr(b,cap,".");char d[2]={(char)('0'+mi10%10u),0};appendstr(b,cap,d);appendstr(b,cap," mi");}
@@ -2210,10 +2276,22 @@ static void draw_manoeuvre_card(void){if(nav_man_type==MAN_NONE||nav_man_idx<0||
 static u32 route_path_m(void){return sat_add32(route_result_m,atlas_future_m);}
 static void append_miles(char*b,unsigned cap,u32 m){if(!display_imperial()){append_metric_distance(b,cap,m,0);return;}u32 mi10=udiv32(m*10u+804u,1609u);append_int(b,cap,(int)(mi10/10u));appendstr(b,cap,".");char d[2]={(char)('0'+mi10%10u),0};appendstr(b,cap,d);appendstr(b,cap," mi");}
 static void append_eta(char*b,unsigned cap,u32 ds){u32 min=udiv32(ds+300u,600u);if(min>=60u){append_int(b,cap,(int)(min/60u));appendstr(b,cap,"h ");append_int(b,cap,(int)(min%60u));appendstr(b,cap,"min");}else{append_int(b,cap,(int)min);appendstr(b,cap," min");}}
+static void append_eta_range(char*b,unsigned cap,u32 ds,u32 var_ds){
+ if(pref.learn_history&&var_ds>=1800u){
+  u32 lo_ds=ds>var_ds/3u?ds-var_ds/3u:ds;
+  u32 hi_ds=sat_add32(ds,var_ds);
+  u32 lo_m=udiv32(lo_ds+300u,600u),hi_m=udiv32(hi_ds+300u,600u);
+  if(hi_m>=lo_m+3u&&lo_m<60u&&hi_m<120u){
+   append_int(b,cap,(int)lo_m);appendstr(b,cap,"-");append_int(b,cap,(int)hi_m);appendstr(b,cap," min");return;
+  }
+ }
+ append_eta(b,cap,ds);
+}
 static void append_arrival_clock(char*b,unsigned cap,u32 ds){int mt=local_clock_minutes();if(mt<0){appendstr(b,cap,"--:--");return;}u32 add=udiv32(ds+300u,600u);mt=(mt+(int)(add%1440u))%1440;char t[6];t[0]=(char)('0'+mt/600);t[1]=(char)('0'+(mt/60)%10);t[2]=':';t[3]=(char)('0'+(mt%60)/10);t[4]=(char)('0'+mt%10);t[5]=0;appendstr(b,cap,t);}
 static void route_draw_window(int*ps,int*pe){int first=route_head+1,last=route_n-1;if(first>last){*ps=1;*pe=0;return;}if(last-first+1<=ROUTE_DRAW_MAX_SEGMENTS){*ps=first;*pe=last;return;}if(!freecam){*ps=first;*pe=first+ROUTE_DRAW_MAX_SEGMENTS-1;if(*pe>last)*pe=last;return;}s32 vl=view_lat(),vo=view_lon();int cq=coslat_q15(vl),best=first;u32 bd=0xffffffffu;for(int i=first;i<=last;i+=64){s32 dx=lon_scale(route_lon[i]-vo,cq),dy=route_lat[i]-vl;u32 d=square_distance(dx,dy);if(d<bd){bd=d;best=i;}}{s32 dx=lon_scale(route_lon[last]-vo,cq),dy=route_lat[last]-vl;u32 d=square_distance(dx,dy);if(d<bd)best=last;}int half=ROUTE_DRAW_MAX_SEGMENTS/2,s=best-half;if(s<first)s=first;int e=s+ROUTE_DRAW_MAX_SEGMENTS-1;if(e>last){e=last;s=e-ROUTE_DRAW_MAX_SEGMENTS+1;if(s<first)s=first;}*ps=s;*pe=e;}
-/* Segment i runs from vertex i-1 to i. Highlight only the bypassed interval. */
-static int route_overlay_slot(int i,int offered){return offered&&i>traffic_begin_idx&&i<=traffic_join_idx&&!traffic_main_shared(i)?1:0;}
+/* Segment i runs from vertex i-1 to i. Highlight only the bypassed interval
+ * for traffic diversions; usual-route proposals keep the active route normal. */
+static int route_overlay_slot(int i,int offered){return offered&&ml_offer_kind==0&&i>traffic_begin_idx&&i<=traffic_join_idx&&!traffic_main_shared(i)?1:0;}
 static void draw_route_overlay(int z){
  if(route_status!=R_READY||route_n-route_head<2)return;
  int s,e;route_draw_window(&s,&e);if(s>e)return;
@@ -2355,6 +2433,21 @@ static void freecam_orientation_anim_update(u32 now);
  * User MAP toggling uses leave_freecam() below so it gets the reverse animation. */
 static void recenter_map(void){freecam=0;map_tilt_q8=256;freecam_course_valid=0;freecam_anim_mode=FC_ANIM_NONE;freecam_anim_at=0;freecam_anim_serial++;freecam_buffered=0;freecam_anim_tilt_from=256;zoom_override=-1;if(pref.autozoom)auto_zoom_level=-1;}
 static void enter_freecam(void){if(freecam||freecam_transition_active()||(!gps.fix&&!track_valid))return;int z=active_zoom();int c=map_course();if(c<0||c>=360)c=0;freecam_course=c;freecam_course_valid=1;/* Tilt still animates even when already facing north. */freecam_anim_mode=FC_ANIM_TO_NORTH;freecam_anim_serial++;freecam_buffered=0;freecam_anim_from=c;freecam_anim_at=hud_now_ms();freecam_anim_tilt_from=256;map_tilt_q8=256;freecam=1;freecam_zoom=z;zoom_override=-1;/* MAP entry begins exactly at the car's current/last tracked position. */cam_lat=car_lat();cam_lon=car_lon();}
+static void enter_freecam_at(s32 lat,s32 lon,int z){
+ int lo=mapok?(int)mh.minlvl:0;
+ if(z<lo)z=lo;if(z>MAX_EXPLORE_ZOOM)z=MAX_EXPLORE_ZOOM;
+ freecam=1;freecam_zoom=z;zoom_override=-1;
+ freecam_course=0;freecam_course_valid=1;map_tilt_q8=0;
+ freecam_anim_mode=FC_ANIM_NONE;freecam_anim_at=0;freecam_anim_serial++;freecam_buffered=0;
+ cam_lat=lat;cam_lon=lon;render_background_dirty=1;
+}
+static int diversion_preview_matches(void){
+ return diversion_preview_active&&traffic_offer_valid()&&
+  diversion_preview_revision==traffic_offer_revision&&
+  diversion_preview_serial==traffic_offer_serial&&
+  diversion_preview_begin==traffic_begin_idx&&
+  diversion_preview_join==traffic_join_idx;
+}
 static void leave_freecam(void){
  if(!freecam)return;
  /* Confirmation may arrive before Explore has finished entering. Reverse from
@@ -2559,7 +2652,7 @@ static struct PhoneDestination phone_dest;static int phone_seq_seen_valid=0;stat
 #define ARRIVAL_MODAL_MS 5000u
 static u32 arrival_modal_deadline=0;
 #define NOTICE_MS 1800u
-static char notice_text[40]; /* Latest action, also used by native checks. */
+static char notice_text[96]; /* Latest action, also used by native checks. */
 
 static int suggested_place(struct SavedPlace*out);
 #include "hud.h"
@@ -2584,6 +2677,8 @@ static int diversion_saving_box(int z,int w,struct HudBox*b){
  for(unsigned i=0;i<sizeof(xs)/sizeof(xs[0]);i++){
   int l=xs[i],t=ys[i];
   if(t<40||t+h>HUD_BOTTOM_Y-8||l<4||l+w>W-4)continue;
+  struct HudBox next_turn=hud_tween[HC_TURN_NEXT].target.box;
+  if(next_turn.a&&l<next_turn.x+next_turn.w+4&&l+w>next_turn.x-4&&t<next_turn.y+next_turn.h+4&&t+h>next_turn.y-4)continue;
   if(l<carx+19&&l+w>carx-19&&t<cary+19&&t+h>cary-19)continue;
   if(l<joinx+6&&l+w>joinx-6&&t<joiny+6&&t+h>joiny-6)continue;
   if(!label_free(l-2,t-2,l+w+2,t+h+2))continue;
@@ -2601,6 +2696,7 @@ static void draw_diversion_markers(int z){
    map_dot_q8(x,y,C_ROUTE_DIVERSION,5);map_dot_q8(x,y,C_MAP_BG,3);
   }
  }
+ if(traffic_saving<600u)return;
  char text[112];diversion_saving_text(text,sizeof(text));
  struct HudBox badge;int w=width(text,0)+18;
  if(w<=164&&diversion_saving_box(z,w,&badge)){
@@ -2614,10 +2710,60 @@ static void draw_diversion_markers(int z){
   hud_ink_alpha=old;
  }
 }
+static int trip_matches_poi(s32 lat,s32 lon){
+ if(!trip.active||trip.count<1)return 0;
+ for(int i=trip.active_idx;i<trip.count;i++){
+  if(geo_seg_m(lat,lon,trip.target[i].lat,trip.target[i].lon)<=35u)return 1;
+ }
+ return 0;
+}
+static int poi_find_for_trip_target(int i,int ex,int ey){
+ if(!trip.active||i<trip.active_idx||i>=trip.count)return -1;
+ int best=-1;u32 best_d=0xffffffffu;
+ for(int p=0;p<poi_visible;p++){
+  u32 d=0;int hit=0;
+  if(poi_labels[p].has_geo){
+   d=geo_seg_m(trip.target[i].lat,trip.target[i].lon,poi_labels[p].lat,poi_labels[p].lon);
+   if(d<=35u)hit=1;
+   else if(iabs32(ex-poi_labels[p].x)<=9&&iabs32(ey-poi_labels[p].y)<=9&&d<=80u)hit=1;
+  }else if(iabs32(ex-poi_labels[p].x)<=9&&iabs32(ey-poi_labels[p].y)<=9){
+   d=(u32)(iabs32(ex-poi_labels[p].x)+iabs32(ey-poi_labels[p].y));hit=1;
+  }
+  if(hit&&d<best_d){best_d=d;best=p;}
+ }
+ return best;
+}
+static void trip_target_endpoint(int i,s32*lat,s32*lon){
+ *lat=trip.target[i].lat;*lon=trip.target[i].lon;
+ if(i==trip.active_idx&&route_status==R_READY&&route_n>=2&&!atlas_future_cost){
+  *lat=route_lat[route_n-1];*lon=route_lon[route_n-1];
+ }
+}
+static void poi_trip_prepare(int z){
+ memzero(poi_trip_tinted,sizeof(poi_trip_tinted));
+ if(!trip.active||trip.count<1)return;
+ for(int i=trip.active_idx;i<trip.count;i++){
+  s32 lat,lon;trip_target_endpoint(i,&lat,&lon);
+  int x,y;map_project_q8(lat,lon,z,&x,&y);
+  int p=poi_find_for_trip_target(i,x>>8,y>>8);
+  if(p>=0)poi_trip_tinted[p]=1;
+ }
+}
+static void draw_trip_markers(int z){
+ if(!trip.active||trip.count<1)return;
+ for(int i=trip.active_idx;i<trip.count;i++){
+  s32 lat,lon;trip_target_endpoint(i,&lat,&lon);
+  int x,y;map_project_q8(lat,lon,z,&x,&y);
+  if(poi_find_for_trip_target(i,x>>8,y>>8)>=0)continue;
+  if(x<6*256||x>(W-6)*256||y<6*256||y>(H-6)*256)continue;
+  map_dot_q8(x,y,C_ROUTE,5);map_dot_q8(x,y,C_MAP_BG,3);
+  if(i==trip.count-1)map_dot_q8(x,y,C_ROUTE,1);
+ }
+}
 static void draw_map_at_zoom(int z){
  perspective_scale_update();
  if(!freecam)drive_label_prepare(z);
- draw_map_geometry(z);draw_route_overlay(z);if(!freecam)drive_label_render();poi_render();draw_diversion_markers(z);
+ draw_map_geometry(z);draw_route_overlay(z);if(!freecam)drive_label_render();poi_trip_prepare(z);poi_render();draw_diversion_markers(z);draw_trip_markers(z);
  draw_car_marker(z);draw_explore_crosshair();
 }
 static void draw_map_background(void){draw_map_at_zoom(active_zoom());}
@@ -2643,7 +2789,7 @@ static void add_recent(const char*name,s32 lat,s32 lon){int found=-1;for(int i=0
 static int fave_contains(s32 lat,s32 lon){for(int i=0;i<nfaves;i++)if(same_place(&faves[i],lat,lon))return i;return-1;}
 static void notice_success(const char*s);
 static void add_fave_place(const char*name,s32 lat,s32 lon){struct SavedPlace p;p.lat=lat;p.lon=lon;copystr(p.name,sizeof(p.name),name&&name[0]?name:"MAP POINT");if(fave_contains(lat,lon)>=0)return;if(nfaves<FAVE_MAX)faves[nfaves++]=p;else{for(int i=1;i<FAVE_MAX;i++)faves[i-1]=faves[i];faves[FAVE_MAX-1]=p;}write_places(FAVES_PATH,faves,nfaves);notice_success(ui_tr("Favourite saved"));}
-static int fave_needs_name(const char*name){return !name||!name[0]||streq(name,"MAP POINT");}
+static int fave_needs_name(const char*name){return !name||!name[0]||streq(name,"MAP POINT")||streq(name,"FUEL")||streq(name,"PARKING")||streq(name,"HOSPITAL");}
 static void add_fave_or_name(const char*name,s32 lat,s32 lon){if(fave_needs_name(name)){keyboard_open_fave_name(lat,lon);screen=SCR_KEY;}else add_fave_place(name,lat,lon);}
 static void add_fave(const struct SavedPlace*p){if(p)add_fave_or_name(p->name,p->lat,p->lon);}
 static void remove_fave(int idx){if(idx<0||idx>=nfaves)return;for(int i=idx+1;i<nfaves;i++)faves[i-1]=faves[i];nfaves--;write_places(FAVES_PATH,faves,nfaves);notice_success(ui_tr("Favourite removed"));}
@@ -2678,7 +2824,17 @@ static void load_trip(void){
 }
 static void trip_schedule_route(void){arrival_ticks=0;trip_need_route=1;trip_route_defer=1;route_cancel();}
 static void trip_request_route(void){struct TripTarget*t=trip_current();arrival_ticks=0;if(!t||trip.paused){trip_need_route=0;trip_route_defer=0;return;}if(!gps.fix){trip_need_route=1;route_cancel();return;}trip_need_route=0;trip_route_defer=0;route_start(t->lat,t->lon);}
-static void set_destination(const char*name,s32 lat,s32 lon){memzero(&trip,sizeof(trip));trip.active=1;trip.count=1;trip.active_idx=0;trip.target[0].lat=lat;trip.target[0].lon=lon;copystr(trip.target[0].name,sizeof(trip.target[0].name),name&&name[0]?name:"MAP POINT");save_trip();add_recent(trip.target[0].name,lat,lon);trip_schedule_route();notice_success(ui_tr("Route started"));}
+static void set_destination(const char*name,s32 lat,s32 lon){
+ memzero(&trip,sizeof(trip));trip.active=1;trip.count=1;trip.active_idx=0;trip.target[0].lat=lat;trip.target[0].lon=lon;
+ copystr(trip.target[0].name,sizeof(trip.target[0].name),name&&name[0]?name:"MAP POINT");
+ save_trip();add_recent(trip.target[0].name,lat,lon);trip_schedule_route();
+ ml_slowdown_seen_n=0;ml_check_parking_offer(lat,lon);
+ if(mob_origin_valid||gps.fix){
+  struct MobPoint org=mob_origin_valid?mob_live.origin:(struct MobPoint){car_lat(),car_lon()};
+  ml_check_stop_offer(org,(struct MobPoint){lat,lon},mob_time(hud_now_ms()));
+ }else ml_stop_valid=0;
+ notice_success(ui_tr("Route started"));
+}
 static void mobility_append_coord(char*b,unsigned cap,s32 value){
  if(value<0){appendstr(b,cap,"-");value=-value;}append_int(b,cap,value/100000);appendstr(b,cap,".");
  char digits[6];for(int i=4;i>=0;i--){digits[i]=(char)('0'+value%10);value/=10;}digits[5]=0;appendstr(b,cap,digits);
@@ -2788,11 +2944,13 @@ static void mobility_service(u32 now){
  int prev_offer=traffic_offer_valid(),prev_warn=traffic_warn;u32 prev_saving=traffic_saving;
  traffic_service(now);
  frequent_startup_service(now,fresh);
+ ml_dirty_service(now);
  if(prev_offer!=traffic_offer_valid()||prev_warn!=traffic_warn||prev_saving!=traffic_saving)render_background_dirty=1;
 }
-static void clear_trip(void){memzero(&trip,sizeof(trip));save_trip();arrival_ticks=0;trip_need_route=trip_route_defer=0;route_cancel();}
-static int trip_add_stop(const char*name,s32 lat,s32 lon){if(!trip.active||trip.count<1||trip.count>=TRIP_MAX_TARGETS)return 0;int ins=trip.count-1;for(int i=trip.count;i>ins;i--)trip.target[i]=trip.target[i-1];trip.target[ins].lat=lat;trip.target[ins].lon=lon;copystr(trip.target[ins].name,sizeof(trip.target[ins].name),name&&name[0]?name:"MAP POINT");trip.count++;if(ins==trip.active_idx)trip_schedule_route();save_trip();notice_success(ui_tr("Stop added"));return 1;}
-static void trip_change_destination(const char*name,s32 lat,s32 lon){if(!trip.active||!trip.count){set_destination(name,lat,lon);return;}int i=trip.count-1;int changed=trip.target[i].lat!=lat||trip.target[i].lon!=lon||!streq(trip.target[i].name,name);trip.target[i].lat=lat;trip.target[i].lon=lon;copystr(trip.target[i].name,sizeof(trip.target[i].name),name&&name[0]?name:"MAP POINT");add_recent(trip.target[i].name,lat,lon);save_trip();if(i==trip.active_idx)trip_schedule_route();if(changed)notice_success(ui_tr("Destination changed"));}
+static void clear_trip(void){memzero(&trip,sizeof(trip));save_trip();arrival_ticks=0;trip_need_route=trip_route_defer=0;ml_guided_target_valid=0;ml_park_valid=0;ml_stop_valid=0;ml_slowdown_seen_n=0;route_cancel();}
+static int trip_add_stop(const char*name,s32 lat,s32 lon){if(!trip.active||trip.count<1||trip.count>=TRIP_MAX_TARGETS)return 0;int ins=trip.count-1;for(int i=trip.count;i>ins;i--)trip.target[i]=trip.target[i-1];trip.target[ins].lat=lat;trip.target[ins].lon=lon;copystr(trip.target[ins].name,sizeof(trip.target[ins].name),name&&name[0]?name:"MAP POINT");trip.count++;if(ins==trip.active_idx)trip_schedule_route();ml_stop_valid=0;if(pref.learn_history&&(mob_origin_valid||gps.fix)){struct MobPoint org=mob_origin_valid?mob_live.origin:(struct MobPoint){car_lat(),car_lon()};struct MobPoint dst={trip.target[trip.count-1].lat,trip.target[trip.count-1].lon};ml_record_stop_habit(org,(struct MobPoint){lat,lon},dst,mob_time(hud_now_ms()),trip.target[ins].name);ml_mark_dirty(hud_now_ms());}save_trip();notice_success(ui_tr("Stop added"));return 1;}
+static void trip_change_destination_notice(const char*name,s32 lat,s32 lon,const char*notice){if(!trip.active||!trip.count){set_destination(name,lat,lon);return;}int i=trip.count-1;int changed=trip.target[i].lat!=lat||trip.target[i].lon!=lon||!streq(trip.target[i].name,name);trip.target[i].lat=lat;trip.target[i].lon=lon;copystr(trip.target[i].name,sizeof(trip.target[i].name),name&&name[0]?name:"MAP POINT");add_recent(trip.target[i].name,lat,lon);save_trip();if(i==trip.active_idx)trip_schedule_route();if(changed&&notice&&notice[0])notice_success(notice);}
+static void trip_change_destination(const char*name,s32 lat,s32 lon){trip_change_destination_notice(name,lat,lon,ui_tr("Destination changed"));}
 static void phone_destination_apply(void){if(menu_blocks_phone())return;if(coordinates_active&&screen!=SCR_COORDINATES&&!(screen==SCR_KEY&&kbd_action==KBD_NAME_COORDINATES))coordinates_active=0;if(!phone_dest.valid||coordinates_active)return;int action=phone_dest.action=='S'?DEST_PICK_ADD_STOP:DEST_PICK_NONE;if(modal!=MOD_NONE)return;if(action==DEST_PICK_ADD_STOP){if(!trip.active||!trip.count)notice_fail(ui_tr("No active route"));else if(trip.count>=TRIP_MAX_TARGETS)notice_fail(ui_tr("Trip full - stop not added"));else if(trip_add_stop(phone_dest.name,phone_dest.lat,phone_dest.lon)){add_recent(phone_dest.name,phone_dest.lat,phone_dest.lon);}else notice_fail(ui_tr("Stop not added"));}
   else{set_destination(phone_dest.name,phone_dest.lat,phone_dest.lon);screen=SCR_MAP;recenter_map();}
   phone_destination_clear();}
@@ -2944,7 +3102,7 @@ static void settings_key(int code){
   case 0:{
    int next=pref.bright+d*10;if(next<10)next=10;if(next>100)next=100;
    if(next==pref.bright)return;
-   pref.bright=next;apply_brightness();break;
+   pref.bright=next;apply_brightness();ml_note_brightness(theme_resolved,pref.bright);break;
   }
   case 1:
    pref.theme+=d;if(pref.theme<THEME_DAY)pref.theme=THEME_AUTO;if(pref.theme>THEME_AUTO)pref.theme=THEME_DAY;
@@ -2963,8 +3121,8 @@ static void settings_key(int code){
   case 7:pref.language=(pref.language+d+UI_LANGUAGE_COUNT)%UI_LANGUAGE_COUNT;break;
   case 10:pref.top_swap=!pref.top_swap;break;
   case 11:pref.bottom_swap=!pref.bottom_swap;break;
-   case 12:pref.learn_history=!pref.learn_history;if(!pref.learn_history){mob_stop_recording();traffic_invalidate();traffic_learning_reset();}break;
-   case 13:pref.destination_predictions=!pref.destination_predictions;if(!pref.destination_predictions)mob_suggest_valid=0;mob_predict_ms=0;break;
+   case 12:pref.learn_history=!pref.learn_history;if(!pref.learn_history){mob_stop_recording();traffic_invalidate();traffic_learning_reset();ml_park_valid=ml_stop_valid=0;ml_route_var_ds=0;ml_offer_kind=0;}break;
+   case 13:pref.destination_predictions=!pref.destination_predictions;if(!pref.destination_predictions){mob_suggest_valid=0;ml_park_valid=ml_stop_valid=0;}mob_predict_ms=0;break;
    case 14:pref.diversions=!pref.diversions;traffic_invalidate();break;
    case 15:return;
   case 8:case 9:{
@@ -2981,6 +3139,7 @@ static void settings_key(int code){
 }
 
 static int modal_action_count(void){if(modal==MOD_RECENT)return trip.active?3:2;if(modal==MOD_FAVE)return trip.active?4:3;if(modal==MOD_TARGET){if(modal_index>=0&&modal_index<trip.count-1)return 3;return 2;}if(modal==MOD_SOURCE_PICK)return 4;return 0;}
+#include "nearby_pois.h"
 #include "popups.h"
 #include "menu_keyboard.h"
 #include "menu_layout.h"
@@ -2990,6 +3149,7 @@ static int modal_action_count(void){if(modal==MOD_RECENT)return trip.active?3:2;
 static void draw(void){
  u32 now=hud_now_ms();freecam_orientation_anim_update(now);clock_service();region_service();camera_service();refresh_theme();
  hud_prepare(active_zoom(),now,1);hud_driver_prepare(now);menu_prepare(now);draw_map_background();
+ hud_glass_background_changed();
  hud_glass_frame_begin();menu_draw(hud_now_ms());draw_modal();hud_glass_frame_end();boot_fade_apply(hud_now_ms());fb_flush();
 }
 
@@ -3023,6 +3183,7 @@ if(modal!=MOD_NONE){
           if(accepted)add_recent("MAP POINT",pending_lat,pending_lon);else notice_fail(ui_tr("Stop not added"));
         }else set_destination("MAP POINT",pending_lat,pending_lon);
         if(accepted){
+          diversion_preview_clear();
           screen=SCR_MAP;trip_pane=1;trip_right_focus=0;leave_freecam();
           if(hud_navigation.kind==HUD_EXPLORE)hud_navigation.kind=HUD_NONE;
         }
@@ -3050,7 +3211,7 @@ if(screen==SCR_KEY&&kbd_action==KBD_NAME_COORDINATES&&code==K_BACK){coordinates_
 if(code==K_BACK){
   if(screen==SCR_TRIP&&trip_pick_mode!=DEST_PICK_NONE){trip_pick_mode=DEST_PICK_NONE;trip_pane=1;trip_right_focus=0;return;}
   if(screen==SCR_MAP&&!freecam&&(bt_control_mode||bt_controls_available())){
-    bt_control_mode=!bt_control_mode;hud_diversion_invited=0;bt_transport_press.kind=0;return;
+    bt_control_mode=!bt_control_mode;hud_diversion_invited=hud_parking_invited=hud_stop_invited=0;bt_transport_press.kind=0;return;
   }
   if(screen==SCR_KEY){screen=SCR_TRIP;return;}if(screen==SCR_MENU)screen=SCR_MAP;else if(screen!=SCR_MAP)screen=SCR_MENU;return;
 }
@@ -3067,6 +3228,13 @@ if(screen==SCR_MAP){
     if(code==K_UP||code==K_DOWN)return;
   }
   if(code==K_MAP){bt_control_mode=0;
+    if(freecam&&diversion_preview_active){
+      int valid=diversion_preview_matches(),from_map=diversion_preview_from_map,kind=diversion_preview_kind;
+      diversion_preview_clear();recenter_map();
+      if(valid)menu_open_diversion(from_map,hud_now_ms());
+      else notice_fail(ui_tr(kind==1?"Route unavailable":"Diversion unavailable"));
+      return;
+    }
     if(!freecam&&pref.autozoom&&zoom_override>=0){zoom_override=-1;auto_zoom_level=-1;hud_pulse(&hud_navigation,HUD_AUTO_ZOOM,1800);return;}
     int was=freecam;toggle_freecam();if(was!=freecam)hud_pulse(&hud_navigation,freecam?HUD_EXPLORE:(pref.autozoom?HUD_AUTO_ZOOM:HUD_MANUAL_ZOOM),1800);return;}
   if(code==K_ENTER){if(freecam){pending_lat=cam_lat;pending_lon=cam_lon;pending_point_stop=trip.active?1:0;modal=MOD_ROUTE_POINT;modal_choice=0;}else hud_show_driving_info();return;}
@@ -3077,7 +3245,7 @@ if(screen==SCR_MAP){
     int next=z+(up?1:-1);
     if(next>=lo&&next<=hi){
       if(freecam)freecam_zoom=next;
-      else if(pref.autozoom)zoom_override=next;
+      else if(pref.autozoom){zoom_override=next;ml_note_zoom_override(gps.mph10,up?1:-1);}
       else{manual_zoom=next;prefs_mark_dirty();}
     }
     if(!freecam&&next>=lo&&next<=hi)hud_pulse(&hud_navigation,HUD_MANUAL_ZOOM,1800);return;
@@ -3116,17 +3284,23 @@ static void key_handle(int code){
  boot_fade_cancel();
  if(code==K_CONSOLE_THEME){pref.theme=(pref.theme+1)%3;prefs_mark_dirty();refresh_theme();render_background_dirty=1;return;}
  if(code==K_CONSOLE_INFO){if(screen==SCR_MAP&&modal==MOD_NONE)hud_show_driving_info();return;}
- if(code==K_CONSOLE_TRIP){if(modal!=MOD_NONE)return;coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;menu_open(P_TRIP,trip.active_idx,hud_now_ms());return;}
- if(code==K_CONSOLE_GPS){if(modal!=MOD_NONE)return;coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;gps_panel_toggle(hud_now_ms());return;}
+ if(code==K_CONSOLE_TRIP){if(modal!=MOD_NONE)return;diversion_preview_clear();coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;menu_open(P_TRIP,trip.active_idx,hud_now_ms());return;}
+ if(code==K_CONSOLE_GPS){if(modal!=MOD_NONE)return;diversion_preview_clear();coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;gps_panel_toggle(hud_now_ms());return;}
  menu_sync(hud_now_ms());
  if(modal==MOD_NONE&&(code==K_MENU||screen!=SCR_MAP)){
-  keydiag(code);if(code==K_MENU&&screen==SCR_MAP)menu_open(P_HOME,0,hud_now_ms());else menu_dispatch(code,hud_now_ms());return;
+  keydiag(code);if(code==K_MENU&&screen==SCR_MAP){diversion_preview_clear();menu_open(P_HOME,0,hud_now_ms());}else menu_dispatch(code,hud_now_ms());return;
  }
  if(code==K_ENTER&&hud_suggestion_shortcut_ready()){
   hud_suggestion_invited=0;bt_control_mode=0;menu_open_suggestion(hud_now_ms());return;
  }
  if(code==K_ENTER&&hud_diversion_shortcut_ready()){
   hud_diversion_invited=0;bt_control_mode=0;menu_open_diversion(1,hud_now_ms());return;
+ }
+ if(code==K_ENTER&&hud_parking_shortcut_ready()){
+  hud_parking_invited=0;bt_control_mode=0;menu_open_parking(hud_now_ms());return;
+ }
+ if(code==K_ENTER&&hud_stop_shortcut_ready()){
+  hud_stop_invited=0;bt_control_mode=0;menu_open_stop(hud_now_ms());return;
  }
  code=control_key(code);if(!code)return;
  int dirty=render_background_dirty,old_screen=screen,old_popup=popup_requested_key();
@@ -3360,13 +3534,13 @@ static void run(void){
  cliou_load("./clio843/maps/fonts.cpf");
 #endif
 #endif
- hardware_load_bluetooth();load_prefs();debug_state_write();load_last_fix();mob_load();mob_fave_load();if(pref.learn_history){mob_session_begin(s_now_ms(),lastfix_valid,lastfix_lat,lastfix_lon);frequent_arm_startup();}seed_boot_theme();if(!pref.debug)remove_stale_logs();load_last_audio();nrecents=read_places(RECENT_PATH,recents,RECENT_MAX);nfaves=read_places(FAVES_PATH,faves,FAVE_MAX);load_trip();apply_brightness();load_map();load_timezones();load_regions();load_cameras();seed_boot_map_view();load_route_data();s_unlink(BT_CMD_PATH);bt_write_small(BT_ACTIVE_PATH,"0\n");bt_active_written=0;bt_name_cache_load();bt_poll_status();if(trip.active){modal=MOD_RESUME_TRIP;modal_choice=0;}open_inputs();
+ hardware_load_bluetooth();load_prefs();debug_state_write();load_last_fix();mob_load();mob_fave_load();ml_load();if(pref.learn_history){mob_session_begin(s_now_ms(),lastfix_valid,lastfix_lat,lastfix_lon);frequent_arm_startup();}seed_boot_theme();if(!pref.debug)remove_stale_logs();load_last_audio();nrecents=read_places(RECENT_PATH,recents,RECENT_MAX);nfaves=read_places(FAVES_PATH,faves,FAVE_MAX);load_trip();apply_brightness();load_map();load_timezones();load_regions();load_cameras();seed_boot_map_view();load_route_data();s_unlink(BT_CMD_PATH);bt_write_small(BT_ACTIVE_PATH,"0\n");bt_active_written=0;bt_name_cache_load();bt_poll_status();if(trip.active){modal=MOD_RESUME_TRIP;modal_choice=0;}open_inputs();
  control_log("CONSOLE READER",0,csw.fd);
  if(vehicle.enabled)for(int i=0;i<9;i++)control_log("VEHICLE STATUS LISTENER",vehicle_ports[i],vehicle.listen[i]);
   int wdfd=(int)s_open(WD_PATH,O_WRONLY_,0);debug_log(STATE_LOG,"CLIOPLAY GLOBAL " CLIOPLAY_VERSION " START");debug_log(STATE_LOG,qadjmode==7?(qadj_map_ok?"QAD7 PACKET+MMAP QUERY ENABLED":"QAD7 PAGED QUERY ENABLED"):"QADJ FAST QUERY FALLBACK CPR2");{char mb[96];mb[0]=0;appendstr(mb,sizeof(mb),"MMAP QAD=");append_int(mb,sizeof(mb),qadj_map_ok);appendstr(mb,sizeof(mb)," GEOM=");append_int(mb,sizeof(mb),route_geom_map_ok);debug_log(STATE_LOG,mb);}u32 tick=0,next_model=s_now_ms(),next_input=next_model;render_runtime_reset(next_model);
   for(;;){
     u32 now=s_now_ms();int model_due=frame_due(now,next_model);
-    if(power_requested()){boot_fade_cancel();debug_log(STATE_LOG,"POWER REQUEST");bt_write_small(BT_ACTIVE_PATH,"0\n");if(pref.learn_history)(void)mob_finish(s_now_ms());if(prefs_dirty)save_prefs();save_last_audio();if(gps.fix)remember_live_fix();save_last_fix();save_trip();render_background_dirty=1;render_runtime_step(hud_now_ms(),1);s_sync();s_nanosleep(0,400000000);vehicle_close();if(wdfd>=0)s_close(wdfd);for(int i=0;i<INPUT_MAX;i++)if(infd[i]>=0)s_close(infd[i]);if(gpsfd>=0)s_close(gpsfd);if(audiofd>=0)s_close(audiofd);if(mapfd>=0)s_close(mapfd);if(qadjfd>=0)s_close(qadjfd);if(routefd>=0)s_close(routefd);return;}
+    if(power_requested()){boot_fade_cancel();debug_log(STATE_LOG,"POWER REQUEST");bt_write_small(BT_ACTIVE_PATH,"0\n");if(pref.learn_history){(void)mob_finish(s_now_ms());if(ml_dirty)(void)ml_save();}if(prefs_dirty)save_prefs();save_last_audio();if(gps.fix)remember_live_fix();save_last_fix();save_trip();render_background_dirty=1;render_runtime_step(hud_now_ms(),1);s_sync();s_nanosleep(0,400000000);vehicle_close();if(wdfd>=0)s_close(wdfd);for(int i=0;i<INPUT_MAX;i++)if(infd[i]>=0)s_close(infd[i]);if(gpsfd>=0)s_close(gpsfd);if(audiofd>=0)s_close(audiofd);if(mapfd>=0)s_close(mapfd);if(qadjfd>=0)s_close(qadjfd);if(routefd>=0)s_close(routefd);return;}
     if(frame_due(now,next_input)){poll_csw();poll_keys();next_input=frame_after(next_input,now,33u);}
     if(model_due){
       next_model=frame_after(next_model,now,FRAME_MODEL_MS);
@@ -3467,45 +3641,4 @@ screen=SCR_MAP;
 #endif
 draw();return 0;}
 #endif
-#ifndef HOST_TEST
-/* Freestanding ARM EABI compiler-runtime shims for the device build. */
-void *memcpy(void *d0,const void *s0,unsigned n){u8*d=(u8*)d0;const u8*s=(const u8*)s0;while(n--)*d++=*s++;return d0;}
-__attribute__((naked)) void __aeabi_uidivmod(void){__asm__ volatile(
-  "cmp r1,#0\n"
-  "beq 2f\n"
-  "mov r2,#0\n"
-  "mov r3,#0\n"
-  "mov r12,#32\n"
-  "1:\n"
-  "mov r3,r3,lsl #1\n"
-  "orr r3,r3,r0,lsr #31\n"
-  "mov r0,r0,lsl #1\n"
-  "cmp r3,r1\n"
-  "subcs r3,r3,r1\n"
-  "adc r2,r2,r2\n"
-  "subs r12,r12,#1\n"
-  "bne 1b\n"
-  "mov r0,r2\n"
-  "mov r1,r3\n"
-  "bx lr\n"
-  "2:\n"
-  "mov r0,#0\n"
-  "mov r1,#0\n"
-  "bx lr\n");}
-__attribute__((naked)) void __aeabi_uidiv(void){__asm__ volatile("b __aeabi_uidivmod\n");}
-__attribute__((naked)) void __aeabi_idivmod(void){__asm__ volatile(
-  "push {r4,r5,lr}\n"
-  "mov r4,r0\n"
-  "eor r5,r0,r1\n"
-  "cmp r0,#0\n"
-  "rsblt r0,r0,#0\n"
-  "cmp r1,#0\n"
-  "rsblt r1,r1,#0\n"
-  "bl __aeabi_uidivmod\n"
-  "cmp r5,#0\n"
-  "rsblt r0,r0,#0\n"
-  "cmp r4,#0\n"
-  "rsblt r1,r1,#0\n"
-  "pop {r4,r5,pc}\n");}
-__attribute__((naked)) void __aeabi_idiv(void){__asm__ volatile("b __aeabi_idivmod\n");}
-#endif
+#include "arm_runtime.h"
