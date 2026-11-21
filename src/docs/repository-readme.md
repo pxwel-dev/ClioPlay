@@ -9,7 +9,7 @@
 
 <p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases/tag/Release">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-## Version @@VERSION@@ (Unreleased)
+## Version @@VERSION@@
 
 - **Expanded local on-device ML (100% offline, opt-in):** builds on driving-history learning via a bounded integer-only companion model (`mobility-ml.dat`, wiped by **Clear driving history**) adding personal road-class and cold-weather (`<= 3 °C`) ETA calibration, **`~X-Y min`** ETA reliability ranges, and subtle amber **Frequent slowdown ahead** / **Cold-weather slowdown ahead** braking alerts.
 - **Unambiguous Traffic Diversion vs Usual Route recommendations:** traffic bypasses highlight the slow section in yellow and announce **Traffic diversion available** → **Take traffic diversion?** (**Likely traffic ahead**, **View diversion**, **Diversion selected**), while learned road preferences keep the active route in its normal colour alongside the dashed teal usual road and announce **Usual route available** → **Use usual route?** (**Based on your usual route**, **View route**, **Usual route selected**), with off-route detours during active congestion prevented from polluting permanent route preferences.
