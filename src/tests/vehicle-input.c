@@ -55,7 +55,14 @@ static void console_ui(void){
  screen=SCR_COORDINATES;coordinates.step=COORD_LAT;coordinates.focus=2;key_handle(K_ROTCW);assert(coordinates.focus==3);
  key_handle(K_CONSOLE_TRIP);assert(sheet_page==P_TRIP);
  int old=pref.theme;key_handle(K_CONSOLE_THEME);assert(pref.theme==(old+1)%3);
- screen=SCR_MAP;freecam=0;route_status=R_READY;key_handle(K_CONSOLE_INFO);assert(hud_navigation.kind==HUD_JOURNEY);
+ screen=SCR_MAP;freecam=0;route_status=R_READY;
+ gps.fix=roadctx.valid=1;copystr(roadctx.street,sizeof(roadctx.street),"Quayside");
+ u32 info_at=hud_now_ms();hud_driver_prepare(info_at);hud_driver_prepare(info_at+HUD_ROAD_NAME_MS);
+ assert(!hud_tween[HC_ROAD_NAME].target.box.a);
+ key_handle(K_CONSOLE_INFO);assert(hud_navigation.kind==HUD_JOURNEY);
+ hud_driver_prepare(hud_now_ms());
+ assert(hud_tween[HC_ROAD_NAME].target.box.a&&streq(hud_tween[HC_ROAD_NAME].target.title,"Quayside"));
+ gps.fix=roadctx.valid=0;
  modal=MOD_RESUME_TRIP;key_handle(K_CONSOLE_TRIP);assert(modal==MOD_RESUME_TRIP&&screen==SCR_MAP);modal=MOD_NONE;
  /* An evdev remote stays usable while the independent console queue runs. */
  int fds[2];assert(pipe(fds)==0);fcntl(fds[0],F_SETFL,O_NONBLOCK);

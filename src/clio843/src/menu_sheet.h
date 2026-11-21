@@ -514,11 +514,19 @@ static void name_content(struct HudBox b,int opacity,u32 now){
 }
 static void coord_content(struct HudBox b,int opacity){
  hud_ink_alpha=opacity;title_draw(b,"Coordinates");
- int fw=(b.w-38)/2;
+ int fw=(b.w-38)/2,field_y=b.y+27,field_h=32;
  for(int i=0;i<2;i++){
-  int x=b.x+14+i*(fw+10);menu_tile(x,b.y+27,fw,32,i==coordinates.step,opacity);hud_ink_alpha=opacity;
-  box_text(x+8,b.y+27,fw-16,12,0,ui_tr(i?"Longitude":"Latitude"),i==coordinates.step?C_ACTIVE_TEXT:C_MUTED);
-  box_text(x+8,b.y+39,fw-16,17,1,coordinates.value[i][0]?coordinates.value[i]:"0.00000",i==coordinates.step?C_ACTIVE_TEXT:C_WHITE);
+  int x=b.x+14+i*(fw+10),selected=i==coordinates.step;
+  menu_tile(x,field_y,fw,field_h,selected,opacity);
+  char title[193],value[193];
+  fitted_text(title,ui_tr(i?"Longitude":"Latitude"),0,fw-16);
+  fitted_text(value,coordinates.value[i][0]?coordinates.value[i]:"0.00000",1,fw-16);
+  struct Ink title_ink=*ink_bounds(title,0),value_ink=*ink_bounds(value,1);
+  const int gap=3;
+  int top=field_y+(field_h-title_ink.h-gap-value_ink.h)/2;
+  hud_ink_alpha=opacity;
+  label(x+(fw-title_ink.w)/2-title_ink.l,top-title_ink.t,0,title,selected?C_ACTIVE_TEXT:C_MUTED,0);
+  label(x+(fw-value_ink.w)/2-value_ink.l,top+title_ink.h+gap-value_ink.t,1,value,selected?C_ACTIVE_TEXT:C_WHITE,0);
  }
  /* Reserve a dedicated warning row ABOVE the keypad; in a compact sheet
   * putting the message at b.y+b.h used to clip it below the glass. */

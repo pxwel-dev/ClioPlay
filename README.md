@@ -14,6 +14,7 @@
 - Bluetooth playback now uses a 200 ms prefill.
 - Animations and steady HUD updates target 20 FPS. ClioPlay prepares Explore rotation and parked overlay transitions ahead of playback; the menu resizes alongside taller notices. Routing calculations still temporarily cap ClioPlay to 5 FPS to allow the single core 400mhz CPU maximum headroom for calculations. 
 - Trip footer buttons, menu lists, dialogs and keyboards wrap around. Use the arrows to change Trip tabs or select Cancel route on the footer.
+- Press Centre / OK to briefly show the current road name and, during guidance, your ETA.
 
 See [version history](CHANGELOG.md) for implemented changes by version.
 
@@ -135,7 +136,7 @@ upper-right console buttons act as the remote's soft keys.
 | **MAP** | **MAP** | Restore Auto zoom after temporary manual zoom; otherwise switch between driving and map browsing, or return to driving from a menu. |
 | **MENU** | **MENU** | Open the menu for Trip, Bluetooth and Settings. |
 | **BACK** | **BACK** | Go back or dismiss a dialog. On the driving map with Bluetooth audio selected and a phone connected, toggle **BT CTRL**. |
-| **Centre / OK** | **Press the knob** | On the driving map, show ETA and remaining distance, or heading without a route. In map browsing, select the crosshair point. In **BT CTRL**, play/pause. In menus, select or confirm. |
+| **Centre / OK** | **Press the knob** | On the driving map, briefly show the current road name and, during guidance, the estimated time and distance remaining. In map browsing, select the crosshair point. In **BT CTRL**, play/pause. In menus, select or confirm. |
 | **Up / Down** | **Joystick up / down** | Enter map browsing and pan, or move through menu rows. |
 | **Left / Right** | **Joystick left / right** | Enter map browsing and pan, change tabs/options/settings, or select dialog choices. In **BT CTRL**, previous/next track. |
 | **Left soft key** | **Upper-left button** | Zoom out; delete a character in coordinate/name entry. |
@@ -148,14 +149,14 @@ choose a row, use the joystick left/right to change its value, and press for
 the row's OK action. Back returns to the category list.
 
 Console shortcuts: **DEST** opens Trip; **LIGHT** cycles Day/Night/Auto;
-**INFO** and **REPEAT** show the journey overview on the map (heading without a
-route). REPEAT displays information; it does not speak instructions. Resume and
-arrival prompts must still be confirmed. No long press is needed for any remote action.
+**INFO** and **REPEAT** show the current road name on the driving map and add
+the journey estimate during guidance. Resume and arrival prompts must still be
+confirmed. No long press is needed for any remote action.
 
 If you adjust the zoom while Auto zoom is enabled, **MAP** restores Auto zoom
 without entering Explore. Press **MAP** again to enter Explore, or use an arrow
-to enter Explore and pan directly. **OK** shows the ETA during guidance, including
-while temporary Manual zoom is active.
+to enter Explore and pan directly. **OK** shows the road name and, during
+guidance, the ETA. This also works during temporary Manual zoom.
 
 See the [full remote and console controls guide](src/README.md#remote-and-console-controls) for actions in
 each screen, including settings, pairing and the favourite keyboard.
@@ -206,4 +207,4 @@ Original ClioPlay development includes:
 
 Third-party software and dependencies retain their respective licences and attribution notices, as documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-<sub>Release files refreshed 20 November 2026 (Europe/London).</sub>
+<sub>Release files refreshed 21 November 2026 (Europe/London).</sub>

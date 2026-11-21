@@ -1,7 +1,7 @@
 # Interface languages
 
 Fixed notifications, turn instructions, camera labels and route states use sentence
-case. System acronyms such as GPS, ETA, BT, AUX and FM, units and brand names retain their normal spelling. Compass headings use local direction abbreviations.
+case. System acronyms such as GPS, ETA, BT, AUX and FM, units and brand names retain their normal spelling.
 
 The language setting changes interface text only. Road/destination names are kept
 as received, except for the reserved internal unnamed-place markers MAP POINT

@@ -49,9 +49,10 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
 
 - **Driving display:** the map fills the screen. The clock shows the outside
   temperature when a valid reading is available. Audio, volume, connection and
-  navigation updates animate in as temporary notices. A new road name appears
-  briefly in the centre and shares its pill with any camera warning. The speed
-  and turn pills flank it. Exceeding a confirmed limit pulses the speed pill red.
+  navigation updates animate in as temporary notices. The road name appears
+  briefly in the centre when you enter a named road or press **OK**. It shares
+  its pill with any camera warning. The speed and turn pills flank it. Exceeding
+  a confirmed limit pulses the speed pill red.
 - **Menus:** each page title shares the top row with the clock and temporary
   audio or connection notices. In Bluetooth control mode, Left and Right skip
   tracks, and OK toggles playback. The selected control briefly highlights.
@@ -136,10 +137,10 @@ uses its normal vehicle configuration to supply physical console events.
 | --- | --- |
 | Top-left / top-right soft buttons | Same as remote soft-left / soft-right: zoom, delete, next or space according to the current page. |
 | BACK | Same as remote BACK, including BT CTRL on the driving map. |
-| INFO | Show the driving journey/ETA overview. |
+| INFO | Briefly show the current road name and, during guidance, the journey estimate. |
 | MENU | Open Menu. |
 | LIGHT | Cycle Day, Night and custom-schedule Auto. |
-| REPEAT | Redisplay the journey overview; spoken navigation is not implemented. |
+| REPEAT | Redisplay the current road name and, during guidance, the journey estimate. |
 | DEST | Open Trip directly, unless a confirmation is awaiting a decision. |
 | MAP | The existing Auto/manual zoom, Explore and return-to-map behaviour. |
 | Joystick | The existing arrow actions, including Explore panning. |
@@ -222,7 +223,7 @@ bindings; the defaults provide complete remote-equivalent control.
 | **MAP** | Restore Auto zoom after a temporary manual adjustment; otherwise enter map browsing. | Return to the driving view and the configured zoom mode. | Leave BT CTRL; restore Auto zoom if temporarily adjusted, otherwise enter map browsing. |
 | **MENU** | Open Menu. | Open Menu. | Leave BT CTRL and open Menu. |
 | **BACK** | Enter BT CTRL when Bluetooth audio is selected and a phone is connected. | | Leave BT CTRL. |
-| **Centre / OK** | Show estimated remaining time and distance for about four seconds. With GPS and no active route, show the heading. | Open the route or add-stop prompt for the point under the crosshair. | Play or pause. |
+| **Centre / OK** | Briefly show the current road name when known. During guidance, also show the estimated time and distance remaining. | Open the route or add-stop prompt for the point under the crosshair. | Play or pause. |
 | **Up / Down** | Enter map browsing and pan. | Pan up or down. | |
 | **Left / Right** | Enter map browsing and pan. | Pan left or right. | Previous or next track. |
 | **Left / right soft keys** | Zoom out or in. With Auto zoom enabled, this sets a temporary override. | Zoom out or in. | Zoom out or in on the driving map. |
@@ -230,9 +231,9 @@ bindings; the defaults provide complete remote-equivalent control.
 With Auto zoom enabled, the soft keys temporarily adjust the driving zoom and
 show **Manual zoom**. **MAP** restores Auto zoom without entering Explore; a
 subsequent **MAP** enters Explore. Arrow keys can enter Explore and pan directly,
-including from temporary manual zoom. **OK** continues to show the journey estimate
-during guidance, including while the zoom is temporarily adjusted. The estimate
-also appears when a route calculation or reroute finishes.
+including from temporary manual zoom. **OK** briefly shows the road name in
+the centre pill and, during guidance, the journey estimate in the status pill.
+The estimate also appears when a route calculation or reroute finishes.
 
 Explore shows one entry notice. Zooming and panning within Explore neither replay
 that notice nor extend it. Leaving Explore shows **Auto zoom**, or **Manual zoom**

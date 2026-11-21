@@ -12,6 +12,8 @@ Release dates are added when a version is published; older versions are not reco
 - Kept the current menu page visible as taller status notices resize it. Scrollable rows move and fade at the edges as the available height changes.
 - Made Itinerary's footer a single row. Use Left/Right to wrap between its available buttons, including Cancel route and Diversion.
 - Added wraparound on menu lists, dialogs, and keyboard controls. Trip tabs use Left/Right; the soft keys retain their zoom, text-entry and pairing actions.
+- Replaced the heading notice with on-demand road names. Press Centre / OK to show the current road for about four seconds. During guidance, the ETA and remaining distance appear too. Console INFO and REPEAT offer the same information.
+- Centred the Latitude and Longitude labels and values in the manual coordinate entry fields.
 
 ## Version 2.2.1 — Release
 

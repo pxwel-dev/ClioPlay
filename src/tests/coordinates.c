@@ -150,6 +150,27 @@ static void save_and_reuse(void){
  assert(nrecents==3&&streq(recents[0].name,"RENAMED"));
  assert(read_places(RECENT_PATH,stored,RECENT_MAX)==3&&streq(stored[0].name,"RENAMED"));
 }
+static void check_coordinate_bars(struct HudBox box){
+ static u16 empty_bars[32*W];
+ int y=box.y+27,w=(box.w-38)/2;
+ fill(0,0,W,H,C_BG);
+ for(int i=0;i<2;i++)menu_tile(box.x+14+i*(w+10),y,w,32,i==coordinates.step,16);
+ memcpy(empty_bars,fb+y*W,sizeof(empty_bars));
+ fill(0,0,W,H,C_BG);
+ coord_content(box,16);
+ for(int i=0;i<2;i++){
+  int x=box.x+14+i*(w+10),top=32,bottom=-1,left=w,right=-1;
+  for(int row=0;row<32;row++)for(int col=0;col<w;col++){
+   int at=row*W+x+col;
+   if(fb[y*W+at]==empty_bars[at])continue;
+   if(row<top)top=row;if(row>bottom)bottom=row;
+   if(col<left)left=col;if(col>right)right=col;
+  }
+  assert(bottom>=top&&abs(top-(31-bottom))<=1);
+  assert(top>=2&&bottom<=29);
+  assert(right>=left&&abs(left-(w-1-right))<=1);
+ }
+}
 static void failures_and_layout(void){
  baseline();set_destination("HOME",5499000,-165000);source(DEST_PICK_ADD_STOP);location("54.98","-1.64","STOP");
  int before=nrecents;trip.count=TRIP_MAX_TARGETS;key_handle(K_ENTER);
@@ -158,13 +179,16 @@ static void failures_and_layout(void){
  sheet_focus=3;key_handle(K_ENTER);assert(screen==SCR_TRIP&&!coordinates_active&&nrecents==before);
  source(DEST_PICK_CHANGE_DEST);location("0","0","");key_handle(K_ENTER);assert(coordinates_active&&nrecents==before);
  /* Sheets stay below persistent HUD, in either theme and every locale. */
+ coordinates.value[0][0]=0;
+ copystr(coordinates.value[1],sizeof(coordinates.value[1]),"-179.1234567");
  load_font();for(int night=0;night<2;night++)for(int language=0;language<UI_LANGUAGE_COUNT;language++){
   pref.language=language;apply_palette(night);car.tempok=1;car.temp=18;gps.hour=12;gps.min=35;
   for(int step=0;step<=COORD_REVIEW;step++){
    coordinates.step=step;menu_open(step==COORD_REVIEW?P_REVIEW:P_COORD,0,hud_now_ms());
    hud_prepare(5,hud_capture_ms,1);menu_prepare(hud_capture_ms);menu_settle(hud_capture_ms);
    assert(sheet_to_box.y>=hud_tween[HC_CLOCK].target.box.y+hud_tween[HC_CLOCK].target.box.h);
-   menu_contents(sheet_page,sheet_focus,sheet_to_box,16,hud_now_ms());
+   if(step<COORD_REVIEW)check_coordinate_bars(sheet_to_box);
+   else menu_contents(sheet_page,sheet_focus,sheet_to_box,16,hud_now_ms());
   }
  }
 }

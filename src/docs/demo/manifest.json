@@ -9,7 +9,7 @@
     "clio843/src/atlas_router.h": "ae13e0cb3de1c5c75a377abced3f4332cecd1ca0ff124e9d3074c555d9068eb5",
     "clio843/src/boot_art.h": "367249c4bf35acfa7ce5092dce4a906c566d5e9e818d1bbd3d65c35ba128dbeb",
     "clio843/src/popups.h": "be8c8b0af2e7b9d833ad7733a48670204ff37d227ba15dfc8cfb3b3f3095fe59",
-    "clio843/src/hud.h": "81c7ba036d19a4abb543c4902a84587dcbfded791f44851c37c878de87e5bcc1",
+    "clio843/src/hud.h": "fee1bd04ff88f6b9b96d1ee8eb0dbc4291054fbf5c198051152ed1a1c53bf500",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
     "clio843/src/audio_schedule.h": "bf37e189f7a0f372567287380820a357878fc1aaf519f85309224cd0d5ae85a6",
     "clio843/src/coordinates.h": "303c229e4c186fab01b092a770a434fca622047b792515df940ddec1983109ef",
@@ -26,7 +26,7 @@
     "clio843/src/global_regions.h": "00772a81c56fefdcf466ce0594c05a9d62983861a6f81be872fb7e474956d647",
     "clio843/src/overlay_frames.h": "65562ff71c209ab71564c7d0dfdb5d296ca66fdc575577de8855557c11521584",
     "clio843/src/boot_transition.h": "8ea391927a52cf8eaa9f010a70b8f8e012b768346ca9cd297110e40e6a850007",
-    "clio843/src/menu_sheet.h": "00547e8730b368ed5a5aaafab41297bee15da5f1ac1aa4fc1275e79f117d5b53",
+    "clio843/src/menu_sheet.h": "816e19d376e050be6def081f8c01224ba769155bc6986b97a34c7537e60b49b0",
     "clio843/src/release_version.h": "e97e24a8a76d585c70c0afeafafefb885b3a7bbaa9e566442b000c704c047700",
     "clio843/src/vehicle_icon.h": "dfcb48775858684a323506e4cb6f61eba56ce3d8c7507a5ef86b58d917f24b4a",
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
@@ -45,7 +45,7 @@
     "clio843/src/global_cameras.h": "d07e8dabf65f3513a5ec88eb15e34bdcad628cdb291f08a518eb46a3ebed9cd9",
     "clio843/src/urban_speed_defaults.h": "a719a3d065f16bc39727b01d7ed73f412beeb4d8703b5bde73a8c6ff1c35ac10",
     "clio843/src/cswd.c": "707aa0a1fdcd8048d2fa252a14ce32176fae347d512e11869f2905a69380530c",
-    "clio843/src/clio040.c": "76c5361054479863a3acdbf65971185dcaeae55b696f4ac99eb1deaaa9bef1bb",
+    "clio843/src/clio040.c": "8493f5d0fb2f671de9ac6d7e44c776a40a154628857aa97bb2798048b851ad4e",
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/vstatd.c": "a359d214853cdd511fb79e905fafc52f5413b635bb3288b268d04c15724a666f",
     "clio843/src/audio_chime.h": "184c222e448db2707fc752bc38f7f6c735b6cb1f4d168d88ddc7da7cf20f4d75",
@@ -54,7 +54,7 @@
     "clio843/src/frame_renderer.h": "bcd4391462f3f9a501142e17872df317686d57aa6d27e7cf6e91ac4e52955ba1",
     "clio843/src/explore_frames.h": "61d49408c2afb79c181ef8e93297cbfa17ab26f41842d54208d5bc6f0fbcf9be",
     "clio843/src/boot_theme.h": "fa46f1bda9c0f37306c90f34d497192953aa718b30fa688291bbc7a66ddab746",
-    "clio843/src/ui_translations.h": "9bd463fd33400bfd8c5543e3b462827d8a02263cb53bfa8ca985044ae8549d5f",
+    "clio843/src/ui_translations.h": "a9e41dc8b6b27e89c36c597da07c4633b898efd87b3f3d0e4a86838d6ee257ac",
     "clio843/src/keyboard-data/layouts.h": "22a3c1a36371612cf10b9db2811812d6320eef8065df4cd7586d4088ea25a6de",
     "clio843/src/keyboard-data/pinyin.h": "790948587decc97f934f36a06c1bf35ce537c96bfd2d18c833da5b94323b0001",
     "clio843/src/vendor/compiler-rt/builtins/extendsftf2.c": "48fb287875d8831c08b6a820f2a152705b1ad00d7615a8150e11475ce2c202c2",
@@ -509,7 +509,7 @@
     "clio843/src/vendor/sheenbidi/Headers/SheenBidi/SheenBidi.h": "44a644a72edf2300838d32c3e32aa14a7cb66b584fb9da643b8311aa21991cbe"
   },
   "executables": {
-    "clio040": "b782fe3769a4ead94b2865725fbcb242d7380c6c38abd86f721fc3e95ef3739b",
+    "clio040": "99688cd752d7f8b54316f58b42a91644df996c337d7526acdb690d7e7b7f5cd5",
     "cliospl": "dad8649c64b58b894a9914a151b8fc75e50c6b79b655e58e3439393b952d0a10",
     "clioa2dp": "89ea3c43741e144afad57d3d8969c5226979c4af3fe01a8b12efba4da775d203"
   },
@@ -1105,7 +1105,7 @@
       "routing_provenance": "Real Newcastle route and legal alternative geometry from the installed CPR2 routing graph. Historical congestion observations are controlled examples. The production traffic search, shared-geometry rendering, BT CTRL and direct map confirmation handler are used. This is not a claim about actual traffic conditions."
     },
     "v216-coordinates.gif": {
-      "sha256": "41a5d087f226e4f525a6eec3ea955c1cb15bcdc62441297fee6e1944641e9c6d",
+      "sha256": "b454d2f57d62ed4a1c017b900d57a66ac20036208dbd118e57d1765354e7caf7",
       "frames": 54,
       "duration_ms": 11200,
       "reserved_pointer_colours": [
@@ -1169,399 +1169,399 @@
         },
         {
           "frame": "night/preview-v216-coordinates-0850.png",
-          "rgb565_sha256": "73fab20980eac09b5fba51d52eb78cf03129a476a264227b9e79807aa430fb65"
+          "rgb565_sha256": "19ff86839229732ef6bbc2e72fd552a653620707d9e954f3caa8269ec9970a78"
         },
         {
           "frame": "night/preview-v216-coordinates-0900.png",
-          "rgb565_sha256": "523d6310935fe752cc077849612a2bbfa2b44af05f8f147b7d52816f6ff090d5"
+          "rgb565_sha256": "6c2f829530f29fa708c340bce49449bd5e1891e850b8c1253ea73b2ed6904a73"
         },
         {
           "frame": "night/preview-v216-coordinates-0950.png",
-          "rgb565_sha256": "65cca40ca0e05488d3370e49b9d601d8fdc4481e48172af5876f28331c798fad"
+          "rgb565_sha256": "e54662826f06c3db100d0594465d3b74e97ed07f33378f2f40a0e0beb36f5584"
         },
         {
           "frame": "night/preview-v216-coordinates-1000.png",
-          "rgb565_sha256": "b9aaf20e507238041f1da10c335bbffb5e1d955ded89607ebb34f53356444e70"
+          "rgb565_sha256": "dfffdbf190e5a00736ee00c994f3098f0f3e19ecad12d8072655489242ee87c1"
         },
         {
           "frame": "night/preview-v216-coordinates-1050.png",
-          "rgb565_sha256": "2970e5f33c08aa87dc2e4b7405a5c4ee792109f46469786ba6205df250630ed8"
+          "rgb565_sha256": "60e7522a39f0921bcdf60e325c9c986662eb2f2f822a314ce1ff63bdb038cf14"
         },
         {
           "frame": "night/preview-v216-coordinates-1100.png",
-          "rgb565_sha256": "43aee463a237143a21d69baa7a885cf8595b488058f802bf372dd4ac3798be82"
+          "rgb565_sha256": "c9ce666670dd8a412db4147557470dfa6d29064348d4ceb2a9b4a049b8617085"
         },
         {
           "frame": "night/preview-v216-coordinates-1150.png",
-          "rgb565_sha256": "945c5917dc0f3597f27ba308bb0e395a3b0bdcae3c83515ba9e90ff4ba7561aa"
+          "rgb565_sha256": "e6e464857ba7b78e798eeffda3661dda74fad0fa3d6c542bf725a8e40a586d66"
         },
         {
           "frame": "night/preview-v216-coordinates-1400.png",
-          "rgb565_sha256": "955740b7e00d434ac14e8347511c0f33000f33762336ac76ea4d39e87a415ab4"
+          "rgb565_sha256": "4492ef7877f76e0b7bfb96f9a8657fb1ed84bc4d9bdf78ad080fdbe2b7a0e968"
         },
         {
           "frame": "night/preview-v216-coordinates-1450.png",
-          "rgb565_sha256": "955740b7e00d434ac14e8347511c0f33000f33762336ac76ea4d39e87a415ab4"
+          "rgb565_sha256": "4492ef7877f76e0b7bfb96f9a8657fb1ed84bc4d9bdf78ad080fdbe2b7a0e968"
         },
         {
           "frame": "night/preview-v216-coordinates-1500.png",
-          "rgb565_sha256": "955740b7e00d434ac14e8347511c0f33000f33762336ac76ea4d39e87a415ab4"
+          "rgb565_sha256": "4492ef7877f76e0b7bfb96f9a8657fb1ed84bc4d9bdf78ad080fdbe2b7a0e968"
         },
         {
           "frame": "night/preview-v216-coordinates-1550.png",
-          "rgb565_sha256": "955740b7e00d434ac14e8347511c0f33000f33762336ac76ea4d39e87a415ab4"
+          "rgb565_sha256": "4492ef7877f76e0b7bfb96f9a8657fb1ed84bc4d9bdf78ad080fdbe2b7a0e968"
         },
         {
           "frame": "night/preview-v216-coordinates-1600.png",
-          "rgb565_sha256": "955740b7e00d434ac14e8347511c0f33000f33762336ac76ea4d39e87a415ab4"
+          "rgb565_sha256": "4492ef7877f76e0b7bfb96f9a8657fb1ed84bc4d9bdf78ad080fdbe2b7a0e968"
         },
         {
           "frame": "night/preview-v216-coordinates-1650.png",
-          "rgb565_sha256": "2c25d8789e7419bce84e37ec41e45e99a3de9a0ee74dc256276c6818c12f33ae"
+          "rgb565_sha256": "3c040fc6b9023588c2ea4582f584e55b1b31b480803f587f5429c019829939bf"
         },
         {
           "frame": "night/preview-v216-coordinates-1700.png",
-          "rgb565_sha256": "2c25d8789e7419bce84e37ec41e45e99a3de9a0ee74dc256276c6818c12f33ae"
+          "rgb565_sha256": "3c040fc6b9023588c2ea4582f584e55b1b31b480803f587f5429c019829939bf"
         },
         {
           "frame": "night/preview-v216-coordinates-1750.png",
-          "rgb565_sha256": "2c25d8789e7419bce84e37ec41e45e99a3de9a0ee74dc256276c6818c12f33ae"
+          "rgb565_sha256": "3c040fc6b9023588c2ea4582f584e55b1b31b480803f587f5429c019829939bf"
         },
         {
           "frame": "night/preview-v216-coordinates-1800.png",
-          "rgb565_sha256": "2c25d8789e7419bce84e37ec41e45e99a3de9a0ee74dc256276c6818c12f33ae"
+          "rgb565_sha256": "3c040fc6b9023588c2ea4582f584e55b1b31b480803f587f5429c019829939bf"
         },
         {
           "frame": "night/preview-v216-coordinates-1850.png",
-          "rgb565_sha256": "2c25d8789e7419bce84e37ec41e45e99a3de9a0ee74dc256276c6818c12f33ae"
+          "rgb565_sha256": "3c040fc6b9023588c2ea4582f584e55b1b31b480803f587f5429c019829939bf"
         },
         {
           "frame": "night/preview-v216-coordinates-1900.png",
-          "rgb565_sha256": "ba29ce872e3f5dfa08911aaf3f94c2a01aa2b085cc274482777eaef3f6f06570"
+          "rgb565_sha256": "23f80e7258e32017b20f7bc82db3211b0edfada7b605a3cf295c9d5d1fc4b2fa"
         },
         {
           "frame": "night/preview-v216-coordinates-1950.png",
-          "rgb565_sha256": "ba29ce872e3f5dfa08911aaf3f94c2a01aa2b085cc274482777eaef3f6f06570"
+          "rgb565_sha256": "23f80e7258e32017b20f7bc82db3211b0edfada7b605a3cf295c9d5d1fc4b2fa"
         },
         {
           "frame": "night/preview-v216-coordinates-2000.png",
-          "rgb565_sha256": "ba29ce872e3f5dfa08911aaf3f94c2a01aa2b085cc274482777eaef3f6f06570"
+          "rgb565_sha256": "23f80e7258e32017b20f7bc82db3211b0edfada7b605a3cf295c9d5d1fc4b2fa"
         },
         {
           "frame": "night/preview-v216-coordinates-2050.png",
-          "rgb565_sha256": "ba29ce872e3f5dfa08911aaf3f94c2a01aa2b085cc274482777eaef3f6f06570"
+          "rgb565_sha256": "23f80e7258e32017b20f7bc82db3211b0edfada7b605a3cf295c9d5d1fc4b2fa"
         },
         {
           "frame": "night/preview-v216-coordinates-2100.png",
-          "rgb565_sha256": "ba29ce872e3f5dfa08911aaf3f94c2a01aa2b085cc274482777eaef3f6f06570"
+          "rgb565_sha256": "23f80e7258e32017b20f7bc82db3211b0edfada7b605a3cf295c9d5d1fc4b2fa"
         },
         {
           "frame": "night/preview-v216-coordinates-2150.png",
-          "rgb565_sha256": "e03c8331eae90473c459f639cf231b5432afd6ecaca7ec6a21869c51f5eb8995"
+          "rgb565_sha256": "9628f6c5460334d9395297a4784e4cecb2bd0f48dd84dbb45ade0c05d02b83f4"
         },
         {
           "frame": "night/preview-v216-coordinates-2200.png",
-          "rgb565_sha256": "e03c8331eae90473c459f639cf231b5432afd6ecaca7ec6a21869c51f5eb8995"
+          "rgb565_sha256": "9628f6c5460334d9395297a4784e4cecb2bd0f48dd84dbb45ade0c05d02b83f4"
         },
         {
           "frame": "night/preview-v216-coordinates-2250.png",
-          "rgb565_sha256": "e03c8331eae90473c459f639cf231b5432afd6ecaca7ec6a21869c51f5eb8995"
+          "rgb565_sha256": "9628f6c5460334d9395297a4784e4cecb2bd0f48dd84dbb45ade0c05d02b83f4"
         },
         {
           "frame": "night/preview-v216-coordinates-2300.png",
-          "rgb565_sha256": "e03c8331eae90473c459f639cf231b5432afd6ecaca7ec6a21869c51f5eb8995"
+          "rgb565_sha256": "9628f6c5460334d9395297a4784e4cecb2bd0f48dd84dbb45ade0c05d02b83f4"
         },
         {
           "frame": "night/preview-v216-coordinates-2350.png",
-          "rgb565_sha256": "e03c8331eae90473c459f639cf231b5432afd6ecaca7ec6a21869c51f5eb8995"
+          "rgb565_sha256": "9628f6c5460334d9395297a4784e4cecb2bd0f48dd84dbb45ade0c05d02b83f4"
         },
         {
           "frame": "night/preview-v216-coordinates-2400.png",
-          "rgb565_sha256": "b885097e83ec6b3b0d62afd246741d2e2b588b198fbe1e6093fd509da6b4e758"
+          "rgb565_sha256": "fbb7f446db1c6033a529abaf4ce8ef8395e5a26b95b97ba37f041000b90c0ec8"
         },
         {
           "frame": "night/preview-v216-coordinates-2450.png",
-          "rgb565_sha256": "b885097e83ec6b3b0d62afd246741d2e2b588b198fbe1e6093fd509da6b4e758"
+          "rgb565_sha256": "fbb7f446db1c6033a529abaf4ce8ef8395e5a26b95b97ba37f041000b90c0ec8"
         },
         {
           "frame": "night/preview-v216-coordinates-2500.png",
-          "rgb565_sha256": "b885097e83ec6b3b0d62afd246741d2e2b588b198fbe1e6093fd509da6b4e758"
+          "rgb565_sha256": "fbb7f446db1c6033a529abaf4ce8ef8395e5a26b95b97ba37f041000b90c0ec8"
         },
         {
           "frame": "night/preview-v216-coordinates-2550.png",
-          "rgb565_sha256": "b885097e83ec6b3b0d62afd246741d2e2b588b198fbe1e6093fd509da6b4e758"
+          "rgb565_sha256": "fbb7f446db1c6033a529abaf4ce8ef8395e5a26b95b97ba37f041000b90c0ec8"
         },
         {
           "frame": "night/preview-v216-coordinates-2600.png",
-          "rgb565_sha256": "b885097e83ec6b3b0d62afd246741d2e2b588b198fbe1e6093fd509da6b4e758"
+          "rgb565_sha256": "fbb7f446db1c6033a529abaf4ce8ef8395e5a26b95b97ba37f041000b90c0ec8"
         },
         {
           "frame": "night/preview-v216-coordinates-2650.png",
-          "rgb565_sha256": "b885097e83ec6b3b0d62afd246741d2e2b588b198fbe1e6093fd509da6b4e758"
+          "rgb565_sha256": "fbb7f446db1c6033a529abaf4ce8ef8395e5a26b95b97ba37f041000b90c0ec8"
         },
         {
           "frame": "night/preview-v216-coordinates-2700.png",
-          "rgb565_sha256": "b885097e83ec6b3b0d62afd246741d2e2b588b198fbe1e6093fd509da6b4e758"
+          "rgb565_sha256": "fbb7f446db1c6033a529abaf4ce8ef8395e5a26b95b97ba37f041000b90c0ec8"
         },
         {
           "frame": "night/preview-v216-coordinates-2750.png",
-          "rgb565_sha256": "b885097e83ec6b3b0d62afd246741d2e2b588b198fbe1e6093fd509da6b4e758"
+          "rgb565_sha256": "fbb7f446db1c6033a529abaf4ce8ef8395e5a26b95b97ba37f041000b90c0ec8"
         },
         {
           "frame": "night/preview-v216-coordinates-3000.png",
-          "rgb565_sha256": "8ee2e11ec2be8e69f0c7888a1c7478fad1ab17bb38ed8faeb74bef1845e375a4"
+          "rgb565_sha256": "2130c2cf8e8f659267b07d1ef966c97e691b87289b68f3aadffe273234f89ad2"
         },
         {
           "frame": "night/preview-v216-coordinates-3050.png",
-          "rgb565_sha256": "8ee2e11ec2be8e69f0c7888a1c7478fad1ab17bb38ed8faeb74bef1845e375a4"
+          "rgb565_sha256": "2130c2cf8e8f659267b07d1ef966c97e691b87289b68f3aadffe273234f89ad2"
         },
         {
           "frame": "night/preview-v216-coordinates-3100.png",
-          "rgb565_sha256": "8ee2e11ec2be8e69f0c7888a1c7478fad1ab17bb38ed8faeb74bef1845e375a4"
+          "rgb565_sha256": "2130c2cf8e8f659267b07d1ef966c97e691b87289b68f3aadffe273234f89ad2"
         },
         {
           "frame": "night/preview-v216-coordinates-3150.png",
-          "rgb565_sha256": "8ee2e11ec2be8e69f0c7888a1c7478fad1ab17bb38ed8faeb74bef1845e375a4"
+          "rgb565_sha256": "2130c2cf8e8f659267b07d1ef966c97e691b87289b68f3aadffe273234f89ad2"
         },
         {
           "frame": "night/preview-v216-coordinates-3200.png",
-          "rgb565_sha256": "8ee2e11ec2be8e69f0c7888a1c7478fad1ab17bb38ed8faeb74bef1845e375a4"
+          "rgb565_sha256": "2130c2cf8e8f659267b07d1ef966c97e691b87289b68f3aadffe273234f89ad2"
         },
         {
           "frame": "night/preview-v216-coordinates-3250.png",
-          "rgb565_sha256": "8ee2e11ec2be8e69f0c7888a1c7478fad1ab17bb38ed8faeb74bef1845e375a4"
+          "rgb565_sha256": "2130c2cf8e8f659267b07d1ef966c97e691b87289b68f3aadffe273234f89ad2"
         },
         {
           "frame": "night/preview-v216-coordinates-3300.png",
-          "rgb565_sha256": "8ee2e11ec2be8e69f0c7888a1c7478fad1ab17bb38ed8faeb74bef1845e375a4"
+          "rgb565_sha256": "2130c2cf8e8f659267b07d1ef966c97e691b87289b68f3aadffe273234f89ad2"
         },
         {
           "frame": "night/preview-v216-coordinates-3350.png",
-          "rgb565_sha256": "8ee2e11ec2be8e69f0c7888a1c7478fad1ab17bb38ed8faeb74bef1845e375a4"
+          "rgb565_sha256": "2130c2cf8e8f659267b07d1ef966c97e691b87289b68f3aadffe273234f89ad2"
         },
         {
           "frame": "night/preview-v216-coordinates-3600.png",
-          "rgb565_sha256": "551187824d98a246aa5efc231949f2dff34874effbcae2849ed719d9ba709329"
+          "rgb565_sha256": "a456ba1161105be99c9837a31f344cd3eb28cdfc6614c6297d7c945f69b401cb"
         },
         {
           "frame": "night/preview-v216-coordinates-3650.png",
-          "rgb565_sha256": "551187824d98a246aa5efc231949f2dff34874effbcae2849ed719d9ba709329"
+          "rgb565_sha256": "a456ba1161105be99c9837a31f344cd3eb28cdfc6614c6297d7c945f69b401cb"
         },
         {
           "frame": "night/preview-v216-coordinates-3700.png",
-          "rgb565_sha256": "551187824d98a246aa5efc231949f2dff34874effbcae2849ed719d9ba709329"
+          "rgb565_sha256": "a456ba1161105be99c9837a31f344cd3eb28cdfc6614c6297d7c945f69b401cb"
         },
         {
           "frame": "night/preview-v216-coordinates-3750.png",
-          "rgb565_sha256": "551187824d98a246aa5efc231949f2dff34874effbcae2849ed719d9ba709329"
+          "rgb565_sha256": "a456ba1161105be99c9837a31f344cd3eb28cdfc6614c6297d7c945f69b401cb"
         },
         {
           "frame": "night/preview-v216-coordinates-3800.png",
-          "rgb565_sha256": "f0162af9488adc71799008e2093e2eafe2a8edc2a96e70d7ac3c534446cb0e9e"
+          "rgb565_sha256": "c4a5dd68112facc5116d734ac5781c22eb831ab315d0580a9261560f59439861"
         },
         {
           "frame": "night/preview-v216-coordinates-3850.png",
-          "rgb565_sha256": "f0162af9488adc71799008e2093e2eafe2a8edc2a96e70d7ac3c534446cb0e9e"
+          "rgb565_sha256": "c4a5dd68112facc5116d734ac5781c22eb831ab315d0580a9261560f59439861"
         },
         {
           "frame": "night/preview-v216-coordinates-3900.png",
-          "rgb565_sha256": "f0162af9488adc71799008e2093e2eafe2a8edc2a96e70d7ac3c534446cb0e9e"
+          "rgb565_sha256": "c4a5dd68112facc5116d734ac5781c22eb831ab315d0580a9261560f59439861"
         },
         {
           "frame": "night/preview-v216-coordinates-3950.png",
-          "rgb565_sha256": "f0162af9488adc71799008e2093e2eafe2a8edc2a96e70d7ac3c534446cb0e9e"
+          "rgb565_sha256": "c4a5dd68112facc5116d734ac5781c22eb831ab315d0580a9261560f59439861"
         },
         {
           "frame": "night/preview-v216-coordinates-4000.png",
-          "rgb565_sha256": "528b0e4620e4b4b03a4600d11f2e8dd93c720fbad8a5461c4de0a5d8a0d140c9"
+          "rgb565_sha256": "83765c2d4c2bac4d2870edec503c3218ed3e7949f90dbc3741fd9b34b0c6d22a"
         },
         {
           "frame": "night/preview-v216-coordinates-4050.png",
-          "rgb565_sha256": "ac1d8c9a9fc8808f3af745a8eab94a3095f32c06db6c63f827f82ac5d585bc7e"
+          "rgb565_sha256": "e53a16251b41492d447ec886bd0cf7bfe7159d99fea8c58f67598cecc10933ee"
         },
         {
           "frame": "night/preview-v216-coordinates-4100.png",
-          "rgb565_sha256": "a9361806d93809cdb2bbc3f2c4e36b49274e22717b50f11b61637c8b382bf0d9"
+          "rgb565_sha256": "ccecacca69511fe27be7d6369fe519e8f8d70f47cc53f24663cc13465d3efdd4"
         },
         {
           "frame": "night/preview-v216-coordinates-4150.png",
-          "rgb565_sha256": "da70dba57fd06edeb7b7444a90f4b191105a25438cd698f1ee541379c3e1af44"
+          "rgb565_sha256": "617696d88a737c26b12f304268e38b1e2a19a73eceba14c2c87a39a43c596b2c"
         },
         {
           "frame": "night/preview-v216-coordinates-4200.png",
-          "rgb565_sha256": "a327bbf7cbc6c498987c9c6622085669a702fbb3485d4dbdf0155bc800157fe4"
+          "rgb565_sha256": "c5cd1b7dcb95af8ee3e24b14248c80554f51825e8ccac5d9c03159734f5af14f"
         },
         {
           "frame": "night/preview-v216-coordinates-4250.png",
-          "rgb565_sha256": "675648629c64b024b9e376368704f14c04c4a034b96a7928828ace092bbdceff"
+          "rgb565_sha256": "b7a5bbf30c9e72a0cb509322ce1d03d19b687cb7f2819997d7127a0cc22a3471"
         },
         {
           "frame": "night/preview-v216-coordinates-4300.png",
-          "rgb565_sha256": "a132cc14c589452860cd4e8e737c990613d533bb0da9273106cd4423a7a54b0e"
+          "rgb565_sha256": "59ef06586adb35f515ed80e62dde5b267044e64c10ea8487aac0ca79e3b0703f"
         },
         {
           "frame": "night/preview-v216-coordinates-4350.png",
-          "rgb565_sha256": "748bf8b6c4bcc1ddcef934cb3296c257e090900b580cd6d525c500988d0db73e"
+          "rgb565_sha256": "b7ef83e420b7faf9fb3ae03f15f084c1fd8f7a7e597e959064126ad36f0ce387"
         },
         {
           "frame": "night/preview-v216-coordinates-4400.png",
-          "rgb565_sha256": "68c7dc78d631510d3a53993e638689ef60dcc55818405af2df03823626e22646"
+          "rgb565_sha256": "479830915bcb70ff5a9da993c19eb2e3db03c261cd0dc5fde73d49d116ecb375"
         },
         {
           "frame": "night/preview-v216-coordinates-4450.png",
-          "rgb565_sha256": "3b060e310a999d1c55c03f7b7536a888c29caad96505273cabb541c53e802380"
+          "rgb565_sha256": "56a63d69907d0127c20d55b1c425f35922824435838200ecfe9ab77debe8f242"
         },
         {
           "frame": "night/preview-v216-coordinates-4500.png",
-          "rgb565_sha256": "f91322f9a6e2fd49920518eb65f92159c9e04be468e8848de209f75b9965ebbe"
+          "rgb565_sha256": "2344d6773fcaa41bb1055a3c2e8513f101b38ba43b36cd6ea6574713cf72d5e6"
         },
         {
           "frame": "night/preview-v216-coordinates-4550.png",
-          "rgb565_sha256": "f91322f9a6e2fd49920518eb65f92159c9e04be468e8848de209f75b9965ebbe"
+          "rgb565_sha256": "2344d6773fcaa41bb1055a3c2e8513f101b38ba43b36cd6ea6574713cf72d5e6"
         },
         {
           "frame": "night/preview-v216-coordinates-4600.png",
-          "rgb565_sha256": "6770b795ddf9b0cff429ceec7f3ca4b88bb885fbc05c8186d319773896a4d1c9"
+          "rgb565_sha256": "2a59bc7fed16923fea18fa2d20db4fbc8ddd1e53769f12da6c1306261a334aa3"
         },
         {
           "frame": "night/preview-v216-coordinates-4650.png",
-          "rgb565_sha256": "6770b795ddf9b0cff429ceec7f3ca4b88bb885fbc05c8186d319773896a4d1c9"
+          "rgb565_sha256": "2a59bc7fed16923fea18fa2d20db4fbc8ddd1e53769f12da6c1306261a334aa3"
         },
         {
           "frame": "night/preview-v216-coordinates-4700.png",
-          "rgb565_sha256": "6770b795ddf9b0cff429ceec7f3ca4b88bb885fbc05c8186d319773896a4d1c9"
+          "rgb565_sha256": "2a59bc7fed16923fea18fa2d20db4fbc8ddd1e53769f12da6c1306261a334aa3"
         },
         {
           "frame": "night/preview-v216-coordinates-4750.png",
-          "rgb565_sha256": "6770b795ddf9b0cff429ceec7f3ca4b88bb885fbc05c8186d319773896a4d1c9"
+          "rgb565_sha256": "2a59bc7fed16923fea18fa2d20db4fbc8ddd1e53769f12da6c1306261a334aa3"
         },
         {
           "frame": "night/preview-v216-coordinates-4800.png",
-          "rgb565_sha256": "6770b795ddf9b0cff429ceec7f3ca4b88bb885fbc05c8186d319773896a4d1c9"
+          "rgb565_sha256": "2a59bc7fed16923fea18fa2d20db4fbc8ddd1e53769f12da6c1306261a334aa3"
         },
         {
           "frame": "night/preview-v216-coordinates-4850.png",
-          "rgb565_sha256": "6770b795ddf9b0cff429ceec7f3ca4b88bb885fbc05c8186d319773896a4d1c9"
+          "rgb565_sha256": "2a59bc7fed16923fea18fa2d20db4fbc8ddd1e53769f12da6c1306261a334aa3"
         },
         {
           "frame": "night/preview-v216-coordinates-4900.png",
-          "rgb565_sha256": "6770b795ddf9b0cff429ceec7f3ca4b88bb885fbc05c8186d319773896a4d1c9"
+          "rgb565_sha256": "2a59bc7fed16923fea18fa2d20db4fbc8ddd1e53769f12da6c1306261a334aa3"
         },
         {
           "frame": "night/preview-v216-coordinates-4950.png",
-          "rgb565_sha256": "6770b795ddf9b0cff429ceec7f3ca4b88bb885fbc05c8186d319773896a4d1c9"
+          "rgb565_sha256": "2a59bc7fed16923fea18fa2d20db4fbc8ddd1e53769f12da6c1306261a334aa3"
         },
         {
           "frame": "night/preview-v216-coordinates-5100.png",
-          "rgb565_sha256": "3bebf9f90e01b1b75271ad84a0ff97abed446130a7968cfd154e88e7e81f350f"
+          "rgb565_sha256": "91645a0ea9ad083e3e9b6d9eabf4c0aad80a83964682a23dca6ae3de11e54ea2"
         },
         {
           "frame": "night/preview-v216-coordinates-5150.png",
-          "rgb565_sha256": "3bebf9f90e01b1b75271ad84a0ff97abed446130a7968cfd154e88e7e81f350f"
+          "rgb565_sha256": "91645a0ea9ad083e3e9b6d9eabf4c0aad80a83964682a23dca6ae3de11e54ea2"
         },
         {
           "frame": "night/preview-v216-coordinates-5200.png",
-          "rgb565_sha256": "3bebf9f90e01b1b75271ad84a0ff97abed446130a7968cfd154e88e7e81f350f"
+          "rgb565_sha256": "91645a0ea9ad083e3e9b6d9eabf4c0aad80a83964682a23dca6ae3de11e54ea2"
         },
         {
           "frame": "night/preview-v216-coordinates-5250.png",
-          "rgb565_sha256": "3bebf9f90e01b1b75271ad84a0ff97abed446130a7968cfd154e88e7e81f350f"
+          "rgb565_sha256": "91645a0ea9ad083e3e9b6d9eabf4c0aad80a83964682a23dca6ae3de11e54ea2"
         },
         {
           "frame": "night/preview-v216-coordinates-5300.png",
-          "rgb565_sha256": "3bebf9f90e01b1b75271ad84a0ff97abed446130a7968cfd154e88e7e81f350f"
+          "rgb565_sha256": "91645a0ea9ad083e3e9b6d9eabf4c0aad80a83964682a23dca6ae3de11e54ea2"
         },
         {
           "frame": "night/preview-v216-coordinates-5350.png",
-          "rgb565_sha256": "3bebf9f90e01b1b75271ad84a0ff97abed446130a7968cfd154e88e7e81f350f"
+          "rgb565_sha256": "91645a0ea9ad083e3e9b6d9eabf4c0aad80a83964682a23dca6ae3de11e54ea2"
         },
         {
           "frame": "night/preview-v216-coordinates-5400.png",
-          "rgb565_sha256": "3bebf9f90e01b1b75271ad84a0ff97abed446130a7968cfd154e88e7e81f350f"
+          "rgb565_sha256": "91645a0ea9ad083e3e9b6d9eabf4c0aad80a83964682a23dca6ae3de11e54ea2"
         },
         {
           "frame": "night/preview-v216-coordinates-5450.png",
-          "rgb565_sha256": "3bebf9f90e01b1b75271ad84a0ff97abed446130a7968cfd154e88e7e81f350f"
+          "rgb565_sha256": "91645a0ea9ad083e3e9b6d9eabf4c0aad80a83964682a23dca6ae3de11e54ea2"
         },
         {
           "frame": "night/preview-v216-coordinates-6500.png",
-          "rgb565_sha256": "f91322f9a6e2fd49920518eb65f92159c9e04be468e8848de209f75b9965ebbe"
+          "rgb565_sha256": "2344d6773fcaa41bb1055a3c2e8513f101b38ba43b36cd6ea6574713cf72d5e6"
         },
         {
           "frame": "night/preview-v216-coordinates-6550.png",
-          "rgb565_sha256": "f91322f9a6e2fd49920518eb65f92159c9e04be468e8848de209f75b9965ebbe"
+          "rgb565_sha256": "2344d6773fcaa41bb1055a3c2e8513f101b38ba43b36cd6ea6574713cf72d5e6"
         },
         {
           "frame": "night/preview-v216-coordinates-6600.png",
-          "rgb565_sha256": "f91322f9a6e2fd49920518eb65f92159c9e04be468e8848de209f75b9965ebbe"
+          "rgb565_sha256": "2344d6773fcaa41bb1055a3c2e8513f101b38ba43b36cd6ea6574713cf72d5e6"
         },
         {
           "frame": "night/preview-v216-coordinates-6650.png",
-          "rgb565_sha256": "f91322f9a6e2fd49920518eb65f92159c9e04be468e8848de209f75b9965ebbe"
+          "rgb565_sha256": "2344d6773fcaa41bb1055a3c2e8513f101b38ba43b36cd6ea6574713cf72d5e6"
         },
         {
           "frame": "night/preview-v216-coordinates-6700.png",
-          "rgb565_sha256": "f91322f9a6e2fd49920518eb65f92159c9e04be468e8848de209f75b9965ebbe"
+          "rgb565_sha256": "2344d6773fcaa41bb1055a3c2e8513f101b38ba43b36cd6ea6574713cf72d5e6"
         },
         {
           "frame": "night/preview-v216-coordinates-6750.png",
-          "rgb565_sha256": "f91322f9a6e2fd49920518eb65f92159c9e04be468e8848de209f75b9965ebbe"
+          "rgb565_sha256": "2344d6773fcaa41bb1055a3c2e8513f101b38ba43b36cd6ea6574713cf72d5e6"
         },
         {
           "frame": "night/preview-v216-coordinates-6800.png",
-          "rgb565_sha256": "f91322f9a6e2fd49920518eb65f92159c9e04be468e8848de209f75b9965ebbe"
+          "rgb565_sha256": "2344d6773fcaa41bb1055a3c2e8513f101b38ba43b36cd6ea6574713cf72d5e6"
         },
         {
           "frame": "night/preview-v216-coordinates-6850.png",
-          "rgb565_sha256": "f91322f9a6e2fd49920518eb65f92159c9e04be468e8848de209f75b9965ebbe"
+          "rgb565_sha256": "2344d6773fcaa41bb1055a3c2e8513f101b38ba43b36cd6ea6574713cf72d5e6"
         },
         {
           "frame": "night/preview-v216-coordinates-7100.png",
-          "rgb565_sha256": "17f142aa73009fafbad6dd36ce5349a5132be0b828b003df25c8986a7168cd00"
+          "rgb565_sha256": "850fd15f45f18fe6157508643ce87b3668bb9638fe4a5c231405dda1235d3c12"
         },
         {
           "frame": "night/preview-v216-coordinates-7150.png",
-          "rgb565_sha256": "17f142aa73009fafbad6dd36ce5349a5132be0b828b003df25c8986a7168cd00"
+          "rgb565_sha256": "850fd15f45f18fe6157508643ce87b3668bb9638fe4a5c231405dda1235d3c12"
         },
         {
           "frame": "night/preview-v216-coordinates-7200.png",
-          "rgb565_sha256": "17f142aa73009fafbad6dd36ce5349a5132be0b828b003df25c8986a7168cd00"
+          "rgb565_sha256": "850fd15f45f18fe6157508643ce87b3668bb9638fe4a5c231405dda1235d3c12"
         },
         {
           "frame": "night/preview-v216-coordinates-7250.png",
-          "rgb565_sha256": "17f142aa73009fafbad6dd36ce5349a5132be0b828b003df25c8986a7168cd00"
+          "rgb565_sha256": "850fd15f45f18fe6157508643ce87b3668bb9638fe4a5c231405dda1235d3c12"
         },
         {
           "frame": "night/preview-v216-coordinates-7300.png",
-          "rgb565_sha256": "17f142aa73009fafbad6dd36ce5349a5132be0b828b003df25c8986a7168cd00"
+          "rgb565_sha256": "850fd15f45f18fe6157508643ce87b3668bb9638fe4a5c231405dda1235d3c12"
         },
         {
           "frame": "night/preview-v216-coordinates-7350.png",
-          "rgb565_sha256": "17f142aa73009fafbad6dd36ce5349a5132be0b828b003df25c8986a7168cd00"
+          "rgb565_sha256": "850fd15f45f18fe6157508643ce87b3668bb9638fe4a5c231405dda1235d3c12"
         },
         {
           "frame": "night/preview-v216-coordinates-7400.png",
-          "rgb565_sha256": "17f142aa73009fafbad6dd36ce5349a5132be0b828b003df25c8986a7168cd00"
+          "rgb565_sha256": "850fd15f45f18fe6157508643ce87b3668bb9638fe4a5c231405dda1235d3c12"
         },
         {
           "frame": "night/preview-v216-coordinates-7450.png",
-          "rgb565_sha256": "17f142aa73009fafbad6dd36ce5349a5132be0b828b003df25c8986a7168cd00"
+          "rgb565_sha256": "850fd15f45f18fe6157508643ce87b3668bb9638fe4a5c231405dda1235d3c12"
         },
         {
           "frame": "night/preview-v216-coordinates-7900.png",
-          "rgb565_sha256": "6b5dfb5067a98924feb9ae203f0ac89541ebac6c9731102b621592ef8a9a7ce6"
+          "rgb565_sha256": "746d29e2be89602c62929007a9111a4f4556aa35b8b0dcf72970de9815e4e745"
         },
         {
           "frame": "night/preview-v216-coordinates-7950.png",
-          "rgb565_sha256": "6839a4fdf4cfd3459853516853117ef36b14e3123dd107bf07575480efc57acf"
+          "rgb565_sha256": "fa2b290ab6b0e2d390707c539bc4881e01110936c1b42dfef2e7d51d2ac9ad03"
         },
         {
           "frame": "night/preview-v216-coordinates-8000.png",
-          "rgb565_sha256": "07b9de07b710eac6d1af130a299ce1ecb455e77852f0e3ea652fb4d89c0dd05a"
+          "rgb565_sha256": "c1e6c78f69a69ec63266462d30e51385448a83aae492a38a0519c713c3ee2001"
         },
         {
           "frame": "night/preview-v216-coordinates-8050.png",
-          "rgb565_sha256": "b7032f702d4976291761e6c37df2492d0318165391e07526aa2b5248a349de96"
+          "rgb565_sha256": "7b4a02c3b0d1a7dc402348523ce3e7d578c46197de0fbcc0d544f25f90a34d25"
         },
         {
           "frame": "night/preview-v216-coordinates-8100.png",
@@ -3126,7 +3126,7 @@
       ]
     },
     "trips-empty-layout.gif": {
-      "sha256": "858d1d024bdaf48990e8d8ecc50e69d0175bbb197830eddd9ed2149cb4013c34",
+      "sha256": "7b36c098161adad421358ef4d7424c96e20855fb8572b4e0dae4380b83c52d5e",
       "frames": 22,
       "duration_ms": 6200,
       "reserved_pointer_colours": [
@@ -3190,47 +3190,47 @@
         },
         {
           "frame": "night/preview-trips-empty-1850.png",
-          "rgb565_sha256": "73fab20980eac09b5fba51d52eb78cf03129a476a264227b9e79807aa430fb65"
+          "rgb565_sha256": "19ff86839229732ef6bbc2e72fd552a653620707d9e954f3caa8269ec9970a78"
         },
         {
           "frame": "night/preview-trips-empty-1900.png",
-          "rgb565_sha256": "523d6310935fe752cc077849612a2bbfa2b44af05f8f147b7d52816f6ff090d5"
+          "rgb565_sha256": "6c2f829530f29fa708c340bce49449bd5e1891e850b8c1253ea73b2ed6904a73"
         },
         {
           "frame": "night/preview-trips-empty-1950.png",
-          "rgb565_sha256": "65cca40ca0e05488d3370e49b9d601d8fdc4481e48172af5876f28331c798fad"
+          "rgb565_sha256": "e54662826f06c3db100d0594465d3b74e97ed07f33378f2f40a0e0beb36f5584"
         },
         {
           "frame": "night/preview-trips-empty-2000.png",
-          "rgb565_sha256": "b9aaf20e507238041f1da10c335bbffb5e1d955ded89607ebb34f53356444e70"
+          "rgb565_sha256": "dfffdbf190e5a00736ee00c994f3098f0f3e19ecad12d8072655489242ee87c1"
         },
         {
           "frame": "night/preview-trips-empty-2050.png",
-          "rgb565_sha256": "2970e5f33c08aa87dc2e4b7405a5c4ee792109f46469786ba6205df250630ed8"
+          "rgb565_sha256": "60e7522a39f0921bcdf60e325c9c986662eb2f2f822a314ce1ff63bdb038cf14"
         },
         {
           "frame": "night/preview-trips-empty-2100.png",
-          "rgb565_sha256": "43aee463a237143a21d69baa7a885cf8595b488058f802bf372dd4ac3798be82"
+          "rgb565_sha256": "c9ce666670dd8a412db4147557470dfa6d29064348d4ceb2a9b4a049b8617085"
         },
         {
           "frame": "night/preview-trips-empty-2150.png",
-          "rgb565_sha256": "945c5917dc0f3597f27ba308bb0e395a3b0bdcae3c83515ba9e90ff4ba7561aa"
+          "rgb565_sha256": "e6e464857ba7b78e798eeffda3661dda74fad0fa3d6c542bf725a8e40a586d66"
         },
         {
           "frame": "night/preview-trips-empty-4200.png",
-          "rgb565_sha256": "945c5917dc0f3597f27ba308bb0e395a3b0bdcae3c83515ba9e90ff4ba7561aa"
+          "rgb565_sha256": "e6e464857ba7b78e798eeffda3661dda74fad0fa3d6c542bf725a8e40a586d66"
         },
         {
           "frame": "night/preview-trips-empty-4250.png",
-          "rgb565_sha256": "9ed9f0f22d9afc351eeb22531ef8de4f3b3bce789c2183a0a2b3bdde8fb5155e"
+          "rgb565_sha256": "13102d667843e4b2a01664ac04eec038d7b4ff25060652ea5fcd89c6624b1563"
         },
         {
           "frame": "night/preview-trips-empty-4300.png",
-          "rgb565_sha256": "598e47e9ad671962f54e51e544845995bfee1cb5bc82f8c79fb99bc179e7a8ac"
+          "rgb565_sha256": "c846a24c478efb3fc07849d6db4ab2259246fa0341f64b5dca322cfbba31f08c"
         },
         {
           "frame": "night/preview-trips-empty-4350.png",
-          "rgb565_sha256": "635e9a0b56542c1a7521fc55b616925eba385b62e2acaf795632f5b8e5c02173"
+          "rgb565_sha256": "fc905813d936b23b5b3b4a66d9514d037776421de9d718c0d256896fec99c402"
         },
         {
           "frame": "night/preview-trips-empty-4400.png",
@@ -5468,7 +5468,7 @@
       ]
     },
     "phone-destination.gif": {
-      "sha256": "cdc74ce1fed4084b546a6d639cd437a8d6cb2332c3e86113c563f33e21e25603",
+      "sha256": "cc477a4e0b30fbfb96d41b260d31201cd3e51756bd45d68bdb54b9ac050cb3f7",
       "frames": 11,
       "duration_ms": 7200,
       "reserved_pointer_colours": [
@@ -5557,7 +5557,7 @@
           "transfer-056.jpg": "01cd1bf92bb29e65bba8e31beb96ba341b0e206a675d3970ef29cbae5f85a5fc"
         },
         "ready_sha256": "93bc757770a4188a9de3234f4f0d4a60d8c77855b80e625fb949db06a93ee37c",
-        "previous_gif_sha256": "c8f994291b556bb9f8cc65501c174f052cd2ec01c4c2aa035033d550ef28b6e0"
+        "previous_gif_sha256": "cdc74ce1fed4084b546a6d639cd437a8d6cb2332c3e86113c563f33e21e25603"
       },
       "source_frames": [
         {
@@ -6125,8 +6125,8 @@
       ]
     },
     "roundabout-eta.gif": {
-      "sha256": "f31f678e2f1ce27b4cc8aa9f9a464094d59eeb82638f6aded25c831f2222f42d",
-      "frames": 13,
+      "sha256": "3109716b157c304b59900002ee2dc52d4c850cac5a80b08eb8bd02232db00e22",
+      "frames": 14,
       "duration_ms": 5600,
       "reserved_pointer_colours": [
         [
@@ -6161,55 +6161,55 @@
         },
         {
           "frame": "night/preview-roundabout-eta-0650.png",
-          "rgb565_sha256": "1787af6ea8106566089641264e59a3666b77065d1d2f7c4cd120e3b6e8c5fb8f"
+          "rgb565_sha256": "da5d5c8b7da597ee45b80241b533dd1467882ccb6f2b4139c36a66231fcd0bfd"
         },
         {
           "frame": "night/preview-roundabout-eta-0700.png",
-          "rgb565_sha256": "ecc6bc729f4d9ae61f6de0fae108bc20bff4694fa0144263b7687575e64a7a45"
+          "rgb565_sha256": "eadbef5d1e5e62c8ecdc5dfe832d4bed1f00dfb9ebed3740aedaeb35d542ada7"
         },
         {
           "frame": "night/preview-roundabout-eta-0750.png",
-          "rgb565_sha256": "017094c864bf898569812f55a768dd713bfc1fb0fc81eff3570a5b897e5b0bfb"
+          "rgb565_sha256": "91bbeca7a6b1b4d5e7d644402841a9db6828321bb53eacb6065db9a0362a789f"
         },
         {
           "frame": "night/preview-roundabout-eta-0800.png",
-          "rgb565_sha256": "81153d773c8f6a0bbd8621dedf41b29ee3c1764cfc682f37398535c1211d3449"
+          "rgb565_sha256": "2d1798cdb43c73dec4bfd25e5c31f8b9bd8badf73fe5938c0ed522d3afba89e8"
         },
         {
           "frame": "night/preview-roundabout-eta-0850.png",
-          "rgb565_sha256": "e18065b0d16365a08024ea39cdc80eb9ccfcfb8755966bc83b1a41db5a1bccc2"
+          "rgb565_sha256": "b6c3fbcf2c048fc9840ca17e75dd7717d5f13d83a49762af4964974473121f8b"
         },
         {
           "frame": "night/preview-roundabout-eta-0900.png",
-          "rgb565_sha256": "55968daf50cce80d0b1fbc10eb87042e519364cebf2295124570433fb7d29bea"
+          "rgb565_sha256": "fdd3ae8eb3f04327ca8faf58dc3ce8d38bdebc9cf3589172f092525ba5ef37a5"
         },
         {
           "frame": "night/preview-roundabout-eta-0950.png",
-          "rgb565_sha256": "55968daf50cce80d0b1fbc10eb87042e519364cebf2295124570433fb7d29bea"
+          "rgb565_sha256": "397283007854aab8ed626d398728b96362c06dea3e5954325d199d713df01b67"
         },
         {
           "frame": "night/preview-roundabout-eta-4800.png",
-          "rgb565_sha256": "55968daf50cce80d0b1fbc10eb87042e519364cebf2295124570433fb7d29bea"
+          "rgb565_sha256": "397283007854aab8ed626d398728b96362c06dea3e5954325d199d713df01b67"
         },
         {
           "frame": "night/preview-roundabout-eta-4850.png",
-          "rgb565_sha256": "53bd2070c7923e946d5f1501e99e8bfddff7c08c79d7952e856b96754a8f238e"
+          "rgb565_sha256": "a1afdfdf770da55cc21019fdf9ceacf6145f38b27f5a1942da8e8cf582888a35"
         },
         {
           "frame": "night/preview-roundabout-eta-4900.png",
-          "rgb565_sha256": "cb5f5c4fa3ee104320b6c64d5b019620971606a6088a7f05e31cb1c9a51f1024"
+          "rgb565_sha256": "ad9eec19877701313d99c4f415b76e5ff281da3525233a9acb60f2468b2be434"
         },
         {
           "frame": "night/preview-roundabout-eta-4950.png",
-          "rgb565_sha256": "cc14ff1f0cdfb7db653379de5415c26ab7ae071927453580ad9048ff8a8924b6"
+          "rgb565_sha256": "fd5246d395694ec764a454d4e74a65a51b05d521dd18e61c18df9ef576922ca2"
         },
         {
           "frame": "night/preview-roundabout-eta-5000.png",
-          "rgb565_sha256": "c28adb47bf8e84ae0bc86798197655c66e7f882e1e42b55955c644c11a3974bf"
+          "rgb565_sha256": "d01077da73222429109b02f5448e48e33ab4cf802c2b992544d18b824fd70977"
         },
         {
           "frame": "night/preview-roundabout-eta-5050.png",
-          "rgb565_sha256": "7c1f128b02d9579f87f166476c3aacaf3dadae848c23fbc3b3e749d6cbc0ea0e"
+          "rgb565_sha256": "0f9a1b9ff7bab862a9568e39208a32b30746e5eba363d20f5b81d476e6f9fbc6"
         },
         {
           "frame": "night/preview-roundabout-eta-5100.png",
@@ -6222,7 +6222,7 @@
       ]
     },
     "coordinate-route.gif": {
-      "sha256": "339261e3c579a04251a73893b115fa33888785f988550b3402fedf45026f6b82",
+      "sha256": "b7af466af49a240657cc8d4963109cffeb677732b54b21b3e806bffafc758beb",
       "frames": 21,
       "duration_ms": 8400,
       "reserved_pointer_colours": [
@@ -6254,11 +6254,11 @@
         },
         {
           "frame": "night/preview-coordinates-latitude.png",
-          "rgb565_sha256": "b8b07369a47ccddaf93141b509c9f22b947805496e228c5deeba28d6df55ef39"
+          "rgb565_sha256": "8939439f36833657a959d03c41f3df8e3d0dc54c93f8d230bfd77d650381fcda"
         },
         {
           "frame": "night/preview-coordinates-longitude.png",
-          "rgb565_sha256": "e3df70d8c86ad2ee5913f347d17e58b400637bd64c17842675cae9d54804a6fe"
+          "rgb565_sha256": "50dfe3299db48077ffa4b9dc1e2b26cc11f274e55fc2c87c09a858c35c199856"
         },
         {
           "frame": "night/preview-coordinates-name.png",
@@ -6566,7 +6566,7 @@
       "routing_provenance": "Production remote handlers create the destination and production routing runs to R_READY on the local map bundle; target coordinates and nonempty route geometry are asserted. GPS is held stationary. The 1.3-second calculation display is a controlled preview interval, not a timing benchmark."
     },
     "coordinates.gif": {
-      "sha256": "5252a4115d67da8c26b1208ae4ee9f6be105abe19dc7bcaceaf0cb4693a4e36e",
+      "sha256": "b81d02f36ad3101a05906e516c7e30f67986fda17da571d1c25d51afa516cf09",
       "frames": 6,
       "duration_ms": 6800,
       "reserved_pointer_colours": [
@@ -6594,15 +6594,15 @@
       "source_frames": [
         {
           "frame": "night/preview-coordinates-entry.png",
-          "rgb565_sha256": "15998e5c7d620f31c4d20938ad6ed63ad2a4f9fe25e94bbad816ab5b772fad56"
+          "rgb565_sha256": "2ae68411f88e87f218bc39e0b34995d7835bf18b6517b9a5d0ae4eb4b71eb9fb"
         },
         {
           "frame": "night/preview-coordinates-latitude.png",
-          "rgb565_sha256": "b8b07369a47ccddaf93141b509c9f22b947805496e228c5deeba28d6df55ef39"
+          "rgb565_sha256": "8939439f36833657a959d03c41f3df8e3d0dc54c93f8d230bfd77d650381fcda"
         },
         {
           "frame": "night/preview-coordinates-longitude.png",
-          "rgb565_sha256": "e3df70d8c86ad2ee5913f347d17e58b400637bd64c17842675cae9d54804a6fe"
+          "rgb565_sha256": "50dfe3299db48077ffa4b9dc1e2b26cc11f274e55fc2c87c09a858c35c199856"
         },
         {
           "frame": "night/preview-coordinates-name.png",

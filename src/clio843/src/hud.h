@@ -109,11 +109,6 @@ static const char* hud_audio_tag(void){
 static const char* hud_track(void){
  return reading_present(btui.title)?btui.title:"";
 }
-static void hud_heading_text(char*b,unsigned cap,int heading){
- static const char*n[8]={"N","NE","E","SE","S","SW","W","NW"};
- b[0]=0;appendstr(b,cap,ui_tr(n[((heading+22)/45)&7]));appendstr(b,cap," ");
- append_int(b,cap,heading);appendstr(b,cap,"°");
-}
 static void hud_source_text(char*b,unsigned cap){
  b[0]=0;
  if(bt_source_selected()){if(btui.connected)copystr(b,cap,hud_track());return;}
@@ -188,8 +183,6 @@ static void hud_nav_text(struct HudCard*c,int z,int kind,int tag){
  case HUD_AUTO_ZOOM:copystr(c->title,sizeof(c->title),ui_tr("Auto zoom"));break;
  case HUD_EXPLORE:copystr(c->title,sizeof(c->title),ui_tr("Explore"));break;
  case HUD_MANUAL_ZOOM:copystr(c->title,sizeof(c->title),ui_tr("Manual zoom"));break;
- case HUD_HEADING:
-  if(gps.fix)hud_heading_text(c->title,sizeof(c->title),map_course());break;
  }
 }
 /* An OK shortcut is armed only by a drawn invitation for this exact
@@ -374,6 +367,7 @@ static void hud_prepare(int z,u32 now,int map){
  hud_status_frame_at=now;
 }
 
+enum {HUD_ROAD_NAME_MS=4000};
 static char hud_last_road[113];
 static int hud_road_live;
 static u32 hud_road_at;
@@ -395,15 +389,25 @@ static int hud_speed_red(u32 now){
  u32 t=(age-360u)%1800u;
  return 256-hud_ease(t<=900u?t:1800u-t,900)*210/256;
 }
+static const char* hud_current_road_name(void){
+ return gps.fix&&roadctx.valid?roadctx.street:"";
+}
+static void hud_show_driving_info(void){
+ u32 now=hud_now_ms();
+ if(!freecam&&hud_current_road_name()[0]){
+  hud_road_at=now;hud_road_live=1;
+ }
+ if(route_status==R_READY)hud_pulse_at(&hud_navigation,HUD_JOURNEY,now,4200);
+}
 static void hud_driver_prepare(u32 now){
  struct HudCard speed={0},road={0},road_name={0},turn={0};
  int camera=gps.fix&&camera_visible;
  int show_speed=gps.fix&&(!freecam||camera);
- const char*name=gps.fix&&roadctx.valid?roadctx.street:"";
+ const char*name=hud_current_road_name();
  if(gps.fix&&roadctx.valid&&!streq(name,hud_last_road)){
   copystr(hud_last_road,sizeof(hud_last_road),name);hud_road_at=now;hud_road_live=name[0]!=0;
  }
- if(now-hud_road_at>=4000u)hud_road_live=0;
+ if(now-hud_road_at>=HUD_ROAD_NAME_MS)hud_road_live=0;
  int show_name=!freecam&&name[0]&&hud_road_live;
  if(show_name){
   // The name has its own tween. Its vertical offset is relative to the plate's bottom.
