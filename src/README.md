@@ -296,13 +296,14 @@ calculation uses the existing five-frame-per-second cap. Declining keeps Explore
   select it and press **OK** to start pairing. **Up / Down** or the knob
   selects a device, **OK** opens its Connect/Disconnect and Forget actions, and
   **Up / Down** selects the action. **OK** confirms; **BACK** returns to the list.
-- **GPS:** a live information panel. The GPS time (to the second) is shown large
-  at the top; below it a compass dial sits beside three columns: **Heading** in
-  degrees with N/NE/E…, estimated horizontal **Accuracy** with the satellite
-  count, and **Altitude** above sea level. Latitude/longitude with N/S/E/W run
-  along the bottom. The heading shows `--` below about 3 mph, where GPS course is
-  unreliable; without a fix the values show `--` and the bottom row reads
-  **No fix**. Accuracy uses the receiver's `$GPGST` error estimate when present,
+- **GPS:** a live information panel. A large compass on the left shows the
+  heading as a light red arrow. Beside it are the GPS time to the second and
+  three columns: **Heading** in degrees with N/NE/E…, estimated horizontal
+  **Accuracy** with the satellite count, and **Altitude** above sea level. The
+  position runs along the bottom in marine degrees and decimal minutes, for
+  example `47° 29.887' N   019° 02.420' E`. When the car stops, the heading and
+  arrow hold the last course, as the map does; without a fix the values show
+  `--` and the bottom row reads **No fix**. Accuracy uses the receiver's `$GPGST` error estimate when present,
   otherwise HDOP × 5 m; green, amber and red mark up to 5 m, up to 15 m and
   worse. Accuracy and altitude follow the Metric/Imperial setting. **BACK**
   returns to Menu. A console button mapped to `GPS` opens the panel directly;

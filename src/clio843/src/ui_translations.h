@@ -200,7 +200,7 @@ static const char*ui_tr(const char*s){static const char*const rows[][UI_LANGUAGE
  {"Satellites: ","Satellites : ","Satélites: ","Satelliten: ","Satelliti: ","Satélites: ","Satellieten: ","Satelity: ","Uydu: ","Δορυφόροι: ","Супутники: ","Спутники: ","الأقمار: ","卫星: ","衛星: ","위성: ","उपग्रह: ","לוויינים: "},
  {"Lat","Lat","Lat","Br.","Lat","Lat","Br.","Szer.","Enl.","Πλ.","Шир.","Шир.","عرض","纬度","緯度","위도","अक्षांश","רוחב"},
  {"Lon","Lon","Lon","Lg.","Lon","Lon","Lg.","Dł.","Boy.","Μήκ.","Довг.","Долг.","طول","经度","経度","경도","देशांतर","אורך"},
- {"Alt","Alt","Alt","Höhe","Alt","Alt","Hoogte","Wys.","Rakım","Υψ.","Вис.","Выс.","ارتفاع","海拔","標高","고도","ऊँचाई","גובה"},
+ {"Altitude","Altitude","Altitud","Höhe","Altitudine","Altitude","Hoogte","Wysokość","Rakım","Υψόμετρο","Висота","Высота","الارتفاع","海拔","標高","고도","ऊँचाई","גובה"},
  {"GPS","GPS","GPS","GPS","GPS","GPS","GPS","GPS","GPS","GPS","GPS","GPS","GPS","GPS","GPS","GPS","GPS","GPS"},
  {"Likely traffic ahead","Ralentissements probables","Tráfico probable","Stau wahrscheinlich","Traffico probabile","Trânsito provável","Waarschijnlijk drukte","Możliwe korki","İleride trafik olabilir","Πιθανή κίνηση μπροστά","Можливі затори попереду","Возможны пробки впереди","ازدحام محتمل أمامك","前方可能拥堵","前方で渋滞の可能性","전방 정체 예상","आगे जाम की संभावना","עומס צפוי בהמשך"},
  {"Based on driving history","Selon vos trajets","Según tus trayectos","Aus bisherigen Fahrten","In base ai tuoi viaggi","Com base nas suas viagens","Op basis van je ritten","Na podstawie historii jazdy","Sürüş geçmişine göre","Με βάση το ιστορικό οδήγησης","За історією поїздок","По истории поездок","استنادا إلى سجل القيادة","基于驾驶历史","運転履歴に基づく","주행 기록 기준","ड्राइविंग इतिहास के आधार पर","לפי היסטוריית הנהיגה"},

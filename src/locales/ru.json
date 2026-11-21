@@ -194,7 +194,7 @@
   "Satellites: ": "Спутники: ",
   "Lat": "Шир.",
   "Lon": "Долг.",
-  "Alt": "Выс.",
+  "Altitude": "Высота",
   "GPS": "GPS",
   "Likely traffic ahead": "Возможны пробки впереди",
   "Based on driving history": "По истории поездок",

@@ -194,7 +194,7 @@
   "Satellites: ": "卫星: ",
   "Lat": "纬度",
   "Lon": "经度",
-  "Alt": "海拔",
+  "Altitude": "海拔",
   "GPS": "GPS",
   "Likely traffic ahead": "前方可能拥堵",
   "Based on driving history": "基于驾驶历史",

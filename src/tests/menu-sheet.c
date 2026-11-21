@@ -171,18 +171,22 @@ static void gps_panel(void){
  nmea_line("$GPGGA,123509,,,,,0,00,,,M,,M,,*00");assert(!gps.fix&&!gps.hdop10&&!gps.alt_valid&&gps_accuracy_dm()<0);
  nmea_line("$GPGGA,123510,3130.000,N,03530.000,E,1,05,1.0,-415.6,M,,M,,*00");assert(gps.alt_valid&&gps.alt_dm==-4156);
  nmea_line("$GPGGA,123511,3130.000,N,03530.000,E,1,05,1.0,,M,,M,,*00");assert(gps.fix&&!gps.alt_valid);
- /* Heading is hidden below the course-update speed. */
- gps.fix=1;gps.course=91;gps.mph10=DISPLAY_COURSE_UPDATE_MPH10-1;assert(gps_panel_heading()<0);
- gps.mph10=DISPLAY_COURSE_UPDATE_MPH10;assert(gps_panel_heading()==91);
+ /* Heading follows the map course, stays visible when stopped and needs a fix. */
+ display_course_valid=0;track_course=-1;gps.fix=1;gps.course=91;gps.mph10=0;assert(gps_panel_heading()==91);
+ display_course=200;display_course_valid=1;assert(gps_panel_heading()==200);
+ gps.fix=0;assert(gps_panel_heading()<0);gps.fix=1;display_course_valid=0;
  char b[32];pref.units=1;gps_accuracy_text(b,sizeof(b),34);assert(streq(b,"3 m"));
  gps_accuracy_text(b,sizeof(b),2);assert(streq(b,"1 m"));gps_accuracy_text(b,sizeof(b),20000);assert(streq(b,">999 m"));
  gps_altitude_text(b,sizeof(b),1204);assert(streq(b,"120 m"));gps_altitude_text(b,sizeof(b),-4156);assert(streq(b,"-416 m"));
  pref.units=2;gps_accuracy_text(b,sizeof(b),40);assert(streq(b,"13 ft"));gps_altitude_text(b,sizeof(b),1200);assert(streq(b,"394 ft"));pref.units=0;
  pref.hoff=1;pref.moff=0;gps.hour=23;gps.min=59;gps.sec=7;gps_time_text(b,sizeof(b));assert(streq(b,"00:59:07"));pref.hoff=0;
  gps.hour=-1;gps_time_text(b,sizeof(b));assert(streq(b,"--:--:--"));gps.hour=12;gps.min=35;
- gps_coordinate_text(b,sizeof(b),4749811,'N','S');assert(streq(b,"47.49811° N"));
- gps_coordinate_text(b,sizeof(b),-165638,'E','W');assert(streq(b,"1.65638° W"));
- gps_coordinate_text(b,sizeof(b),-5,'N','S');assert(streq(b,"0.00005° S"));
+ /* Degrees and decimal minutes: 2-digit latitude, 3-digit longitude degrees. */
+ gps_coordinate_text(b,sizeof(b),4749811,'N','S');assert(streq(b,"47° 29.887' N"));
+ gps_coordinate_text(b,sizeof(b),-165638,'E','W');assert(streq(b,"001° 39.383' W"));
+ gps_coordinate_text(b,sizeof(b),-5,'N','S');assert(streq(b,"00° 00.003' S"));
+ gps_coordinate_text(b,sizeof(b),17999999,'E','W');assert(streq(b,"179° 59.999' E"));
+ gps_coordinate_text(b,sizeof(b),0,'E','W');assert(streq(b,"000° 00.000' E"));
  /* Opened directly, BACK or the same action closes it; OK and the knob are inert. */
  gps_panel_toggle(hud_now_ms());assert(sheet_page==P_GPS&&screen==SCR_GPS&&!sheet_depth);
  key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_ROTCW);assert(sheet_page==P_GPS);

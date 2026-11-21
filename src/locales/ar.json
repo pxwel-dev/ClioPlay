@@ -194,7 +194,7 @@
   "Satellites: ": "الأقمار: ",
   "Lat": "عرض",
   "Lon": "طول",
-  "Alt": "ارتفاع",
+  "Altitude": "الارتفاع",
   "GPS": "GPS",
   "Likely traffic ahead": "ازدحام محتمل أمامك",
   "Based on driving history": "استنادا إلى سجل القيادة",

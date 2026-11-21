@@ -194,7 +194,7 @@
   "Satellites: ": "衛星: ",
   "Lat": "緯度",
   "Lon": "経度",
-  "Alt": "標高",
+  "Altitude": "標高",
   "GPS": "GPS",
   "Likely traffic ahead": "前方で渋滞の可能性",
   "Based on driving history": "運転履歴に基づく",

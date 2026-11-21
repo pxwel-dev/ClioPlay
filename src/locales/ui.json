@@ -800,9 +800,9 @@
       "Lon",
       "Lon"
     ],
-    "Alt": [
-      "Alt",
-      "Alt"
+    "Altitude": [
+      "Altitude",
+      "Altitud"
     ],
     "GPS": [
       "GPS",

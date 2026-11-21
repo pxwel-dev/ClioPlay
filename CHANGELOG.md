@@ -7,8 +7,9 @@ Release dates are added when a version is published; older versions are not reco
 
 ### Changes in this version
 
-1) Add a GPS panel: large GPS time, compass with heading (blank when stopped), estimated accuracy (green/amber/red) with satellite count, altitude, and latitude/longitude with N/S/E/W. It opens from the last Menu row, or from a console button mapped to the new `GPS` action (e.g. `btn7=GPS` for REPEAT); that button or BACK closes it.
+1) Add a GPS panel: large GPS time, a large compass with a light red heading arrow (holding the last course when stopped), estimated accuracy (green/amber/red) with satellite count, altitude, and the position in degrees and decimal minutes (e.g. `47° 29.887' N`). It opens from the last Menu row, or from a console button mapped to the new `GPS` action (e.g. `btn7=GPS` for REPEAT); that button or BACK closes it.
 2) Parse `$GPGST` error estimates, GGA HDOP and altitude.
+3) Translate the **Altitude** label in all languages.
 
 ## Version 2.2.4 — Release
 

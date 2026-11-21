@@ -194,7 +194,7 @@
   "Satellites: ": "위성: ",
   "Lat": "위도",
   "Lon": "경도",
-  "Alt": "고도",
+  "Altitude": "고도",
   "GPS": "GPS",
   "Likely traffic ahead": "전방 정체 예상",
   "Based on driving history": "주행 기록 기준",
