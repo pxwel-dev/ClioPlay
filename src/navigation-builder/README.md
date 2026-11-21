@@ -1,6 +1,6 @@
 # ClioPlay Global navigation builder
 
-Build a complete region from **one original `.osm.pbf`**, without supplying old
+Build a complete region from **one or more original `.osm.pbf` extracts**, without supplying old
 ClioPlay packs, overlays, separate boundary files, fonts or a postal database.
 Filled inland water/greenery and processed coastal water/estuaries are included.
 Roads are drawn above all fill layers.
@@ -26,9 +26,10 @@ From this directory run:
 python3 build_navigation.py
 ```
 
-The sequence is PBF path → scan actual contents/bounds → show intersecting
-countries and ask confirmation → build/inspect all outputs. Automatic dependency
-setup creates `.venv` when needed. Dragging a file into a macOS terminal is supported.
+Enter each PBF path, then press Enter on an empty prompt. The wizard merges
+multiple extracts, scans the data, shows intersecting countries and asks for
+confirmation before building. Dragging files into a macOS terminal is supported.
+Automatic dependency setup creates `.venv` when needed.
 The country check verifies intersection, not completeness of country coverage.
 Extracts above 350 MB automatically become a regional atlas; `--atlas` forces it and `--single-region` disables automatic splitting.
 
@@ -38,8 +39,19 @@ For unattended use, provide the expected country code:
 python3 build_navigation.py /path/to/spain.osm.pbf --yes --country ES --output /path/to/output
 ```
 
-For a cross-border extract repeat `--country` for each expected country. An absent
-expected country aborts before map construction. `--work PATH` reuses scratch
+For a cross-border build, pass multiple input paths and repeat `--country` for
+each expected country. An absent country aborts before map construction.
+
+```sh
+python3 build_navigation.py france-latest.osm.pbf belgium-latest.osm.pbf --yes --country FR --country BE --output /path/to/output
+```
+
+Use sorted snapshot extracts from the same provider and point in time. The
+builder combines them with [Osmium merge](https://docs.osmcode.org/osmium/latest/osmium-merge.html),
+deduplicates shared objects and rejects conflicting versions. It keeps a verified
+merged PBF in local build scratch so you can resume with the same source files.
+The combined PBF needs extra disk space. The bundle records each input filename
+and checksum. `--work PATH` reuses scratch
 space and `--cache PATH` reuses coastline downloads. Output/work must be separate.
 The builder prints both locations; diagnostic reports stay in scratch. The output
 contains only the installable files and their `build.json` manifest.
@@ -58,11 +70,13 @@ For a single region, keep these seven files together with their `build.json` SHA
 | `fonts.cpf` | Bundled 23 MB native-script glyphs and shaping tables |
 | `timezones.cpt` | Offline GPS timezone/DST polygons and 2020–2060 transitions |
 
-**Use the Global executable. Older ClioPlay versions cannot read the new map/route
-formats.** `route.qadj` is specific to the exact `route.cpr`; never mix builds.
+**Use the Global executable and current navigation formats.** The runtime
+requires CPM5 and CPR2 v5; QAD7 is the supported acceleration sidecar. The
+installer accepts version-2 navigation and atlas manifests only. `route.qadj` is specific to the exact `route.cpr`; never mix builds.
 The wizard in the parent folder installs the executable and complete data set
-with staging, checksum verification and backups. Upgrading an older Global card
-also backs up and removes its unused search indexes. Alternatively:
+with staging, checksum verification and backups. Known stale search indexes on the card are backed up and removed during install.
+If your pack uses an unsupported format, build a fresh pack; current packs
+can be reused without rebuilding. Alternatively:
 
 ```sh
 python3 ../tools/prepare_card.py /path/to/prepared-runtime
@@ -219,9 +233,9 @@ The catalog and QAD7 formats are unchanged; existing verified packs need no rebu
 CPN1 is a build-side identity index;
 CPA1 is the device overlay. Boundary cuts without a safe endpoint are reported,
 so universal whole-country optimality is not implied by the small passing fixtures.
-A PBF must cover the intended journey; independent finished country atlases cannot
-be merged on the SD card. Use one cross-border extract (for example a suitable
-regional/continental source) when building multi-country coverage.
+For multi-country coverage, select adjacent snapshots together or use a single
+cross-border extract. Routes can cross the border where the supplied road graph
+connects. Finished atlases cannot be combined on the SD card.
 
 Shared fonts and country/timezone data are prepared once for the whole atlas,
 not repeated for every region. Atlas builds release bulky per-region SQLite and geometry scratch after publishing

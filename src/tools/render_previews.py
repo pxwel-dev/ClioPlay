@@ -10,11 +10,13 @@ import sys
 import tempfile
 
 from PIL import Image, ImageChops, ImageDraw, ImageFont
-from render_gallery import (BLUETOOTH_SAMPLES, MENU_ENTRY_SAMPLES, MENU_RETURN_SAMPLES, PHONE_CALC_SAMPLES, ROUNDABOUT_ETA_SAMPLES,
+from render_gallery import (ANIMATION_SAMPLE_MS, BLUETOOTH_SAMPLES, MENU_ENTRY_SAMPLES, MENU_RETURN_SAMPLES, PHONE_CALC_SAMPLES, ROUNDABOUT_ETA_SAMPLES,
                             SPEED_WARNING_SAMPLES, EXPLORE_SAMPLES, TWEEN_STEPS, ZOOM_MODE_SAMPLES, ROUTE_READY_SAMPLES, POPUP_SAMPLES,
                             TRIPS_LAYOUT_SAMPLES, TRIPS_EMPTY_SAMPLES, POPUPS_LAYOUT_SAMPLES,
                             V216_COORDINATES_SAMPLES, V216_HUD_SETTINGS_SAMPLES,
-                            V216_BLUETOOTH_HIDDEN_SAMPLES, V216_ITINERARY_SAMPLES, ROOT, sha)
+                            V216_BLUETOOTH_HIDDEN_SAMPLES, V216_ITINERARY_SAMPLES,
+                            V220_DESTINATION_SAMPLES, V220_DIVERSION_SAMPLES, V220_FREQUENT_PLACE_SAMPLES, ROOT, sha)
+
 
 
 def timeline(theme, scenes):
@@ -30,13 +32,17 @@ def previews():
     road_frames = sorted({0,5300}|{at+step for at in (100,1100,4100) for step in TWEEN_STEPS})
     status_samples = sorted({at+step for at in (0,800,1600,2600,6500,7000) for step in TWEEN_STEPS} | {4400,4800,5400,6100,6200,6280,6360,6440,8600})
     metadata_samples = sorted({at+step for at in (0,900,1700,2900,4300,8500) for step in TWEEN_STEPS} | {700,2600,3900,7200,9200})
-    boot = [(f'boot-fade-{ms:04d}', 67) for ms in range(0, 501, 67)] + [('boot-fade-0536', 364), ('boot-fade-0900', 700)]
+    boot = [(f'boot-fade-{ms:04d}', ANIMATION_SAMPLE_MS) for ms in range(0, 500, ANIMATION_SAMPLE_MS)]
+    boot += [('boot-fade-0500', 400), ('boot-fade-0900', 700)]
     boot[0] = (boot[0][0], 750)
-    return {
+    plans = {
+        'v220-frequent-place.gif': timeline('night', timed_scenes('preview-v220-frequent-place', V220_FREQUENT_PLACE_SAMPLES, 5900)),
+        'v220-destination-prediction.gif': timeline('night', timed_scenes('preview-v220-destination-prediction', V220_DESTINATION_SAMPLES, 6500)),
+        'v220-intelligent-diversions.gif': timeline('night', timed_scenes('preview-v220-intelligent-diversions', V220_DIVERSION_SAMPLES, 6200)),
         'v216-coordinates.gif': timeline('night', timed_scenes('preview-v216-coordinates', V216_COORDINATES_SAMPLES, 11200)),
         'v216-hud-settings.gif': timeline('night', timed_scenes('preview-v216-hud-settings', V216_HUD_SETTINGS_SAMPLES, 10000)),
         'v216-bluetooth-hidden.gif': timeline('night', timed_scenes('preview-v216-bluetooth-hidden', V216_BLUETOOTH_HIDDEN_SAMPLES, 9600)),
-        'v216-itinerary.gif': timeline('night', timed_scenes('preview-v216-itinerary', V216_ITINERARY_SAMPLES, 7500)),
+        'v216-itinerary.gif': timeline('night', timed_scenes('preview-v216-itinerary', V216_ITINERARY_SAMPLES, 9900)),
         'trips-layout.gif': timeline('night', timed_scenes('preview-trips-layout', TRIPS_LAYOUT_SAMPLES, 13200)),
         'trips-empty-layout.gif': timeline('night', timed_scenes('preview-trips-empty', TRIPS_EMPTY_SAMPLES, 6200)),
         'popups-layout.gif': timeline('night', timed_scenes('preview-popups-layout', POPUPS_LAYOUT_SAMPLES, 10800)),
@@ -82,6 +88,21 @@ def previews():
         ]),
     }
 
+    return {name: gif_clock(sequence) for name, sequence in plans.items()}
+
+
+def gif_clock(sequence):
+    """Drop samples that have no display time at GIF's 10 ms resolution."""
+    result = []
+    elapsed = encoded = 0
+    for frame, ms in sequence:
+        elapsed += ms
+        target = round(elapsed / 10) * 10
+        if target > encoded:
+            result.append((frame, target - encoded))
+            encoded = target
+    return result
+
 
 # RGB565-expanded body/facet colours from the Day/Night vehicle palette.
 # Keep these small but important details out of whole-scene colour averaging.
@@ -115,13 +136,7 @@ def encode_gif(captures, destination, sequence):
     reserved = [channel for colour in POINTER_COLOURS for channel in colour]
     palette.putpalette(reserved + learned.getpalette()[:(256-len(POINTER_COLOURS))*3])
     indexed = [quantize_preview(image, palette) for image in images]
-    # GIF has a 10 ms clock: carry rounding error to retain total timing.
-    durations, elapsed, encoded = [], 0, 0
-    for _, ms in sequence:
-        elapsed += ms
-        target = round(elapsed / 10) * 10
-        durations.append(target - encoded)
-        encoded = target
+    durations = [ms for _, ms in sequence]
     indexed[0].save(destination, save_all=True, append_images=indexed[1:],
                     duration=durations, loop=0, optimize=True)
     with Image.open(destination) as image:
@@ -215,12 +230,24 @@ def main():
                 'runs to R_READY on the local map bundle; target coordinates and nonempty '
                 'route geometry are asserted. GPS is held stationary. The 1.3-second '
                 'calculation display is a controlled preview interval, not a timing benchmark.')
-        generator_paths = ('tools/render_previews.py', 'tools/render_gallery.py', 'tools/text_engine.py',
+        reports['v220-intelligent-diversions.gif']['routing_provenance'] = (
+            'Real Newcastle route and legal alternative geometry from '
+            'the installed CPR2 routing graph. Historical congestion '
+            'observations are controlled examples. The production traffic '
+            'search, shared-geometry rendering, BT CTRL and direct map '
+            'confirmation handler are used. This is '
+            'not a claim about actual traffic conditions.'
+        )
+        generator_paths = ('tools/render_previews.py', 'tools/render_gallery.py', 'tools/text_engine.py', 'tools/mobility_stories.py',
                            'tests/native.c', 'tests/splash.c', 'tests/fixtures/route.h', 'clio843/font.bin')
         manifest = {
             'schema': 'clioplay-readme-previews-1',
             'framebuffer': '480x272 RGB565 from production C draw() and key_handle()',
-            'example': 'Newcastle upon Tyne, with simulated car and phone inputs',
+            'example': (
+                'Newcastle upon Tyne, with simulated car and phone inputs; '
+                'This demonstration uses controlled learned records and a real '
+                'map-backed diversion calculated by production routing'
+            ),
             'native_sources': capture['native_sources'],
             'executables': capture['executables'],
             'generator_inputs': {path: sha(ROOT / path) for path in generator_paths},

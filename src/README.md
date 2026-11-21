@@ -1,20 +1,27 @@
-# ClioPlay version 2.1.6
+# ClioPlay version 2.2.2
+
+Version 2.2.2 raises the Bluetooth prefill to 200 ms, makes animation and steady
+HUD updates smoother, and adds wraparound to menu controls. See the [changelog](docs/changelog.md).
 
 ## Set up a card
+
+Already installed? Use the [software-only update guide](docs/updating.md) to update without rebuilding maps or downloading firmware. The steps below are for a fresh installation.
 
 Current prebuilt programs are included in this source/publication folder.
 To change and rebuild the runtime, follow [BUILDING.md](BUILDING.md).
 
 Install Python 3.11+, osmium-tool, a C++17 compiler, and cabextract or 7-Zip. Run `Install.command` on macOS, or `python3 install.py`.
 
-1. Select your `.osm.pbf` first. The installer scans it and asks you to verify the
-   intended coverage. Complete relations can contain remote nodes; both source
-   metadata and the installation envelope are retained. Bounds alone do not prove
-   that a country is complete.
+1. Enter or drag in your first `.osm.pbf` path. Add more paths when prompted, then
+   press Enter on an empty prompt to continue. For multiple files, choose extracts
+   from the same provider and snapshot. The installer merges them locally, rejects
+   conflicting versions of shared objects and asks you to verify the coverage.
+   Bounds alone do not prove that a country is complete. You can also supply
+   `--pbf PATH` once per file when starting `python3 install.py`.
 2. The builder creates and checks every navigation file. Fonts, country profiles,
    timezone boundaries and offline DST rules are bundled; coastline data is
    downloaded and cached automatically on first use.
-3. Large extracts automatically become an atlas of overlapping regional packs.
+3. A large combined extract automatically becomes an atlas of overlapping regional packs.
    Small extracts remain a single pack. Select the SD-card root after building.
 4. The installer automatically downloads and caches TomTom Navcore 8.843,
    verifies its checksum, and combines `ttsystem` and `vehicledaemon` with the full AUX/remote/Bluetooth bootstrap,
@@ -25,8 +32,9 @@ Install Python 3.11+, osmium-tool, a C++17 compiler, and cabextract or 7-Zip. Ru
    stay in place. Failed commits attempt rollback, including atlas selectors.
 
 The installer accepts an SD-card root or a local folder for inspecting the
-complete installation. Rebuild with `python3 tools/build_ui.py --install` after
-changing native code. Current programs live in `clio843/`; `card-template/`
+complete installation. Rebuild with `python3 tools/rebuild_arm.py` after
+changing native code, then regenerate the previews and refresh the publication as
+described in [BUILDING.md](BUILDING.md). Current programs live in `clio843/`; `card-template/`
 contains only default startup scripts, preferences and the legacy helpers. The
 custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
 
@@ -36,18 +44,21 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
   services and data load. Once
   the first UI frame is ready, the splash cross-fades into the live display over
   about half a second. Map/model/input services continue normally; pressing a
-  control reveals the UI immediately. The transition targets 15 FPS, or 5 FPS
+  control reveals the UI immediately. The transition targets 20 FPS, or 5 FPS
   during route calculation. It adds no readiness wait or artificial loading stage.
 
 - **Driving display:** the map fills the screen. The clock shows the outside
   temperature when a valid reading is available. Audio, volume, connection and
-  navigation updates animate in as temporary notices. A new road name appears
-  briefly in the centre and shares its pill with any camera warning. The speed
-  and turn pills flank it. Exceeding a confirmed limit pulses the speed pill red.
+  navigation updates animate in as temporary notices. The road name appears
+  briefly in the centre when you enter a named road or press **OK**. It shares
+  its pill with any camera warning. The speed and turn pills flank it. Exceeding
+  a confirmed limit pulses the speed pill red.
 - **Menus:** each page title shares the top row with the clock and temporary
   audio or connection notices. In Bluetooth control mode, Left and Right skip
   tracks, and OK toggles playback. The selected control briefly highlights.
-- **Bluetooth audio:** selecting another audio source suspends decoding while
+- **Bluetooth audio:** on units with `hw_bluetooth=0`, the Bluetooth menu, phone
+  audio, phone destinations and related controls are unavailable. On equipped units,
+  selecting another audio source suspends decoding while
   keeping the phone connection, controls and destination reception available.
   If a media stream stalls without suspending its transport, playback closes
   after queued audio has had time to drain and restarts when packets return.
@@ -92,16 +103,16 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
   retain visual alerts; FM interruption is not implemented. Physical playback
   timing still needs vehicle verification.
 - **Clock:** offline automatic timezone and DST from GPS, with a manual fallback.
-  Settings → Clock: Enter toggles Auto/manual; Left/Right selects a manual offset
+  Settings → System → Clock: Enter toggles Auto/manual; Left/Right selects a manual offset
   in 15-minute steps. Rules span 2020–2060 and retain the last offset at boot.
-- **Auto theme:** a custom daily schedule using local time. In Settings, choose
+- **Auto theme:** a custom daily schedule using local time. In Settings → Display, choose
   Auto under Theme, then set **Day starts** and **Night starts**. Defaults are
   07:00 and 18:00. Scroll down to the schedule rows, use **OK** to select hours
   or minutes, and **Left / Right** to adjust the highlighted part. The times are
   saved and also apply to the boot splash. Day/Night overrides remain available.
   The unit clock and saved UTC offset provide the schedule before GPS is ready.
   With no valid clock, Auto retains the last theme, defaulting to Night.
-- **Language:** 18 options in Settings, including Arabic, Simplified Chinese,
+- **Language:** 18 options in Settings → System, including Arabic, Simplified Chinese,
   Japanese, Korean, Hindi, Hebrew, Greek and Cyrillic languages. See
   [the complete language list](locales/README.md). Native destination and
   street names remain unchanged. Received UTF-8 names, Arabic/Indic shaping and
@@ -126,14 +137,14 @@ uses its normal vehicle configuration to supply physical console events.
 | --- | --- |
 | Top-left / top-right soft buttons | Same as remote soft-left / soft-right: zoom, delete, next or space according to the current page. |
 | BACK | Same as remote BACK, including BT CTRL on the driving map. |
-| INFO | Show the driving journey/ETA overview. |
+| INFO | Briefly show the current road name and, during guidance, the journey estimate. |
 | MENU | Open Menu. |
 | LIGHT | Cycle Day, Night and custom-schedule Auto. |
-| REPEAT | Redisplay the journey overview; spoken navigation is not implemented. |
+| REPEAT | Redisplay the current road name and, during guidance, the journey estimate. |
 | DEST | Open Trip directly, unless a confirmation is awaiting a decision. |
 | MAP | The existing Auto/manual zoom, Explore and return-to-map behaviour. |
 | Joystick | The existing arrow actions, including Explore panning. |
-| Knob rotation | Zoom the map; previous/next track in BT CTRL; scroll menus; select dialog choices; traverse keyboard characters and coordinate fields. |
+| Knob rotation | Zoom the map; previous/next track in BT CTRL; scroll menus; select dialog choices; traverse keyboard and coordinate keypad keys. |
 | Knob press | OK/confirm; play/pause in BT CTRL. |
 
 Duplicate evdev knob events are ignored only after a valid console FIFO record
@@ -199,9 +210,9 @@ coordinate-entry and dialog instructions:
 Turning the knob is an additional convenience: it zooms the map, selects tracks
 in BT CTRL, scrolls lists and traverses keyboard/keypad buttons and dialog choices.
 In Settings, turn it to select a row; joystick Left/Right changes the value and
-knob press performs OK. In Trip, either the upper soft buttons or joystick
-Left/Right cycle Itinerary, Recents and Favourites. Turning the knob scrolls
-the current list. No long-press binding is required.
+knob press performs OK. In Trip, use the joystick Left/Right for tabs or
+for the buttons on the Itinerary footer. Turning the knob moves between list
+rows and wraps at the ends. No long-press binding is required.
 
 The [console action table](#physical-console-and-temperature-sources) also covers
 INFO, REPEAT, LIGHT and DEST shortcuts. Optional custom mappings can change these
@@ -214,7 +225,7 @@ bindings; the defaults provide complete remote-equivalent control.
 | **MAP** | Restore Auto zoom after a temporary manual adjustment; otherwise enter map browsing. | Return to the driving view and the configured zoom mode. | Leave BT CTRL; restore Auto zoom if temporarily adjusted, otherwise enter map browsing. |
 | **MENU** | Open Menu. | Open Menu. | Leave BT CTRL and open Menu. |
 | **BACK** | Enter BT CTRL when Bluetooth audio is selected and a phone is connected. | | Leave BT CTRL. |
-| **Centre / OK** | Show estimated remaining time and distance for about four seconds. With GPS and no active route, show the heading. | Open the route or add-stop prompt for the point under the crosshair. | Play or pause. |
+| **Centre / OK** | Briefly show the current road name when known. During guidance, also show the estimated time and distance remaining. | Open the route or add-stop prompt for the point under the crosshair. | Play or pause. |
 | **Up / Down** | Enter map browsing and pan. | Pan up or down. | |
 | **Left / Right** | Enter map browsing and pan. | Pan left or right. | Previous or next track. |
 | **Left / right soft keys** | Zoom out or in. With Auto zoom enabled, this sets a temporary override. | Zoom out or in. | Zoom out or in on the driving map. |
@@ -222,13 +233,13 @@ bindings; the defaults provide complete remote-equivalent control.
 With Auto zoom enabled, the soft keys temporarily adjust the driving zoom and
 show **Manual zoom**. **MAP** restores Auto zoom without entering Explore; a
 subsequent **MAP** enters Explore. Arrow keys can enter Explore and pan directly,
-including from temporary manual zoom. **OK** continues to show the journey estimate
-during guidance, including while the zoom is temporarily adjusted. The estimate
-also appears when a route calculation or reroute finishes.
+including from temporary manual zoom. **OK** briefly shows the road name in
+the centre pill and, during guidance, the journey estimate in the status pill.
+The estimate also appears when a route calculation or reroute finishes.
 
 Explore shows one entry notice. Zooming and panning within Explore neither replay
 that notice nor extend it. Leaving Explore shows **Auto zoom**, or **Manual zoom**
-when Auto zoom is disabled in Settings. These mode notices share the usual glass
+when Auto zoom is disabled in Settings → Navigation. These mode notices share the usual glass
 styling, transitions and temporary display time.
 
 Confirming a point selected in Explore returns directly to the driving map with
@@ -240,16 +251,22 @@ calculation uses the existing five-frame-per-second cap. Declining keeps Explore
 - **Menu:** use **Up / Down** to choose Trip, Bluetooth, Settings or GPS. Press **OK**
   to open it or **BACK** to return to driving. From a page, **MENU** or **BACK**
   returns to Menu. **MAP** goes directly to the driving map.
-- **Trip:** always opens **Itinerary** first. **Left / Right** or the left/right
-  soft keys cycle **Itinerary → Recents → Favourites**, remembering each tab's
-  selection. **Up / Down** or knob rotation scrolls. **OK** opens stop, destination
-  or saved-place actions. The itinerary includes **Add stop** and **Cancel route**;
+- **Trip:** always opens **Itinerary** first. Use **Left / Right** to cycle
+  **Itinerary → Recents → Favourites**. Each tab remembers its selection.
+  **Up / Down** or knob rotation moves between rows and wraps at the ends.
+  On the Itinerary footer, **Left / Right** wraps between **Add stop**,
+  **Cancel route** and **Diversion** when offered. Move **Up / Down** to a
+  target to switch tabs again. **OK** opens the highlighted action. A trip holds up to **10 targets** (9 stops plus the final
+  destination), including stops already visited. Scroll to see targets beyond the
+  visible rows; connector lines end at the last visible marker. **Add stop** is
+  disabled at capacity; remove an unvisited stop or start a new trip to free space.
+  The itinerary includes **Add stop** and **Cancel route**;
   an empty itinerary offers **Coordinates**. Add stop and Change destination let
   you choose Recents, Favourites or Coordinates, then review before confirmation.
   **BACK** returns one level without applying a draft. Phone destinations arrive
   automatically, with no receive option to open.
-- **Bluetooth:** **Pair new phone** stays above the saved-phone list; the **right
-  soft key** starts pairing from anywhere in that list. **Up / Down** or the knob
+- **Bluetooth:** **Pair new phone** stays at the top of the saved-phone list;
+  select it and press **OK** to start pairing. **Up / Down** or the knob
   selects a device, **OK** opens its Connect/Disconnect and Forget actions, and
   **Up / Down** selects the action. **OK** confirms; **BACK** returns to the list.
 - **GPS:** a live information panel. The GPS time (to the second) is shown large
@@ -265,27 +282,37 @@ calculation uses the existing five-frame-per-second cap. Declining keeps Explore
   the same button or **BACK** then closes it.
 
 All these pages are animated frosted-glass sheets over the live map. Menu,
-Settings and Bluetooth retain the lower driving pills when there is enough room;
-Trip, coordinates and naming use a taller sheet. An unusually tall status notice
-can temporarily hide the lower pills to make room for a compact page. The top
-clock and status pill keep their position and notice timers across page changes.
+Settings, Bluetooth, Trip, coordinates and review use compact sheets between
+the persistent HUD pills. Only the naming keyboard expands into the lower HUD area. An unusually tall status notice
+shrinks the sheet in sync with the notice. The current page stays visible and
+its scrolling rows fade at the edges. The top clock and status pill keep their
+position and notice timers across page changes.
+
+### Intelligent navigation
+
+Optional offline learning uses completed Barcelona power-off driving sessions, even without an active route. Enable **Learn driving history** in Settings → Driving history. The empty Itinerary retains the original destination-entry layout. With no active trip and sufficient evidence, the map status pill displays a green Suggested destination and blue OK to review (BACK to review during BT CTRL). OK opens a default-Yes confirmation; No suppresses that destination for the recording session, Back leaves it eligible, and ignoring it never changes the route. On a later stationary startup, five completed visits across three distinct dates in the last 90 days can prompt Add to favourites? for the current place. No is the safe default. Yes opens the existing Favourite naming keyboard with an editable inferred name (or an empty field); only Save adds the Favourite and returns to the map. The prompt is shown at most once per place until driving history is cleared, and never starts navigation. The predictor reconciles the stored starting point with live GPS, combines day/time, recency and early trajectory evidence, and resolves destinations via named Favourites/Recents, nearby offline map names or coordinates. During guidance, a historical traffic warning may appear and a **Diversion** action is available in Trip if a beneficial legal local alternative is found. Shared geometry stays solid magenta, bypassed geometry is yellow/gold and the distinct proposed diversion is dashed aqua/teal. The glass status pill continuously displays a single line with the success-green Faster route available announcement and blue OK to review (BACK to review when BT CTRL is active). A centred, anti-aliased frosted-glass badge near the actual decision point shows the approximate saving when space permits. The invitation disappears at the decision point if ignored. Press OK twice from the driving map to accept; with BT CTRL active, press Back first. Normal zoom and Bluetooth controls are preserved. The confirmation opens on Yes; declining it keeps the original route, warning and adjusted ETA, and only suppresses alternative offers overlapping that section. Later independent diversions remain eligible. No live traffic or automatic route selection is used. Learning still relies only on completed power-off sessions, not arrival prompts. Destination suggestions and diversions can be enabled separately; **Clear driving history** removes the private learned data after confirmation. Raw GPS time is independent of the UI clock adjustment. See [intelligent navigation](docs/intelligent-navigation.md) for the complete behavior and limitations.
 
 ### Settings
 
-Use **Up / Down** to highlight a row. The available actions depend on the setting.
+Use **Up / Down** to highlight a category and **OK** to open it. Use the same controls within each page to highlight a setting; **Back** returns to its category. The available actions depend on the setting.
 
-| Setting | Left / Right | Centre / OK |
-| --- | --- | --- |
-| Brightness | Adjust in 10-point steps. | |
-| Theme | Cycle Day, Night and Auto. | |
-| Units | Cycle Auto, Metric and Imperial. | |
-| Auto zoom | Toggle on or off. | |
-| Camera alerts | Cycle Off, Visual and Phone audio. | |
-| Clock | Set a manual UTC offset in 15-minute steps. | Toggle automatic and manual time. |
-| Debug log | Toggle on or off. | |
-| Language | Cycle backwards or forwards. | Open the language chooser. |
-| Day starts / Night starts | Adjust the highlighted hour or minute. | Switch between editing hours and minutes. |
-| Switch top pills to the left/right | Switch bottom pills to the left/right | |
+| Category | Setting | Left / Right | Centre / OK |
+| --- | --- | --- | --- |
+| Display | Brightness | Adjust in 10-point steps. | |
+| Display | Theme | Cycle Day, Night and Auto. | |
+| Display | Day starts / Night starts | Adjust the highlighted hour or minute. | Switch between editing hours and minutes. |
+| HUD layout | Top pill order | Toggle Status left / Clock left (status and time/temperature swap sides). | |
+| HUD layout | Bottom pill order | Toggle Speed left / Direction left. | |
+| Navigation | Units | Cycle Auto, Metric and Imperial. | |
+| Navigation | Auto zoom | Toggle on or off. | |
+| Navigation | Camera alerts | Cycle Off, Visual and Phone audio (Off/Visual only if Bluetooth hardware is absent). | |
+| Driving history | Learn driving history | Toggle recording and learning. | Toggle. |
+| Driving history | Destination suggestions | Toggle learned suggestions. | Toggle. |
+| Driving history | Intelligent diversions | Toggle historical traffic and diversion offers. | Toggle. |
+| Driving history | Clear driving history | | Open deletion confirmation. |
+| System | Language | Cycle backwards or forwards. | Open the language chooser. |
+| System | Clock | Set a manual UTC offset in 15-minute steps. | Toggle automatic and manual time. |
+| System | Debug log | Toggle on or off. | |
 
 The release version is shown at the bottom of Settings.
 
@@ -299,10 +326,11 @@ The release version is shown at the bottom of Settings.
   have their own mode. The **left soft key**
   deletes, the **right soft key** inserts a space, and **BACK** returns to the
   previous page without saving (or to longitude with the coordinate name retained). In the language chooser, **Up / Down** moves one language,
-  **Left / Right** jumps six, **OK** selects, and **BACK** or the **left soft key**
+  **Left / Right** jumps six, both directions wrap, **OK** selects, and **BACK**
   closes the chooser. See [language-specific input](locales/README.md#favourite-keyboard).
 - In option dialogs, **Up / Left** selects the previous option and **Down / Right**
-  selects the next one. In Yes/No dialogs, use **Left / Right**. **OK** confirms,
+  selects the next one. Choices wrap at the ends. In Yes/No dialogs, use
+  **Left / Right**. **OK** confirms,
   and **BACK** dismisses ordinary dialogs. Menu action lists use **Up / Down**;
   their Yes/No confirmations still use **Left / Right**. At the saved-trip resume prompt, choose
   an option and confirm with **OK**. At arrival, **OK** continues from a stop or
@@ -384,11 +412,13 @@ is capped at 5 FPS**, including pills, loading indicators, playback, speed warni
 menus and Explore rotation. This leaves more CPU time for routing. New input and
 status changes queue for the next frame; input, GPS and audio services keep running.
 On completion, failure or cancellation, normal presentation resumes immediately.
-Outside calculation, a separate compositor targets approximately 15 FPS while overlays animate. It
-restores the latest finished background before drawing each overlay frame, so
-map updates can continue during an animation without showing partial roads or
-retaining old glyphs. Two extra RGB565 backgrounds use about 510 KiB of RAM.
-Quiet screens do not redraw at 15 FPS unnecessarily.
+Outside calculation, live and prepared animations and steady HUD updates target
+20 FPS. The compositor draws over the latest finished map. While parked, it
+holds the current map until the scene changes and prepares finite pill, popup
+and menu transitions before displaying them. The extra preparation adds a
+short delay. Routine playback and clock updates let the queued transition
+finish. Unchanged screens hold their last image. When the framebuffer driver
+supports partial writes, only the changed overlay rows are sent.
 
 Frosted surfaces combine complete 8 × 8 backdrop areas with a separable
 1–2–1 blend over neighbouring areas in both axes, softening detail over a
@@ -406,24 +436,24 @@ speed-limit insets are sampled afresh.
 
 All popup windows use this glass, including route confirmations, saved-place and
 itinerary actions, phone prompts, Bluetooth actions and keyboard language choices.
-Their entrances, exits, resizing, text changes and moving selection highlights
-share the pills' independent 15 FPS animation clock (5 FPS during calculation).
+Yes/No confirmations use compact cards with reduced padding; itinerary removal
+and cancellation retain the target name. Action menus size to their available
+choices. Their entrances, exits, resizing, text changes and moving selection highlights
+share the pills' independent 20 FPS animation clock (5 FPS during calculation).
 Popup-only input does not force a new map frame. Actions take effect immediately;
 copied popup content remains available while closing, including after deletion
 or a page change. A settled popup returns to the normal presentation cadence.
 
-Scrollable Recents, Favourites, saved-phone, Settings and keyboard-language lists
+Scrollable Itinerary, Recents, Favourites, saved-phone, Settings and keyboard-language lists
 show a proportional scrollbar only when more rows exist than fit onscreen.
 The thumb tracks the actual scrollable list size and visible window. The
 phone-pairing action is pinned separately above the device list. Popup scrollbars use translucent antialiased strokes over the glass
 and share its entrance, exit and content fades.
 
 Explore rotation and tilt follow a 500 ms elapsed-time transition rather than a
-fixed number of map frames. Camera presentation requests additional map drawing
-passes using the tile cache; these still cost CPU time. During rotation, live map
-updates are coalesced onto the 15 FPS presentation clock so the 10 FPS map
-clock cannot insert redundant full renders between camera frames. The existing
-500 ms eased trajectory and exact projection are retained. Offscreen strokes are rejected
+fixed number of map frames. ClioPlay normally prepares the ten map backgrounds
+for the rotation before presenting them at 20 FPS. The HUD draws over each
+prepared background and keeps its own notification timers. Offscreen strokes are rejected
 conservatively before rasterisation, and tile coordinates use an exactly
 equivalent shift/remainder conversion instead of repeated software division. Live model updates keep
 running, and rotation never resets a pill's appearance or notification timer.
@@ -432,10 +462,11 @@ Routing uses spare
 deadline budget in chunks of at most 5 ms, with periodic cooperative clock checks.
 
 These are scheduling targets, not measured frame rates on the 400 MHz head unit.
-Slow SD reads or drawing can miss deadlines; missed frames are skipped rather than
-replayed in a burst. With Debug enabled, five-second `FRAME 5S` summaries in the
+Slow SD reads or drawing can delay presentation. Live transitions sample the
+current time. Prepared sequences keep every frame in order and take longer when
+the unit is busy. With Debug enabled, five-second `FRAME 5S` summaries in the
 existing `state.log` report presentations, scheduled map frames, extra camera
-passes, lateness and drawing/routing time. No frame log is written with Debug off.
+passes, lateness, drawing/routing time and animation preparation time. No frame log is written with Debug off.
 
 ### Radio and Bluetooth source selection
 
@@ -462,16 +493,25 @@ navigation and menus. Console input uses the independent reader described in the
 
 ### Decimal-degree destinations
 
-**Trip → Itinerary → Coordinates** opens latitude, longitude, optional name,
-and review. **Add stop** and **Change destination** expose the same Coordinates
-source. Arrow keys move around the numeric keypad; OK presses a key. **±** toggles
-the sign, **.** adds the decimal separator, **Delete** removes the last character,
-and **Clear** clears the current field. The left soft key deletes; the right soft
-key advances a numeric field. On the name keyboard, the right soft key inserts a
-space, and **Next** opens review. The existing keyboard-language selector works
-for destination names. BACK keeps entered values while going back; MAP/MENU leave
-without saving. Review offers the route/stop action, Edit coordinates, Rename
-and Cancel. No saved places or itinerary targets change until confirmation.
+**Trip → Itinerary → Coordinates** opens a single keypad sheet with latitude
+and longitude fields. **Add stop** and **Change destination** expose the same
+Coordinates source. Arrow keys or console knob rotation select among 13 keys;
+**OK** presses the highlighted key. The bottom-left column contains two half-width
+keys: **±** toggles the sign and **.** inserts the decimal separator. **0** is in
+the middle and **Next** is at bottom right.
+
+The left soft key deletes the last character; the right soft key cycles between
+latitude and longitude, wrapping in both directions. Select **Next** to validate
+both fields and open optional naming. An invalid or empty field is selected and
+its warning shown above the keypad; nothing is saved. **BACK** returns to the
+previous page (Itinerary, source selector or Review when editing) without applying
+the draft. Reopening a new coordinate entry starts with empty fields.
+
+On the name keyboard, the right soft key inserts a space and **Next** opens
+Review. BACK from naming returns to the coordinate sheet with the draft name
+retained. Review offers the route/stop action, Edit coordinates, Edit name and
+Cancel; backing out of Edit coordinates restores the prior review values. MAP/MENU
+leave without saving. No saved places or itinerary targets change until confirmation.
 
 Latitude accepts −90…90, longitude −180…180; minus means south/west. Decimal
 points use `.` in every interface language. Up to seven fractional digits can be
@@ -479,7 +519,11 @@ entered; the router stores 1e-5 degree integers and review displays the rounded
 five-decimal values. Exact geographic bounds are checked before rounding. Parsing
 uses bounded integer operations, without floating point or a geocoding service.
 An empty/space-only name becomes the coordinate pair. Saved names use the existing
-40-character Unicode limit and the existing Recents/favourites/trip formats.
+40-character Unicode limit. Recents and Favourites use CLP2 only; current saved places are retained.
+Trips use CTR4 only. Older trip and saved-place formats are ignored, not migrated
+or deleted on load. Subsequent saves replace the respective file. Current maps
+use CPM5, CPR2 version 5 and matching QAD7; the installer accepts version-2
+navigation/atlas manifests. Rebuild outdated navigation packs before use.
 Existing nearby-place deduplication applies to Recents. Coordinate entry does not
 expand map coverage; normal navigation-data/routing errors still apply.
 
@@ -504,5 +548,5 @@ footprints and add no runtime blur or font dependency.
 
 For device validation, compare Explore entry/exit with Bluetooth playing and
 paused, including simultaneous volume/track notices, reversal and route start.
-The 15 FPS camera/HUD cadence is a target, not measured physical head-unit FPS.
+The camera and HUD target 20 FPS. Actual frame rates depend on the head unit and its workload.
 During route calculation the whole UI remains capped at 5 FPS.

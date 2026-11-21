@@ -18,6 +18,13 @@
 **/recent.dat
 **/trip.dat
 **/audlast.dat
+**/gpslast.dat
+**/history.dat
+**/history.prev.dat
+**/mobility.dat
+**/mobility.tmp
+**/mobility-places.dat
+**/mobility-places.tmp
 **/cswmap.ini
 /csw
 /vstat
@@ -35,5 +42,4 @@
 **/ttsystem
 **/PNDNavigator
 **/vehicledaemon
-src/Rebuild-ARM.command
 src/tools/prepare_minimal_release.py

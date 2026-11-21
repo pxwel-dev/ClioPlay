@@ -57,6 +57,28 @@ static void point_confirmation(void){
  key_handle(K_ENTER);key_handle(K_RIGHT);key_handle(K_ENTER);
  assert(screen==SCR_MAP&&freecam&&!freecam_transition_active()&&!trip.active&&!nrecents);
 }
+static void driving_info(void){
+ for(int guidance=0;guidance<2;guidance++)for(int named=0;named<2;named++){
+  baseline();
+  trip.active=guidance;route_status=hud_observed_route=guidance?R_READY:R_IDLE;
+  roadctx.valid=1;copystr(roadctx.street,sizeof(roadctx.street),named?"Quayside":"");
+  camera_visible=guidance;camera_current.kind=1;camera_distance=180;
+  struct HudTween*name=&hud_tween[HC_ROAD_NAME];
+  hud_driver_prepare(10000);
+  prepare(15000);hud_driver_prepare(15000);
+  assert(!name->target.box.a&&!hud_navigation.kind);
+  key_handle(K_ENTER);prepare(15000);hud_driver_prepare(15000);
+  assert(!!name->target.box.a==named);
+  if(named)assert(streq(name->target.title,"Quayside")&&hud_pose(name,15160).a>0);
+  assert(hud_navigation.kind==(guidance?HUD_JOURNEY:HUD_NONE));
+  if(guidance)assert(card()->kind==HUD_JOURNEY&&streq(card()->tag,"ETA")&&hud_tween[HC_ROAD].target.kind);
+  prepare(16000);key_handle(K_ENTER);prepare(16000);hud_driver_prepare(19999);
+  assert(!!name->target.box.a==named);
+  hud_driver_prepare(20000);assert(!name->target.box.a);
+  assert(!!hud_tween[HC_ROAD].target.box.a==guidance);
+ }
+ camera_clear();roadctx=(struct RoadCtx){0};
+}
 int main(void){
  baseline();prepare(10100);key_handle(K_MAP);prepare(10100);
  assert(freecam&&hud_navigation.kind==HUD_EXPLORE&&streq(card()->title,"Explore"));
@@ -107,7 +129,7 @@ int main(void){
  /* A clamp with no zoom change cannot invent a temporary override or notice. */
  baseline();gps.mph10=0;auto_zoom_level=6;key_handle(K_SR);prepare(10000);
  assert(zoom_override==-1&&!hud_navigation.kind);
- point_confirmation();
+ point_confirmation();driving_info();
  puts("Selected-point routing: direct animated return, mid-entry reversal, stops, persistent time/temperature and cancellation passed.");
  puts("Zoom notices: one Explore entry, silent pan/zoom and limits, stable Debug text, MAP restores Auto before Explore, OK retains ETA, arrows enter from overrides, manual setting and transition guards passed.");
 }

@@ -1,6 +1,6 @@
 /* Independent clocks; expired frames are skipped, never replayed in a burst. */
 #define FRAME_MODEL_MS 100u
-#define FRAME_UI_MS 67u /* Approximately 15 Hz on the millisecond clock. */
+#define FRAME_UI_MS 50u /* 20 Hz for HUD updates and animations. */
 #define FRAME_MAP_MS 100u
 #define FRAME_CALC_MAP_MS 200u
 #define FRAME_ROUTE_CHUNK_MS 5u
@@ -11,12 +11,10 @@ static u32 frame_after(u32 deadline,u32 now,u32 period){
  if(!frame_due(now,deadline))return deadline;
  return deadline+((now-deadline)/period+1u)*period;
 }
-/* Calculation caps everything; otherwise steady values share the map rate. */
-static u32 frame_ui_period(int calculating,int transition){
- return calculating?FRAME_CALC_MAP_MS:transition?FRAME_UI_MS:FRAME_MAP_MS;
-}
-static void frame_advance_ui(struct FrameClock*c,u32 now,int calculating,int transition){
- c->next=frame_after(c->next,now,frame_ui_period(calculating,transition));
+/* The HUD runs independently of the map, with a shared cap during routing. */
+static u32 frame_ui_period(int calculating){return calculating?FRAME_CALC_MAP_MS:FRAME_UI_MS;}
+static void frame_advance_ui(struct FrameClock*c,u32 now,u32 period){
+ c->next=frame_after(c->next,now,period);
 }
 static u32 frame_earlier(u32 a,u32 b){return (s32)(a-b)<0?a:b;}
 static u32 frame_route_budget(u32 now,u32 deadline){

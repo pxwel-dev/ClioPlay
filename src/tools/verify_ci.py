@@ -33,12 +33,12 @@ def main():
     if not options.host_only:
         run(sys.executable, ROOT/'tools/refresh_latest.py', '--check')
         run(sys.executable, ROOT/'tools/verify_publication.py')
-    for name in ('test_vendor_download.py', 'test_clean_install.py',
-                 'test_bundle_layout.py', 'test_publication.py', 'test_bootstrap.py', 'test_release_version.py'):
+    for name in ('test_vendor_download.py', 'test_clean_install.py', 'test_merge_extracts.py', 'test_update_card.py',
+                 'test_bundle_layout.py', 'test_publication.py', 'test_bootstrap.py', 'test_release_version.py', 'test_ui_translations.py'):
         run(sys.executable, '-m', 'unittest', 'discover', '-s', ROOT/'tests', '-p', name)
     with tempfile.TemporaryDirectory(prefix='clioplay-ci-') as temp:
         (Path(temp)/'clio843').mkdir()
-        for name in ('map-antialias', 'map-areas', 'map-layers', 'map-pois', 'vehicle-marker', 'vehicle-input', 'roundabout', 'ui-labels-alerts', 'glass-outline', 'hud-status', 'hud-customization', 'hud-metadata', 'bluetooth-sources', 'coordinates', 'menu-sheet', 'hud-playback', 'hud-pages', 'hud-zoom', 'popups', 'frame-renderer', 'render-fast-paths', 'audio-chime', 'audio-decoder', 'audio-runtime', 'auto-theme', 'splash', 'boot-transition'):
+        for name in ('mobility', 'current-formats', 'map-antialias', 'map-areas', 'map-layers', 'map-pois', 'vehicle-marker', 'vehicle-input', 'roundabout', 'ui-labels-alerts', 'glass-outline', 'hud-status', 'hud-customization', 'hud-metadata', 'bluetooth-sources', 'coordinates', 'menu-sheet', 'hud-playback', 'hud-pages', 'hud-zoom', 'popups', 'frame-renderer', 'render-fast-paths', 'audio-chime', 'audio-decoder', 'audio-runtime', 'auto-theme', 'splash', 'boot-transition'):
             exe = Path(temp)/name
             run('cc', '-O1', '-g', '-fsanitize=undefined',
                 '-fno-sanitize-recover=all', '-DCLIO_HOST_ROOT="'+temp+'/"', ROOT/'tests'/f'{name}.c', '-lm', '-o', exe)

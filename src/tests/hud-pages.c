@@ -28,8 +28,40 @@ int main(void){
  assert(!sheet_page&&!menu_animating(13100)&&clock->position_at==clock_at&&hud_audio.until==term);
  /* A multi-row legal status resizes the sheet rather than covering it. */
  hud_capture_ms=14000;route_status=R_CALC;set_volume(18);hud_bt_notice(ui_tr("Pairing phone"));
- menu_open(P_SETTINGS,8,14000);prepare(14000);prepare(14400);
+ menu_open_setting(8,14000);prepare(14000);prepare(14400);
  assert(hud_tween[HC_STATUS].target.box.h<=96&&sheet_to_box.y>=hud_tween[HC_STATUS].target.box.y+hud_tween[HC_STATUS].target.box.h+8);
  assert(hud_menu_animating(14400));
- puts("Map menu HUD: persistent clock/status across entry, subpages and exit, unchanged notice timers, expanded-notice clearance and live calculation passed.");
+ /* A status expansion must preserve the current page's transition clock
+  * and use the same sampled geometry, including when it happens on entry. */
+ route_status=hud_observed_route=R_READY;hud_bt_feedback.kind=hud_navigation.kind=HUD_NONE;
+ hud_capture_ms=15000;set_volume(20);hud_pulse(&hud_navigation,HUD_JOURNEY,5000);menu_open(P_PLACES,0,15000);prepare(15000);prepare(15400);
+ struct HudBox before=menu_pose(15400);
+ u32 page_at=menu_at;
+ hud_capture_ms=15500;hud_bt_notice(ui_tr("Pairing phone"));prepare(15500);
+ assert(menu_at==page_at&&hud_box_eq(before,menu_pose(15500)));
+ int last_top=before.y;
+ for(u32 t=15500;t<=15820;t++){
+  struct HudBox b=menu_pose(t),pill=hud_status_pose(t);
+  assert(b.y>=last_top&&b.y-last_top<=1);
+  assert(b.y>=pill.y+pill.h+8&&b.y+b.h==before.y+before.h);
+  last_top=b.y;
+ }
+ assert(last_top>before.y&&hud_box_eq(menu_pose(15820),sheet_to_box));
+ hud_capture_ms=16000;menu_open(P_TRIP,0,16000);prepare(16000);
+ hud_bt_feedback.kind=HUD_NONE;prepare(16100);
+ assert(menu_at==16000&&sheet_old_page==P_PLACES);
+ prepare(16420);
+ assert(hud_box_eq(menu_pose(16420),sheet_to_box)&&menu_pose(16420).y==before.y);
+ /* A tall pill's exit gradually releases the reserved area even while
+  * its geometric height stays unchanged during the fade. */
+ hud_capture_ms=16500;hud_bt_notice(ui_tr("Pairing phone"));prepare(16500);prepare(16820);
+ last_top=menu_pose(16820).y;
+ hud_bt_feedback.kind=hud_navigation.kind=hud_audio.kind=HUD_NONE;prepare(16900);
+ for(u32 t=16900;t<=17220;t++){
+  int top=menu_pose(t).y;
+  assert(top<=last_top&&last_top-top<=1);
+  last_top=top;
+ }
+ assert(last_top==before.y&&menu_at==16000);
+ puts("Map menu HUD: persistent clock/status across entry, subpages and exit, unchanged notice timers, synchronised status expansion and contraction, independent page fades and live calculation passed.");
 }

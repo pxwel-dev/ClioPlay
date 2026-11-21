@@ -10,22 +10,76 @@ Release dates are added when a version is published; older versions are not reco
 1) Add a GPS panel: large GPS time, compass with heading (blank when stopped), estimated accuracy (green/amber/red) with satellite count, altitude, and latitude/longitude with N/S/E/W. It opens from the last Menu row, or from a console button mapped to the new `GPS` action (e.g. `btn7=GPS` for REPEAT); that button or BACK closes it.
 2) Parse `$GPGST` error estimates, GGA HDOP and altitude.
 
-## Version 2.1.6 - Latest development release
+## Version 2.2.2 — Release (Major Performance Optimisation)
+
+- Increased the Bluetooth PCM prefill from 150 to 200 ms for more playback headroom under UI load.
+- Reused the finished map while parked and updated only changed framebuffer rows when the driver supports partial writes.
+- Prepared Explore rotation backgrounds and parked menu, popup and pill transitions before playback. Prepared frames play in order when a refresh runs late. Routine Bluetooth and clock updates wait for a prepared transition to finish.
+- Raised live and buffered animations and steady HUD updates to a 20 FPS target. Moving maps still target 10 FPS and route calculation caps the entire display at 5 FPS.
+- Kept the current menu page visible as taller status notices resize it. Scrollable rows move and fade at the edges as the available height changes.
+- Made Itinerary's footer a single row. Use Left/Right to wrap between its available buttons, including Cancel route and Diversion.
+- Added wraparound on menu lists, dialogs, and keyboard controls. Trip tabs use Left/Right; the soft keys retain their zoom and text-entry actions.
+- Removed the right-soft-key Bluetooth pairing shortcut; start pairing from Pair new phone at the top of the Bluetooth list.
+- Replaced the heading notice with on-demand road names. Press Centre / OK to show the current road for about four seconds. During guidance, the ETA and remaining distance appear too. Console INFO and REPEAT offer the same information.
+- Centred the Latitude and Longitude labels and values in the manual coordinate entry fields.
+
+## Version 2.2.1 — Release
+
+- The guided installer and navigation builder accept multiple matching OSM extracts for one cross-border build. The installer merges them locally and rejects conflicting versions of shared objects.
+- Bluetooth SBC decoding uses less computation while preserving the same PCM output and playback configuration.
+
+## Version 2.2.0 — Release
 
 ### Changes in this version
 
-1) Simplify coordinate page. Only keypad. Soft right will cycle between lat/long and wrap back around to the other side, while soft left is delete. 
+- Introduced optional, offline driving-history learning. Fresh GPS observations are recorded independently of active navigation and only successful Barcelona power-off sessions train the model.
+- Added contextual suggested trips in the map status pill, with provisional startup GPS reconciliation, adaptive day/time and recency scoring, ordered early-trajectory evidence, confidence hysteresis and offline destination naming. OK opens an explicit Yes/No confirmation; BT CTRL retains playback priority and displays BACK to review. No suppresses that destination for the current recording session. The empty Itinerary retains the original destination-entry layout.
+- Added an optional stationary-startup frequent-place favourite prompt after five completed visits across three dates within 90 days. It never repeats for the same place unless history is cleared; Yes opens the existing Favourite keyboard with a suggested name when available; only Save adds the favourite, without starting navigation or changing prediction confidence.
+- Added directional historical road-time profiles, traffic-adjusted ETAs and an explicit local Diversion choice with gold/yellow bypassed geometry and an aqua/teal alternative. Existing map formats and static CH/QAD7 shortcut weights remain unchanged.
+- Shared route geometry remains magenta; dashed teal alternatives, yellow bypasses and junction markers distinguish proposed changes. A small centred frosted-glass map badge shows the approximate saving near the decision point; the glass HUD announces the offer with context-sensitive Back/OK instructions; direct map confirmation preserves Bluetooth controls and driving zoom.
+- Diversion invitations use a persistent single line with the established success green announcement and blue context-sensitive review instruction, until acceptance, rejection or expiry.
+- Declining a diversion suppresses only its bypassed section; later independent offers remain available, and diversion confirmation initially selects Yes.
+- Organised Settings into Display, HUD layout, Navigation, Driving history and System subpages; preferences and their stored values are unchanged.
+- Added history, destination suggestion and diversion controls in Settings, including a confirmed clear-history action. Private data is excluded from the publication.
+- Fixed Bluetooth phone names and connected-state identity when switching between saved devices; both remain keyed by hardware address.
+- Completed the new navigation and HUD translations across all 18 interface languages, and added missing-key regression checks.
+- Added native regression cases and two controlled preview storyboards. Historical traffic is not live traffic; a physical head-unit trial remains necessary.
+- Added a software-only update mode with verified staged copies, a dated software backup and rollback; existing maps, settings and personal history remain untouched.
+
+## Version 2.1.8 — Release
+
+### Changes in this version
+
+- Fixed itinerary connector lines extending towards the Add stop action when additional targets are off-screen. Connections now join visible markers only.
+- Increased trip capacity from five to ten targets in total (nine intermediate stops plus the final destination). Saved trips use CTR4 only; unfinished trips from older formats cannot be resumed.
+- Removed obsolete saved-place, map, routing and bundle-format readers. Current CLP2 places and current navigation packs remain supported; unsupported formats require fresh data.
+- Reduced the size of confirmation dialogs and their action menus while retaining readable labels, existing choices, focus targets and animation behaviour.
+
+## Version 2.1.7 — Release
+
+### Changes in this version
+
+- Restored **BACK** to return to the previous page without advancing or applying a coordinate draft.
+- Added a full-width **Next** key at the bottom right of the coordinate keypad. The **±** and **.** keys share the bottom-left column; **0** remains in the middle.
+- **Next** validates both fields and opens optional naming; invalid entries stay editable. Soft-right still cycles latitude/longitude and soft-left deletes.
+- Updated directional/rotary navigation, regression checks and demo capture scripts.
+
+## Version 2.1.6 — Release
+
+### Changes in this version
+
+1) Simplify coordinate page. Only keypad. Soft right will cycle between lat/long and wrap back around to the other side, while soft left is delete.
 2) Vertically recentre the trip symbols (circle & squares) within the selection window
 3) Add further customisability in settings:
    - Status pill on left / Time & temp pill on right (DEFAULT VALUE), Status pill on right / Time & temp pill on left
    - Speed pill in left / Direction pill on right (DEFAULT VALUE), Speed pill on right / Direction pill on left
 4) If hw_bluetooth = 0, hide all bluetooth-related functionality in the UI.
 
-## Version 2.1.5 - Latest development release
+## Version 2.1.5 — Release
 
 ### Changes in this version
 
-- Resized the trips pages to fit in-between the top and bottom pills. Only the keyboard expands to allow more room for entering destination names. 
+- Resized the trips pages to fit in-between the top and bottom pills. Only the keyboard expands to allow more room for entering destination names.
 
 ## 2.1.0 — Release
 

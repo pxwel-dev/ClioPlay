@@ -136,31 +136,28 @@ static const int sbc_offset8[4][8]={{-2,0,0,0,0,0,0,1},{-3,0,0,0,0,0,1,2},{-4,0,
 
 enum { SBC_MONO=0,SBC_DUAL=1,SBC_STEREO=2,SBC_JOINT=3 };
 struct SbcFrame {int frequency,blocks,mode,channels,allocation,subbands,bitpool;u8 joint;u8 scale[2][8];s32 sb[16][2][8];s16 pcm[2][128];};
-struct SbcState {s32 V[2][170];s16 offset[2][16];int initialized;};
+/* Each PCM phase uses alternating matrix rows i and i+8 over ten ages.
+ * Interleave them into two mirrored rings so the FIR reads one contiguous
+ * window and the cursor wraps once per block, rather than once per row. */
+struct SbcState {
+ s32 history[2][8][2][20];
+ unsigned cursor[2];
+};
 
-/* The decoder requests at most 16 bits. Read only the bytes covered by that
- * request; callers validate the bit range before entering this hot path. */
-static u32 get_bits(const u8*d,u32 bitpos,int n){
- if(!n)return 0;
- u32 byte=bitpos>>3,shift=bitpos&7u,v=(u32)d[byte]<<16;
- if(shift+(u32)n>8u)v|=(u32)d[byte+1]<<8;
- if(shift+(u32)n>16u)v|=d[byte+2];
- return (v>>(24u-shift-(u32)n))&((1u<<n)-1u);
-}
-/* Exact division by 2^bits-1, not an approximate audio calculation. Floor
- * reciprocal multiplication underestimates the quotient by at most one; the
- * remainder correction restores the original result over the full u32 range.
- * ARMv4T has UMULL, avoiding the old 32-iteration division per subband sample. */
-static u32 sbc_levels_divide(u32 n,int bits){
- static const u32 reciprocal[17]={0,0,
+/* Floor reciprocals leave a quotient at most one low. Correct the
+ * remainder to keep the original fixed-point result for every sample. */
+static const u32 sbc_reciprocal[17]={0,0,
   0xffffffffu/3u,0xffffffffu/7u,0xffffffffu/15u,0xffffffffu/31u,
   0xffffffffu/63u,0xffffffffu/127u,0xffffffffu/255u,0xffffffffu/511u,
   0xffffffffu/1023u,0xffffffffu/2047u,0xffffffffu/4095u,0xffffffffu/8191u,
   0xffffffffu/16383u,0xffffffffu/32767u,0xffffffffu/65535u};
- if(bits==1)return n;
- u32 divisor=(1u<<bits)-1u,q=(u32)(((unsigned long long)n*reciprocal[bits])>>32);
- return q+(n-q*divisor>=divisor);
+
+static inline u32 sbc_dequantize(u32 n,u32 levels,u32 reciprocal){
+ if(levels==1)return n;
+ u32 q=(u32)(((unsigned long long)n*reciprocal)>>32);
+ return q+(n-q*levels>=levels);
 }
+
 static void sbc_bits(struct SbcFrame*f,int bits[2][8]){
   int bitneed[2][8],maxneed=0,bitcount=0,slicecount=0,bitslice,ch,sb;
   for(ch=0;ch<2;ch++)for(sb=0;sb<8;sb++){
@@ -177,16 +174,67 @@ static void sbc_bits(struct SbcFrame*f,int bits[2][8]){
 static int sbc_unpack(const u8*d,u32 len,struct SbcFrame*f){
   if(len<4||d[0]!=0x9c)return -1;f->frequency=(d[1]>>6)&3;f->blocks=4+4*((d[1]>>4)&3);f->mode=(d[1]>>2)&3;f->channels=f->mode==SBC_MONO?1:2;f->allocation=(d[1]>>1)&1;f->subbands=(d[1]&1)?8:4;f->bitpool=d[2];
   if(f->frequency!=2||f->blocks!=16||f->subbands!=8||(f->mode!=SBC_STEREO&&f->mode!=SBC_JOINT)||f->bitpool<2||f->bitpool>53)return -2;
-  u32 consumed=32;f->joint=0;if(f->mode==SBC_JOINT){if(len*8u<consumed+8)return-3;for(int sb=0;sb<7;sb++)if(get_bits(d,consumed+sb,1))f->joint|=(u8)(1u<<sb);consumed+=8;}
-  if(len*8u<consumed+64)return-3;for(int ch=0;ch<2;ch++)for(int sb=0;sb<8;sb++){f->scale[ch][sb]=(u8)get_bits(d,consumed,4);consumed+=4;}
-  int bits[2][8];sbc_bits(f,bits);
-  for(int blk=0;blk<16;blk++)for(int ch=0;ch<2;ch++)for(int sb=0;sb<8;sb++){int nb=bits[ch][sb];if(!nb){f->sb[blk][ch][sb]=0;continue;}if(consumed+(u32)nb>len*8u)return-3;u32 a=get_bits(d,consumed,nb);consumed+=(u32)nb;u32 num=((a<<1)|1u)<<f->scale[ch][sb];f->sb[blk][ch][sb]=(s32)sbc_levels_divide(num,nb)-(1<<f->scale[ch][sb]);}
-  if(f->mode==SBC_JOINT)for(int blk=0;blk<16;blk++)for(int sb=0;sb<8;sb++)if(f->joint&(1u<<sb)){s32 a=f->sb[blk][0][sb],b=f->sb[blk][1][sb];f->sb[blk][0][sb]=a+b;f->sb[blk][1][sb]=a-b;}
-  if(consumed&7u)consumed+=8u-(consumed&7u);return (int)(consumed>>3);
+  unsigned header=f->mode==SBC_JOINT?13u:12u;
+  /* Sixteen blocks at bitpool bits each give an exact byte length. */
+  unsigned frame_bytes=header+2u*(unsigned)f->bitpool;
+  if(len<frame_bytes)return -3;
+
+  const u8*scale=d+header-8;
+  f->joint=0;
+  if(f->mode==SBC_JOINT){
+   unsigned joint=d[4];
+   for(int sb=0;sb<7;sb++)if(joint&(128u>>sb))f->joint|=(u8)(1u<<sb);
+  }
+  for(int ch=0;ch<2;ch++)for(int i=0;i<4;i++){
+   u8 pair=*scale++;
+   f->scale[ch][2*i]=pair>>4;
+   f->scale[ch][2*i+1]=pair&15;
+  }
+
+  struct Quantizer {unsigned width,scale,levels,reciprocal;};
+  struct Quantizer plan[2][8];
+  int bits[2][8],block_bits=0;
+  sbc_bits(f,bits);
+  for(int ch=0;ch<2;ch++)for(int sb=0;sb<8;sb++){
+   unsigned width=(unsigned)bits[ch][sb];
+   plan[ch][sb]=(struct Quantizer){width,f->scale[ch][sb],(1u<<width)-1u,sbc_reciprocal[width]};
+   block_bits+=(int)width;
+  }
+  if(block_bits!=f->bitpool)return -3;
+
+  const u8*payload=d+header;
+  u32 reservoir=0;
+  unsigned available=0;
+  for(int block=0;block<16;block++){
+   for(int ch=0;ch<2;ch++)for(int sb=0;sb<8;sb++){
+    const struct Quantizer*q=&plan[ch][sb];
+    s32 sample=0;
+    if(q->width){
+     while(available<q->width){
+      reservoir=(reservoir<<8)|*payload++;
+      available+=8;
+     }
+     available-=q->width;
+     u32 value=(reservoir>>available)&q->levels;
+     u32 numerator=((value<<1)|1u)<<q->scale;
+     sample=(s32)sbc_dequantize(numerator,q->levels,q->reciprocal)-(1<<q->scale);
+    }
+    f->sb[block][ch][sb]=sample;
+   }
+  }
+  if(f->joint){
+   for(int sb=0;sb<7;sb++)if(f->joint&(1u<<sb)){
+    for(int block=0;block<16;block++){
+     s32 left=f->sb[block][0][sb],right=f->sb[block][1][sb];
+     f->sb[block][0][sb]=left+right;
+     f->sb[block][1][sb]=left-right;
+    }
+   }
+  }
+  return (int)frame_bytes;
 }
 static s16 clip16(s32 v){return v>32767?32767:(v<-32768?-32768:(s16)v);}
 static s32 madd(s32 a,s32 b,s32 r){return (s32)((u32)a*(u32)b+(u32)r);} /* intentional fixed-point wrap */
-static void sbc_state_init(struct SbcState*s){memzero(s,sizeof(*s));for(int ch=0;ch<2;ch++)for(int i=0;i<16;i++)s->offset[ch][i]=(s16)(10*i+10);s->initialized=1;}
 /* Fold exact quantised-matrix identities. Odd rows pair c and -c-1,
  * rather than exact negatives: subtract the right-hand sum before shifting.
  * All arithmetic stays modulo 2^32, preserving the original fixed-point PCM. */
@@ -212,15 +260,48 @@ static void sbc_matrix8(const s32*x,s32*out){
  out[12]=(s32)((u32)synmatrix8[12][0]*total);
 }
 static void sbc_synth8(struct SbcState*s,struct SbcFrame*f,int ch,int blk){
-  s32 matrix[16];sbc_matrix8(f->sb[blk][ch],matrix);s16*off=s->offset[ch];for(int i=0;i<16;i++){off[i]--;if(off[i]<0){off[i]=159;for(int j=0;j<9;j++)s->V[ch][j+160]=s->V[ch][j];}s->V[ch][off[i]]=SCALE8(matrix[i]);}
-  for(int i=0,idx=0;i<8;i++,idx+=5){int k=(i+8)&15;s32 r=madd(s->V[ch][off[k]+9],sbc_proto_8_80m1[idx+4],0);r=madd(s->V[ch][off[i]+8],sbc_proto_8_80m0[idx+4],r);r=madd(s->V[ch][off[k]+7],sbc_proto_8_80m1[idx+3],r);r=madd(s->V[ch][off[i]+6],sbc_proto_8_80m0[idx+3],r);r=madd(s->V[ch][off[k]+5],sbc_proto_8_80m1[idx+2],r);r=madd(s->V[ch][off[i]+4],sbc_proto_8_80m0[idx+2],r);r=madd(s->V[ch][off[k]+3],sbc_proto_8_80m1[idx+1],r);r=madd(s->V[ch][off[i]+2],sbc_proto_8_80m0[idx+1],r);r=madd(s->V[ch][off[k]+1],sbc_proto_8_80m1[idx],r);r=madd(s->V[ch][off[i]],sbc_proto_8_80m0[idx],r);f->pcm[ch][blk*8+i]=clip16(SCALE8(r));}
-}
-static int sbc_decode(const u8*d,u32 len,struct SbcState*s,struct SbcFrame*f){int n=sbc_unpack(d,len,f);if(n<0)return n;if(!s->initialized)sbc_state_init(s);for(int ch=0;ch<2;ch++)for(int blk=0;blk<16;blk++)sbc_synth8(s,f,ch,blk);return n;}
+ s32 matrix[16];
+ sbc_matrix8(f->sb[blk][ch],matrix);
+ unsigned phase=s->cursor[ch]?s->cursor[ch]-1u:9u;
+ s->cursor[ch]=phase;
+ for(int i=0;i<8;i++){
+  s32 *current=&s->history[ch][i][phase&1u][phase];
+  s32 *alternate=&s->history[ch][i][(phase&1u)^1u][phase];
+  current[0]=current[10]=SCALE8(matrix[i]);
+  alternate[0]=alternate[10]=SCALE8(matrix[i+8]);
 
-/* Normal 44.1 kHz output needs no resampling or inactive-chime mixing. */
-static void sbc_pcm_interleave(u8*out,const struct SbcFrame*f){
- for(int i=0;i<128;i++){u16 l=(u16)f->pcm[0][i],r=(u16)f->pcm[1][i];
-  out[4*i]=(u8)l;out[4*i+1]=(u8)(l>>8);out[4*i+2]=(u8)r;out[4*i+3]=(u8)(r>>8);}
+  const s32 *even=&sbc_proto_8_80m0[i*5],*odd=&sbc_proto_8_80m1[i*5];
+  s32 sum=madd(current[0],even[0],0);
+  sum=madd(current[1],odd[0],sum);
+  sum=madd(current[2],even[1],sum);
+  sum=madd(current[3],odd[1],sum);
+  sum=madd(current[4],even[2],sum);
+  sum=madd(current[5],odd[2],sum);
+  sum=madd(current[6],even[3],sum);
+  sum=madd(current[7],odd[3],sum);
+  sum=madd(current[8],even[4],sum);
+  sum=madd(current[9],odd[4],sum);
+  f->pcm[ch][blk*8+i]=clip16(SCALE8(sum));
+ }
+}
+static int sbc_decode(const u8*d,u32 len,struct SbcState*s,struct SbcFrame*f){
+ int n=sbc_unpack(d,len,f);
+ if(n<0)return n;
+ for(int ch=0;ch<2;ch++)for(int blk=0;blk<16;blk++)sbc_synth8(s,f,ch,blk);
+ return n;
+}
+
+/* The PCM ring consumes little-endian stereo frames. Use one aligned
+ * word store for a left/right pair on the ARM target and little-endian hosts. */
+static inline u32 pcm_word(s16 left,s16 right){
+ u32 word=(u32)(u16)left|((u32)(u16)right<<16);
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+ word=__builtin_bswap32(word);
+#endif
+ return word;
+}
+static void sbc_pcm_interleave(u32*out,const struct SbcFrame*f){
+ for(int i=0;i<128;i++)out[i]=pcm_word(f->pcm[0][i],f->pcm[1][i]);
 }
 
 #if !defined(HOST_TEST) || defined(AUDIO_RUNTIME_TEST)
@@ -248,6 +329,7 @@ static void sbc_pcm_interleave(u8*out,const struct SbcFrame*f){
  *   /tmp/clbtcmd    monotonically sequenced commands from clio040
  * ------------------------------------------------------------------------- */
 #define BT_META_PATH "/tmp/clbtmeta"
+#define BT_META_TMP_PATH "/tmp/clbtmeta.tmp"
 #define BT_NAV_PATH "/tmp/clnav"
 #define BT_NAV_TMP_PATH "/tmp/clnav.tmp"
 #define BT_CMD_PATH "/tmp/clbtcmd"
@@ -259,6 +341,7 @@ static void sbc_pcm_interleave(u8*out,const struct SbcFrame*f){
 #define BT_BONDS_PATH "./clio843/btbonds.dat"
 #define BT_NAMES_PATH "./clio843/btnames.dat"
 #define BT_DEVLIST_PATH "/tmp/clbtdevices"
+#define BT_DEVLIST_TMP_PATH "/tmp/clbtdevices.tmp"
 #define HCID_KEY_DB "/etc/bluetooth/link_key"
 
 static long s_unlink(const char*p){return sc1(10,(long)p);}
@@ -266,7 +349,7 @@ static long s_fcntl(int fd,int cmd,long arg){return sc3(55,fd,cmd,arg);}
 
 static char status_last[28];
 static int meta_dirty=1,meta_paired=0,meta_connected=0,meta_playing=0,meta_pos=0,meta_dur=0;
-static char meta_device[33],meta_title[193],meta_artist[161],meta_album[161];
+static char meta_device[33],meta_device_addr[18],meta_title[193],meta_artist[161],meta_album[161];
 static int hcifd=-1;static u8 live_peer[6];static int live_peer_valid=0;
 static u32 command_seq_seen=0;
 
@@ -304,7 +387,13 @@ static void meta_clear_track(void){meta_title[0]=meta_artist[0]=meta_album[0]=0;
  * title is transport plumbing, not user media, so never publish it to clio040. */
 static int nav_sender_fallback_meta(void){return streq(meta_title,"ClioPlay Send");}
 static void meta_hide_track(void){meta_title[0]=meta_artist[0]=meta_album[0]=0;meta_pos=meta_dur=0;meta_dirty=1;}
-static void meta_write(void){char b[1024];b[0]=0;append_str(b,sizeof(b),"DEVICE=");append_str(b,sizeof(b),meta_device);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"TITLE=");append_str(b,sizeof(b),meta_title);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"ARTIST=");append_str(b,sizeof(b),meta_artist);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"ALBUM=");append_str(b,sizeof(b),meta_album);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"PAIRED=");append_char(b,sizeof(b),meta_paired?'1':'0');append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"CONNECTED=");append_char(b,sizeof(b),meta_connected?'1':'0');append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"PLAYING=");append_char(b,sizeof(b),meta_playing?'1':'0');append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"POS=");append_sint(b,sizeof(b),meta_pos);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"DUR=");append_uint(b,sizeof(b),(u32)(meta_dur<0?0:meta_dur));append_char(b,sizeof(b),'\n');file_write(BT_META_PATH,b);meta_dirty=0;}
+/* Publish complete IPC snapshots, never partially rewritten records. */
+static int bt_publish_snapshot(const char*path,const char*tmp,const char*data){
+ long fd=s_open(tmp,O_WRONLY_|O_CREAT_|O_TRUNC_,0600);if(fd<0)return 0;
+ u32 n=slen(data);long wrote=s_write((int)fd,data,n);long closed=s_close((int)fd);
+ if(wrote!=(long)n||closed<0||s_rename(tmp,path)<0){s_unlink(tmp);return 0;}return 1;
+}
+static void meta_write(void){char b[1024];b[0]=0;append_str(b,sizeof(b),"DEVICE_ADDR=");append_str(b,sizeof(b),meta_device_addr);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"DEVICE=");append_str(b,sizeof(b),meta_device);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"TITLE=");append_str(b,sizeof(b),meta_title);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"ARTIST=");append_str(b,sizeof(b),meta_artist);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"ALBUM=");append_str(b,sizeof(b),meta_album);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"PAIRED=");append_char(b,sizeof(b),meta_paired?'1':'0');append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"CONNECTED=");append_char(b,sizeof(b),meta_connected?'1':'0');append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"PLAYING=");append_char(b,sizeof(b),meta_playing?'1':'0');append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"POS=");append_sint(b,sizeof(b),meta_pos);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"DUR=");append_uint(b,sizeof(b),(u32)(meta_dur<0?0:meta_dur));append_char(b,sizeof(b),'\n');if(bt_publish_snapshot(BT_META_PATH,BT_META_TMP_PATH,b))meta_dirty=0;}
 
 /* Bluetooth addresses are stored in kernel byte order; display is reversed. */
 static const char HX[]="0123456789ABCDEF";
@@ -324,11 +413,11 @@ static void devnames_write(struct DevNameRec r[MAX_DEVICES],int c){char b[768];b
 static int device_name_find(const u8 addr[6],char*out,u32 cap){struct DevNameRec r[MAX_DEVICES];int c=devnames_read(r);for(int i=0;i<c;i++)if(addr_eq(r[i].addr,addr)){if(out&&cap)copystr(out,cap,r[i].name);return 1;}return 0;}
 static void device_name_store(const u8 addr[6],const char*name){if(name_is_unknown(name))return;struct DevNameRec r[MAX_DEVICES];int c=devnames_read(r),at=-1;for(int i=0;i<c;i++)if(addr_eq(r[i].addr,addr)){at=i;break;}if(at<0){if(c<MAX_DEVICES)at=c++;else{for(int i=1;i<MAX_DEVICES;i++)r[i-1]=r[i];at=MAX_DEVICES-1;}memcopy(r[at].addr,addr,6);}copystr(r[at].name,sizeof(r[at].name),name);devnames_write(r,c);}
 static void device_name_remove(const u8 addr[6]){struct DevNameRec r[MAX_DEVICES],o[MAX_DEVICES];int c=devnames_read(r),n=0;for(int i=0;i<c;i++)if(!addr_eq(r[i].addr,addr))o[n++]=r[i];devnames_write(o,n);}
-static void meta_device_set_addr(const u8 a[6]){char n[33];if(device_name_find(a,n,sizeof(n))&&!name_is_unknown(n))copystr(meta_device,sizeof(meta_device),n);else copystr(meta_device,sizeof(meta_device),"PHONE");meta_dirty=1;}
+static void meta_device_set_addr(const u8 a[6]){char n[33];addr_text(a,meta_device_addr);if(device_name_find(a,n,sizeof(n))&&!name_is_unknown(n))copystr(meta_device,sizeof(meta_device),n);else copystr(meta_device,sizeof(meta_device),"PHONE");meta_dirty=1;}
 static u8 saved_peer[6];static int saved_peer_valid=0;
-static void peer_save(const u8 a[6]){char s[24];addr_text(a,s);append_char(s,sizeof(s),'\n');file_write(BT_PHONE_PATH,s);memcopy(saved_peer,a,6);saved_peer_valid=1;meta_paired=1;meta_device_set_addr(a);device_list_write();}
+static void peer_save(const u8 a[6]){char s[24];addr_text(a,s);append_char(s,sizeof(s),'\n');file_write(BT_PHONE_PATH,s);memcopy(saved_peer,a,6);saved_peer_valid=1;meta_paired=1;meta_device_set_addr(live_peer_valid?live_peer:a);device_list_write();}
 static void peer_load(void){char b[24]={0};long fd=s_open(BT_PHONE_PATH,O_RDONLY_,0);if(fd<0)return;long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n<=0)return;b[n]=0;if(addr_parse(b,saved_peer)){saved_peer_valid=1;meta_paired=1;meta_device_set_addr(saved_peer);}}
-static void peer_clear(void){memzero(saved_peer,6);saved_peer_valid=0;meta_paired=0;meta_device[0]=0;s_unlink(BT_PHONE_PATH);meta_clear_track();meta_dirty=1;}
+static void peer_clear(void){memzero(saved_peer,6);saved_peer_valid=0;meta_paired=0;if(live_peer_valid)meta_device_set_addr(live_peer);else meta_device_addr[0]=meta_device[0]=0;s_unlink(BT_PHONE_PATH);meta_clear_track();meta_dirty=1;}
 
 /* ---------------- Persistent phone bond store ----------------------------
  * This TomTom image uses pre-2.16 BlueZ.  Its /etc/bluetooth/link_key is a
@@ -351,15 +440,10 @@ static void hcid_db_update(const u8 remote[6],const u8 key[16],u8 type,int add){
 static int hcid_db_find(const u8 remote[6],u8 key[16],u8*type){if(!local_bdaddr_valid)return 0;u8 in[HCID_REC_SIZE*16];long fd=s_open(HCID_KEY_DB,O_RDONLY_,0);if(fd<0)return 0;long nr=s_read((int)fd,in,sizeof(in));s_close((int)fd);if(nr<=0)return 0;int rc=(int)(nr/HCID_REC_SIZE);for(int i=0;i<rc;i++){u8*p=in+i*HCID_REC_SIZE;if(addr_eq(p,local_bdaddr)&&addr_eq(p+6,remote)){memcopy(key,p+12,16);if(type)*type=p[28];return 1;}}return 0;}
 static int bond_restore_hcid(const u8 addr[6]){u8 key[16],type=0;if(!bond_find(addr,key,&type)){if(!hcid_db_find(addr,key,&type))return 0;bond_store(addr,key,type);hci_log("PHONE BOND IMPORTED FROM HCID",addr,-1);}hcid_db_update(addr,key,type,1);hci_store_link_key(addr,key);hci_log("PHONE BOND RESTORED TO HCID",addr,-1);return 1;}
 static void bond_capture(const u8*p){/* HCI Link Key Notification payload: addr6,key16,type1 */if(!p)return;bond_store(p,p+6,p[22]);hci_store_link_key(p,p+6);hci_log("PHONE BOND KEY STORED",p,-1);device_list_write();}
-/* Persist the best live identity before a session can clear live_peer_valid.
- * meta_device is intentionally retained across an ordinary disconnect, so it
- * is also a safe recovery source for the currently selected remembered peer. */
-static void remember_live_name(void){if(live_peer_valid&&!name_is_unknown(meta_device))device_name_store(live_peer,meta_device);}
+/* Device names belong to the HCI address, not to global playback metadata. */
 static int device_list_known=0,device_list_connected=0,device_list_live=0,device_list_saved=0;
 static u8 device_list_live_addr[6],device_list_saved_addr[6];static char device_list_name[33];
-static void device_list_write(void){u8 r[MAX_BONDS][BOND_REC_SIZE];int c=bond_read(r);char b[1280];b[0]=0;append_str(b,sizeof(b),"COUNT=");append_uint(b,sizeof(b),(u32)c);append_char(b,sizeof(b),'\n');for(int i=0;i<c;i++){char a[18],n[33];int live=(meta_connected&&live_peer_valid&&addr_eq(r[i],live_peer));int saved=(saved_peer_valid&&addr_eq(r[i],saved_peer));addr_text(r[i],a);if(!device_name_find(r[i],n,sizeof(n)))copystr(n,sizeof(n),"UNKNOWN DEVICE");/* A resolved device name can outlive the transport connection.  Recover it
- * for either the live peer or the currently remembered peer, and immediately
- * write it back so subsequent boots no longer depend on transient metadata. */if((live||saved)&&name_is_unknown(n)&&!name_is_unknown(meta_device)){copystr(n,sizeof(n),meta_device);device_name_store(r[i],n);}append_str(b,sizeof(b),"DEV=");append_str(b,sizeof(b),a);append_char(b,sizeof(b),'|');append_char(b,sizeof(b),live?'1':'0');append_char(b,sizeof(b),'|');append_str(b,sizeof(b),n);append_char(b,sizeof(b),'\n');}file_write(BT_DEVLIST_PATH,b);
+static void device_list_write(void){u8 r[MAX_BONDS][BOND_REC_SIZE];int c=bond_read(r);char b[1280];b[0]=0;append_str(b,sizeof(b),"COUNT=");append_uint(b,sizeof(b),(u32)c);append_char(b,sizeof(b),'\n');for(int i=0;i<c;i++){char a[18],n[33];int live=(meta_connected&&live_peer_valid&&addr_eq(r[i],live_peer));addr_text(r[i],a);if(!device_name_find(r[i],n,sizeof(n)))copystr(n,sizeof(n),"UNKNOWN DEVICE");append_str(b,sizeof(b),"DEV=");append_str(b,sizeof(b),a);append_char(b,sizeof(b),'|');append_char(b,sizeof(b),live?'1':'0');append_char(b,sizeof(b),'|');append_str(b,sizeof(b),n);append_char(b,sizeof(b),'\n');}if(!bt_publish_snapshot(BT_DEVLIST_PATH,BT_DEVLIST_TMP_PATH,b))return;
  device_list_connected=meta_connected;device_list_live=live_peer_valid;device_list_saved=saved_peer_valid;
  memcopy(device_list_live_addr,live_peer,6);memcopy(device_list_saved_addr,saved_peer,6);
  copystr(device_list_name,sizeof(device_list_name),meta_device);device_list_known=1;
@@ -370,7 +454,7 @@ static void device_list_service(void){
     !addr_eq(device_list_saved_addr,saved_peer)||!streq(device_list_name,meta_device))device_list_write();
 }
 static void hci_remote_name_request(const u8 addr[6]){if(hcifd<0||!addr)return;u8 b[14];memzero(b,sizeof(b));b[0]=0x01;b[1]=0x19;b[2]=0x04;b[3]=10;memcopy(b+4,addr,6);b[10]=0x02;long n=s_write(hcifd,b,sizeof(b));hci_log(n==(long)sizeof(b)?"HCI REMOTE NAME REQUEST":"HCI REMOTE NAME REQUEST FAIL",addr,n==(long)sizeof(b)?-1:1);}
-static void remote_name_store(const u8 addr[6],const u8*src,u32 n){char d[33],known[33];u32 j=0;for(u32 i=0;i<n&&j+1<sizeof(d);i++){u8 c=src[i];if(!c)break;if(c>=32&&c<127&&c!='|')d[j++]=(char)c;else if(c>=128){if(!j||d[j-1]!=' ')d[j++]=' ';}}while(j&&d[j-1]==' ')j--;d[j]=0;int target=(live_peer_valid&&addr_eq(addr,live_peer))||(saved_peer_valid&&addr_eq(addr,saved_peer));if(name_is_unknown(d)){/* A transient/blank Remote Name result is not new identity information. Preserve the last resolved name instead of exposing UNKNOWN DEVICE. */if(device_name_find(addr,known,sizeof(known))&&!name_is_unknown(known))copystr(d,sizeof(d),known);else if(target&&!name_is_unknown(meta_device))copystr(d,sizeof(d),meta_device);else copystr(d,sizeof(d),"PHONE");}else device_name_store(addr,d);if(target&&!name_is_unknown(d))copystr(meta_device,sizeof(meta_device),d);meta_dirty=1;device_list_write();char l[96];l[0]=0;append_str(l,sizeof(l),"PHONE NAME ");append_str(l,sizeof(l),d);append_char(l,sizeof(l),'\n');bt_log_append(l);}
+static void remote_name_store(const u8 addr[6],const u8*src,u32 n){char d[33],known[33];u32 j=0;for(u32 i=0;i<n&&j+1<sizeof(d);i++){u8 c=src[i];if(!c)break;if(c>=32&&c<127&&c!='|')d[j++]=(char)c;else if(c>=128){if(!j||d[j-1]!=' ')d[j++]=' ';}}while(j&&d[j-1]==' ')j--;d[j]=0;int target=live_peer_valid?addr_eq(addr,live_peer):(saved_peer_valid&&addr_eq(addr,saved_peer));if(name_is_unknown(d)){/* A transient/blank Remote Name result is not new identity information. Preserve the last resolved name instead of exposing UNKNOWN DEVICE. */if(device_name_find(addr,known,sizeof(known))&&!name_is_unknown(known))copystr(d,sizeof(d),known);else copystr(d,sizeof(d),"PHONE");}else device_name_store(addr,d);if(target)meta_device_set_addr(addr);meta_dirty=1;device_list_write();char l[96];l[0]=0;append_str(l,sizeof(l),"PHONE NAME ");append_str(l,sizeof(l),d);append_char(l,sizeof(l),'\n');bt_log_append(l);}
 static void hci_request(const char*verb,const u8*a){char b[64];b[0]=0;append_str(b,sizeof(b),verb);if(a){char t[18];addr_text(a,t);append_char(b,sizeof(b),' ');append_str(b,sizeof(b),t);}append_char(b,sizeof(b),'\n');file_write(BT_HCI_PATH,b);}
 
 /* ---------------- Carminat continuous PCM ring -------------------------- */
@@ -397,7 +481,7 @@ struct SndFmt{u32 rate,channels,bits,frames,mode;};struct SndPair{u32 handle,pos
  * and byte-accurate validity tracking between successive hardware cursor reads.
  * The driver does not expose an underrun flag; clock elapsed since the last
  * cursor sample also guards against cursor wrap or freeze during starvation. */
-#define SND_PREFILL_44K_BYTES 26460u /* 150 ms * 44100 samples/s * 4 bytes */
+#define SND_PREFILL_44K_BYTES 35280u /* 200 ms * 44100 samples/s * 4 bytes */
 #define SND_RING_GUARD 4u
 #define SND_UNDERRUN_MARGIN_MS 40u
 static int sndfd=-1,snd_started=0,snd_mix_active=0,snd_div=1;
@@ -609,7 +693,7 @@ static int listenfd=-1,ctrllistenfd=-1,sigfd=-1,mediafd=-1;
 static int cfg_ok=0,av_opened=0,av_started=0,manual_block=0;
 static int sbc_resume_reset=1,media_audio_idle=0;
 static int avrcp_delay_ticks=-1,reconnect_profile_ticks=-1;
-static struct SbcState decst;static struct SbcFrame decfr;static u8 pcm_out[512];
+static struct SbcState decst;static struct SbcFrame decfr;static u32 pcm_out[128];
 /* Capability is a mask: 44.1 kHz + Stereo + Joint Stereo.  A SET_CONFIGURATION
  * selects exactly one channel mode, so accept 0x22 (Stereo) or 0x21 (Joint). */
 static const u8 SBC_CAP0=0x23;
@@ -657,14 +741,14 @@ static void alert_service(void){u32 now=alert_now_ms(),msg[4];snd_feed_now=now;l
  if(!snd_open())return;if(snd_started)snd_sample_playback();u32 target=udiv32(snd_output_bps,5u);
  /* At most 250ms of PCM per poll, including the initial 150ms prefill. */
  for(unsigned block=0;block<88&&(snd_started?snd_used:snd_queued)<target;block++){
-  for(int i=0;i<128;i++){int gain,tone=chime_sample(&camera_chime,&gain);s16 v=(s16)tone;pcm_out[4*i]=(u8)v;pcm_out[4*i+1]=(u8)((u16)v>>8);pcm_out[4*i+2]=(u8)v;pcm_out[4*i+3]=(u8)((u16)v>>8);}if(!snd_push(pcm_out,512))break;
+  for(int i=0;i<128;i++){int gain,tone=chime_sample(&camera_chime,&gain);s16 v=(s16)tone;pcm_out[i]=pcm_word(v,v);}if(!snd_push((const u8*)pcm_out,sizeof(pcm_out)))break;
  }
 }
 static void pcm_pack(void){int q=0,d=snd_div;
  if(d==1&&!chime_active(&camera_chime)){
   sbc_pcm_interleave(pcm_out,&decfr);
-  q=512;
- }else{if(d<1)d=1;for(int i=0;i<128;i+=d){s32 l=0,r=0;for(int j=0;j<d;j++){l+=decfr.pcm[0][i+j];r+=decfr.pcm[1][i+j];}if(d==2){l>>=1;r>>=1;}else if(d==4){l>>=2;r>>=2;}int gain,tone=chime_sample(&camera_chime,&gain);s16 ls=(s16)chime_mix(l,gain,tone),rs=(s16)chime_mix(r,gain,tone);pcm_out[q++]=(u8)ls;pcm_out[q++]=(u8)((u16)ls>>8);pcm_out[q++]=(u8)rs;pcm_out[q++]=(u8)((u16)rs>>8);}}if(!snd_push(pcm_out,(u32)q))status_set("BT BUFFERING");else status_set(snd_started?"BT STREAMING":"BT BUFFERING");}
+  q=128;
+ }else{if(d<1)d=1;for(int i=0;i<128;i+=d){s32 l=0,r=0;for(int j=0;j<d;j++){l+=decfr.pcm[0][i+j];r+=decfr.pcm[1][i+j];}if(d==2){l>>=1;r>>=1;}else if(d==4){l>>=2;r>>=2;}int gain,tone=chime_sample(&camera_chime,&gain);s16 ls=(s16)chime_mix(l,gain,tone),rs=(s16)chime_mix(r,gain,tone);pcm_out[q++]=pcm_word(ls,rs);}}if(!snd_push((const u8*)pcm_out,(u32)q*4u))status_set("BT BUFFERING");else status_set(snd_started?"BT STREAMING":"BT BUFFERING");}
 static void media_packet(const u8*b,int n){if(!av_started||n<14)return;alert_last_media=alert_now_ms();snd_feed_now=alert_last_media;if(source_active&&snd_started)snd_sample_playback();media_packets++;media_bytes+=(u32)n;int cc=b[0]&15,off=12+4*cc;if(b[0]&0x10){if(off+4>n){media_decode_errors++;return;}int ext=((int)b[off+2]<<8)|b[off+3];off+=4+ext*4;}if(off>=n){media_decode_errors++;return;}u8 ph=b[off++];if(ph&0xe0){media_decode_errors++;return;}int frames=ph&15;if(frames<1){media_decode_errors++;return;}if(!source_active){sbc_resume_reset=1;return;}media_audio_idle=0;if(sbc_resume_reset){memzero(&decst,sizeof(decst));sbc_resume_reset=0;}int decoded=0;for(int k=0;k<frames&&off<n;k++){int used=sbc_decode(b+off,(u32)(n-off),&decst,&decfr);if(used<=0){media_decode_errors++;break;}off+=used;decoded++;media_frames++;if(sndfd<0&&!snd_open())return;pcm_pack();}u32 finished=alert_now_ms();if(decoded&&snd_feed_valid)snd_feed_at=finished;if(audio_profile_on){u32 elapsed=finished-alert_last_media;if(elapsed>audio_packet_max_ms)audio_packet_max_ms=elapsed;}if(media_packets==1||media_packets==10||(media_packets%100u)==0||decoded!=frames)av_log_media();}
 
 /* ---------------- AVRCP Controller: metadata + 4 transport commands ----- */
@@ -672,7 +756,7 @@ static int avrcpfd=-1,avrcp_state=0;/*0 none,1 connecting,2 ready*/static u8 avr
 static u16 be16(const u8*p){return(u16)(((u16)p[0]<<8)|p[1]);}static u32 be32(const u8*p){return((u32)p[0]<<24)|((u32)p[1]<<16)|((u32)p[2]<<8)|p[3];}
 static void put_be32(u8*p,u32 v){p[0]=(u8)(v>>24);p[1]=(u8)(v>>16);p[2]=(u8)(v>>8);p[3]=(u8)v;}
 static void avrcp_close(void){if(avrcpfd>=0)s_close(avrcpfd);avrcpfd=-1;avrcp_state=0;}
-static void reconnect_profile_ready(const u8*peer){if(reconnect_wait_ticks<0)return;if(peer){memcopy(live_peer,peer,6);live_peer_valid=1;}meta_connected=1;meta_dirty=1;reconnect_wait_ticks=-1;reconnect_profile_ticks=-1;status_set("BT CONNECTED");hci_log("PHONE RECONNECT PROFILE READY",peer,-1);}
+static void reconnect_profile_ready(const u8*peer){if(reconnect_wait_ticks<0)return;if(peer){memcopy(live_peer,peer,6);live_peer_valid=1;meta_device_set_addr(live_peer);}meta_connected=1;meta_dirty=1;reconnect_wait_ticks=-1;reconnect_profile_ticks=-1;status_set("BT CONNECTED");hci_log("PHONE RECONNECT PROFILE READY",peer,-1);}
 static void avrcp_open(u32 tick){if(avrcp_state||manual_block||tick<avrcp_retry_at)return;const u8*peer=live_peer_valid?live_peer:(saved_peer_valid?saved_peer:0);if(!peer)return;hci_log("AVRCP CONNECT TRY",peer,-1);int fd=bt_socket();if(fd<0){hci_log("AVRCP SOCKET FAIL",peer,(int)(-fd));avrcp_retry_at=tick+50;return;}/* ACL is already authenticated/encrypted by A2DP.  Do not trigger a second legacy security negotiation here. */int r=bt_connect_nb(fd,PSM_AVRCP,peer);if(r==0){avrcpfd=fd;avrcp_state=2;avrcp_retry_at=tick+50;hci_log("AVRCP CONNECTED",peer,-1);reconnect_profile_ready(peer);return;}/* EINPROGRESS/EALREADY on old Linux. */if(r==-115||r==-114||r==-11){avrcpfd=fd;avrcp_state=1;hci_log("AVRCP CONNECT PENDING",peer,(int)(-r));return;}hci_log("AVRCP CONNECT IMMEDIATE FAIL",peer,(int)(-r));s_close(fd);avrcp_retry_at=tick+50;}
 static void avrcp_connect_finish(u32 tick){if(avrcp_state!=1||avrcpfd<0)return;int e=bt_so_error(avrcpfd);const u8*peer=live_peer_valid?live_peer:(saved_peer_valid?saved_peer:0);if(e==0){avrcp_state=2;avrcp_retry_at=tick+50;hci_log("AVRCP CONNECTED",peer,-1);reconnect_profile_ready(peer);}else if(e==11||e==114||e==115){return;}else{hci_log("AVRCP CONNECT FAIL",peer,e<0?-e:e);avrcp_close();avrcp_retry_at=tick+50;if(reconnect_wait_ticks>=0)reconnect_profile_ticks=20;}}
 static int avrcp_write(const u8*b,u32 n){return avrcp_state==2&&avrcpfd>=0&&s_write(avrcpfd,b,n)==(long)n;}
@@ -747,13 +831,13 @@ static void auto_boot_service(u32 tick){
   status_set("BT RECONNECTING");
   hci_log(auto_attempts==1?"AUTO RECONNECT PROFILE-FIRST":"AUTO RECONNECT SECOND TRY",saved_peer,-1);
 }
-static void session_close(int keep_status){remember_live_name();snd_close();avrcp_close();avrcp_delay_ticks=-1;reconnect_profile_ticks=-1;reconnect_wait_ticks=-1;if(mediafd>=0)s_close(mediafd);if(sigfd>=0)s_close(sigfd);mediafd=sigfd=-1;av_reset_stream();live_peer_valid=0;meta_connected=0;meta_playing=0;meta_dirty=1;if(!keep_status)status_set(meta_paired?"BT WAIT PHONE":"BT WAIT PHONE");}
+static void session_close(int keep_status){snd_close();avrcp_close();avrcp_delay_ticks=-1;reconnect_profile_ticks=-1;reconnect_wait_ticks=-1;if(mediafd>=0)s_close(mediafd);if(sigfd>=0)s_close(sigfd);mediafd=sigfd=-1;av_reset_stream();live_peer_valid=0;meta_connected=0;meta_playing=0;if(saved_peer_valid)meta_device_set_addr(saved_peer);else meta_device_addr[0]=meta_device[0]=0;meta_dirty=1;if(!keep_status)status_set(meta_paired?"BT WAIT PHONE":"BT WAIT PHONE");}
 
 /* clio040 command file is a single latest-command record; sequence prevents repeats. */
 static void process_command(void){char b[96]={0};long fd=s_open(BT_CMD_PATH,O_RDONLY_,0);if(fd<0)return;long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n<=0)return;b[n]=0;u32 seq=0;if(!parse_uint0(b,&seq)||seq==command_seq_seen)return;command_seq_seen=seq;char*p=b;while(*p>='0'&&*p<='9')p++;while(*p==' '||*p=='\t')p++;
   if(starts0(p,"PLAY")){avrcp_passthrough(0x44);return;}if(starts0(p,"PAUSE")){avrcp_passthrough(0x46);return;}if(starts0(p,"NEXT")){avrcp_passthrough(0x4b);return;}if(starts0(p,"PREV")){avrcp_passthrough(0x4c);return;}
   if(starts0(p,"PAIR")){auto_boot_preempt();if(hci_pair_armed){pair_pin_status();return;}manual_block=0;pair_pin_prepare();hci_pair_armed=1;hci_pair_ticks=600;hci_pin_peer_valid=0;{char l[40];l[0]=0;append_str(l,sizeof(l),"HCI PAIR ARMED 60S PIN ");append_str(l,sizeof(l),pair_pin);hci_log(l,0,-1);}if(pairing_policy_set(1)){hci_request("PAIR",0);}else{pair_policy_fallback=1;pair_policy_on=1;hci_request("PAIR_FALLBACK",0);}pair_pin_status();return;}
-  if(starts0(p,"CONNECT")){auto_boot_preempt();u8 target[6];const u8*t=0;char*q=p+7;while(*q==' '||*q=='\t')q++;if(addr_parse(q,target))t=target;else if(saved_peer_valid)t=saved_peer;manual_block=0;if(!t){status_set("BT NO SAVED DEVICE");return;}if(hci_pair_armed){hci_pair_armed=0;hci_pair_ticks=0;pairing_policy_finish();}hci_pin_peer_valid=0;if(!bond_restore_hcid(t)){status_set("BT REPAIR REQUIRED");hci_log("PHONE RECONNECT NO SAVED KEY",t,-1);return;}peer_save(t);hci_remote_name_request(t);avrcp_close();reconnect_profile_ticks=0;reconnect_wait_ticks=250;avrcp_retry_at=0;hci_log("PHONE RECONNECT PROFILE-FIRST+BOND",t,-1);status_set("BT RECONNECTING");return;}
+  if(starts0(p,"CONNECT")){auto_boot_preempt();u8 target[6];const u8*t=0;char*q=p+7;while(*q==' '||*q=='\t')q++;if(addr_parse(q,target))t=target;else if(saved_peer_valid)t=saved_peer;manual_block=0;if(!t){status_set("BT NO SAVED DEVICE");return;}if(hci_pair_armed){hci_pair_armed=0;hci_pair_ticks=0;pairing_policy_finish();}hci_pin_peer_valid=0;if(!bond_restore_hcid(t)){status_set("BT REPAIR REQUIRED");hci_log("PHONE RECONNECT NO SAVED KEY",t,-1);return;}if(live_peer_valid&&!addr_eq(t,live_peer)){hci_request("DISCONNECT",live_peer);session_close(1);}peer_save(t);hci_remote_name_request(t);avrcp_close();reconnect_profile_ticks=0;reconnect_wait_ticks=250;avrcp_retry_at=0;hci_log("PHONE RECONNECT PROFILE-FIRST+BOND",t,-1);status_set("BT RECONNECTING");return;}
   if(starts0(p,"DISCONNECT")){auto_boot_preempt();u8 target[6];const u8*t=live_peer_valid?live_peer:(saved_peer_valid?saved_peer:0);char*q=p+10;while(*q==' '||*q=='\t')q++;if(addr_parse(q,target))t=target;manual_block=1;if(hci_pair_armed){hci_pair_armed=0;hci_pair_ticks=0;pairing_policy_finish();}if(t)hci_request("DISCONNECT",t);if(!t||(live_peer_valid&&addr_eq(t,live_peer)))session_close(1);status_set("BT DISCONNECTED");device_list_write();return;}
   if(starts0(p,"UNPAIR")){auto_boot_preempt();u8 target[6];const u8*t=saved_peer_valid?saved_peer:0;char*q=p+6;while(*q==' '||*q=='\t')q++;if(addr_parse(q,target))t=target;manual_block=1;if(hci_pair_armed){hci_pair_armed=0;hci_pair_ticks=0;pairing_policy_finish();}if(t){u8 oldpeer[6];memcopy(oldpeer,t,6);bond_remove(oldpeer);device_name_remove(oldpeer);hcid_db_update(oldpeer,0,0,0);hci_request("UNPAIR",oldpeer);if(live_peer_valid&&addr_eq(oldpeer,live_peer))session_close(1);if(saved_peer_valid&&addr_eq(oldpeer,saved_peer)){u8 r[MAX_BONDS][BOND_REC_SIZE];int c=bond_read(r);if(c>0)peer_save(r[0]);else peer_clear();}}device_list_write();status_set("BT DEVICE FORGOTTEN");return;}
 }

@@ -19,7 +19,8 @@ static void map_mask_begin(int kind){
  map_mask_active=1;map_mask_shift=0;
  if(kind==0){map_mask_count=3;map_coverage_cols[0]=C_WATER;map_coverage_cols[1]=C_GREEN;map_coverage_cols[2]=C_BLUE;}
  else if(kind==1){map_mask_count=6;for(int i=0;i<6;i++)map_coverage_cols[i]=road_colours[i];}
- else{map_mask_count=1;map_coverage_cols[0]=kind==2?C_ROUTE:C_CAR;}
+ else if(kind==2){map_mask_count=3;map_coverage_cols[0]=C_ROUTE;map_coverage_cols[1]=C_ROUTE_SKIPPED;map_coverage_cols[2]=C_ROUTE_DIVERSION;}
+ else{map_mask_count=1;map_coverage_cols[0]=C_CAR;}
 }
 static void map_mask_select(int slot){map_mask_shift=slot*5;}
 #else
@@ -232,6 +233,30 @@ static void map_stroke_polyline(const int*x,const int*y,int n,u16 col,int wid){
   if(!(i&7))render_checkpoint();
   if(!((x[prev]<-20*256&&x[i]<-20*256)||(x[prev]>(W+20)*256&&x[i]>(W+20)*256)||(y[prev]<(MAP_TOP-5)*256&&y[i]<(MAP_TOP-5)*256)||(y[prev]>(MAP_BOTTOM+3)*256&&y[i]>(MAP_BOTTOM+3)*256)))map_line_q8(x[prev],y[prev],x[i],y[i],col,wid);
   prev=i;
+ }
+}
+/* Dashed proposed-route ink. Fixed screen-space cadence keeps the
+ * distinction visible at all zooms, including short geometry segments. */
+static void map_dash_segment(int x0,int y0,int x1,int y1,u16 col,int*phase){
+ int dx=x1-x0,dy=y1-y0,ax=dx<0?-dx:dx,ay=dy<0?-dy:dy;
+ int hi=ax>ay?ax:ay,lo=ax>ay?ay:ax,len=hi+(lo*3)/8;
+ if(!len)return;
+ const int on=10*256,period=17*256;
+ int start=*phase;*phase=(start+len)%period;
+ /* Most of a long offscreen stroke can be skipped without changing phase. */
+ int first=0,last=len;
+ int p=ax>=ay?x0:y0,d=ax>=ay?dx:dy,limit=(ax>=ay?W:H)*256;
+ if(!d)return;
+ long long aa=(long long)(-4*256-p)*len/d,bb=(long long)(limit+4*256-p)*len/d;
+ if(aa>bb){long long tmp=aa;aa=bb;bb=tmp;}
+ if(aa>last||bb<0)return;if(aa>first)first=(int)aa;if(bb<last)last=(int)bb;
+ int at=first;
+ while(at<last){
+  int q=(start+at)%period,next=at+(q<on?on-q:period-q);
+  if(next>last)next=last;
+  if(q<on)map_line_q8(x0+(int)((long long)dx*at/len),y0+(int)((long long)dy*at/len),
+   x0+(int)((long long)dx*next/len),y0+(int)((long long)dy*next/len),col,3);
+  at=next;
  }
 }
 /* Four vertical coverage samples only along a polygon's fringe. Fully covered

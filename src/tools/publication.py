@@ -5,11 +5,19 @@ import json
 SOURCE_ROOTS = ('clio843/src', 'navigation-builder', 'tools', 'tests', 'repository',
                 'fonts', 'locales', 'third_party')
 EXCLUDED_PARTS = {'.git', '.venv', '.cache', '.build', '__pycache__', 'node_modules'}
-EXCLUDED_NAMES = {'.DS_Store', 'build_qadj', 'build_uk.command',
-                  'bond.dat', 'faves.dat', 'recent.dat', 'trip.dat', 'audlast.dat',
-                  'ui_translations 2.h'}
+EXCLUDED_NAMES = {
+    '.DS_Store', 'build_qadj', 'build_uk.command',
+    'bond.dat', 'faves.dat', 'recent.dat', 'trip.dat',
+    'audlast.dat', 'ui_translations 2.h', 'history.dat',
+    'history.prev.dat', 'mobility.dat', 'mobility.tmp',
+    'mobility-places.dat', 'mobility-places.tmp',
+    'gpslast.dat', 'prepare_minimal_release.py'
+}
 PREVIEW_GIFS = ('boot-day.gif', 'boot-night.gif', 'popups.gif', 'driving.gif', 'menus.gif', 'bluetooth.gif', 'phone-destination.gif',
-                'speed-warning.gif', 'map-browsing.gif', 'roundabout-eta.gif', 'add-stop.gif', 'status-notifications.gif', 'metadata-updates.gif', 'coordinates.gif', 'coordinate-route.gif', 'map-point-route.gif')
+                'speed-warning.gif', 'map-browsing.gif', 'roundabout-eta.gif', 'add-stop.gif', 'status-notifications.gif', 'metadata-updates.gif', 'coordinates.gif', 'coordinate-route.gif', 'map-point-route.gif',
+                'v216-coordinates.gif', 'v216-hud-settings.gif', 'v216-bluetooth-hidden.gif', 'v216-itinerary.gif',
+                'trips-layout.gif', 'trips-empty-layout.gif', 'popups-layout.gif',
+                'v220-destination-prediction.gif', 'v220-intelligent-diversions.gif', 'v220-frequent-place.gif')
 
 def source_files(root, reports):
     files = {}
@@ -26,7 +34,7 @@ def source_files(root, reports):
     names = ('README.md', 'VERSION', 'BUILDING.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md',
              '.gitignore', 'Install.command', 'install.py', 'bootstrap-SHA256.json',
              'docs/source-status.md', 'docs/camera-support.md', 'docs/repository-readme.md',
-             'docs/github-launch.md', 'docs/changelog.md', 'docs/scenic-iii-hardware.md', 'card-template/cswmap.example.ini', 'legacy-binaries/clioaux-init',
+             'docs/changelog.md', 'docs/updating.md', 'docs/intelligent-navigation.md', 'docs/release-workflow.md', 'docs/scenic-iii-hardware.md', 'card-template/cswmap.example.ini', 'legacy-binaries/clioaux-init',
              'legacy-binaries/manifest.json', 'clio843/font.bin',
              'card-template/ttn', 'card-template/clio843/btstart.sh', 'card-template/clio843/prefs.ini',
              'card-template/clio843/focusd', 'card-template/clio843/hidd')
@@ -63,6 +71,13 @@ def gitignore():
 **/recent.dat
 **/trip.dat
 **/audlast.dat
+**/gpslast.dat
+**/history.dat
+**/history.prev.dat
+**/mobility.dat
+**/mobility.tmp
+**/mobility-places.dat
+**/mobility-places.tmp
 **/cswmap.ini
 /csw
 /vstat
@@ -80,6 +95,7 @@ def gitignore():
 **/ttsystem
 **/PNDNavigator
 **/vehicledaemon
+src/tools/prepare_minimal_release.py
 '''
 
 def source_gitignore(root):

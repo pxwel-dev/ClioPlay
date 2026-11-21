@@ -23,30 +23,23 @@ static int reference_unpack(const u8*d,u32 len,struct SbcFrame*f){
   if(consumed&7u)consumed+=8u-(consumed&7u);return (int)(consumed>>3);
 }
 
-static void reference_synth8(struct SbcState*s,struct SbcFrame*f,int ch,int blk){
+struct ReferenceState {s32 V[2][170];s16 offset[2][16];int initialized;};
+static void reference_synth8(struct ReferenceState*s,struct SbcFrame*f,int ch,int blk){
   s16*off=s->offset[ch];for(int i=0;i<16;i++){off[i]--;if(off[i]<0){off[i]=159;for(int j=0;j<9;j++)s->V[ch][j+160]=s->V[ch][j];}s32 r=madd(synmatrix8[i][7],f->sb[blk][ch][7],0);for(int j=6;j>=0;j--)r=madd(synmatrix8[i][j],f->sb[blk][ch][j],r);s->V[ch][off[i]]=SCALE8(r);}
   for(int i=0,idx=0;i<8;i++,idx+=5){int k=(i+8)&15;s32 r=madd(s->V[ch][off[k]+9],sbc_proto_8_80m1[idx+4],0);r=madd(s->V[ch][off[i]+8],sbc_proto_8_80m0[idx+4],r);r=madd(s->V[ch][off[k]+7],sbc_proto_8_80m1[idx+3],r);r=madd(s->V[ch][off[i]+6],sbc_proto_8_80m0[idx+3],r);r=madd(s->V[ch][off[k]+5],sbc_proto_8_80m1[idx+2],r);r=madd(s->V[ch][off[i]+4],sbc_proto_8_80m0[idx+2],r);r=madd(s->V[ch][off[k]+3],sbc_proto_8_80m1[idx+1],r);r=madd(s->V[ch][off[i]+2],sbc_proto_8_80m0[idx+1],r);r=madd(s->V[ch][off[k]+1],sbc_proto_8_80m1[idx],r);r=madd(s->V[ch][off[i]],sbc_proto_8_80m0[idx],r);f->pcm[ch][blk*8+i]=clip16(SCALE8(r));}
 }
 
-static void bit_reader_checks(void){
- for(u32 len=1;len<=128;len++){
-  u8*d=malloc(len);assert(d);for(u32 i=0;i<len;i++)d[i]=(u8)random_u32();
-  for(u32 pos=0;pos<=len*8;pos++)for(int bits=0;bits<=16&&pos+(u32)bits<=len*8;bits++)
-   assert(get_bits(d,pos,bits)==reference_get_bits(d,pos,bits));
-  free(d);
- }
-}
 static void division_checks(void){
  for(int bits=1;bits<=16;bits++){
   u32 d=(1u<<bits)-1;
   /* Exhaustive small values, full-range randomized dividends and multiples. */
-  for(u32 n=0;n<65536;n++)assert(sbc_levels_divide(n,bits)==n/d);
-  assert(sbc_levels_divide(0xffffffffu,bits)==0xffffffffu/d);
+  for(u32 n=0;n<65536;n++)assert(sbc_dequantize(n,d,sbc_reciprocal[bits])==n/d);
+  assert(sbc_dequantize(0xffffffffu,d,sbc_reciprocal[bits])==0xffffffffu/d);
   for(int i=0;i<100000;i++){
-   u32 n=random_u32();assert(sbc_levels_divide(n,bits)==n/d);
-   u32 multiple=(n/d)*d;assert(sbc_levels_divide(multiple,bits)==multiple/d);
-   if(multiple)assert(sbc_levels_divide(multiple-1,bits)==(multiple-1)/d);
-   if(multiple<0xffffffffu)assert(sbc_levels_divide(multiple+1,bits)==(multiple+1)/d);
+   u32 n=random_u32();assert(sbc_dequantize(n,d,sbc_reciprocal[bits])==n/d);
+   u32 multiple=(n/d)*d;assert(sbc_dequantize(multiple,d,sbc_reciprocal[bits])==multiple/d);
+   if(multiple)assert(sbc_dequantize(multiple-1,d,sbc_reciprocal[bits])==(multiple-1)/d);
+   if(multiple<0xffffffffu)assert(sbc_dequantize(multiple+1,d,sbc_reciprocal[bits])==(multiple+1)/d);
   }
  }
 }
@@ -59,9 +52,10 @@ static void matrix_checks(void){
  }
 }
 static void frame_checks(void){
- struct SbcState old_state={0},new_state={0};
- for(int mode=0;mode<2;mode++)for(int pool=2;pool<=53;pool++)for(int trial=0;trial<12;trial++){
-  u8 data[128];for(int i=0;i<128;i++)data[i]=(u8)random_u32();data[0]=0x9c;data[1]=(u8)(mode?0xbd:0xb9);data[2]=(u8)pool;
+ struct ReferenceState old_state={0};
+ struct SbcState new_state={0};
+ for(int mode=0;mode<2;mode++)for(int allocation=0;allocation<2;allocation++)for(int pool=2;pool<=53;pool++)for(int trial=0;trial<12;trial++){
+  u8 data[128];for(int i=0;i<128;i++)data[i]=(u8)random_u32();data[0]=0x9c;data[1]=(u8)((mode?0xbd:0xb9)|(allocation<<1));data[2]=(u8)pool;
   struct SbcFrame old={0},cur={0};int length=reference_unpack(data,sizeof(data),&old);
   assert(length>0&&length<=(int)sizeof(data));
   /* Every truncation must reject before touching bytes beyond its allocation. */
@@ -71,10 +65,13 @@ static void frame_checks(void){
    assert(x==y);if(x>0)assert(!memcmp(a.sb,b.sb,sizeof(a.sb)));free(bounded);
   }
   assert(sbc_decode(data,(u32)length,&new_state,&cur)==length);
-  if(!old_state.initialized)sbc_state_init(&old_state);
+  if(!old_state.initialized){
+   for(int ch=0;ch<2;ch++)for(int i=0;i<16;i++)old_state.offset[ch][i]=(s16)(10*i+10);
+   old_state.initialized=1;
+  }
   for(int ch=0;ch<2;ch++)for(int blk=0;blk<16;blk++)reference_synth8(&old_state,&old,ch,blk);
   assert(!memcmp(old.pcm,cur.pcm,sizeof(old.pcm)));
-  u8 pcm[512];sbc_pcm_interleave(pcm,&cur);
+  u32 words[128];sbc_pcm_interleave(words,&cur);const u8*pcm=(const u8*)words;
   for(int i=0;i<128;i++)for(int ch=0;ch<2;ch++){
    u16 sample=(u16)cur.pcm[ch][i];assert(pcm[4*i+2*ch]==(u8)sample);assert(pcm[4*i+2*ch+1]==(u8)(sample>>8));
   }
@@ -86,7 +83,7 @@ static void frame_checks(void){
  /* Full signed 16-bit range, including clipping endpoints, packs unchanged. */
  for(int base=-32768;base<32768;base+=128){
   for(int i=0;i<128;i++){f.pcm[0][i]=(s16)(base+i);f.pcm[1][i]=(s16)(32767-(base+32768+i));}
-  u8 pcm[512];sbc_pcm_interleave(pcm,&f);
+  u32 words[128];sbc_pcm_interleave(words,&f);const u8*pcm=(const u8*)words;
   for(int i=0;i<128;i++)for(int ch=0;ch<2;ch++)assert((u16)(pcm[4*i+2*ch]|((u16)pcm[4*i+2*ch+1]<<8))==(u16)f.pcm[ch][i]);
  }
 }
@@ -115,4 +112,4 @@ static void schedule_checks(void){
  assert(audio_periodic(&p,0x55u,100)==0);assert(audio_periodic_wait(&p,0x55u,100)==99);
  assert(audio_countdown(10,50)==0&&audio_countdown(-1,50)==-1&&audio_countdown(0,50)==0);
 }
-int main(void){bit_reader_checks();division_checks();matrix_checks();frame_checks();schedule_checks();puts("Audio decoder: exact division/bit reads/folded synthesis/PCM, bounded frames and packet-independent maintenance passed.");return 0;}
+int main(void){division_checks();matrix_checks();frame_checks();schedule_checks();puts("Audio decoder: exact dequantization, frame bitstream and synthesis PCM, bounded frames and packet-independent maintenance passed.");return 0;}

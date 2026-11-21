@@ -39,7 +39,7 @@ static void scene(s32 lat,s32 lon,int z,int night,int driving,int heading){
   freecam=!driving;freecam_course_valid=1;freecam_course=0;
   freecam_anim_mode=FC_ANIM_NONE;map_tilt_q8=driving?256:0;
   perspective_lut_tilt=-1;theme_resolved=night;apply_palette(night);
-  mapok=1;mapfmt=mh.ver>=5?5:4;font_ok=0;nav_card_w=nav_card_h=ndrive_labels=0;
+  mapok=1;mapfmt=5;font_ok=0;nav_card_w=nav_card_h=ndrive_labels=0;
   (void)z;
 }
 static unsigned verify(int z,unsigned*water,unsigned*green){
@@ -107,7 +107,7 @@ int main(int argc,char**argv){
   unsigned failures=synthetic();
   if(argc>1){
     mapfd=open(argv[1],O_RDONLY);assert(mapfd>=0);
-    assert(read(mapfd,&mh,sizeof(mh))==sizeof(mh));assert(!memcmp(mh.magic,"CPM4",4));
+    assert(read(mapfd,&mh,sizeof(mh))==sizeof(mh));assert(!memcmp(mh.magic,"CPM5",4));
     const struct {const char*name;s32 lat,lon;} sites[]={
       {"Tyne Bridge",5496830,-160580},{"Waterloo Bridge",5150810,-11650},
       {"Tower Bridge",5150550,-7540}};

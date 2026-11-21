@@ -1,11 +1,14 @@
 /* Decimal-degree destination entry. All conversion is bounded integer arithmetic;
  * drafts never touch saved places or the itinerary until the review is confirmed. */
 enum {COORD_LAT=0,COORD_LON=1,COORD_REVIEW=2};
-static struct {
+/* Row-major order: 1–9, sign, decimal point, zero, Next. */
+enum {COORD_SIGN=9,COORD_DOT,COORD_ZERO,COORD_NEXT,COORD_KEY_COUNT};
+struct CoordinateDraft {
  int step,focus,review_focus,action,error;
  char value[2][16],name[161];
  s32 lat,lon;
-} coordinates;
+};
+static struct CoordinateDraft coordinates;
 
 /* Up to seven fractional digits; round once to the router's 1e-5 degree units.
  * Check exact geographical bounds before rounding (90.000001 is invalid). */
@@ -60,7 +63,7 @@ static void coordinates_leave(int sources){
  if(sources&&coordinates.action!=DEST_PICK_NONE){dest_pick_action=coordinates.action;modal=MOD_SOURCE_PICK;modal_choice=2;}
 }
 /* Soft-right always cycles between the two coordinate fields; it never
- * silently submits the destination. Back confirms once both values are set. */
+ * silently submits the destination. The on-screen Next key validates both. */
 static void coordinates_next(void){
  coordinates.step=coordinates.step==COORD_LAT?COORD_LON:COORD_LAT;
  coordinates.error=0;
@@ -81,12 +84,12 @@ static void coordinates_delete(void){
 }
 static void coordinates_type(int key){
  char*b=coordinates.value[coordinates.step];unsigned n=slen(b);coordinates.error=0;
- if(key==9){
+ if(key==COORD_SIGN){
   if(b[0]=='-'){for(unsigned i=0;i<n;i++)b[i]=b[i+1];}
   else if(n+1<sizeof(coordinates.value[0])){for(unsigned i=n+1;i>0;i--)b[i]=b[i-1];b[0]='-';}
   return;
  }
- if(key==11){
+ if(key==COORD_DOT){
   for(unsigned i=0;i<n;i++)if(b[i]=='.')return;
   if(!n||streq(b,"-")){appendstr(b,sizeof(coordinates.value[0]),"0");n++;}
   if(n+1<sizeof(coordinates.value[0]))appendstr(b,sizeof(coordinates.value[0]),".");return;
@@ -95,7 +98,38 @@ static void coordinates_type(int key){
  const char*dot=0;unsigned whole=0;
  for(const char*p=b;*p;p++){if(*p=='.')dot=p;else if(!dot&&*p!='-')whole++;}
  if((dot&&slen(dot+1)>=7)||(!dot&&whole>=3)||n+1>=sizeof(coordinates.value[0]))return;
- char c[2]={(char)(key==10?'0':'1'+key),0};appendstr(b,sizeof(coordinates.value[0]),c);
+ char c[2]={(char)(key==COORD_ZERO?'0':'1'+key),0};appendstr(b,sizeof(coordinates.value[0]),c);
+}
+/* Share the layout and traversal between the sheet and legacy renderer.
+ * The bottom-left column is split in two; vertical arrows align by column,
+ * with the sign as the entry point to that split and horizontal access to dot. */
+static void coordinate_key_bounds(int key,int cw,int gap,int*x,int*w){
+ int width=cw-gap;
+ *x=(key%3)*cw;*w=width;
+ if(key==COORD_SIGN||key==COORD_DOT){
+  *w=(width-gap)/2;*x=key==COORD_SIGN?0:*w+gap;
+  if(key==COORD_DOT)*w=width-*x;
+ }else if(key==COORD_ZERO)*x=cw;
+ else if(key==COORD_NEXT)*x=2*cw;
+}
+static const char*coordinate_key_label(int key,char b[2]){
+ if(key==COORD_SIGN)return "±";
+ if(key==COORD_DOT)return ".";
+ if(key==COORD_NEXT)return ui_tr("Next");
+ b[0]=key==COORD_ZERO?'0':(char)('1'+key);b[1]=0;return b;
+}
+static void coordinate_move(int code){
+ int f=coordinates.focus,row=f<COORD_SIGN?f/3:3;
+ int col=row<3?f%3:f<=COORD_DOT?0:f==COORD_ZERO?1:2;
+ if(code==K_ROTCW||code==K_ROTCCW){
+  coordinates.focus=(f+(code==K_ROTCW?1:-1)+COORD_KEY_COUNT)%COORD_KEY_COUNT;return;
+ }
+ if(code==K_LEFT||code==K_RIGHT){
+  int start=row*3,n=row==3?4:3;
+  coordinates.focus=start+(f-start+(code==K_RIGHT?1:-1)+n)%n;return;
+ }
+ row=(row+(code==K_DOWN?1:3))%4;
+ coordinates.focus=row<3?row*3+col:col==0?COORD_SIGN:col==1?COORD_ZERO:COORD_NEXT;
 }
 static void coordinates_submit(void){
  char name[161];copystr(name,sizeof(name),coordinates.name);
@@ -120,13 +154,12 @@ static void coordinates_submit(void){
 static void coordinates_handle(int code){
  if(code==K_BACK){
   if(coordinates.step==COORD_REVIEW)coordinates_open_name();
-  else if(!coordinates.value[0][0]&&!coordinates.value[1][0])coordinates_leave(1);
-  else coordinates_finish();
+  else coordinates_leave(1);
   return;
  }
  if(coordinates.step==COORD_REVIEW){
-  if((code==K_UP||code==K_LEFT)&&coordinates.review_focus>0)coordinates.review_focus--;
-  else if((code==K_DOWN||code==K_RIGHT)&&coordinates.review_focus<3)coordinates.review_focus++;
+  if(code==K_UP||code==K_LEFT||code==K_DOWN||code==K_RIGHT)
+   coordinates.review_focus=wrap_focus(coordinates.review_focus,code==K_UP||code==K_LEFT?-1:1,4);
   else if(code==K_ENTER){
    if(coordinates.review_focus==0)coordinates_submit();
    else if(coordinates.review_focus==1){coordinates.step=COORD_LAT;coordinates.focus=0;coordinates.error=0;}
@@ -136,12 +169,8 @@ static void coordinates_handle(int code){
  }
  if(code==K_ESC){coordinates_delete();return;}
  if(code==K_SR){coordinates_next();return;}
- int focus=coordinates.focus%12,row=focus/3,col=focus%3;
- if(code==K_LEFT)coordinates.focus=row*3+(col+2)%3;
- else if(code==K_RIGHT)coordinates.focus=row*3+(col+1)%3;
- else if(code==K_UP)coordinates.focus=((row+3)%4)*3+col;
- else if(code==K_DOWN)coordinates.focus=((row+1)%4)*3+col;
- else if(code==K_ENTER)coordinates_type(focus);
+ if(code==K_LEFT||code==K_RIGHT||code==K_UP||code==K_DOWN||code==K_ROTCW||code==K_ROTCCW)coordinate_move(code);
+ else if(code==K_ENTER){if(coordinates.focus==COORD_NEXT)coordinates_finish();else coordinates_type(coordinates.focus);}
 }
 static void draw_coordinates(void){
  fill(0,0,W,H,C_BG);
@@ -159,9 +188,9 @@ static void draw_coordinates(void){
  keyboard_surface(12,MENU_BODY_Y,456,44,0);
  compact_fit(24,50,430,3,value[0]?value:"0.00000",value[0]?C_WHITE:C_MUTED);
  if(coordinates.error)compact_fit(24,112,432,0,ui_tr(axis==COORD_LAT?"Enter a valid latitude":"Enter a valid longitude"),C_WARN);
- for(int i=0;i<12;i++){
-  int x=42+(i%3)*132,y=131+(i/3)*29,f=coordinates.focus==i;char b[4]={0};
-  if(i==9)copystr(b,sizeof(b),"±");else{b[0]=i==10?'0':i==11?'.':(char)('1'+i);b[1]=0;}
-  keyboard_surface(x,y,124,25,f);compact_center(x+62,y+3,112,1,b,ui_choice_text(f));
+ for(int i=0;i<COORD_KEY_COUNT;i++){
+  int x,w,y=131+(i<COORD_SIGN?i/3:3)*29,f=coordinates.focus==i;char b[2];
+  coordinate_key_bounds(i,132,8,&x,&w);x+=42;
+  keyboard_surface(x,y,w,25,f);compact_center(x+w/2,y+3,w-8,1,coordinate_key_label(i,b),ui_choice_text(f));
  }
 }

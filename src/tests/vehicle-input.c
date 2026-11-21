@@ -59,7 +59,14 @@ static void console_ui(void){
  screen=SCR_COORDINATES;coordinates.step=COORD_LAT;coordinates.focus=2;key_handle(K_ROTCW);assert(coordinates.focus==3);
  key_handle(K_CONSOLE_TRIP);assert(sheet_page==P_TRIP);
  int old=pref.theme;key_handle(K_CONSOLE_THEME);assert(pref.theme==(old+1)%3);
- screen=SCR_MAP;freecam=0;route_status=R_READY;key_handle(K_CONSOLE_INFO);assert(hud_navigation.kind==HUD_JOURNEY);
+ screen=SCR_MAP;freecam=0;route_status=R_READY;
+ gps.fix=roadctx.valid=1;copystr(roadctx.street,sizeof(roadctx.street),"Quayside");
+ u32 info_at=hud_now_ms();hud_driver_prepare(info_at);hud_driver_prepare(info_at+HUD_ROAD_NAME_MS);
+ assert(!hud_tween[HC_ROAD_NAME].target.box.a);
+ key_handle(K_CONSOLE_INFO);assert(hud_navigation.kind==HUD_JOURNEY);
+ hud_driver_prepare(hud_now_ms());
+ assert(hud_tween[HC_ROAD_NAME].target.box.a&&streq(hud_tween[HC_ROAD_NAME].target.title,"Quayside"));
+ gps.fix=roadctx.valid=0;
  /* GPS action toggles its panel, BACK closes it, and it replaces an open sheet. */
  key_handle(K_CONSOLE_GPS);assert(sheet_page==P_GPS&&screen==SCR_GPS);key_handle(K_CONSOLE_GPS);assert(screen==SCR_MAP);
  key_handle(K_CONSOLE_GPS);key_handle(K_BACK);assert(screen==SCR_MAP);

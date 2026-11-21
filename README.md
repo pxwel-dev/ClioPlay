@@ -1,28 +1,36 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
-<h1 align="center">ClioPlay 2.1.6</h1>
+<h1 align="center">ClioPlay 2.2.2</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
 <p align="center">
   Created and maintained by <a href="https://github.com/pxwel-dev">Pawel (pxwel-dev)</a>.
 </p>
 
 
-<p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases/tag/Release">Download latest release</a> · <a href="#install">Install instructions</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
+<p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases/tag/Release">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-## Version 2.1.6 - Latest development release
+## Version 2.2.2 (Major Performance Optimisation)
 
-### Changes in this version
-
-1) Simplify coordinate page. Only keypad. Soft right will cycle between lat/long and wrap back around to the other side, while soft left is delete. 
-2) Vertically recentre the trip symbols (circle & squares) within the selection window
-3) Add further customisability in settings:
-   - Status pill on left / Time & temp pill on right (DEFAULT VALUE), Status pill on right / Time & temp pill on left
-   - Speed pill in left / Direction pill on right (DEFAULT VALUE), Speed pill on right / Direction pill on left
-4) If hw_bluetooth = 0, hide all bluetooth-related functionality in the UI. 
+- Bluetooth playback now uses a 200 ms prefill.
+- Animations and steady HUD updates target 20 FPS. ClioPlay prepares Explore rotation and parked overlay transitions ahead of playback; the menu resizes alongside taller notices. Routing calculations still temporarily cap ClioPlay to 5 FPS to allow the single core 400mhz CPU maximum headroom for calculations. 
+- Trip footer buttons, menu lists, dialogs and keyboards wrap around. Use the arrows to change Trip tabs or select Cancel route on the footer.
+- Press Centre / OK to briefly show the current road name and, during guidance, your ETA.
 
 See [version history](CHANGELOG.md) for implemented changes by version.
 
+See [intelligent navigation](src/docs/intelligent-navigation.md) for configuration, model behaviour and privacy.
+
 ## UI previews
+
+See the [full preview index](src/docs/demo/README.md) for all animations.
+
+| Destination prediction | Intelligent diversions |
+| --- | --- |
+| ![Learned destination in the driving HUD with explicit review](src/docs/demo/v220-destination-prediction.gif) | ![Historical traffic and alternative route selection, controlled fixture](src/docs/demo/v220-intelligent-diversions.gif) |
+
+| Frequent-place suggestion | Send a destination with [ClioPlay Send](https://pxwel-dev.github.io/ClioPlay-Send/) |
+| --- | --- |
+| <img src="src/docs/demo/v220-frequent-place.gif" width="391"> | <img src="src/docs/demo/phone-destination.gif" width="391"> |
 
 | Driving and camera alerts | Dynamically-resizing, animated frosted-glass menu |
 | --- | --- |
@@ -48,47 +56,22 @@ See [version history](CHANGELOG.md) for implemented changes by version.
 | --- | --- |
 | ![Change top and bottom bar pill positions in settings](src/docs/demo/v216-hud-settings.gif) | ![A new song appears, updates inside Bluetooth control, then radio tuning changes the frequency](src/docs/demo/metadata-updates.gif) |
 
-
-<table align="center">
-  <thead>
-    <tr>
-      <th>
-        Send a destination with
-        <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>
-      </th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td align="center">
-        <img
-          src="src/docs/demo/phone-destination.gif"
-          alt="ClioPlay Send and the head unit receiving a destination side by side"
-          width="480"
-        >
-      </td>
-    </tr>
-  </tbody>
-</table>
-
-
-
 ## Compatibility
 
 The primary supported configuration is:
 
-- Non-Bluetooth radio with a CD player (other radio units may work, but likely with no audio source / volume information available)
+- Non-Bluetooth radio with a CD player (other radios will work, but likely with no live radio audio source info and volume info available)
 - Non-live Carminat TomTom head unit
-- Bluetooth remote control, or a supported Scénic III / Mégane physical console
+- Bluetooth remote control (Clio 3), or a physical console (Scénic 3, Mégane 3)
 
-Physical console input and alternate temperature source are detected
-from incoming runtime events alongside the Bluetooth remote and Focus readings.
+Physical console input and alternate temperature source (Scénic 3, Mégane 3) are detected
+from incoming runtime events alongside the Bluetooth remote and Focus readings (Clio 3).
 Both sources are available automatically. Existing
 Focus temperature readings take priority when valid. See the
 [console setup and controls](src/README.md#physical-console-and-temperature-sources).
-The hardware protocol was contributed from a tested Scénic III.
+The hardware protocol was contributed from a tested Scénic 3.
 
-ClioPlay automatically discovers Bluetooth hardware on the Carminat; for Bluetooth, the Carminat must have: (`hw_bluetooth=1`). If no Bluetooth hardware is discovered, ClioPlay hides all Bluetooth-related UI features (Bluetooth audio and sending destinations by phone via <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>). 
+ClioPlay automatically discovers Bluetooth hardware on the Carminat; for Bluetooth, the Carminat must have: (`hw_bluetooth=1`). If no Bluetooth hardware is discovered, ClioPlay hides all Bluetooth-related UI features (Bluetooth audio and sending destinations by phone via <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>).
 
 ClioPlay handles the audio source as follows:
 
@@ -107,19 +90,24 @@ BT CTRL also requires a connected phone. Unavailable radio/volume readings stay 
 - Offline OpenStreetMap navigation, routing and rerouting.
 - Browse the map and route to a selected point, send destination from a connected phone, or manually enter named decimal-degree lat/long coordinates
 - Manage stops, recents and favourites.
+- Optional offline destination learning, historical traffic-aware ETAs and local diversions based on personal GPS history.
 - Bluetooth phone audio with track information and remote playback controls.
 - Vehicle audio controls remain responsible for physical volume and mute.
 - Full-screen maps with animated, semi-transparent frosted glass notices for road names, camera alerts, route progress and audio changes.
 - Day/Night themes with custom daily switch times in Auto, automatic units and time zones, and 18 interface languages.
 - Mapped speed limits and camera alerts where the bundled country policy allows them.
 
-For new stops/destinations, enter **Coordinates** on the head unit or use the separate [ClioPlay Send website](https://pxwel-dev.github.io/ClioPlay-Send/) to send the new route to ClioPlay from your phone via Bluetooth. For ease of use, add the website to your Home Screen as a web app.
+For new stops/destinations, enter **Coordinates** on the head unit, choose **Next** on the keypad to validate both fields and proceed to naming, or use the separate [ClioPlay Send website](https://pxwel-dev.github.io/ClioPlay-Send/) to send the new route to ClioPlay from your phone via Bluetooth. For ease of use, add the website to your Home Screen as a web app.
 
 ## Install
 
-You need a FAT32-formatted SD card (SDHC, minimum 2GB, recommended 8GB, theoretical max 32GB) for the head unit and an `.osm.pbf` map extract covering your journeys.
+**Already using ClioPlay?** Follow the [software update guide](src/docs/updating.md) to retain your maps, settings, saved places, pairings and driving history without rebuilding navigation or downloading firmware.
 
-Get the map extract from [Geofabrik Downloads](https://download.geofabrik.de/) by choosing your region and downloading its `.osm.pbf` file. Download and extract this repository, then follow your desktop setup:
+The instructions below are for fresh installations or new navigation data.
+
+You need a FAT32-formatted SD card (SDHC, minimum 2GB, recommended 8GB, theoretical max 32GB) for the head unit and one or more `.osm.pbf` map extracts covering your journeys.
+
+Choose your regions and download their `.osm.pbf` files from [Geofabrik Downloads](https://download.geofabrik.de/). When combining extracts, use the same provider and snapshot so shared border data agrees. Download and extract this repository, then follow your desktop setup:
 
 | Computer | Start here |
 | --- | --- |
@@ -127,14 +115,14 @@ Get the map extract from [Geofabrik Downloads](https://download.geofabrik.de/) b
 | **macOS** | Install `python`, `osmium-tool`, `llvm` and `cabextract` with Homebrew, then open **Install.command**. |
 | **Linux (Ubuntu 24.04)** | Install `python3 python3-venv python3-pip build-essential osmium-tool cabextract` with `apt`, then run `python3 install.py`. |
 
-1. Choose your PBF and confirm its region.
+1. Enter or drag in each `.osm.pbf` path. Press Enter on an empty prompt when done. The installer merges multiple selections and asks you to confirm the resulting coverage.
 2. Let the installer build and check navigation data.
 3. Select the SD-card root and confirm installation.
 4. Safely eject it before use and insert into your car.
 
 The installer downloads and checks the required official TomTom firmware.
 It does not format the card. Replaced files are backed up. Any existing ClioPlay preferences,
-pairings and saved places are preserved. No previous ClioPlay install is needed.
+pairings and saved places are preserved. Personal driving history stays on the SD card; do not include it in a release. No previous ClioPlay install is needed.
 Map building can take substantial time for large extracts.
 
 ## Use your remote or console
@@ -148,26 +136,27 @@ upper-right console buttons act as the remote's soft keys.
 | **MAP** | **MAP** | Restore Auto zoom after temporary manual zoom; otherwise switch between driving and map browsing, or return to driving from a menu. |
 | **MENU** | **MENU** | Open the menu for Trip, Bluetooth and Settings. |
 | **BACK** | **BACK** | Go back or dismiss a dialog. On the driving map with Bluetooth audio selected and a phone connected, toggle **BT CTRL**. |
-| **Centre / OK** | **Press the knob** | On the driving map, show ETA and remaining distance, or heading without a route. In map browsing, select the crosshair point. In **BT CTRL**, play/pause. In menus, select or confirm. |
+| **Centre / OK** | **Press the knob** | On the driving map, briefly show the current road name and, during guidance, the estimated time and distance remaining. In map browsing, select the crosshair point. In **BT CTRL**, play/pause. In menus, select or confirm. |
 | **Up / Down** | **Joystick up / down** | Enter map browsing and pan, or move through menu rows. |
 | **Left / Right** | **Joystick left / right** | Enter map browsing and pan, change tabs/options/settings, or select dialog choices. In **BT CTRL**, previous/next track. |
-| **Left soft key** | **Upper-left button** | Zoom out; previous Trip tab; delete a character in coordinate/name entry. |
-| **Right soft key** | **Upper-right button** | Zoom in; next Trip tab; pair a phone from Bluetooth; advance a coordinate field; insert a space in a name. |
+| **Left soft key** | **Upper-left button** | Zoom out; delete a character in coordinate/name entry. |
+| **Right soft key** | **Upper-right button** | Zoom in; cycle latitude/longitude; insert a space in a name. |
 
 Turning the console knob also zooms the map, skips tracks in **BT CTRL**, scrolls
 lists and moves through keyboard/keypad buttons or dialog choices. In Settings,
-turn it to choose a row, use the joystick left/right to change its value, and
-press it for the row's OK action.
+turn it to choose a category and press to open it. Within a category, turn to
+choose a row, use the joystick left/right to change its value, and press for
+the row's OK action. Back returns to the category list.
 
 Console shortcuts: **DEST** opens Trip; **LIGHT** cycles Day/Night/Auto;
-**INFO** and **REPEAT** show the journey overview on the map (heading without a
-route). REPEAT displays information; it does not speak instructions. Resume and
-arrival prompts must still be confirmed. No long press is needed for any remote action.
+**INFO** and **REPEAT** show the current road name on the driving map and add
+the journey estimate during guidance. Resume and arrival prompts must still be
+confirmed. No long press is needed for any remote action.
 
 If you adjust the zoom while Auto zoom is enabled, **MAP** restores Auto zoom
 without entering Explore. Press **MAP** again to enter Explore, or use an arrow
-to enter Explore and pan directly. **OK** shows the ETA during guidance, including
-while temporary Manual zoom is active.
+to enter Explore and pan directly. **OK** shows the road name and, during
+guidance, the ETA. This also works during temporary Manual zoom.
 
 See the [full remote and console controls guide](src/README.md#remote-and-console-controls) for actions in
 each screen, including settings, pairing and the favourite keyboard.
@@ -175,11 +164,13 @@ each screen, including settings, pairing and the favourite keyboard.
 Menus now open as animated glass panels over the map. Menu, Bluetooth and
 Settings retain the bottom driving pills when there is room; Trip and its entry
 pages use a taller panel. Time and active status notices remain in place. Trip
-always opens on **Itinerary**; **Left / Right** or the soft keys cycle through
-**Itinerary → Recents → Favourites**, and **Up / Down** or the console knob scrolls
-the current list. Press **OK** to open an item, **BACK** to return one level,
+always opens on **Itinerary**. **Left / Right** cycles through **Itinerary →
+Recents → Favourites**. On the itinerary's bottom row, **Left / Right** wraps
+between action buttons, including **Cancel route**. Use **Up / Down** or the
+console knob to move between rows and wrap at the ends. Press **OK** to open an
+item, **BACK** to return one level,
 or **MAP** to return directly to driving. **Pair new phone** stays at the top of
-Bluetooth and is also available with its right soft key.
+Bluetooth.
 
 ## Status and development
 
@@ -216,4 +207,4 @@ Original ClioPlay development includes:
 
 Third-party software and dependencies retain their respective licences and attribution notices, as documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-<sub>Release files refreshed 16 November 2026 (Europe/London).</sub>
+<sub>Release files refreshed 21 November 2026 (Europe/London).</sub>

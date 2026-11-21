@@ -1,6 +1,7 @@
 /* Real UK atlas regression: frame scheduling, paged regional IDs and repair. */
 #include <sys/mman.h>
 #include <fcntl.h>
+#include <stdarg.h>
 #include <unistd.h>
 #include <string.h>
 static int force_paged=0;
@@ -8,9 +9,12 @@ static void*test_mmap(void*a,size_t n,int prot,int flags,int fd,off_t off){
  if(force_paged&&fd>=0)return MAP_FAILED;
  return mmap(a,n,prot,flags,fd,off);
 }
-static int test_open(const char*p,int f,int m){
- int flags=f&3;if(f&64)flags|=O_CREAT;if(f&512)flags|=O_TRUNC;if(f&1024)flags|=O_APPEND;if(f&2048)flags|=O_NONBLOCK;
- return open(!strcmp(p,"/proc/meminfo")?CLIO_HOST_ROOT "meminfo":p,flags,m);
+static int test_open(const char*path,int flags,...){
+ const char*target=!strcmp(path,"/proc/meminfo")?CLIO_HOST_ROOT "meminfo":path;
+ if(!(flags&O_CREAT))return open(target,flags);
+ va_list args;va_start(args,flags);
+ int mode=va_arg(args,int);
+ va_end(args);return open(target,flags,mode);
 }
 #define mmap test_mmap
 #define open test_open
@@ -26,7 +30,7 @@ static int test_open(const char*p,int f,int m){
 static void position(s32 la,s32 lo){gps.fix=1;gps.mph10=0;gps.lat=track_lat=la;gps.lon=track_lon=lo;track_valid=1;}
 static unsigned finish(void){
  unsigned calls=0;
- while(route_status==R_CALC){assert(++calls<10000);route_service_until(s_now_ms()+ROUTE_INITIAL_SLICE_MS);}
+ while(route_status==R_CALC){assert(++calls<10000);route_service_until(s_now_ms()+FRAME_ROUTE_CHUNK_MS);}
  assert(route_status==R_READY);return calls;
 }
 int main(int argc,char**argv){
@@ -39,7 +43,7 @@ int main(int argc,char**argv){
   u32 r=pass?atlas_nr-1-i:i;assert(atlas_open_route((int)r));assert(qadjmode==7&&qadjok);
   assert(qadj_map_ok==!force_paged);
   u32 ids[3]={0,rh.nodes>17?17:0,rh.nodes/2};
-  for(int k=0;k<3;k++){u32 got=0,want=0;assert(qadj5_index_get(ids[k],&got));assert(s_lseek(qadjfd,qh5.index_off+ids[k]*4u,0)>=0);assert(s_read(qadjfd,&want,4)==4);assert(got==want);}
+  for(int k=0;k<3;k++){u32 got=0,want=0;assert(qadj7_index_get(ids[k],&got));assert(s_lseek(qadjfd,qh7_query.index_off+ids[k]*4u,0)>=0);assert(s_read(qadjfd,&want,4)==4);assert(got==want);}
  }
  position(5497548,-164050);pref.debug=1;assert(route_start(5496800,-160800));
  u32 start=s_now_ms();unsigned calls=finish();u32 elapsed=s_now_ms()-start,queries=atlas_cost_queries;
@@ -75,7 +79,7 @@ int main(int argc,char**argv){
  assert(route_lat[route_n-1]==endlat&&route_lon[route_n-1]==endlon&&atlas_dest_lat==5520000&&atlas_dest_lon==-170000);
  for(int legs=0;route_exact_to!=ROUTE_NOARC;legs++){
   assert(legs<20);position(route_lat[route_n-1],route_lon[route_n-1]);route_head=route_n>1?route_n-2:0;
-  route_service_until(s_now_ms()+ROUTE_INITIAL_SLICE_MS);finish();
+  route_service_until(s_now_ms()+FRAME_ROUTE_CHUNK_MS);finish();
  }
  assert(!atlas_future_cost&&!atlas_future_m&&geo_seg_m(route_lat[route_n-1],route_lon[route_n-1],5520000,-170000)<1000);
  /* The reported slow Newcastle-London journey must not regress to a search
@@ -87,7 +91,7 @@ int main(int argc,char**argv){
  while(1){assert(++legs<20);total=sat_add32(total,route_result_cost);metres=sat_add32(metres,route_result_m);
   if(route_exact_to==ROUTE_NOARC)break;
   position(route_lat[route_n-1],route_lon[route_n-1]);route_head=route_n>1?route_n-2:0;
-  route_service_until(s_now_ms()+ROUTE_INITIAL_SLICE_MS);finish();
+  route_service_until(s_now_ms()+FRAME_ROUTE_CHUNK_MS);finish();
  }
  assert(total==154867&&metres==457401&&!atlas_future_cost&&!atlas_future_m);
  char report[1024];FILE*f=fopen(ROUTING_STATUS_PATH,"rb");assert(f);size_t bytes=fread(report,1,sizeof(report)-1,f);report[bytes]=0;fclose(f);

@@ -31,9 +31,9 @@ static const size_t QADJ_ENTRY_SIZE=16;
 static const size_t QREC7_SIZE=32;
 static const size_t QAD7_POINT_SIZE=20;
 static const uint32_t QAD_RECON_META=2u;
-static const uint32_t QAD4_LOCAL_ARC_IDS=4u;
-static const uint32_t QAD5_DIRECT_INDEX=8u;
-static const uint32_t QAD5_RANK_ORDER=16u;
+static const uint32_t QAD7_LOCAL_ARC_IDS=4u;
+static const uint32_t QAD7_DIRECT_INDEX=8u;
+static const uint32_t QAD7_RANK_ORDER=16u;
 static const uint32_t QAD7_PACKET_GEOM=64u;
 static const uint32_t QAD_NODE_MAX=32768u;
 static const uint32_t ARC_SHORTCUT=1u;
@@ -51,12 +51,12 @@ int main(int argc,char**argv){
  int fd=::open(in,O_RDONLY);if(fd<0)die(std::string("open route.cpr failed: ")+std::strerror(errno));
  struct stat st{};if(fstat(fd,&st)||st.st_size<(off_t)CPR_HDR_SIZE)die("route.cpr too small");size_t sz=(size_t)st.st_size;
  unsigned char* m=(unsigned char*)mmap(nullptr,sz,PROT_READ,MAP_PRIVATE,fd,0);if(m==MAP_FAILED)die(std::string("mmap failed: ")+std::strerror(errno));
- if(std::memcmp(m,"CPR2",4)||(rd16(m+4)!=4 && rd16(m+4)!=5))die("route.cpr is not CPR2 v4");
+ if(std::memcmp(m,"CPR2",4)||rd16(m+4)!=5)die("route.cpr is not CPR2 v5");
  uint32_t nodes=rd32(m+8),base_edges=rd32(m+16),route_edges=rd32(m+20),ch_arcs=rd32(m+32),upf_count=rd32(m+36),upr_count=rd32(m+40),geom_points=rd32(m+44);
  uint32_t node_off=rd32(m+60),base_off=rd32(m+68),arc_off=rd32(m+76),upf_off=rd32(m+80),upr_off=rd32(m+84),geom_off=rd32(m+88);
  auto inside=[&](uint64_t off,uint64_t bytes){return off<=sz&&bytes<=sz-off;};
- if(!nodes||!ch_arcs||nodes>=0x01000000u||!inside(node_off,(uint64_t)nodes*CPR_NODE_SIZE)||!inside(base_off,(uint64_t)base_edges*CPR_BASE_SIZE)||!inside(arc_off,(uint64_t)ch_arcs*CPR_ARC_SIZE)||!inside(upf_off,(uint64_t)upf_count*4)||!inside(upr_off,(uint64_t)upr_count*4)||!inside(geom_off,(uint64_t)geom_points*CPR_POINT_SIZE))die("route.cpr routing regions are invalid or node ids exceed QAD4 packing");
- if(sz>0xffffffffULL)die("route.cpr exceeds QAD4 32-bit identity field");
+ if(!nodes||!ch_arcs||nodes>=0x01000000u||!inside(node_off,(uint64_t)nodes*CPR_NODE_SIZE)||!inside(base_off,(uint64_t)base_edges*CPR_BASE_SIZE)||!inside(arc_off,(uint64_t)ch_arcs*CPR_ARC_SIZE)||!inside(upf_off,(uint64_t)upf_count*4)||!inside(upr_off,(uint64_t)upr_count*4)||!inside(geom_off,(uint64_t)geom_points*CPR_POINT_SIZE))die("route.cpr routing regions are invalid or node ids exceed QAD7 packing");
+ if(sz>0xffffffffULL)die("route.cpr exceeds QAD7 32-bit identity field");
  const unsigned char* arcs=m+arc_off;const unsigned char* bases=m+base_off;const unsigned char* gp=m+geom_off;
 
  /* Sidecar-local arc IDs are assigned preorder from shortcut-DAG roots.  This
@@ -71,19 +71,19 @@ int main(int argc,char**argv){
  auto visit=[&](uint32_t root){if(old_to_new[root]!=0xffffffffu)return;stack.clear();stack.push_back(root);while(!stack.empty()){uint32_t x=stack.back();stack.pop_back();if(old_to_new[x]!=0xffffffffu)continue;old_to_new[x]=(uint32_t)new_to_old.size();new_to_old.push_back(x);const unsigned char* a=arcs+(uint64_t)x*CPR_ARC_SIZE;if(a[21]&ARC_SHORTCUT){uint32_t l=rd32(a+12),r=rd32(a+16);if(old_to_new[r]==0xffffffffu)stack.push_back(r);if(old_to_new[l]==0xffffffffu)stack.push_back(l);}}};
  for(uint32_t aid=0;aid<ch_arcs;aid++)if(!is_child[aid])visit(aid);
  for(uint32_t aid=0;aid<ch_arcs;aid++)visit(aid);
- if(new_to_old.size()!=ch_arcs)die("QAD4 reconstruction renumbering incomplete");
+ if(new_to_old.size()!=ch_arcs)die("QAD7 reconstruction renumbering incomplete");
 
  std::vector<uint32_t> block_size(nodes),rank(nodes),node_offs(nodes);uint64_t sumf=0,sumr=0,data_bytes=0;
  for(uint32_t n=0;n<nodes;n++){
    const unsigned char* np=m+node_off+(uint64_t)n*CPR_NODE_SIZE;uint32_t ff=rd32(np+28),rf=rd32(np+36);uint32_t fc=rd16(np+32),rc=rd16(np+34);rank[n]=rd32(np+20);
    if(ff>upf_count||fc>upf_count-ff||rf>upr_count||rc>upr_count-rf)die("node upward adjacency range invalid");
-   uint64_t bs=4ull+(uint64_t)(fc+rc)*QADJ_ENTRY_SIZE;if(bs>QAD_NODE_MAX)die("single-node QAD5 block exceeds runtime buffer");block_size[n]=(uint32_t)bs;sumf+=fc;sumr+=rc;data_bytes+=bs;
+   uint64_t bs=4ull+(uint64_t)(fc+rc)*QADJ_ENTRY_SIZE;if(bs>QAD_NODE_MAX)die("single-node QAD7 block exceeds runtime buffer");block_size[n]=(uint32_t)bs;sumf+=fc;sumr+=rc;data_bytes+=bs;
  }
  if(sumf!=upf_count||sumr!=upr_count)die("node counts do not cover CPR upward reference arrays exactly");
- if(data_bytes>0x7fffffffu)die("QAD5 query data exceeds runtime 2 GiB offset limit");
+ if(data_bytes>0x7fffffffu)die("QAD7 query data exceeds runtime 2 GiB offset limit");
  std::vector<uint32_t> node_order(nodes);for(uint32_t n=0;n<nodes;n++)node_order[n]=n;
  std::sort(node_order.begin(),node_order.end(),[&](uint32_t a,uint32_t b){return rank[a]<rank[b];});
- uint64_t cur_off=0;for(uint32_t n:node_order){node_offs[n]=(uint32_t)cur_off;cur_off+=block_size[n];}if(cur_off!=data_bytes)die("QAD5 node offset accounting mismatch");
+ uint64_t cur_off=0;for(uint32_t n:node_order){node_offs[n]=(uint32_t)cur_off;cur_off+=block_size[n];}if(cur_off!=data_bytes)die("QAD7 node offset accounting mismatch");
  std::vector<uint32_t> geom_units(base_edges,0);
  for(uint32_t b=0;b<base_edges;b++){
    const unsigned char* bp=bases+(uint64_t)b*CPR_BASE_SIZE;uint32_t gf=rd32(bp+4);uint32_t gc=rd16(bp+16);if(gc<2||gf>geom_points||gc>geom_points-gf)continue;
@@ -116,12 +116,12 @@ int main(int argc,char**argv){
  uint64_t index_off=QAD7_HDR_SIZE,index_bytes=(uint64_t)nodes*4u,data_off=index_off+index_bytes,rmeta_off=data_off+data_bytes,rmeta_bytes=(uint64_t)ch_arcs*QREC7_SIZE,packet_off=rmeta_off+rmeta_bytes,out_size=packet_off+packet_bytes;
  if(out_size>0x7fffffffULL)die("route.qadj would exceed runtime 2 GiB file-offset limit");
  std::string tmp=std::string(out)+".new";int ofd=::open(tmp.c_str(),O_WRONLY|O_CREAT|O_TRUNC,0644);if(ofd<0)die(std::string("open output failed: ")+std::strerror(errno));
- unsigned char h[QAD7_HDR_SIZE]{};std::memcpy(h,"QAD7",4);wr16(h+4,7);wr16(h+6,(uint16_t)QADJ_ENTRY_SIZE);uint32_t hv[]={nodes,ch_arcs,upf_count,upr_count,route_edges,(uint32_t)sz,(uint32_t)index_off,(uint32_t)index_bytes,(uint32_t)data_off,(uint32_t)data_bytes,(uint32_t)rmeta_off,(uint32_t)rmeta_bytes,QAD_RECON_META|QAD4_LOCAL_ARC_IDS|QAD5_DIRECT_INDEX|QAD5_RANK_ORDER|QAD7_PACKET_GEOM,0u,(uint32_t)packet_off,(uint32_t)packet_bytes,(uint32_t)packet_points,QAD7_POINT_SIZE};for(int i=0;i<18;i++)wr32(h+8+i*4,hv[i]);write_all(ofd,h,sizeof(h));
+ unsigned char h[QAD7_HDR_SIZE]{};std::memcpy(h,"QAD7",4);wr16(h+4,7);wr16(h+6,(uint16_t)QADJ_ENTRY_SIZE);uint32_t hv[]={nodes,ch_arcs,upf_count,upr_count,route_edges,(uint32_t)sz,(uint32_t)index_off,(uint32_t)index_bytes,(uint32_t)data_off,(uint32_t)data_bytes,(uint32_t)rmeta_off,(uint32_t)rmeta_bytes,QAD_RECON_META|QAD7_LOCAL_ARC_IDS|QAD7_DIRECT_INDEX|QAD7_RANK_ORDER|QAD7_PACKET_GEOM,0u,(uint32_t)packet_off,(uint32_t)packet_bytes,(uint32_t)packet_points,QAD7_POINT_SIZE};for(int i=0;i<18;i++)wr32(h+8+i*4,hv[i]);write_all(ofd,h,sizeof(h));
  std::vector<unsigned char> ib((size_t)index_bytes);for(uint32_t n=0;n<nodes;n++)wr32(ib.data()+(uint64_t)n*4u,node_offs[n]);write_all(ofd,ib.data(),ib.size());
  const unsigned char* uf=m+upf_off;const unsigned char* ur=m+upr_off;std::vector<unsigned char> outbuf;outbuf.reserve(1024*1024+QAD_NODE_MAX);
  auto flush=[&](){if(!outbuf.empty()){write_all(ofd,outbuf.data(),outbuf.size());outbuf.clear();}};
- auto emit_ref=[&](uint32_t aid,bool reverse){if(aid>=ch_arcs)die("invalid CH arc id in upward reference array");const unsigned char* a=arcs+(uint64_t)aid*CPR_ARC_SIZE;uint32_t other=rd32(a+(reverse?0:4)),cost=rd32(a+8),local=old_to_new[aid];if(other>=nodes||local==0xffffffffu)die("unmapped QAD5 adjacency");size_t p=outbuf.size();outbuf.resize(p+QADJ_ENTRY_SIZE);wr32(outbuf.data()+p,other);wr32(outbuf.data()+p+4,cost);wr32(outbuf.data()+p+8,local);wr32(outbuf.data()+p+12,node_offs[other]);};
- for(uint32_t node:node_order){const unsigned char* np=m+node_off+(uint64_t)node*CPR_NODE_SIZE;uint32_t ff=rd32(np+28),rf=rd32(np+36);uint16_t fc=rd16(np+32),rc=rd16(np+34);size_t before=outbuf.size();outbuf.resize(before+4);wr16(outbuf.data()+before,fc);wr16(outbuf.data()+before+2,rc);for(uint32_t k=0;k<fc;k++)emit_ref(rd32(uf+(uint64_t)(ff+k)*4u),false);for(uint32_t k=0;k<rc;k++)emit_ref(rd32(ur+(uint64_t)(rf+k)*4u),true);if(outbuf.size()-before!=block_size[node])die("QAD5 node block size mismatch");if(outbuf.size()>=1024*1024)flush();}
+ auto emit_ref=[&](uint32_t aid,bool reverse){if(aid>=ch_arcs)die("invalid CH arc id in upward reference array");const unsigned char* a=arcs+(uint64_t)aid*CPR_ARC_SIZE;uint32_t other=rd32(a+(reverse?0:4)),cost=rd32(a+8),local=old_to_new[aid];if(other>=nodes||local==0xffffffffu)die("unmapped QAD7 adjacency");size_t p=outbuf.size();outbuf.resize(p+QADJ_ENTRY_SIZE);wr32(outbuf.data()+p,other);wr32(outbuf.data()+p+4,cost);wr32(outbuf.data()+p+8,local);wr32(outbuf.data()+p+12,node_offs[other]);};
+ for(uint32_t node:node_order){const unsigned char* np=m+node_off+(uint64_t)node*CPR_NODE_SIZE;uint32_t ff=rd32(np+28),rf=rd32(np+36);uint16_t fc=rd16(np+32),rc=rd16(np+34);size_t before=outbuf.size();outbuf.resize(before+4);wr16(outbuf.data()+before,fc);wr16(outbuf.data()+before+2,rc);for(uint32_t k=0;k<fc;k++)emit_ref(rd32(uf+(uint64_t)(ff+k)*4u),false);for(uint32_t k=0;k<rc;k++)emit_ref(rd32(ur+(uint64_t)(rf+k)*4u),true);if(outbuf.size()-before!=block_size[node])die("QAD7 node block size mismatch");if(outbuf.size()>=1024*1024)flush();}
  flush();
  std::vector<unsigned char> rb;rb.resize(1024*1024);size_t rpos=0;auto rflush=[&](){if(rpos){write_all(ofd,rb.data(),rpos);rpos=0;}};
  for(uint32_t nid=0;nid<ch_arcs;nid++){

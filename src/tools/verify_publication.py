@@ -59,7 +59,8 @@ def verify_text_and_links(folder, paths):
             if re.search(pattern, raw):
                 raise ValueError(name+' pattern in publication: '+str(path.relative_to(folder)))
     docs = ('README.md', 'CONTRIBUTING.md', 'src/README.md',
-            'src/BUILDING.md', 'src/docs/github-launch.md', 'src/docs/demo/README.md', 'WINDOWS.md')
+            'src/BUILDING.md', 'src/docs/changelog.md', 'src/docs/release-workflow.md',
+            'src/docs/demo/README.md', 'src/docs/intelligent-navigation.md', 'src/docs/updating.md', 'WINDOWS.md')
     if (folder/'SECURITY.md').is_file():docs += ('SECURITY.md',)
     for name in docs:
         path = folder/name
@@ -97,20 +98,18 @@ def verify_previews(source, readme):
             sha(source / 'clio843' / name) != digest for name, digest in programs.items()):
         raise ValueError('Preview executables are stale; run tools/render_previews.py')
     for name, report in previews.items():
-        # The full coordinate-route preview supersedes the older entry-only
-        # loop in the main README. Keep that loop checked and linked in notes.
-        legacy_link = (name == 'coordinates.gif' and
-                       f']({name})' in (demo / 'README.md').read_text())
+        # The demo index is the complete catalogue; the root README is a subset.
+        indexed = f']({name})' in (demo / 'README.md').read_text()
         embedded = (f'](src/docs/demo/{name})' in readme or
                     f'src="src/docs/demo/{name}"' in readme)
-        if not embedded and not legacy_link:
+        if not embedded and not indexed:
             raise ValueError('README is missing a preview: ' + name)
         path = demo / name
         with path.open('rb') as stream:
             header = stream.read(10)
         if (sha(path) != report['sha256'] or header[:6] != b'GIF89a'
                 or struct.unpack('<HH', header[6:]) != ((936,510) if name=='phone-destination.gif' else (480,272))
-                or report['frames'] < 2 or not 0 < report['duration_ms'] < 10000):
+                or report['frames'] < 2 or not 0 < report['duration_ms'] <= 15000):
             raise ValueError('Invalid or changed preview: ' + name)
     return {name: {'duration_ms': report['duration_ms'], 'frames': report['frames']}
             for name, report in previews.items()}
@@ -132,7 +131,7 @@ def verify_tree(folder):
                 raise ValueError('Unsafe publication path: '+name)
     paths = [folder / name for name in managed] if managed else [p for p in folder.rglob('*') if p.is_file()]
     vendor_hashes = {digest for _, digest in VENDOR.values()}
-    forbidden = {'bond.dat', 'recent.dat', 'trip.dat', 'faves.dat', 'audlast.dat',
+    forbidden = {'history.dat', 'history.prev.dat', 'mobility.dat', 'mobility.tmp', 'mobility-places.dat', 'mobility-places.tmp', 'gpslast.dat', 'bond.dat', 'recent.dat', 'trip.dat', 'faves.dat', 'audlast.dat',
                  'ttsystem', 'PNDNavigator', 'vehicledaemon'}
     for path in paths:
         cursor=folder

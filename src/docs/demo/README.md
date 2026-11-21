@@ -2,23 +2,31 @@
 
 | Preview | What it shows |
 | --- | --- |
+| [Frequent-place favourites](v220-frequent-place.gif) | Controlled stationary startup after five visits, name-free prompt, editable name prefilled from a Recent, then explicit Save and return to the map. |
+| [Destination prediction](v220-destination-prediction.gif) | Controlled completed-journey model, a matched Favourite, green/blue map invitation in BT CTRL and normal driving, and explicit Yes/No confirmation. |
+| [Intelligent diversions](v220-intelligent-diversions.gif) | Historical traffic warning, solid shared route, yellow bypass, dashed teal real-map alternative, a frosted-glass approximate saving badge beside the decision point, single-line green announcement and blue review hint, and animated BT CTRL → Back → OK → Yes confirmation. Traffic observations are controlled examples. |
 | [Day boot](boot-day.gif) / [Night boot](boot-night.gif) | Logo and wordmark on a soft theme-aware background, followed by the production half-second cross-fade into the live UI. The initial hold is illustrative, not a boot-time measurement. |
-| [Popups](popups.gif) | Route confirmation, destination-source choices, saved-phone actions and the keyboard language picker share glass entrance, exit, text and focus transitions. |
+| [Popups](popups.gif) | Compact route confirmation, destination-source choices, saved-phone actions and the keyboard language picker share glass entrance, exit, text and focus transitions. |
 | [Song and radio updates](metadata-updates.gif) | New song titles animate in, including during BT CTRL. Radio tuning updates even when the station name stays the same. |
 | [Status notifications](status-notifications.gif) | GPS acquisition and recovery, phone connection, volume and no-active-route messages share one animated pill. |
 | [Driving](driving.gif) | A new road name appears. A camera alert joins the same pill and remains after the name fades. |
-| [Menus](menus.gif) | A glass panel opens over the map while the clock and current volume notice persist. Itinerary, Recents and Favourites, saved-phone actions, compact Settings and return to driving use the production controller. |
+| [Menus](menus.gif) | A glass panel opens over the map while the clock and current volume notice persist. Itinerary, Recents and Favourites, saved-phone actions, categorised Settings and return to driving use the production controller. |
 | [Bluetooth](bluetooth.gif) | The volume notice expands to show controls and a thin track progress bar. A reported seek eases forward, and pause highlights when pressed. |
 | [Phone destination](phone-destination.gif) | The real ClioPlay Send website beside the native head-unit UI: send, route progress and the received destination. No receive option is required; Bluetooth transport is simulated. |
 | [Speeding warning](speed-warning.gif) | The speed pill pulses red above a confirmed 30 mph limit and eases back when the car slows down. |
 | [Map browsing](map-browsing.gif) | Manual zoom is temporary; MAP restores Auto before entering Explore. Explore appears once on entry, stays silent during later pan/zoom, and returns to Auto with one notice. |
 | [Roundabout and ETA](roundabout-eta.gif) | The turn pill shows the third exit. OK displays the estimated time and remaining distance. |
-| [Coordinate route](coordinate-route.gif) | Choose Coordinates, enter latitude/longitude and a name, review, calculate a real route, return to driving and find the destination in Recents. |
+| [Coordinate route](coordinate-route.gif) | Choose Coordinates, enter latitude/longitude, press keypad Next, enter a name, review, calculate a real route, return to driving and find the destination in Recents. |
 | [Map-point route](map-point-route.gif) | Enter Explore with MAP, pan to a point, press OK, confirm and calculate a real route back in the driving view. |
-| [Coordinates](coordinates.gif) | Enter decimal latitude/longitude, name and review a destination, then confirm it into the route and Recents. |
+| [Coordinates](coordinates.gif) | Enter decimal latitude/longitude, use Next, name and review a destination, then confirm it into the route and Recents. |
 | [Add a stop](add-stop.gif) | Trip chooses a favourite, reviews it, then inserts it before the original destination. |
+| [Coordinate keypad (2.1.7)](v216-coordinates.gif) | Split sign/decimal keys, soft-key field toggle/delete, Next validation and optional naming. The existing filename is retained for compatibility. |
+| [Trip layout](trips-layout.gif) | Compact Itinerary, Recents, Favourites, and destination-source review. |
+| [Empty trip layout](trips-empty-layout.gif) | Open Coordinates from an empty itinerary and return using Back. |
+| [Popup layout](popups-layout.gif) | Smaller confirmation cards, dynamic action menus and compact language picker; expanded name keyboard. |
+| [Itinerary](v216-itinerary.gif) | Scroll the itinerary, wrap between Add stop and Cancel route, and dismiss the confirmation to keep the trip. |
 | [Bluetooth hidden](v216-bluetooth-hidden.gif) | Able to use ClioPlay, even if hw_bluetooth=0 |
-| [Hud Customisability](v216-hud-settings.gif) | Change top and bottom bar pill positions in settings |
+| [Hud Customisability](v216-hud-settings.gif) | Change top and bottom bar pill positions in Settings → HUD layout |
 
 Native UI frames are 480 × 272 from the production C renderer. The phone-destination loop combines those unchanged frames with a captured browser panel on a 936 × 510 canvas. Website sources and capture tooling remain private. On regeneration, pass --phone-capture to supply new browser screenshots, or the existing GIF browser panel is reused while native UI frames are refreshed.
 The boot previews use the production splash and cross-fade blend, with a cached
@@ -26,13 +34,12 @@ map position and simulated GPS acquisition. Their initial hold is illustrative;
 loading time is not measured. Other previews show an example route around Newcastle upon Tyne. Car and phone inputs
 are controlled samples. The destination preview feeds a sample message into
 the ClioPlay daemon/UI handoff. Camera positions are illustrative. Motion is
-sampled at approximately 15 frames per second during short transitions, and
-5 frames per second while calculating a route. GIF timing uses 67 ms animation samples and 200 ms calculation samples. The timings
+sampled at 20 frames per second during short transitions, and
+5 frames per second while calculating a route. GIF timing uses 50 ms animation samples and 200 ms calculation samples. The timings
 describe controlled host captures, not achieved head-unit frame rates. The runtime
 uses separate map and animation schedules, capped together during calculation;
-steady speed, distance, clock, volume and playback-progress values use the
-10 FPS map cadence. New information, fades, resizing and warning pulses retain
-the 15 FPS transition target.
+the map targets 10 FPS. Steady HUD changes, fades, resizing and warning pulses
+target 20 FPS.
 Glass uses complete 8 × 8 area filtering plus a weighted blend of neighbouring
 areas over a 24 × 24 footprint, with higher-precision colour calculations
 and full-strength, screen-anchored 8 × 8 ordered dithering at the final RGB565
@@ -42,7 +49,7 @@ cycle between frames. GIF palette reduction can obscure this detail compared
 with the native RGB565 display. Unchanged-background samples are
 cached during live overlay animations.
 All popup windows use the same glass. Their entrances, exits, resizing, content
-changes and selection highlights share the pills' independent 15 FPS transition
+changes and selection highlights share the pills' independent 20 FPS transition
 clock; map drawing remains on its normal schedule. The entire UI retains the
 5 FPS cap during route calculation. Popup actions are handled immediately.
 Explore camera passes require extra drawing work. Head-unit performance, Bluetooth and audio require a
@@ -66,9 +73,13 @@ Build and copy the current executables as described in [BUILDING.md](../../BUILD
 With Pillow and a host C/C++ compiler, run from `src/`:
 
 ```sh
-python3 tools/render_previews.py --maps /path/to/clio843/maps
+python3 tools/regenerate_gifs.py --maps /path/to/clio843/maps
 python3 tools/refresh_latest.py
 ```
+
+Without maps, `python3 tools/regenerate_gifs.py` produces only seven quick
+mapless previews. Use the full map-backed command above before publication;
+it refreshes all GIFs and the provenance manifest.
 
 The [manifest](manifest.json) records preview, source and executable hashes.
 The map bundle is read in place. Captured PNGs, raw framebuffers and host

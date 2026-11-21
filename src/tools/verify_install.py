@@ -29,27 +29,18 @@ def main():
   try:install(bad,card,args.prepared_runtime);raise AssertionError('corrupt bundle accepted')
   except ValueError:pass
   assert before=={str(p.relative_to(card)):sha(p) for p in card.rglob('*') if p.is_file()}
-  # Legacy eight-file cards are still readable; upgrades back up unused indexes.
-  def legacy_bundle(current,kind):
-   target=t/('legacy-'+kind);shutil.copytree(current,target,symlinks=False)
+  # Old bundle versions are rejected, without touching the existing card.
+  for current,kind in ((flat,'navigation'),(atlas,'atlas')):
+   target=t/('unsupported-'+kind);shutil.copytree(current,target,symlinks=False)
    m=json.loads((target/'build.json').read_text());m['builder']='global-'+kind+'-1'
-   packs=[target/r['path'] for r in m['regions']] if kind=='atlas' else [target]
-   for pack in packs:
-    path=pack/'search.cps';path.write_bytes(b'CPS1-legacy-fixture')
-    m['files'][str(path.relative_to(target))]={'bytes':path.stat().st_size,'sha256':sha(path)}
-   (target/'build.json').write_text(json.dumps(m));validate_bundle(target);return target
-  oldflat=legacy_bundle(flat,'navigation');oldatlas=legacy_bundle(atlas,'atlas')
-  install(oldflat,card,args.prepared_runtime);backup=install(flat,card,args.prepared_runtime)
-  assert not (card/'clio843/maps/search.cps').exists()
-  assert (backup/'clio843/maps/search.cps').read_bytes()==b'CPS1-legacy-fixture'
-  install(oldatlas,card,args.prepared_runtime);backup=install(atlas,card,args.prepared_runtime)
-  for region in ('west','east'):
-   assert not (card/'clio843/maps'/region/'search.cps').exists()
-   assert (backup/'clio843/maps'/region/'search.cps').read_bytes()==b'CPS1-legacy-fixture'
+   (target/'build.json').write_text(json.dumps(m))
+   try:install(target,card,args.prepared_runtime);raise AssertionError('unsupported bundle accepted')
+   except ValueError:pass
+  assert before=={str(p.relative_to(card)):sha(p) for p in card.rglob('*') if p.is_file()}
   install(flat,card,args.prepared_runtime)
   backup=install(atlas,card,args.prepared_runtime);assert (card/'clio843/maps/atlas.cpa').is_file();assert not (card/'clio843/maps/map.cpm').exists();assert (backup/'clio843/maps/map.cpm').is_file();validate_bundle(card/'clio843/maps')
   backup=install(flat,card,args.prepared_runtime);assert not (card/'clio843/maps/atlas.cpa').exists();assert (backup/'clio843/maps/atlas.cpa').is_file();validate_bundle(card/'clio843/maps')
-  install(oldatlas,card,args.prepared_runtime)
+  install(atlas,card,args.prepared_runtime)
   before={str(p.relative_to(card)):sha(p) for p in (card/'clio843').rglob('*') if p.is_file()};replace=install_nav.os.replace;failed=[False]
   def fail(src,dst):
    if not failed[0] and '.clioplay-global-stage-' in str(src) and str(dst).endswith('/west/route.cpr'):failed[0]=True;raise OSError('injected late atlas commit failure')
@@ -76,6 +67,6 @@ def main():
   redirected=t/'redirected';redirected.mkdir();(redirected/'clio843').symlink_to(card/'clio843',target_is_directory=True);(redirected/'ttn').write_text('existing boot')
   try:install(flat,redirected,args.prepared_runtime);raise AssertionError('symlink accepted')
   except ValueError:pass
- report={'clean_card':'verified supported firmware + complete runtime staged and installed into a temporary blank card directory','atlas_transitions':'flat → atlas → flat; obsolete active selector and packs backed up','rollback':'late atlas failure restores existing files; final runtime commit failure removes all partial blank-card files','legacy_upgrade':'v1 flat and atlas indexes backed up and removed on v2 upgrade','persistence':'preferences and pairing fixture unchanged','symlinks':'redirected card directory rejected before staging','corruption':'bad complete-runtime and navigation checksums rejected before target changes','hardware':'not connected; no vehicle claim'}
+ report={'clean_card':'verified supported firmware + complete runtime staged and installed into a temporary blank card directory','atlas_transitions':'flat → atlas → flat; obsolete active selector and packs backed up','rollback':'late atlas failure restores existing files; final runtime commit failure removes all partial blank-card files','format_rejection':'v1 manifests refused before card mutation','persistence':'preferences and pairing fixture unchanged','symlinks':'redirected card directory rejected before staging','corruption':'bad complete-runtime and navigation checksums rejected before target changes','hardware':'not connected; no vehicle claim'}
  (ROOT/'build/installer-verification.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 if __name__=='__main__':main()

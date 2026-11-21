@@ -2,7 +2,7 @@
 """One-command ClioPlay ARM rebuild, with optional release-version bump.
 
     python3 tools/rebuild_arm.py                  # rebuild current VERSION
-    python3 tools/rebuild_arm.py --version 2.1.6  # set version everywhere + rebuild
+    python3 tools/rebuild_arm.py --version 2.1.8  # set version everywhere + rebuild
 
 Compiles all source-built ARM programs with build_ui.py, validates their ELF
 headers/build reports/version strings, then installs all three into clio843/.
@@ -134,7 +134,7 @@ def install(results):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('new_version', nargs='?', help='Optional new version, e.g. 2.1.6')
+    parser.add_argument('new_version', nargs='?', help='Optional new version, e.g. 2.1.8')
     parser.add_argument('--version', dest='version_option', help='Set version in all sources/bootstraps before building')
     parser.add_argument('--build-only', action='store_true', help='Build without installing binaries in src/clio843/')
     parser.add_argument('--publish', action='store_true', help='Also refresh the clean-install publication (requires up-to-date README GIFs)')

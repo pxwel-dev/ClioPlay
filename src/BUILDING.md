@@ -7,6 +7,12 @@ use Linux/WSL or macOS.
 Run commands from this directory. The runtime and builder are independent
 of sibling ClioPlay folders.
 
+For the complete maintainer release sequence, including version bumps, ARM
+rebuilds, GIFs, publication checks and Git, see the
+[release workflow](docs/release-workflow.md).
+
+The [intelligent navigation guide](docs/intelligent-navigation.md) describes the bounded native learning model, private files, local history inspector and new mobility regression. No new navigation format or map rebuild is needed for current packs.
+
 ## ARM programs
 
 Requires Python **3.12+**, Clang with the ARM backend, LLD ELF linker and an archive
@@ -14,13 +20,12 @@ tool capable of ARM ELF (LLVM `llvm-ar` on macOS). On macOS:
 
 ```sh
 brew install python llvm lld
-python3 tools/build_ui.py
-cp build/clio040 build/cliospl build/clioa2dp clio843/
+python3 tools/rebuild_arm.py
 ```
 
-This builds `clio040`, `cliospl` and `clioa2dp` and copies them into
-`clio843/`. If no preview inputs changed, `--install` also installs them into
-`clio843/`, where the clean installer reads them. Flags/compiler/input hashes and ELF checks are written to
+This verifies and installs the three ARM executables into `clio843/` without
+refreshing publication or deploying to an SD card. Flags/compiler/input hashes
+and ELF checks are written to
 `build/*.build.json`. Supply `--clang` / `--linker` if required.
 
 The build also regenerates the splash icon's 8×8 coverage masks from
@@ -30,7 +35,7 @@ unit composites the small masks directly without a supersampled framebuffer.
 This `src/` directory is the canonical development tree inside
 `CLIOPLAY-LATEST-VERSION/`. A successful `--install` build also refreshes the
 parent folder’s clean-install publication. When UI sources change, use the
-build/copy sequence above, then regenerate the README previews before running
+rebuild command above, then regenerate the README previews before running
 `python3 tools/refresh_latest.py`. The publication check compares the preview
 source and executable hashes with the current build.
 Documentation/packaging changes need `python3 tools/refresh_latest.py`; use
@@ -46,7 +51,7 @@ vendored LLVM compiler-rt for ARM7TDMI. HarfBuzz and SheenBidi are vendored too.
 Executables are freestanding static ARMv4T ELF32, EABI5 soft float, legacy Linux
 OABI syscalls, image base 0x10000 and 64 KiB segment alignment. Build checks reject
 dynamic loaders, missing entry points and unresolved symbols. The main executable
-has about 10.9 MiB BSS, including the bounded 2 MiB shaping arena and existing map/
+previously had about 10.9 MiB BSS (2.1.8; use the current build report for the new size), including the bounded 2 MiB shaping arena and existing map/
 route caches. Native font tables are mapped on demand; glyph bitmaps stay on the
 card, with a bounded RAM cache. Actual total memory/performance needs hardware
 measurement. `--no-map-antialias` is a build-time rendering fallback.
@@ -141,7 +146,7 @@ python3 tools/verify.py --maps /path/to/existing/UK/clio843/maps
 `verify_unicode.py` links the production shaping engine and tests the actual
 2 MiB allocator under host UBSan. It renders 17 native-script examples plus the
 Trip screen; checks mixed bidirectional text, native phone handoff/persistence,
-old saved-place migration and UTF‑8-safe rename/delete. These are rendered pixels,
+unsupported saved-place rejection and UTF‑8-safe rename/delete. These are rendered pixels,
 not desktop browser text overlays.
 
 `verify_global.py` builds clearly synthetic metric/imperial PBF fixtures through
@@ -155,7 +160,7 @@ To regenerate the short GIFs embedded in the main README, install Pillow and
 use an existing UK map bundle covering Newcastle:
 
 ```sh
-python3 tools/render_previews.py --maps /path/to/clio843/maps
+python3 tools/regenerate_gifs.py --maps /path/to/clio843/maps
 ```
 
 The tool writes the README GIFs and a provenance manifest to `docs/demo/`.
@@ -229,7 +234,7 @@ screens from the production RGB565 renderer and checks theme, brightness,
 anti-aliased icon compositing and the one-shot RAM-image handoff under UBSan.
 The output stays outside the publication. `tests/boot-transition.c` verifies the
 cross-fade endpoints, invalid/stale input, cancellation, memory cleanup and the
-normal 15 FPS / route-calculation 5 FPS compositor cadence.
+normal 20 FPS / route-calculation 5 FPS compositor cadence.
 
 ## Scheduled Auto theme
 
@@ -249,7 +254,7 @@ timezone/DST updates also affect the schedule through that offset. With no valid
 clock, retain the saved palette, defaulting to Night.
 
 `tests/auto-theme.c` covers exact boundaries, midnight wrap, local offsets,
-legacy/corrupt preferences, persistence, controls and manual overrides.
+missing/corrupt preferences, persistence, controls and manual overrides.
 `tests/splash.c` verifies the schedule against actual splash framebuffer output.
 Both run under UBSan in `tools/verify_ci.py`.
 
@@ -308,8 +313,11 @@ project helpers are included separately; see [source status](docs/source-status.
 `VERSION` is the release identity. `tools/build_ui.py` generates
 `clio843/src/release_version.h` from it and records the version in each binary’s
 build report. The Settings footer and UI/Bluetooth startup logs use that generated value. Bootstrap
-scripts declare the same `CLIOPLAY_VERSION`; update their declaration when
-changing `VERSION`, then refresh their entries in `bootstrap-SHA256.json`.
+scripts declare the same `CLIOPLAY_VERSION`. Use
+`python3 tools/release_version.py --set 2.2.2` (or the intended new version) to
+synchronise the header, bootstrap versions and `bootstrap-SHA256.json`.
+Alternatively, `python3 tools/rebuild_arm.py --version 2.2.2` synchronises and
+rebuilds in one command.
 `python3 tools/release_version.py --check` rejects mismatched labels before
 building or publishing. Downloader user agents also read `VERSION`. Map formats,
 protocol identifiers and third-party dependency versions are separate.

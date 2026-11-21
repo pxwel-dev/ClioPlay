@@ -19,11 +19,12 @@ static void baseline(void){
 }
 static void digits(const char*s){
  while(*s){char c=*s++;assert(screen==SCR_COORDINATES&&coordinates.step!=COORD_REVIEW);
-  coordinates.focus=c=='-'?9:c=='.'?11:c=='0'?10:c-'1';key_handle(K_ENTER);
+  coordinates.focus=c=='-'?COORD_SIGN:c=='.'?COORD_DOT:c=='0'?COORD_ZERO:c-'1';key_handle(K_ENTER);
  }
 }
+static void next(void){coordinates.focus=COORD_NEXT;key_handle(K_ENTER);}
 static void name(const char*s){assert(screen==SCR_KEY&&kbd_action==KBD_NAME_COORDINATES);while(*s){int cp=utf8_code(&s);keyboard_type(cp);}pk_focus=PK_SAVE;key_handle(K_ENTER);assert(screen==SCR_COORDINATES&&coordinates.step==COORD_REVIEW);}
-static void location(const char*lat,const char*lon,const char*title){digits(lat);key_handle(K_SR);assert(coordinates.step==COORD_LON);digits(lon);key_handle(K_SR);assert(coordinates.step==COORD_LAT);key_handle(K_BACK);
+static void location(const char*lat,const char*lon,const char*title){digits(lat);key_handle(K_SR);assert(coordinates.step==COORD_LON);digits(lon);key_handle(K_SR);assert(coordinates.step==COORD_LAT);next();
  assert(screen==SCR_KEY);name(title);}
 static void source(int action){
  menu_open(P_TRIP,0,hud_now_ms());open_sources(action,hud_now_ms());
@@ -51,21 +52,37 @@ static void entry_and_cancel(void){
  baseline();key_handle(K_ENTER);assert(screen==SCR_COORDINATES&&coordinates_active);
  key_handle(K_SR);assert(!coordinates.error&&coordinates.step==COORD_LON&&!nrecents);
  key_handle(K_SR);assert(coordinates.step==COORD_LAT);
- digits("90.000001");key_handle(K_BACK);assert(coordinates.error&&coordinates.step==COORD_LAT);
+ next();assert(coordinates.error&&coordinates.step==COORD_LAT);
+ digits("90.000001");coordinates.focus=COORD_NEXT;key_handle(K_ENTER);assert(coordinates.error&&coordinates.step==COORD_LAT);
  while(coordinates.value[0][0])key_handle(K_ESC);
  assert(!coordinates.value[0][0]&&!coordinates.error);
- digits("54.97548");key_handle(K_SR);digits("-1.64050");key_handle(K_BACK);
+ digits("54.97548");next();assert(coordinates.step==COORD_LON&&coordinates.error);digits("-1.64050");next();
  assert(screen==SCR_KEY);name("  東京 QUAY  ");
  assert(streq(coordinates.name,"東京 QUAY")&&!nrecents&&!trip.active);
+ /* Editing from Review has Review as its previous page; cancel the edit. */
+ sheet_focus=1;key_handle(K_ENTER);key_handle(K_ESC);key_handle(K_BACK);
+ assert(sheet_page==P_REVIEW&&coordinates_active&&sheet_focus==1&&streq(coordinates.value[0],"54.97548"));
  sheet_focus=1;key_handle(K_ENTER);assert(coordinates.step==COORD_LAT);
  assert(streq(coordinates.value[0],"54.97548")&&streq(coordinates.value[1],"-1.64050"));
  key_handle(K_SR);assert(coordinates.step==COORD_LON);
- key_handle(K_BACK);assert(streq(kbd_text,"東京 QUAY"));
+ next();assert(streq(kbd_text,"東京 QUAY"));
  key_handle(K_BACK);assert(coordinates.step==COORD_LON&&screen==SCR_COORDINATES);
+ key_handle(K_BACK);assert(sheet_page==P_REVIEW&&coordinates_active&&streq(coordinates.name,"東京 QUAY"));
+ int depth=sheet_depth;sheet_focus=1;key_handle(K_ENTER);
+ key_handle(K_ESC);digits("9");next();assert(sheet_page==P_NAME);name("");
+ assert(sheet_page==P_REVIEW&&sheet_depth==depth&&coordinates.lat==5497549);
+ key_handle(K_BACK);assert(sheet_page==P_NAME);key_handle(K_BACK);assert(sheet_page==P_COORD);
+ key_handle(K_BACK);assert(sheet_page==P_TRIP&&!coordinates_active&&!trip.active&&!nrecents);
  key_handle(K_MENU);assert(screen==SCR_MENU&&!coordinates_active);
+ /* BACK leaves either axis, even if a populated draft would validate. */
+ source(DEST_PICK_ADD_STOP);digits("12");key_handle(K_SR);digits("34");key_handle(K_BACK);
+ assert(sheet_page==P_SOURCE&&sheet_focus==2&&!coordinates_active&&!trip.active&&!nrecents);
+ key_handle(K_ENTER);assert(sheet_page==P_COORD&&!coordinates.value[0][0]&&!coordinates.value[1][0]);
+ digits("12");key_handle(K_BACK);assert(sheet_page==P_SOURCE&&!coordinates_active);
+ baseline();key_handle(K_ENTER);digits("12");key_handle(K_BACK);assert(sheet_page==P_TRIP&&!coordinates_active);
  source(DEST_PICK_ADD_STOP);key_handle(K_BACK);assert(sheet_page==P_SOURCE&&sheet_focus==2&&!coordinates_active);
  key_handle(K_BACK);coordinates_open(DEST_PICK_NONE);digits("-");key_handle(K_ENTER); /* +/- toggles sign */
- assert(!coordinates.value[0][0]);coordinates.focus=11;key_handle(K_ENTER);assert(streq(coordinates.value[0],"0."));
+ assert(!coordinates.value[0][0]);coordinates.focus=COORD_DOT;key_handle(K_ENTER);assert(streq(coordinates.value[0],"0."));
  key_handle(K_ENTER);assert(streq(coordinates.value[0],"0."));key_handle(K_ESC);assert(streq(coordinates.value[0],"0"));
  key_handle(K_MENU);assert(!coordinates_active&&screen==SCR_MENU&&!nrecents);
  coordinates_open(DEST_PICK_NONE);location("0","0","");key_handle(K_MAP);assert(screen==SCR_MAP&&!coordinates_active&&!nrecents);
@@ -75,7 +92,7 @@ static void soft_keys(void){
  assert(screen==SCR_COORDINATES&&coordinates.step==COORD_LON);
  digits("-1.64050");key_handle(K_ESC);assert(streq(coordinates.value[1],"-1.6405"));
  key_handle(K_SR);assert(screen==SCR_COORDINATES&&coordinates.step==COORD_LAT);
- key_handle(K_SR);assert(coordinates.step==COORD_LON);key_handle(K_BACK);
+ key_handle(K_SR);assert(coordinates.step==COORD_LON);next();
  assert(screen==SCR_KEY&&streq(hud_page_title(),"Rename"));
  keyboard_type('A');key_handle(K_SR);assert(screen==SCR_KEY&&streq(kbd_text,"A "));
  keyboard_type('B');key_handle(K_ESC);assert(streq(kbd_text,"A "));
@@ -85,10 +102,24 @@ static void keypad_navigation(void){
  baseline();coordinates_open(DEST_PICK_NONE);assert(coordinates.focus==0);
  key_handle(K_RIGHT);key_handle(K_RIGHT);key_handle(K_RIGHT);assert(coordinates.focus==0);
  key_handle(K_LEFT);assert(coordinates.focus==2);key_handle(K_DOWN);assert(coordinates.focus==5);
- key_handle(K_DOWN);assert(coordinates.focus==8);key_handle(K_DOWN);assert(coordinates.focus==11);
- key_handle(K_DOWN);assert(coordinates.focus==2);key_handle(K_UP);assert(coordinates.focus==11);
+ key_handle(K_DOWN);assert(coordinates.focus==8);key_handle(K_DOWN);assert(coordinates.focus==COORD_NEXT);
+ key_handle(K_DOWN);assert(coordinates.focus==2);key_handle(K_UP);assert(coordinates.focus==COORD_NEXT);
  coordinates.focus=0;key_handle(K_ROTCW);assert(coordinates.focus==1);
- key_handle(K_ROTCCW);assert(coordinates.focus==0);key_handle(K_ROTCCW);assert(coordinates.focus==11);
+ key_handle(K_ROTCCW);assert(coordinates.focus==0);key_handle(K_ROTCCW);assert(coordinates.focus==COORD_NEXT);
+ /* All thirteen keys are reachable; the split column preserves row wrapping. */
+ for(int i=COORD_NEXT;i>=0;i--){assert(coordinates.focus==i);key_handle(K_ROTCCW);}
+ assert(coordinates.focus==COORD_NEXT);key_handle(K_RIGHT);assert(coordinates.focus==COORD_SIGN);
+ key_handle(K_RIGHT);assert(coordinates.focus==COORD_DOT);key_handle(K_RIGHT);assert(coordinates.focus==COORD_ZERO);
+ key_handle(K_RIGHT);assert(coordinates.focus==COORD_NEXT);key_handle(K_LEFT);assert(coordinates.focus==COORD_ZERO);
+ key_handle(K_UP);assert(coordinates.focus==7);key_handle(K_DOWN);assert(coordinates.focus==COORD_ZERO);
+ key_handle(K_LEFT);assert(coordinates.focus==COORD_DOT);key_handle(K_UP);assert(coordinates.focus==6);
+ key_handle(K_DOWN);assert(coordinates.focus==COORD_SIGN);
+ for(int cw=70;cw<=132;cw++){
+  int x[COORD_KEY_COUNT],w[COORD_KEY_COUNT];
+  for(int i=0;i<COORD_KEY_COUNT;i++){coordinate_key_bounds(i,cw,5,&x[i],&w[i]);assert(w[i]>0&&x[i]>=0&&x[i]+w[i]<=3*cw);}
+  assert(x[COORD_SIGN]==0&&x[COORD_DOT]==w[COORD_SIGN]+5&&x[COORD_DOT]+w[COORD_DOT]==cw-5);
+  assert(x[COORD_ZERO]==cw&&x[COORD_NEXT]==2*cw&&w[COORD_NEXT]==cw-5);
+ }
  coordinates_open(DEST_PICK_NONE);phone_dest.valid=1;phone_dest.action='N';
  phone_dest.lat=5497000;phone_dest.lon=-164000;copystr(phone_dest.name,sizeof(phone_dest.name),"PHONE");
  screen=SCR_MAP;phone_destination_apply();assert(!coordinates_active&&trip.active&&!phone_dest.valid);
@@ -119,6 +150,27 @@ static void save_and_reuse(void){
  assert(nrecents==3&&streq(recents[0].name,"RENAMED"));
  assert(read_places(RECENT_PATH,stored,RECENT_MAX)==3&&streq(stored[0].name,"RENAMED"));
 }
+static void check_coordinate_bars(struct HudBox box){
+ static u16 empty_bars[32*W];
+ int y=box.y+27,w=(box.w-38)/2;
+ fill(0,0,W,H,C_BG);
+ for(int i=0;i<2;i++)menu_tile(box.x+14+i*(w+10),y,w,32,i==coordinates.step,16);
+ memcpy(empty_bars,fb+y*W,sizeof(empty_bars));
+ fill(0,0,W,H,C_BG);
+ coord_content(box,16);
+ for(int i=0;i<2;i++){
+  int x=box.x+14+i*(w+10),top=32,bottom=-1,left=w,right=-1;
+  for(int row=0;row<32;row++)for(int col=0;col<w;col++){
+   int at=row*W+x+col;
+   if(fb[y*W+at]==empty_bars[at])continue;
+   if(row<top)top=row;if(row>bottom)bottom=row;
+   if(col<left)left=col;if(col>right)right=col;
+  }
+  assert(bottom>=top&&abs(top-(31-bottom))<=1);
+  assert(top>=2&&bottom<=29);
+  assert(right>=left&&abs(left-(w-1-right))<=1);
+ }
+}
 static void failures_and_layout(void){
  baseline();set_destination("HOME",5499000,-165000);source(DEST_PICK_ADD_STOP);location("54.98","-1.64","STOP");
  int before=nrecents;trip.count=TRIP_MAX_TARGETS;key_handle(K_ENTER);
@@ -127,13 +179,16 @@ static void failures_and_layout(void){
  sheet_focus=3;key_handle(K_ENTER);assert(screen==SCR_TRIP&&!coordinates_active&&nrecents==before);
  source(DEST_PICK_CHANGE_DEST);location("0","0","");key_handle(K_ENTER);assert(coordinates_active&&nrecents==before);
  /* Sheets stay below persistent HUD, in either theme and every locale. */
+ coordinates.value[0][0]=0;
+ copystr(coordinates.value[1],sizeof(coordinates.value[1]),"-179.1234567");
  load_font();for(int night=0;night<2;night++)for(int language=0;language<UI_LANGUAGE_COUNT;language++){
   pref.language=language;apply_palette(night);car.tempok=1;car.temp=18;gps.hour=12;gps.min=35;
   for(int step=0;step<=COORD_REVIEW;step++){
    coordinates.step=step;menu_open(step==COORD_REVIEW?P_REVIEW:P_COORD,0,hud_now_ms());
    hud_prepare(5,hud_capture_ms,1);menu_prepare(hud_capture_ms);menu_settle(hud_capture_ms);
    assert(sheet_to_box.y>=hud_tween[HC_CLOCK].target.box.y+hud_tween[HC_CLOCK].target.box.h);
-   menu_contents(sheet_page,sheet_focus,sheet_to_box,16,hud_now_ms());
+   if(step<COORD_REVIEW)check_coordinate_bars(sheet_to_box);
+   else menu_contents(sheet_page,sheet_focus,sheet_to_box,16,hud_now_ms());
   }
  }
 }

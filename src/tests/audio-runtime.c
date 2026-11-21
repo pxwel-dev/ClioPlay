@@ -11,6 +11,11 @@ static int mock_running,mock_source=1,mock_debug=0,mock_alert=0;
 static unsigned mock_alert_words[4];
 static unsigned char mock_ring[65536] __attribute__((aligned(4)));
 static char mock_nav[512];
+static struct MockFile{const char*path;unsigned char data[1280];unsigned size;} mock_files[]={
+ {"./clio843/btnames.dat",{0},0},{"./clio843/btbonds.dat",{0},0},
+ {"/tmp/clbtdevices",{0},0},{"/tmp/clbtdevices.tmp",{0},0},
+ {"/tmp/clbtmeta",{0},0},{"/tmp/clbtmeta.tmp",{0},0}};
+static int mock_file(const char*p){for(unsigned i=0;i<sizeof(mock_files)/sizeof(mock_files[0]);i++)if(!strcmp(p,mock_files[i].path))return (int)i;return-1;}
 static long sc1(long nr,long a){(void)nr;(void)a;return 0;}
 static long sc2(long nr,long a,long b){
  if(nr==263){long*t=(long*)b;t[0]=mock_now/1000;t[1]=(mock_now%1000)*1000000L;return 0;}
@@ -19,6 +24,7 @@ static long sc2(long nr,long a,long b){
 static long sc3(long nr,long a,long b,long c){(void)nr;(void)a;(void)b;(void)c;return 0;}
 static long s_open(const char*p,int flags,int mode){
  (void)mode;
+ int i=mock_file(p);if(i>=0){if(flags&512)mock_files[i].size=0;else if(!mock_files[i].size&&!(flags&64))return-2;return 20+i;}
  if(!strcmp(p,"/dev/barc-snd")){mock_formats++;return 3;}
  if(!strcmp(p,"/tmp/clbt"))return 4;
  if(!strcmp(p,"/tmp/cldebug"))return 5;
@@ -27,17 +33,19 @@ static long s_open(const char*p,int flags,int mode){
  return -2;
 }
 static long s_read(int fd,void*p,unsigned n){
+ if(fd>=20&&fd<26){struct MockFile*f=&mock_files[fd-20];if(n>f->size)n=f->size;memcpy(p,f->data,n);return n;}
  if(fd==4||fd==5){if(n)((char*)p)[0]=(fd==4?mock_source:mock_debug)?'1':'0';return n?1:0;}
  if(fd==6){unsigned size=sizeof(mock_alert_words);if(n<size)size=n;memcpy(p,mock_alert_words,size);return size;}
  return -2;
 }
 static long s_write(int fd,const void*p,unsigned n){
+ if(fd>=20&&fd<26){struct MockFile*f=&mock_files[fd-20];assert(n<sizeof(f->data));memcpy(f->data,p,n);f->data[n]=0;f->size=n;return n;}
  if(fd==9){unsigned size=n<sizeof(mock_nav)-1?n:sizeof(mock_nav)-1;memcpy(mock_nav,p,size);mock_nav[size]=0;}
  if(fd==11)mock_logs++;
  return n;
 }
 static long s_close(int fd){if(fd==3){mock_closes++;mock_running=0;}return 0;}
-static long s_rename(const char*a,const char*b){(void)a;(void)b;return 0;}
+static long s_rename(const char*a,const char*b){int i=mock_file(a),j=mock_file(b);if(i>=0&&j>=0){memcpy(mock_files[j].data,mock_files[i].data,mock_files[i].size+1);mock_files[j].size=mock_files[i].size;mock_files[i].size=0;}return 0;}
 static long s_ioctl(int fd,unsigned req,long arg){
  (void)fd;
  if(req==0x40145314u){unsigned*f=(unsigned*)arg;if(f[0]>mock_rate_cap)return -22;mock_rate=f[0];return 1;}
@@ -102,7 +110,7 @@ static void rate_checks(void){
 }
 static void source_checks(void){
  u8 p[2048];int n=packet(p,5);reset(44100);pump(p,n,30,0);
- assert(decst.initialized&&snd_started);u32 frames=media_frames,packets=media_packets;
+ assert(media_frames>0&&snd_started);u32 frames=media_frames,packets=media_packets;
  mock_source=0;audio_source_refresh();assert(sndfd<0&&sbc_resume_reset);
  pump(p,n,20,30);assert(media_packets==packets+20&&media_frames==frames);
  /* Malformed media is still bounded while muted; it cannot reopen output. */
@@ -159,4 +167,22 @@ static void copy_checks(void){
   audio_pcm_copy(to+dest,from+so,n);assert(!memcmp(expected,to,sizeof(to)));
  }
 }
-int main(void){rate_checks();source_checks();idle_checks();cue_checks();copy_checks();snd_close();puts("Playback: three rates, gated decode/fresh resume, AVRCP/destination handoff, bounded idle drain, transport suspend, paused cues and PCM copies passed.");return 0;}
+static void bluetooth_identity_checks(void){
+ u8 a[6]={1,2,3,4,5,6},b[6]={2,2,3,4,5,6},key[16]={0};char addr_a[18],addr_b[18],name[33];
+ addr_text(a,addr_a);addr_text(b,addr_b);bond_store(a,key,0);bond_store(b,key,0);
+ live_peer_valid=1;memcopy(live_peer,a,6);meta_connected=1;saved_peer_valid=1;memcopy(saved_peer,b,6);
+ remote_name_store(a,(const u8*)"First phone",11);
+ assert(streq(meta_device,"First phone")&&streq(meta_device_addr,addr_a));assert(!device_name_find(b,name,sizeof(name)));
+ remote_name_store(b,(const u8*)"Second phone",12);
+ assert(streq(meta_device,"First phone")&&streq(meta_device_addr,addr_a));
+ assert(device_name_find(a,name,sizeof(name))&&streq(name,"First phone"));assert(device_name_find(b,name,sizeof(name))&&streq(name,"Second phone"));
+ device_list_write();assert(strstr((char*)mock_files[2].data,"DEV=06:05:04:03:02:01|1|First phone\n"));assert(strstr((char*)mock_files[2].data,"DEV=06:05:04:03:02:02|0|Second phone\n"));
+ meta_write();assert(strstr((char*)mock_files[4].data,"DEVICE_ADDR=06:05:04:03:02:01\nDEVICE=First phone\n"));
+ memcopy(live_peer,b,6);meta_device_set_addr(b);remote_name_store(a,(const u8*)"First renamed",13);
+ assert(streq(meta_device,"Second phone")&&streq(meta_device_addr,addr_b));
+ assert(device_name_find(a,name,sizeof(name))&&streq(name,"First renamed"));assert(device_name_find(b,name,sizeof(name))&&streq(name,"Second phone"));
+ remote_name_store(b,(const u8*)"",0);assert(streq(meta_device,"Second phone"));device_list_write();
+ assert(strstr((char*)mock_files[2].data,"DEV=06:05:04:03:02:02|1|Second phone\n"));
+ assert(strstr((char*)mock_files[2].data,"DEV=06:05:04:03:02:01|0|First renamed\n"));
+}
+int main(void){bluetooth_identity_checks();rate_checks();source_checks();idle_checks();cue_checks();copy_checks();snd_close();puts("Playback: three rates, gated decode/fresh resume, AVRCP/destination handoff, bounded idle drain, transport suspend, paused cues and PCM copies passed.");return 0;}

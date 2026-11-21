@@ -19,9 +19,11 @@ from PIL import Image, ImageDraw, ImageFont
 from verify import decode
 from text_engine import build as build_text
 
+from mobility_stories import DESTINATION_EVENTS, MAP_DIVERSION_EVENTS, FREQUENT_PLACE_EVENTS
+
 ROOT = Path(__file__).resolve().parents[1]
 SCENES = []
-ANIMATION_SAMPLE_MS = 67  # Match FRAME_UI_MS: approximately 15 Hz.
+ANIMATION_SAMPLE_MS = 50  # Match the runtime 20 Hz HUD and animation clock.
 TWEEN_STEPS = tuple(range(0, 351, ANIMATION_SAMPLE_MS))
 EXPLORE_SAMPLES = tuple(range(0, 568, ANIMATION_SAMPLE_MS))  # Include the first completed pose.
 BLUETOOTH_EVENTS = (
@@ -96,6 +98,13 @@ TRIPS_EMPTY_EVENTS = (
     (4200, 'key_handle(K_BACK);assert(sheet_page==P_TRIP);'),
 )
 TRIPS_EMPTY_SAMPLES = sorted({at+step for at,_ in TRIPS_EMPTY_EVENTS for step in TWEEN_STEPS}|{5900})
+V220_DESTINATION_SAMPLES = sorted({at+step for at,_ in DESTINATION_EVENTS for step in TWEEN_STEPS}|{6000})
+V220_FREQUENT_PLACE_SAMPLES = sorted({at+step for at,_ in FREQUENT_PLACE_EVENTS for step in TWEEN_STEPS}|{5600})
+V220_DIVERSION_SAMPLES = sorted({
+    at+step
+    for at, _ in MAP_DIVERSION_EVENTS
+    for step in TWEEN_STEPS
+} | {5900})
 POPUPS_LAYOUT_EVENTS = (
     (0, 'menu_open(P_TRIP,0,hud_now_ms());'),
     (900, 'confirm_kind=0;menu_change(P_CONFIRM,0,hud_now_ms());'),
@@ -110,14 +119,22 @@ POPUPS_LAYOUT_SAMPLES = sorted({at+step for at,_ in POPUPS_LAYOUT_EVENTS for ste
 
 
 # ClioPlay 2.1.6 compact-screen and HUD customization animations.
-V216_COORDINATES_EVENTS = ((0, 'clear_trip();menu_open(P_TRIP,0,hud_now_ms());'), (800, 'key_handle(K_ENTER);assert(sheet_page==P_COORD);'), (1400, 'coordinates.focus=4;key_handle(K_ENTER);'), (1650, 'coordinates.focus=3;key_handle(K_ENTER);'), (1900, 'coordinates.focus=11;key_handle(K_ENTER);'), (2150, 'coordinates.focus=8;key_handle(K_ENTER);'), (2400, 'coordinates.focus=6;key_handle(K_ENTER);'), (3000, 'key_handle(K_SR);assert(coordinates.step==COORD_LON);'), (3600, 'coordinates.focus=9;key_handle(K_ENTER);'), (3800, 'coordinates.focus=0;key_handle(K_ENTER);'), (4000, 'coordinates.focus=11;key_handle(K_ENTER);'), (4200, 'coordinates.focus=5;key_handle(K_ENTER);'), (4600, 'key_handle(K_ESC);assert(streq(coordinates.value[1],"-1."));'), (5100, 'key_handle(K_BACK);assert(coordinates.error&&coordinates.step==COORD_LON);'), (6500, 'coordinates.focus=5;key_handle(K_ENTER);'), (7100, 'key_handle(K_SR);assert(coordinates.step==COORD_LAT);'), (7900, 'key_handle(K_BACK);assert(sheet_page==P_NAME);'), (9600, 'pk_focus=PK_SAVE;key_handle(K_ENTER);assert(sheet_page==P_REVIEW);'))
+V216_COORDINATES_EVENTS = ((0, 'clear_trip();menu_open(P_TRIP,0,hud_now_ms());'), (800, 'key_handle(K_ENTER);assert(sheet_page==P_COORD);'), (1400, 'coordinates.focus=4;key_handle(K_ENTER);'), (1650, 'coordinates.focus=3;key_handle(K_ENTER);'), (1900, 'coordinates.focus=COORD_DOT;key_handle(K_ENTER);'), (2150, 'coordinates.focus=8;key_handle(K_ENTER);'), (2400, 'coordinates.focus=6;key_handle(K_ENTER);'), (3000, 'key_handle(K_SR);assert(coordinates.step==COORD_LON);'), (3600, 'coordinates.focus=COORD_SIGN;key_handle(K_ENTER);'), (3800, 'coordinates.focus=0;key_handle(K_ENTER);'), (4000, 'coordinates.focus=COORD_DOT;key_handle(K_ENTER);'), (4200, 'coordinates.focus=5;key_handle(K_ENTER);'), (4600, 'key_handle(K_ESC);assert(streq(coordinates.value[1],"-1."));'), (5100, 'coordinates.focus=COORD_NEXT;key_handle(K_ENTER);assert(coordinates.error&&coordinates.step==COORD_LON);'), (6500, 'coordinates.focus=5;key_handle(K_ENTER);'), (7100, 'key_handle(K_SR);assert(coordinates.step==COORD_LAT);'), (7900, 'coordinates.focus=COORD_NEXT;key_handle(K_ENTER);assert(sheet_page==P_NAME);'), (9600, 'pk_focus=PK_SAVE;key_handle(K_ENTER);assert(sheet_page==P_REVIEW);'))
 V216_COORDINATES_SAMPLES = sorted({at+step for at,_ in V216_COORDINATES_EVENTS for step in TWEEN_STEPS} | {11100})
-V216_HUD_SETTINGS_EVENTS = ((0, 'menu_open(P_SETTINGS,10,hud_now_ms());'), (1700, 'key_handle(K_RIGHT);assert(pref.top_swap);'), (3600, 'key_handle(K_DOWN);assert(sheet_focus==11);'), (4200, 'key_handle(K_RIGHT);assert(pref.bottom_swap);'), (6100, 'key_handle(K_MAP);assert(sheet_page==P_CLOSED);'), (8200, 'menu_open(P_SETTINGS,11,hud_now_ms());'))
+V216_HUD_SETTINGS_EVENTS = ((0, 'menu_open(P_SETTINGS,1,hud_now_ms());'), (700, 'key_handle(K_ENTER);assert(sheet_page==P_SET_HUD);'), (1700, 'key_handle(K_RIGHT);assert(pref.top_swap);'), (3600, 'key_handle(K_DOWN);assert(settings_row(sheet_page,sheet_focus)==11);'), (4200, 'key_handle(K_RIGHT);assert(pref.bottom_swap);'), (6100, 'key_handle(K_MAP);assert(sheet_page==P_CLOSED);'), (8200, 'menu_open_setting(11,hud_now_ms());'))
 V216_HUD_SETTINGS_SAMPLES = sorted({at+step for at,_ in V216_HUD_SETTINGS_EVENTS for step in TWEEN_STEPS} | {9900})
 V216_BLUETOOTH_HIDDEN_EVENTS = ((0, 'menu_open(P_HOME,0,hud_now_ms());'), (2200, 'hw_bluetooth_enabled=0;menu_change(P_HOME,0,hud_now_ms());assert(menu_count(P_HOME)==2);'), (4400, 'key_handle(K_DOWN);key_handle(K_ENTER);assert(sheet_page==P_SETTINGS);'), (6600, 'key_handle(K_MENU);assert(sheet_page==P_HOME);'), (7500, 'hw_bluetooth_enabled=1;menu_change(P_HOME,1,hud_now_ms());'), (8500, 'key_handle(K_ENTER);assert(sheet_page==P_PHONE);'))
 V216_BLUETOOTH_HIDDEN_SAMPLES = sorted({at+step for at,_ in V216_BLUETOOTH_HIDDEN_EVENTS for step in TWEEN_STEPS} | {9500})
-V216_ITINERARY_EVENTS = ((0, 'assert(trip_add_stop("Museum",5498000,-164000));assert(trip_add_stop("Gallery",5498500,-165000));assert(trip_add_stop("Cafe",5498700,-166000));menu_open(P_TRIP,0,hud_now_ms());'), (1500, 'key_handle(K_DOWN);'), (2200, 'key_handle(K_DOWN);'), (2900, 'key_handle(K_DOWN);'), (3600, 'key_handle(K_DOWN);assert(sheet_focus==trip.count-1);'), (4500, 'key_handle(K_UP);'), (5300, 'key_handle(K_UP);'), (6100, 'key_handle(K_UP);'))
-V216_ITINERARY_SAMPLES = sorted({at+step for at,_ in V216_ITINERARY_EVENTS for step in TWEEN_STEPS} | {7400})
+# Keep Add stop enabled so the footer can show both wrap directions.
+ITINERARY_SETUP = 'for(int i=trip.count;i<TRIP_MAX_TARGETS-1;i++){char name[32];snprintf(name,sizeof(name),"Stop %d",i);assert(trip_add_stop(name,5498000+i*100,-164000-i*100));}menu_open(P_TRIP,0,hud_now_ms());'
+V216_ITINERARY_EVENTS = ((0, ITINERARY_SETUP),) + tuple(
+    (1000+i*500, 'key_handle(K_DOWN);assert(sheet_focus==%d);' % (i+1)) for i in range(9)) + (
+    (5750, 'key_handle(K_RIGHT);assert(sheet_focus==trip.count+1);'),
+    (6400, 'key_handle(K_RIGHT);assert(sheet_focus==trip.count);'),
+    (7100, 'key_handle(K_LEFT);assert(sheet_focus==trip.count+1);'),
+    (7800, 'key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&sheet_focus==1);'),
+    (8800, 'key_handle(K_BACK);assert(sheet_page==P_TRIP&&trip.active);'))
+V216_ITINERARY_SAMPLES = sorted({at+step for at,_ in V216_ITINERARY_EVENTS for step in TWEEN_STEPS} | {9800})
 
 
 
@@ -146,21 +163,21 @@ def motion(group, name, title, setup, events, samples):
 def catalog(sender_receipts=None):
     SCENES.clear()
     add('Overview', 'driving', 'Driving with a route')
-    for elapsed in (*range(0, 501, ANIMATION_SAMPLE_MS), 536, 900):
+    for elapsed in (*range(0, 501, ANIMATION_SAMPLE_MS), 900):
         add('Overview', f'boot-fade-{elapsed:04d}', f'Boot to UI · {elapsed} ms',
             f'boot_preview({elapsed});gallery_motion=1;')
     for name, setup, steps in (
         ('recents','screen=SCR_TRIP;trip_pane=0;trip_tab=0;nrecents=25;',24),
         ('favourites','screen=SCR_TRIP;trip_pane=0;trip_tab=1;nfaves=25;',24),
         ('phones','screen=SCR_BT;bt_page_focus=0;',20),
-        ('settings','screen=SCR_SET;set_focus=0;',9),
+        ('settings','menu_open_setting(0,hud_now_ms());',9),
         ('languages','screen=SCR_KEY;keyboard_open_fave_rename(0);kbd_picker=1;kbd_pick=0;',17),
     ):
         add('Scrollbars',f'scrollbar-{name}-top',name+' · first page',setup)
         key('Scrollbars',f'scrollbar-{name}-bottom',name+' · last page',setup,'key_handle(K_DOWN);'*steps)
 
     motion('Popup animations', 'preview-popups', 'Glass confirmations, animated choices, resizing and dismissal',
-           'explore();settle();', POPUP_EVENTS, POPUP_SAMPLES)
+           'preview_enter_explore();settle();', POPUP_EVENTS, POPUP_SAMPLES)
     status_events = (
         (0, 'gps.fix=0;'),
         (800, 'set_volume(16);'),
@@ -225,7 +242,7 @@ def catalog(sender_receipts=None):
         'screen=SCR_BT;show_phone_connection();')
     add('Prototype HUD','hud-phone-route-volume','Phone connection alongside route progress, volume and Bluetooth controls',
         'key_handle(K_BACK);route_status=R_CALC;set_volume(18);show_phone_connection();copystr(btui.title,sizeof(btui.title),"Night Drive");')
-    add('Prototype HUD','hud-setting-changed','Brightness updates in its row','screen=SCR_SET;set_focus=0;key_handle(K_RIGHT);')
+    add('Prototype HUD','hud-setting-changed','Brightness updates in its row','menu_open_setting(0,hud_now_ms());key_handle(K_RIGHT);')
     add('Prototype HUD','hud-menu-audio-connection','Audio and connection notices stay above settings',
         'screen=SCR_SET;set_band("FM");copystr(af.station,sizeof(af.station),"BBC Radio 1");rebuild_source();set_volume(18);show_phone_connection();')
     for elapsed in (0,80,160,240,320):
@@ -257,7 +274,7 @@ def catalog(sender_receipts=None):
     motion('HUD motion', 'hud-speed-warning', 'Speeding warning', road_cleared,
            ((400, 'gps.mph10=390;assert(hud_is_overspeed());'),
             (2640, 'gps.mph10=240;assert(!hud_is_overspeed());')), SPEED_WARNING_SAMPLES)
-    for name, title, setup in [('explore','Explore map','explore();'), ('menu','Main menu','screen=SCR_MENU;'), ('trip-recents','Recent destinations','screen=SCR_TRIP;'), ('trip-favourites','Favourite destinations','screen=SCR_TRIP;trip_tab=1;'), ('itinerary','Current itinerary','screen=SCR_TRIP;trip_pane=1;'), ('phone','Phone connection','screen=SCR_BT;'), ('settings','Settings','screen=SCR_SET;'), ('keyboard','Name a favourite','name_keyboard();')]:
+    for name, title, setup in [('explore','Explore map','preview_enter_explore();'), ('menu','Main menu','screen=SCR_MENU;'), ('trip-recents','Recent destinations','screen=SCR_TRIP;'), ('trip-favourites','Favourite destinations','screen=SCR_TRIP;trip_tab=1;'), ('itinerary','Current itinerary','screen=SCR_TRIP;trip_pane=1;'), ('phone','Phone connection','screen=SCR_BT;'), ('settings','Settings','screen=SCR_SET;'), ('keyboard','Name a favourite','name_keyboard();')]:
         add('Overview',name,title,setup)
     for i,title in enumerate(('Destinations','Bluetooth','Settings')):
         key('Menu',f'menu-focus-{i}',f'Select {title}', 'key_handle(K_MENU);', 'key_handle(K_DOWN);'*i, f'assert(menu_focus=={i});')
@@ -276,9 +293,9 @@ def catalog(sender_receipts=None):
         key('Menu',f'{name}-map',f'MAP returns from {name}',f'screen={page};','key_handle(K_MAP);','assert(screen==SCR_MAP);')
         key('Menu',f'{name}-page-back',f'BACK leaves {name}',f'screen={page};','key_handle(K_BACK);')
     for name,code in [('up','K_UP'),('down','K_DOWN'),('left','K_LEFT'),('right','K_RIGHT')]:
-        key('Map',f'pan-{name}',f'Pan Explore {name}','explore();',f'key_handle({code});')
+        key('Map',f'pan-{name}',f'Pan Explore {name}','preview_enter_explore();',f'key_handle({code});')
     for free in (False,True):
-        setup='explore();' if free else ''
+        setup='preview_enter_explore();' if free else ''
         for name,code in [('in','K_SR'),('out','K_ESC')]:
             key('Map',f'zoom-{name}-'+('explore' if free else 'driving'),f'Zoom {name} in '+('Explore' if free else 'driving'),setup,f'key_handle({code});')
     key('Map','autozoom-override','Override automatic zoom','pref.autozoom=1;zoom_override=4;','key_handle(K_SR);','assert(zoom_override==5);')
@@ -286,7 +303,7 @@ def catalog(sender_receipts=None):
     key('Map','map-menu','Open menu from driving','','key_handle(K_MENU);','assert(screen==SCR_MENU);')
     for mode in ('enter','leave'):
         for frame,elapsed in enumerate(EXPLORE_SAMPLES):
-            setup='' if mode=='enter' else 'explore();'
+            setup='' if mode=='enter' else 'preview_enter_explore();'
             action=f'key_handle(K_MAP);explore_sample({elapsed});'
             key('Animations',f'explore-{mode}-{frame:02}',f'Explore {mode} · frame {frame}',setup,action,note='Elapsed-time camera samples at approximately 15 Hz; map/model cadence is separate. Host captures do not measure hardware throughput.')
     browse = 'key_handle(K_MAP);' + 'explore_sample(100);' * 6
@@ -319,7 +336,7 @@ def catalog(sender_receipts=None):
     key('Destinations','saved-focus','Move focus to saved places','screen=SCR_TRIP;trip_pane=1;','key_handle(K_ESC);','assert(trip_pane==0);')
     key('Destinations','itinerary-down','Select next itinerary item','screen=SCR_TRIP;trip_pane=1;','key_handle(K_DOWN);','assert(trip_right_focus==1);')
     key('Destinations','itinerary-up','Select previous itinerary item','screen=SCR_TRIP;trip_pane=1;trip_right_focus=1;','key_handle(K_UP);','assert(trip_right_focus==0);')
-    add('Destinations','itinerary-full','Five-target itinerary','screen=SCR_TRIP;trip_pane=1;four_stops();')
+    add('Destinations','itinerary-full','Ten-target itinerary','full_itinerary();menu_open(P_TRIP,0,hud_now_ms());')
     add('Destinations','itinerary-empty','No current route','screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;')
     key('Destinations','empty-receive','Receive first destination from phone','screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;','', 'assert(modal==MOD_NONE);')
     for stage, title in [('entry','Enter latitude'),('latitude','Latitude ready'),('longitude','Longitude ready'),('name','Optional destination name'),('review','Review coordinates and name'),('saved','Named destination saved to Recents')]:
@@ -350,7 +367,7 @@ def catalog(sender_receipts=None):
     motion('Offline routing','map-point-ready','Calculated map-point route',
            map_start+'preview_finish_route();',((0,''),),ROUTE_READY_SAMPLES)
     add('Coordinates','coordinates-invalid-latitude','Invalid latitude remains editable',
-        'coordinate_preview("entry");coordinate_digits("90.00001");key_handle(K_BACK);',check='assert(coordinates.error&&coordinates.step==COORD_LAT&&!trip.active);')
+        'coordinate_preview("entry");coordinate_digits("90.00001");coordinates.focus=COORD_NEXT;key_handle(K_ENTER);',check='assert(coordinates.error&&coordinates.step==COORD_LAT&&!trip.active);')
     add('Coordinates','coordinates-review-long-name','Long Unicode destination in review',
         'coordinate_preview("review");copystr(coordinates.name,sizeof(coordinates.name),"東京駅 丸の内中央口 · Newcastle Central Station");')
     add('Coordinates','coordinates-latitude-german','Translated numeric entry with valid clock and status',
@@ -359,7 +376,7 @@ def catalog(sender_receipts=None):
         'coordinate_preview("latitude");pref.language=12;coordinates.error=1;')
     add('Coordinates','coordinates-review-hebrew','Hebrew review with left-to-right coordinates',
         'coordinate_preview("review");pref.language=17;')
-    key('Destinations','full-add-disabled','Full itinerary: add-stop limit','screen=SCR_TRIP;trip_pane=1;four_stops();trip_right_focus=5;','key_handle(K_ENTER);','assert(modal==MOD_NONE&&trip.count==5);')
+    key('Destinations','full-add-disabled','Full itinerary: add-stop limit','full_itinerary();menu_open(P_TRIP,TRIP_MAX_TARGETS,hud_now_ms());','key_handle(K_ENTER);','assert(modal==MOD_NONE&&trip.count==TRIP_MAX_TARGETS);')
     add_stop = 'key_handle(K_MENU);key_handle(K_ENTER);key_handle(K_SR);key_handle(K_DOWN);key_handle(K_DOWN);'
     add_source = add_stop + 'key_handle(K_ENTER);key_handle(K_DOWN);'
     pick_favourite = add_source + 'key_handle(K_ENTER);key_handle(K_DOWN);'
@@ -404,7 +421,7 @@ def catalog(sender_receipts=None):
     key('Saved-place actions','unnamed-recent-favourite','Name an unnamed map point as a favourite','screen=SCR_TRIP;copystr(recents[0].name,sizeof(recents[0].name),"MAP POINT");key_handle(K_ENTER);modal_choice=2;','key_handle(K_ENTER);','assert(screen==SCR_KEY);')
     key('Itinerary actions','unnamed-destination-favourite','Name an unnamed destination as a favourite','screen=SCR_TRIP;copystr(trip.target[1].name,sizeof(trip.target[1].name),"MAP POINT");trip_pane=1;trip_right_focus=1;key_handle(K_ENTER);modal_choice=1;','key_handle(K_ENTER);','assert(screen==SCR_KEY);')
     # Yes/no actions expose both selection states and confirmed outcomes.
-    confirmations=[('map-route','Route to map point','explore();trip.active=0;key_handle(K_ENTER);'),('map-stop','Add map point as stop','explore();key_handle(K_ENTER);'),('cancel-route','Cancel current route','screen=SCR_TRIP;modal=MOD_CANCEL_ROUTE;'),('remove-stop','Remove itinerary stop','screen=SCR_TRIP;modal=MOD_REMOVE_STOP;modal_index=0;'),('resume-trip','Resume saved trip','screen=SCR_MAP;trip.paused=1;modal=MOD_RESUME_TRIP;')]
+    confirmations=[('map-route','Route to map point','preview_enter_explore();trip.active=0;key_handle(K_ENTER);'),('map-stop','Add map point as stop','preview_enter_explore();key_handle(K_ENTER);'),('cancel-route','Cancel current route','screen=SCR_TRIP;modal=MOD_CANCEL_ROUTE;'),('remove-stop','Remove itinerary stop','screen=SCR_TRIP;modal=MOD_REMOVE_STOP;modal_index=0;'),('resume-trip','Resume saved trip','screen=SCR_MAP;trip.paused=1;modal=MOD_RESUME_TRIP;')]
     for name,title,state in confirmations:
         for choice,answer in ((0,'Yes'),(1,'No')):
             setup=state+f'modal_choice={choice};'
@@ -431,7 +448,7 @@ def catalog(sender_receipts=None):
         phone_received + 'u32 deadline=s_now_ms()+120000;'
         'while(route_status==R_CALC&&time_before_u32(s_now_ms(),deadline))route_service_until(s_now_ms()+12);'
         'screen=SCR_TRIP;trip_pane=1;', check='assert(route_status==R_READY);')
-    add('Phone destinations','incoming-full','Phone stop rejected: itinerary full','screen=SCR_TRIP;four_stops();incoming("Extra stop",\'S\');')
+    add('Phone destinations','incoming-full','Phone stop rejected: itinerary full','screen=SCR_TRIP;full_itinerary();incoming("Extra stop",\'S\');')
     add('Phone destinations','incoming-no-route','Phone stop rejected: no active route','screen=SCR_TRIP;trip.active=0;trip.count=0;incoming("Extra stop",\'S\');')
     for choice,title,command in [(0,'Disconnect','DISCONNECT'),(1,'Forget connected phone','UNPAIR')]:
         state=f'screen=SCR_BT;bt_page_connected_choice={choice};'
@@ -455,35 +472,39 @@ def catalog(sender_receipts=None):
     key('Favourite keyboard','keyboard-utf8-delete','Delete a whole native character','screen=SCR_KEY;keyboard_open_fave_rename(0);copystr(kbd_text,sizeof(kbd_text),"東京");','key_handle(K_ESC);','assert(!strcmp(kbd_text,"東"));')
     key('Favourite keyboard','keyboard-save-empty','Empty name stays in keyboard','name_keyboard();kbd_focus=38;','key_handle(K_ENTER);','assert(screen==SCR_KEY);')
     # Settings: row navigation, every discrete option, and meaningful numeric boundaries.
-    for i,title in enumerate(('Brightness','Theme','Units','Auto zoom','Camera alerts','Clock','Debug log','Language','Day starts','Night starts')):
-        key('Settings',f'settings-focus-{i}','Select '+title,'screen=SCR_SET;','key_handle(K_DOWN);'*i,f'assert(set_focus=={i});')
-    key('Settings','settings-up','Move settings selection up','screen=SCR_SET;set_focus=7;','key_handle(K_UP);','assert(set_focus==6);')
+    # Keep each capture's remote interaction on the categorised settings tree.
+    groups = ((0,1,8,9),(10,11),(2,3,4),(12,13,14,15),(7,5,6))
+    titles = ('Brightness','Theme','Units','Auto zoom','Camera alerts','Clock','Debug log','Language','Day starts','Night starts','Top pill order','Bottom pill order','Learn driving history','Destination suggestions','Intelligent diversions','Clear driving history')
+    for group,rows in enumerate(groups):
+        for pos,i in enumerate(rows):
+            key('Settings',f'settings-focus-{i}','Select '+titles[i],'menu_open(P_SETTINGS,0,hud_now_ms());','key_handle(K_DOWN);'*group+'key_handle(K_ENTER);'+'key_handle(K_DOWN);'*pos,f'assert(settings_row(sheet_page,sheet_focus)=={i});')
+    key('Settings','settings-up','Move settings selection up','menu_open_setting(6,hud_now_ms());','key_handle(K_UP);','assert(settings_row(sheet_page,sheet_focus)==5);')
     key('Settings','schedule-edit-day','Adjust the Day start hour',
-        'screen=SCR_SET;set_focus=8;theme_time_part=0;','key_handle(K_RIGHT);',
+        'menu_open_setting(8,hud_now_ms());theme_time_part=0;','key_handle(K_RIGHT);',
         'assert(pref.day_start==8*60);')
     key('Settings','schedule-edit-minute','Adjust the Night start minute',
-        'screen=SCR_SET;set_focus=9;theme_time_part=0;','key_handle(K_ENTER);key_handle(K_LEFT);',
+        'menu_open_setting(9,hud_now_ms());theme_time_part=0;','key_handle(K_ENTER);key_handle(K_LEFT);',
         'assert(pref.night_start==17*60+59);')
     for value in (10,50,100):
-        key('Settings',f'brightness-{value}',f'Brightness {value}%','screen=SCR_SET;pref.bright=50;', 'key_handle(K_LEFT);'*((50-value)//10) if value<50 else 'key_handle(K_RIGHT);'*((value-50)//10),f'assert(pref.bright=={value});')
+        key('Settings',f'brightness-{value}',f'Brightness {value}%','menu_open_setting(0,hud_now_ms());pref.bright=50;', 'key_handle(K_LEFT);'*((50-value)//10) if value<50 else 'key_handle(K_RIGHT);'*((value-50)//10),f'assert(pref.bright=={value});')
     for value,title in enumerate(('Day','Night','Auto')):
-        key('Settings',f'theme-{title.lower()}','Theme · '+title,'screen=SCR_SET;set_focus=1;pref.theme=THEME_DAY;','key_handle(K_RIGHT);'*value,f'assert(pref.theme=={value});', 'Changing theme changes the framebuffer palette; paired columns identify the starting theme, and can converge on the same explicit setting.')
+        key('Settings',f'theme-{title.lower()}','Theme · '+title,'menu_open_setting(1,hud_now_ms());pref.theme=THEME_DAY;','key_handle(K_RIGHT);'*value,f'assert(pref.theme=={value});', 'Changing theme changes the framebuffer palette; paired columns identify the starting theme, and can converge on the same explicit setting.')
     for value,title in enumerate(('Auto','Metric','Imperial')):
-        key('Settings',f'units-{title.lower()}','Units · '+title,'screen=SCR_SET;set_focus=2;pref.units=0;','key_handle(K_RIGHT);'*value,f'assert(pref.units=={value});')
+        key('Settings',f'units-{title.lower()}','Units · '+title,'menu_open_setting(2,hud_now_ms());pref.units=0;','key_handle(K_RIGHT);'*value,f'assert(pref.units=={value});')
     for on in (False,True):
-        key('Settings','autozoom-'+str(int(on)),'Auto zoom · '+('On' if on else 'Off'),f'screen=SCR_SET;set_focus=3;pref.autozoom={int(not on)};','key_handle(K_RIGHT);',f'assert(pref.autozoom=={int(on)});')
-        key('Settings','debug-'+str(int(on)),'Debug log · '+('On' if on else 'Off'),f'screen=SCR_SET;set_focus=6;pref.debug={int(not on)};','key_handle(K_RIGHT);',f'assert(pref.debug=={int(on)});')
+        key('Settings','autozoom-'+str(int(on)),'Auto zoom · '+('On' if on else 'Off'),f'menu_open_setting(3,hud_now_ms());pref.autozoom={int(not on)};','key_handle(K_RIGHT);',f'assert(pref.autozoom=={int(on)});')
+        key('Settings','debug-'+str(int(on)),'Debug log · '+('On' if on else 'Off'),f'menu_open_setting(6,hud_now_ms());pref.debug={int(not on)};','key_handle(K_RIGHT);',f'assert(pref.debug=={int(on)});')
     for value,title in enumerate(('Off','Visual','Phone audio')):
-        key('Settings',f'camera-setting-{value}','Camera alerts · '+title,'screen=SCR_SET;set_focus=4;pref.cameras=0;','key_handle(K_RIGHT);'*value,f'assert(pref.cameras=={value});')
+        key('Settings',f'camera-setting-{value}','Camera alerts · '+title,'menu_open_setting(4,hud_now_ms());pref.cameras=0;','key_handle(K_RIGHT);'*value,f'assert(pref.cameras=={value});')
     for on in (False,True):
-        key('Settings','clock-'+str(int(on)),'Clock · '+('Automatic' if on else 'Manual'),f'screen=SCR_SET;set_focus=5;pref.clock_auto={int(not on)};','key_handle(K_ENTER);',f'assert(pref.clock_auto=={int(on)});')
+        key('Settings','clock-'+str(int(on)),'Clock · '+('Automatic' if on else 'Manual'),f'menu_open_setting(5,hud_now_ms());pref.clock_auto={int(not on)};','key_handle(K_ENTER);',f'assert(pref.clock_auto=={int(on)});')
     for name,setup,action in [('plus-quarter','pref.hoff=pref.moff=0;','key_handle(K_RIGHT);'),('minus-quarter','pref.hoff=pref.moff=0;','key_handle(K_LEFT);'),('lower-wrap','pref.hoff=-12;pref.moff=0;','key_handle(K_LEFT);'),('upper-wrap','pref.hoff=14;pref.moff=0;','key_handle(K_RIGHT);')]:
-        key('Settings','clock-'+name,'Manual clock · '+name,'screen=SCR_SET;set_focus=5;'+setup,action)
+        key('Settings','clock-'+name,'Manual clock · '+name,'menu_open_setting(5,hud_now_ms());'+setup,action)
     languages=json.loads((ROOT/'locales/ui.json').read_text())['languages']
     for i,code in enumerate(languages):
-        key('Languages','language-'+code,'Language · '+code,'screen=SCR_SET;set_focus=7;pref.language=0;','key_handle(K_RIGHT);'*i,f'assert(pref.language=={i});')
-    key('Languages','language-enter','Cycle language with ENTER','screen=SCR_SET;set_focus=7;','key_handle(K_ENTER);','assert(pref.language==1);')
-    key('Languages','language-backward','Cycle language backwards','screen=SCR_SET;set_focus=7;','key_handle(K_LEFT);',f'assert(pref.language=={len(languages)-1});')
+        key('Languages','language-'+code,'Language · '+code,'menu_open_setting(7,hud_now_ms());pref.language=0;','key_handle(K_RIGHT);'*i,f'assert(pref.language=={i});')
+    key('Languages','language-enter','Choose a language using the picker','menu_open_setting(7,hud_now_ms());pref.language=0;','key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_ENTER);','assert(pref.language==1&&sheet_page==P_SET_SYSTEM);')
+    key('Languages','language-backward','Cycle language backwards','menu_open_setting(7,hud_now_ms());','key_handle(K_LEFT);',f'assert(pref.language=={len(languages)-1});')
     roundabout = 'region_flags|=4;nav_man_type=MAN_ROUNDABOUT;nav_man_exit=3;nav_man_idx=route_head+8;nav_man_m=180;'
     add('Navigation states','roundabout-guidance','Roundabout circulation and exit number',roundabout,
         note='Controlled third-exit guidance state; production clockwise HUD glyph.')
@@ -504,19 +525,19 @@ def catalog(sender_receipts=None):
             f'assert(!strcmp(kbd_text,"{char}"));')
     for value in (20,30,40,60,70,80,90):
         key('Settings',f'brightness-{value}',f'Brightness {value}%',
-            'screen=SCR_SET;pref.bright=50;',
+            'menu_open_setting(0,hud_now_ms());pref.bright=50;',
             'key_handle(K_LEFT);'*((50-value)//10) if value<50 else 'key_handle(K_RIGHT);'*((value-50)//10),f'assert(pref.bright=={value});')
     for name,setup,action,check in [
-        ('brightness-min','screen=SCR_SET;pref.bright=10;','K_LEFT','assert(pref.bright==10);'),
-        ('brightness-max','screen=SCR_SET;pref.bright=100;','K_RIGHT','assert(pref.bright==100);'),
-        ('theme-wrap-left','screen=SCR_SET;set_focus=1;pref.theme=0;','K_LEFT','assert(pref.theme==2);'),
-        ('theme-wrap-right','screen=SCR_SET;set_focus=1;pref.theme=2;','K_RIGHT','assert(pref.theme==0);'),
-        ('units-wrap-left','screen=SCR_SET;set_focus=2;pref.units=0;','K_LEFT','assert(pref.units==2);'),
-        ('units-wrap-right','screen=SCR_SET;set_focus=2;pref.units=2;','K_RIGHT','assert(pref.units==0);'),
-        ('cameras-wrap-left','screen=SCR_SET;set_focus=4;pref.cameras=0;','K_LEFT','assert(pref.cameras==2);'),
-        ('cameras-wrap-right','screen=SCR_SET;set_focus=4;pref.cameras=2;','K_RIGHT','assert(pref.cameras==0);'),
-        ('language-wrap-right','screen=SCR_SET;set_focus=7;pref.language=UI_LANGUAGE_COUNT-1;','K_RIGHT','assert(pref.language==0);'),
-        ('language-wrap-enter','screen=SCR_SET;set_focus=7;pref.language=UI_LANGUAGE_COUNT-1;','K_ENTER','assert(pref.language==0);'),
+        ('brightness-min','menu_open_setting(0,hud_now_ms());pref.bright=10;','K_LEFT','assert(pref.bright==10);'),
+        ('brightness-max','menu_open_setting(0,hud_now_ms());pref.bright=100;','K_RIGHT','assert(pref.bright==100);'),
+        ('theme-wrap-left','menu_open_setting(1,hud_now_ms());pref.theme=0;','K_LEFT','assert(pref.theme==2);'),
+        ('theme-wrap-right','menu_open_setting(1,hud_now_ms());pref.theme=2;','K_RIGHT','assert(pref.theme==0);'),
+        ('units-wrap-left','menu_open_setting(2,hud_now_ms());pref.units=0;','K_LEFT','assert(pref.units==2);'),
+        ('units-wrap-right','menu_open_setting(2,hud_now_ms());pref.units=2;','K_RIGHT','assert(pref.units==0);'),
+        ('cameras-wrap-left','menu_open_setting(4,hud_now_ms());pref.cameras=0;','K_LEFT','assert(pref.cameras==2);'),
+        ('cameras-wrap-right','menu_open_setting(4,hud_now_ms());pref.cameras=2;','K_RIGHT','assert(pref.cameras==0);'),
+        ('language-wrap-right','menu_open_setting(7,hud_now_ms());pref.language=UI_LANGUAGE_COUNT-1;','K_RIGHT','assert(pref.language==0);'),
+        ('language-wrap-enter','menu_open_setting(7,hud_now_ms());pref.language=UI_LANGUAGE_COUNT-1;','K_ENTER','assert(sheet_page==P_LANG&&sheet_focus==UI_LANGUAGE_COUNT-1);'),
         ('connected-choice-right','screen=SCR_BT;','K_RIGHT','assert(bt_page_connected_choice==1);'),
         ('connected-choice-left','screen=SCR_BT;bt_page_connected_choice=1;','K_LEFT','assert(bt_page_connected_choice==0);'),
         ('saved-phone-dialog','screen=SCR_BT;bt_page_focus=1;','K_ENTER','assert(bt_page_dialog>=0);'),
@@ -525,7 +546,7 @@ def catalog(sender_receipts=None):
         ('saved-phone-soft-back','screen=SCR_BT;bt_page_focus=1;key_handle(K_ENTER);','K_ESC','assert(bt_page_dialog<0);'),
         ('phone-up','screen=SCR_BT;bt_page_focus=2;','K_UP','assert(bt_page_focus==1);'),
         ('map-recenter','cam_lat+=100;cam_lon+=100;','K_ENTER',''),
-        ('map-menu-from-explore','explore();','K_MENU','assert(screen==SCR_MENU);'),
+        ('map-menu-from-explore','preview_enter_explore();','K_MENU','assert(screen==SCR_MENU);'),
         ('map-no-fix','gps.fix=track_valid=0;','K_MAP','assert(!freecam);'),
         ('trip-cancel-open','screen=SCR_TRIP;trip_pane=1;trip_right_focus=3;','K_ENTER','assert(modal==MOD_CANCEL_ROUTE);'),
         ('trip-add-open','screen=SCR_TRIP;trip_pane=1;trip_right_focus=2;','K_ENTER','assert(modal==MOD_SOURCE_PICK);'),
@@ -544,7 +565,7 @@ def catalog(sender_receipts=None):
     for name,setup in [('stop','MOD_ARRIVED_STOP'),('destination','MOD_ARRIVED_DEST')]:
         key('Dialog controls','arrival-protected-'+name,'Arrival prompt awaits confirmation · '+name,
             f'modal={setup};','key_handle(K_BACK);key_handle(K_MAP);',f'assert(modal=={setup});')
-    for name,setup in [('map-min','manual_zoom=mh.minlvl;'),('map-max','manual_zoom=mh.maxlvl;'),('explore-min','explore();freecam_zoom=mh.minlvl;'),('explore-max','explore();freecam_zoom=MAX_EXPLORE_ZOOM;')]:
+    for name,setup in [('map-min','manual_zoom=mh.minlvl;'),('map-max','manual_zoom=mh.maxlvl;'),('explore-min','preview_enter_explore();freecam_zoom=mh.minlvl;'),('explore-max','preview_enter_explore();freecam_zoom=MAX_EXPLORE_ZOOM;')]:
         key('Map boundaries','zoom-boundary-'+name,'Zoom boundary · '+name,setup,
             'key_handle(K_ESC);' if name.endswith('min') else 'key_handle(K_SR);')
     for name,setup in [('disconnected','btui.connected=0;'),('no-track',''),('unavailable','btui.connected=0;copystr(btui.status,sizeof(btui.status),"BT DAEMON ERROR");screen=SCR_BT;')]:
@@ -556,13 +577,13 @@ def catalog(sender_receipts=None):
     add('Camera states','camera-limit-variable','Speed camera with a variable limit','show_camera(1,0);camera_current.flags=8;')
     # Short, everyday examples for the publication showcase.
     for name,title,setup,action in [
-        ('showcase-theme-day','Choose the Day theme','screen=SCR_SET;set_focus=1;pref.theme=THEME_NIGHT;refresh_theme();','K_LEFT'),
-        ('showcase-theme-auto','Automatic day/night theme','screen=SCR_SET;set_focus=1;pref.theme=THEME_NIGHT;refresh_theme();','K_RIGHT'),
-        ('showcase-theme-night','Return to the Night theme','screen=SCR_SET;set_focus=1;pref.theme=THEME_AUTO;refresh_theme();','K_LEFT'),
-        ('showcase-units-auto','Use automatic country units','screen=SCR_SET;set_focus=2;pref.units=2;','K_RIGHT'),
-        ('showcase-language-en','Return to English','screen=SCR_SET;set_focus=7;pref.language=1;','K_LEFT'),
-        ('showcase-camera-off','Turn camera alerts off','screen=SCR_SET;set_focus=4;pref.cameras=1;','K_LEFT'),
-        ('showcase-camera-audio','Enable camera cues through phone audio','screen=SCR_SET;set_focus=4;pref.cameras=1;','K_RIGHT'),
+        ('showcase-theme-day','Choose the Day theme','menu_open_setting(1,hud_now_ms());pref.theme=THEME_NIGHT;refresh_theme();','K_LEFT'),
+        ('showcase-theme-auto','Automatic day/night theme','menu_open_setting(1,hud_now_ms());pref.theme=THEME_NIGHT;refresh_theme();','K_RIGHT'),
+        ('showcase-theme-night','Return to the Night theme','menu_open_setting(1,hud_now_ms());pref.theme=THEME_AUTO;refresh_theme();','K_LEFT'),
+        ('showcase-units-auto','Use automatic country units','menu_open_setting(2,hud_now_ms());pref.units=2;','K_RIGHT'),
+        ('showcase-language-en','Return to English','menu_open_setting(7,hud_now_ms());pref.language=1;','K_LEFT'),
+        ('showcase-camera-off','Turn camera alerts off','menu_open_setting(4,hud_now_ms());pref.cameras=1;','K_LEFT'),
+        ('showcase-camera-audio','Enable camera cues through phone audio','menu_open_setting(4,hud_now_ms());pref.cameras=1;','K_RIGHT'),
         ('showcase-keyboard-char','Enter a character','screen=SCR_KEY;keyboard_open_fave_rename(0);kbd_focus=4;','K_ENTER'),
         ('showcase-keyboard-delete','Delete a character','screen=SCR_KEY;keyboard_open_fave_rename(0);appendstr(kbd_text,sizeof(kbd_text),"E");','K_ESC')]:
         key('Showcase controls',name,title,setup,f'key_handle({action});')
@@ -606,6 +627,10 @@ def modern_menus():
     for page,name,title in [('P_HOME','menu','Menu'),('P_TRIP','itinerary','Active itinerary'),('P_PHONE','phone','Saved phones'),('P_SETTINGS','settings','Settings')]:
         SCENES[:] = [s for s in SCENES if s['id']!=name]
         add('Menu sheets',name,title,f'menu_open({page},0,hud_now_ms());')
+    for group,title in enumerate(('Display','HUD layout','Navigation','Driving history','System')):
+        key('Menu sheets',f'settings-category-{group}',title,f'menu_open(P_SETTINGS,{group},hud_now_ms());','key_handle(K_ENTER);',f'assert(sheet_page==P_SET_DISPLAY+{group});')
+    for row,title in enumerate(('Brightness','Theme','Units','Auto zoom','Camera alerts','Clock','Debug log','Language','Day starts','Night starts','Top pill order','Bottom pill order','Learn driving history','Destination suggestions','Intelligent diversions','Clear driving history')):
+        add('Menu sheets',f'settings-focus-{row}',title,f'menu_open_setting({row},hud_now_ms());')
     for tab,name in [(0,'recents'),(1,'favourites')]:
         add('Menu sheets',name+'-tab',name.title(),f'menu_open(P_TRIP,0,hud_now_ms());'+('key_handle(K_RIGHT);'*(tab+1)))
         for bottom in (False,True):
@@ -613,16 +638,16 @@ def modern_menus():
                 f'nrecents=nfaves=25;places_tab={tab};menu_open(P_PLACES,{24 if bottom else 0},hud_now_ms());')
     add('Menu sheets','showcase-keyboard-char','Adaptive naming keyboard','keyboard_open_fave_rename(0);menu_open(P_NAME,0,hud_now_ms());pk_reset();pk_prepare();pk_focus=4;', 'key_handle(K_ENTER);')
     for name,row,part in [('schedule-edit-day',8,0),('schedule-edit-minute',9,1)]:
-        add('Menu sheets',name,'Custom theme schedule',f'menu_open(P_SETTINGS,{row},hud_now_ms());theme_time_part={part};')
-    add('Menu sheets','showcase-theme-day','Choose Day theme','menu_open(P_SETTINGS,1,hud_now_ms());pref.theme=THEME_NIGHT;refresh_theme();','key_handle(K_LEFT);')
+        add('Menu sheets',name,'Custom theme schedule',f'menu_open_setting({row},hud_now_ms());theme_time_part={part};')
+    add('Menu sheets','showcase-theme-day','Choose Day theme','menu_open_setting(1,hud_now_ms());pref.theme=THEME_NIGHT;refresh_theme();','key_handle(K_LEFT);')
     for lang in range(18):
         add('Menu sheets','keyboard-'+str(lang),'Native naming layout',f'pref_keyboard_language={lang};keyboard_open_fave_rename(0);menu_open(P_NAME,0,hud_now_ms());pk_reset();pk_prepare();')
     events=((0,'key_handle(K_MENU);'),(700,'key_handle(K_ENTER);'),(1500,'key_handle(K_RIGHT);'),
-            (2300,'key_handle(K_SR);'),(3100,'key_handle(K_BACK);'),
+            (2300,'key_handle(K_RIGHT);'),(3100,'key_handle(K_BACK);'),
             (3800,'key_handle(K_DOWN);key_handle(K_ENTER);'),(4600,'key_handle(K_DOWN);key_handle(K_ENTER);'),
             (5400,'key_handle(K_BACK);'),(6200,'key_handle(K_MENU);'),
             (7000,'key_handle(K_DOWN);key_handle(K_DOWN);key_handle(K_ENTER);'),
-            (7800,'key_handle(K_DOWN);'),(8600,'key_handle(K_RIGHT);'),(9400,'key_handle(K_MAP);'))
+            (7800,'key_handle(K_DOWN);'),(8600,'key_handle(K_ENTER);assert(sheet_page==P_SET_HUD);'),(9400,'key_handle(K_MAP);'))
     samples=sorted({at+step for at,_ in events for step in TWEEN_STEPS}|{9800})
     motion('Menu sheets','preview-menu-tour','On-map Menu, three Trip tabs, Bluetooth actions and Settings',
            'settle();set_volume(16);draw();hud_capture_ms+=400u;draw();',events,samples)
@@ -632,14 +657,26 @@ def modern_menus():
            'settle();', TRIPS_EMPTY_EVENTS, TRIPS_EMPTY_SAMPLES)
     motion('Compact Trips', 'preview-popups-layout', 'Confirmations and expanded typing keyboard with compact picker',
            'settle();', POPUPS_LAYOUT_EVENTS, POPUPS_LAYOUT_SAMPLES)
-    motion('Version 2.1.6', 'preview-v216-coordinates', 'Soft keys cycle axis/delete, Back validates, then name and review',
+    motion('Version 2.1.7', 'preview-v216-coordinates', 'Soft keys cycle axis/delete, Next validates, then name and review',
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_COORDINATES_EVENTS, V216_COORDINATES_SAMPLES)
     motion('Version 2.1.6', 'preview-v216-hud-settings', 'Top and bottom HUD card side preferences',
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_HUD_SETTINGS_EVENTS, V216_HUD_SETTINGS_SAMPLES)
     motion('Version 2.1.6', 'preview-v216-bluetooth-hidden', 'Simulated Bluetooth hardware flag hides UI entries',
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_BLUETOOTH_HIDDEN_EVENTS, V216_BLUETOOTH_HIDDEN_SAMPLES)
-    motion('Version 2.1.6', 'preview-v216-itinerary', 'Scroll and centre trip icons with five destinations',
+    motion('Version 2.1.8', 'preview-v216-itinerary', 'Scroll the itinerary and wrap between footer actions',
            'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_ITINERARY_EVENTS, V216_ITINERARY_SAMPLES)
+    motion('Intelligent navigation', 'preview-v220-frequent-place', 'Stationary startup: offer, editable Favourite name, save',
+           'settle();', FREQUENT_PLACE_EVENTS, V220_FREQUENT_PLACE_SAMPLES)
+    motion('Intelligent navigation', 'preview-v220-destination-prediction', 'Learned destination: BT CTRL, map invitation and confirmation',
+           'settle();', DESTINATION_EVENTS, V220_DESTINATION_SAMPLES)
+    motion(
+        'Intelligent navigation',
+        'preview-v220-intelligent-diversions',
+        'Historical traffic warning and real map-backed diversion',
+        'settle();',
+        MAP_DIVERSION_EVENTS,
+        V220_DIVERSION_SAMPLES
+    )
     add('Menu sheets','empty-receive','Empty itinerary receives phone destinations automatically','trip.active=trip.count=0;menu_open(P_TRIP,0,hud_now_ms());')
     add_stop='key_handle(K_MENU);key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_DOWN);'
     source=add_stop+'key_handle(K_ENTER);key_handle(K_DOWN);'
@@ -660,9 +697,286 @@ static void save_route(void){saved_n=route_n;saved_m=route_result_m;saved_cost=r
  memcpy(saved_lat,route_lat,sizeof(saved_lat));memcpy(saved_lon,route_lon,sizeof(saved_lon));memcpy(saved_node,route_node,sizeof(saved_node));memcpy(saved_arc,route_seg_arc,sizeof(saved_arc));memcpy(saved_phys,route_seg_phys,sizeof(saved_phys));memcpy(saved_seg_m,route_seg_m,sizeof(saved_seg_m));memcpy(saved_seg_cost,route_seg_cost,sizeof(saved_seg_cost));}
 static void restore_route(void){route_n=saved_n;route_head=0;route_result_m=saved_m;route_result_cost=saved_cost;route_status=R_READY;
  memcpy(route_lat,saved_lat,sizeof(saved_lat));memcpy(route_lon,saved_lon,sizeof(saved_lon));memcpy(route_node,saved_node,sizeof(saved_node));memcpy(route_seg_arc,saved_arc,sizeof(saved_arc));memcpy(route_seg_phys,saved_phys,sizeof(saved_phys));memcpy(route_seg_m,saved_seg_m,sizeof(saved_seg_m));memcpy(route_seg_cost,saved_seg_cost,sizeof(saved_seg_cost));}
-static void explore(void){enter_freecam();explore_sample(500);}
+
+/* Real map-backed diversion preview.
+ *
+ * Keep the calculated Newcastle route and use controlled historical
+ * observations to create congestion on part of that route.
+ * The production traffic search must discover a legal alternative.
+ *
+ * Cache the resulting candidate because every animation frame starts
+ * from a freshly restored baseline route.
+ */
+
+static int demo_div_n, demo_div_a, demo_div_b,demo_profile_a,demo_profile_b;
+static u32 demo_div_saving;
+static struct TrafficPoint demo_div_path[TRAFFIC_PATH_MAX];
+
+static void preview_map_traffic_profile(int a, int b, u32 now)
+{
+    const u32 epoch = mob_epoch(2026, 10, 21, 12, 35, 0);
+
+    mob_model_reset();
+    mob.serial = 20;
+    mob_current_epoch = epoch;
+    mob_clock_ms = now;
+
+    /* Twenty controlled observations of congestion on each directed
+     * road in the selected section. Leave static graph costs intact.
+     */
+    for (int i = a + 1; i <= b;) {
+        u32 arc = route_seg_arc[i];
+        u32 full = 0;
+        u32 key = traffic_key_for_arc(arc, &full);
+
+        if (key && full && full <= 36000u) {
+            struct MobRoad *r =
+                mob_road_find(key, mob_bucket(epoch), 1);
+
+            if (r) {
+                r->count = 20;
+                r->stamp = mob.serial;
+                r->mean_ds = full * 5u;
+            }
+        }
+
+        while (i <= b && route_seg_arc[i] == arc)
+            i++;
+    }
+
+    u32 elapsed = 0;
+    u32 delay = 0;
+
+    for (int i = route_head + 1; i <= b;) {
+        u32 arc = route_seg_arc[i];
+        u32 base = 0;
+
+        while (i <= b && route_seg_arc[i] == arc) {
+            base = sat_add32(base, route_seg_cost[i]);
+            i++;
+        }
+
+        u32 adjusted = traffic_adjust(
+            arc, epoch + elapsed / 10u, base, 0, 0
+        );
+
+        if (adjusted > base)
+            delay = sat_add32(delay, adjusted - base);
+
+        elapsed = sat_add32(elapsed, adjusted);
+    }
+
+    traffic_eta_ds = delay;
+    traffic_eta_head = route_head;
+    traffic_eta_revision = traffic_route_revision;
+    traffic_slow_end = b;
+    traffic_warn = delay >= 600u;
+}
+
+static int preview_find_map_diversion(u32 now)
+{
+    const u32 distances[] = {150u, 250u, 350u, 400u, 700u, 1000u, 1300u};
+    u32 approach = 0;
+    u32 last_attempt = 0;
+
+    /* Try several nearby divergence and rejoin points on the real
+     * route. Use actual turn-state nodes, not arbitrary vertices.
+     */
+    for (int a = route_head + 1; a < route_n - 2; a++) {
+        approach = sat_add32(approach, route_seg_m[a]);
+
+        if (approach > 1000u)
+            break;
+
+        if (route_node[a] == ROUTE_NOARC)
+            continue;
+
+        if (last_attempt && approach < last_attempt + 60u)
+            continue;
+
+        last_attempt = approach;
+
+        struct CprNode node;
+
+        if (!route_read_node(route_node[a], &node))
+            continue;
+
+        route_dest_comp = node.comp;
+
+        for (unsigned d = 0;
+             d < sizeof(distances) / sizeof(distances[0]); d++) {
+
+            u32 distance = 0;
+            u32 raw = 0;
+            int b = -1;
+
+            for (int i = a + 1; i < route_n; i++) {
+                distance = sat_add32(distance, route_seg_m[i]);
+                raw = sat_add32(raw, route_seg_cost[i]);
+
+                if (distance >= distances[d] &&
+                    route_node[i] != ROUTE_NOARC) {
+                    b = i;
+                    break;
+                }
+            }
+
+            if (b <= a + 1 || !raw ||
+                raw > TRAFFIC_LOOKAHEAD_DS)
+                continue;
+
+            /* Try blocking either the initial or an interior arc. */
+            u32 blocks[] = {
+                route_seg_arc[a + 1],
+                route_seg_arc[a + (b - a) / 2]
+            };
+
+            for (unsigned k = 0; k < 2; k++) {
+                if (blocks[k] == ROUTE_NOARC ||
+                    blocks[k] == route_seg_arc[b])
+                    continue;
+
+                if (k && blocks[k] == blocks[0])
+                    continue;
+
+                traffic_invalidate();
+                preview_map_traffic_profile(a, b, now);
+
+                if (!traffic_warn)
+                    continue;
+
+                if (!traffic_search_start(
+                        a, b, blocks[k], raw, 0, now))
+                    continue;
+
+                /* Fixed preview time makes capture deterministic.
+                 * The production search retains its state limit.
+                 */
+                for (int step = 0;
+                     traffic_searching && step < 1024; step++)
+                    traffic_search_step(now);
+
+                traffic_search_cancel();
+
+                if (!traffic_offer_valid())
+                    continue;
+
+                demo_profile_a=a;demo_profile_b=b;
+                demo_div_a = traffic_begin_idx;
+                demo_div_b = traffic_join_idx;
+                demo_div_n = traffic_offer_n;
+                demo_div_saving = traffic_saving;
+
+                memcpy(
+                    demo_div_path,
+                    traffic_path,
+                    sizeof(struct TrafficPoint) * demo_div_n
+                );
+
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+static void preview_map_diversion_seed(void)
+{
+    assert(mapok && routeok);
+    assert(route_status == R_READY && route_n > 2);
+
+    pref.learn_history = 1;
+    pref.diversions = 1;
+    gps.fix = 1;
+
+    u32 now = hud_now_ms();
+
+    if (!demo_div_n) {
+        if (!preview_find_map_diversion(now)) {
+            fprintf(stderr,
+                "No legal map-backed preview diversion found "
+                "on the Newcastle baseline route.\n");
+            assert(demo_div_n > 1);
+        }
+    }
+
+    traffic_invalidate();
+
+    /* Restore the learned context for this animation frame. */
+    preview_map_traffic_profile(demo_profile_a, demo_profile_b, now);
+
+    traffic_begin_idx = demo_div_a;
+    traffic_join_idx = demo_div_b;
+    traffic_offer_n = demo_div_n;
+    traffic_saving = demo_div_saving;
+    traffic_region = atlas_route_region;
+    traffic_offer_revision = traffic_route_revision;
+
+    memcpy(
+        traffic_path,
+        demo_div_path,
+        sizeof(struct TrafficPoint) * demo_div_n
+    );
+
+    assert(traffic_prepare_offer());
+
+    /* Position the simulated vehicle immediately before the
+     * divergence, using coordinates from the actual route.
+     */
+    int p = demo_div_a - 1;
+
+    if (p > route_head)
+        route_trim_prefix(p);
+
+    gps.lat = track_lat = route_lat[route_head];
+    gps.lon = track_lon = route_lon[route_head];
+    track_valid = 1;
+
+    int heading = nav_heading10(
+        route_lat[route_head],
+        route_lon[route_head],
+        route_lat[demo_div_a],
+        route_lon[demo_div_a]
+    );
+
+    if (heading >= 0 && heading < 360)
+        gps.course = track_course = display_course = heading;
+
+    display_course_valid = 1;
+
+    /* Match the normal gallery driving zoom, without auto-zoom changes. */
+    pref.autozoom = 0;
+    manual_zoom = 5;
+    zoom_override = -1;
+
+    trip.active = 1;
+    trip.paused = 0;
+    trip.count = 1;
+    trip.active_idx = 0;
+
+    trip.target[0].lat = route_target_lat = 5497370;
+    trip.target[0].lon = route_target_lon = -161331;
+
+    copystr(
+        trip.target[0].name,
+        sizeof(trip.target[0].name),
+        "Work"
+    );
+
+    struct CprNode node;
+    assert(route_read_node(route_node[demo_div_a], &node));
+    route_dest_comp = node.comp;
+
+    traffic_eta_head = route_head;
+    nav_maneuver_find();
+    render_background_dirty = 1;
+
+    assert(mapok && traffic_warn && traffic_offer_valid());
+}
+static void preview_enter_explore(void){enter_freecam();explore_sample(500);}
 static void name_keyboard(void){screen=SCR_KEY;keyboard_open_fave_name(5497370,-161331);}
-static void coordinate_digits(const char*s){while(*s){char c=*s++;coordinates.focus=c=='-'?9:c=='.'?11:c=='0'?10:c-'1';key_handle(K_ENTER);}}
+static void coordinate_digits(const char*s){while(*s){char c=*s++;coordinates.focus=c=='-'?COORD_SIGN:c=='.'?COORD_DOT:c=='0'?COORD_ZERO:c-'1';key_handle(K_ENTER);}}
 static void coordinate_preview(const char*stage){
  clear_trip();menu_open(P_TRIP,0,hud_now_ms());key_handle(K_ENTER);
  assert(screen==SCR_COORDINATES&&coordinates_active&&sheet_page==P_COORD);
@@ -672,8 +986,8 @@ static void coordinate_preview(const char*stage){
  key_handle(K_SR);assert(coordinates.step==COORD_LON);
  coordinate_digits("-1.64050");
  coordinates.focus=0;if(streq(stage,"longitude"))return;
- /* Since 2.1.6, soft-right switches axes; Back validates both coordinates. */
- key_handle(K_BACK);assert(screen==SCR_KEY&&sheet_page==P_NAME);
+ /* Soft-right switches axes; the keypad Next validates both coordinates. */
+ coordinates.focus=COORD_NEXT;key_handle(K_ENTER);assert(screen==SCR_KEY&&sheet_page==P_NAME);
  const char*name="QUAYSIDE";
  while(*name)keyboard_type((unsigned char)*name++);
  pk_focus=PK_SAVE;if(streq(stage,"name"))return;
@@ -713,7 +1027,7 @@ static void map_point_preview(const char*stage){
  trip_service();trip_service();assert(screen==SCR_MAP&&!freecam&&route_status==R_CALC);
 }
 static void three_stops(void){trip.count=4;trip.active_idx=0;for(int i=0;i<3;i++){trip.target[i].lat=5497300+i*100;trip.target[i].lon=-161300-i*100;snprintf(trip.target[i].name,sizeof(trip.target[i].name),"Stop %d",i+1);}trip.target[3]=trip.target[0];copystr(trip.target[3].name,sizeof(trip.target[3].name),"Home");}
-static void four_stops(void){three_stops();trip.count=5;trip.target[4]=trip.target[3];copystr(trip.target[3].name,sizeof(trip.target[3].name),"Stop 4");}
+static void full_itinerary(void){three_stops();trip.target[TRIP_MAX_TARGETS-1]=trip.target[3];for(int i=3;i<TRIP_MAX_TARGETS-1;i++){trip.target[i]=trip.target[0];snprintf(trip.target[i].name,sizeof(trip.target[i].name),"Stop %d",i+1);}trip.count=TRIP_MAX_TARGETS;}
 static void incoming(const char*name,char action){phone_dest.valid=1;phone_dest.action=action;phone_dest.lat=5497370;phone_dest.lon=-161331;copystr(phone_dest.name,sizeof(phone_dest.name),name);phone_destination_apply();}
 static void incoming_sender(const char*name,int seq,char action,int lat,int lon){char packet[512];int n=snprintf(packet,sizeof(packet),"SEQ=%d\nACTION=%c\nLAT=%d\nLON=%d\nNAME=%s\n",seq,action,lat,lon,name);long fd=s_open(BT_NAV_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);assert(fd>=0);assert(s_write((int)fd,packet,n)==n);s_close((int)fd);poll_phone_destination();assert(phone_dest.valid);phone_destination_apply();}
 static void show_camera(int kind,int avg){camera_visible=1;camera_average=avg;camera_current.kind=kind;camera_current.speed=30;camera_current.flags=2;camera_distance=avg?850:180;camera_average_speed=42;}

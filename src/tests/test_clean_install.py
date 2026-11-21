@@ -42,6 +42,16 @@ class CleanInstallerTest(unittest.TestCase):
                 self.assertEqual(run.call_count,1)
                 self.assertEqual(run.call_args.args[0][-2:],['--speed-import',str(path.resolve())])
 
+    def test_multiple_extract_paths_reach_the_builder(self):
+        with tempfile.TemporaryDirectory() as temp:
+            paths = [Path(temp)/name for name in ("France north.osm.pbf", "Belgium.osm.pbf")]
+            with patch.object(sys.stdin, 'isatty', return_value=True), \
+                 patch('builtins.input', return_value=''), \
+                 patch.object(setup.subprocess, 'run') as run:
+                setup.main(['--pbf', str(paths[0]), '--pbf', str(paths[1])])
+            self.assertEqual(run.call_count, 1)
+            self.assertEqual(run.call_args.args[0][2:4], [str(path.resolve()) for path in paths])
+
     def test_decline_cleans_prepared_runtime_without_installing(self):
         with tempfile.TemporaryDirectory() as temp:
             with patch.object(sys.stdin, 'isatty', return_value=True), \
