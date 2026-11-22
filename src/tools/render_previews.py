@@ -18,7 +18,8 @@ from render_gallery import (ANIMATION_SAMPLE_MS, BLUETOOTH_SAMPLES, MENU_ENTRY_S
                             V220_DESTINATION_SAMPLES, V220_DIVERSION_SAMPLES, V220_FREQUENT_PLACE_SAMPLES,
                             V223_NEARBY_SAMPLES, V223_SECONDARY_MANOEUVRE_SAMPLES, V223_VIEW_DIVERSION_SAMPLES,
                             V224_ML_ETA_HABITS_SAMPLES, V224_ML_SLOWDOWNS_SAMPLES,
-                            V224_ML_PARKING_POIS_SAMPLES, V224_ML_ADAPTIVE_HUD_SAMPLES, ROOT, sha)
+                            V224_ML_PARKING_POIS_SAMPLES, V224_ML_ADAPTIVE_HUD_SAMPLES,
+                            V225_GPS_PANEL_SAMPLES, ROOT, sha)
 
 
 
@@ -46,6 +47,7 @@ def previews():
         'v224-ml-slowdowns.gif': timeline('night', timed_scenes('preview-v224-ml-slowdowns', V224_ML_SLOWDOWNS_SAMPLES, 10800)),
         'v224-ml-parking-and-pois.gif': timeline('night', timed_scenes('preview-v224-ml-parking-and-pois', V224_ML_PARKING_POIS_SAMPLES, 10500)),
         'v224-ml-adaptive-hud.gif': timeline('day', timed_scenes('preview-v224-ml-adaptive-hud', V224_ML_ADAPTIVE_HUD_SAMPLES, 10100)),
+        'v225-gps-panel.gif': timeline('night', timed_scenes('preview-v225-gps-panel', V225_GPS_PANEL_SAMPLES, 8700)),
         'v220-frequent-place.gif': timeline('night', timed_scenes('preview-v220-frequent-place', V220_FREQUENT_PLACE_SAMPLES, 5900)),
         'v220-destination-prediction.gif': timeline('night', timed_scenes('preview-v220-destination-prediction', V220_DESTINATION_SAMPLES, 6500)),
         'v220-intelligent-diversions.gif': timeline('night', timed_scenes('preview-v220-intelligent-diversions', V220_DIVERSION_SAMPLES, 6200)),
@@ -202,15 +204,42 @@ def compose_phone(captures, output, sequence, supplied, previous):
     return timeline_out,provenance
 
 
+def select_plans(all_plans, requested):
+    if not requested:
+        return all_plans
+    chosen = {}
+    unknown = []
+    for item in requested:
+        name = item if item.endswith('.gif') else f'{item}.gif'
+        if name in all_plans:
+            chosen[name] = all_plans[name]
+        else:
+            unknown.append(item)
+    if unknown:
+        valid = ', '.join(sorted(all_plans))
+        raise SystemExit(f"Unknown GIF(s): {', '.join(unknown)}\nAvailable: {valid}")
+    return chosen
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--maps', type=Path, default=ROOT / 'navigation-output',
                         help='existing UK map bundle covering Newcastle')
     parser.add_argument('--phone-capture',type=Path,help='private external browser screenshots; otherwise reuse the published browser panel')
+    parser.add_argument('--only', '--gif', dest='only', nargs='+', metavar='GIF',
+                        help='regenerate only the named GIF(s), with or without .gif suffix')
+    parser.add_argument('--list', action='store_true',
+                        help='list all available GIF preview names and exit')
     args = parser.parse_args()
+    all_plans = previews()
+    if args.list:
+        for name in sorted(all_plans):
+            print(name)
+        return
+    plans = select_plans(all_plans, args.only)
     output = ROOT / 'docs/demo'
-    plans = previews()
     scenes = sorted({Path(relative).stem for sequence in plans.values() for relative, _ in sequence})
+    themes = sorted({Path(relative).parts[0] for sequence in plans.values() for relative, _ in sequence})
     with tempfile.TemporaryDirectory(prefix='clioplay-readme-previews-') as temp:
         work = Path(temp)
         captures = work / 'captures'
@@ -218,7 +247,7 @@ def main():
         selection.write_text(json.dumps(scenes))
         subprocess.run([sys.executable, str(ROOT / 'tools/render_gallery.py'),
                         '--maps', str(args.maps.resolve()), '--output', str(captures),
-                        '--scene-ids', str(selection), '--themes', 'day', 'night', '--frames-only'],
+                        '--scene-ids', str(selection), '--themes', *themes, '--frames-only'],
                        check=True)
         capture = json.loads((captures / 'manifest.json').read_text())
         reports = {}
@@ -234,57 +263,77 @@ def main():
                 {'frame': relative, 'rgb565_sha256': capture['frames'][relative]['rgb565_sha256']}
                 for relative, _ in sequence
             ]}
-        for name in ('coordinate-route.gif','map-point-route.gif'):
-            reports[name]['routing_provenance'] = (
+        provenance = {
+            'coordinate-route.gif': (
                 'Production remote handlers create the destination and production routing '
                 'runs to R_READY on the local map bundle; target coordinates and nonempty '
                 'route geometry are asserted. GPS is held stationary. The 1.3-second '
-                'calculation display is a controlled preview interval, not a timing benchmark.')
-        for name in ('v220-intelligent-diversions.gif', 'v223-view-diversion.gif'):
-            reports[name]['routing_provenance'] = (
+                'calculation display is a controlled preview interval, not a timing benchmark.'),
+            'map-point-route.gif': (
+                'Production remote handlers create the destination and production routing '
+                'runs to R_READY on the local map bundle; target coordinates and nonempty '
+                'route geometry are asserted. GPS is held stationary. The 1.3-second '
+                'calculation display is a controlled preview interval, not a timing benchmark.'),
+            'v220-intelligent-diversions.gif': (
                 'Real Newcastle route and legal alternative geometry from '
                 'the installed CPR2 routing graph. Historical congestion '
                 'observations are controlled examples. The production traffic '
                 'search, shared-geometry rendering, BT CTRL, Explore diversion '
                 'preview and direct map confirmation handler are used. This is '
-                'not a claim about actual traffic conditions.'
-            )
-        reports['v223-secondary-manoeuvre.gif']['routing_provenance'] = (
-            'Real Newcastle city-centre route calculated by production routing '
-            'from the installed CPR2 routing graph. Vehicle movement along route '
-            'vertices is simulated; production nav_maneuver_find() and '
-            'nav_next_maneuver_find() drive both Turn cards.'
-        )
-        reports['v223-nearby-pois.gif']['routing_provenance'] = (
-            'Real Newcastle POI tiles scanned offline by production nearby_scan() '
-            'from the installed CPM5 map bundle (Z5 3x3 inner pass plus Z3 expanding '
-            'rings), using production remote handlers to add a stop to the itinerary.'
-        )
-        reports['v224-ml-eta-and-habits.gif']['routing_provenance'] = (
-            'Real Durham (Gilesgate to Neville\'s Cross) route and legal usual-route '
-            'alternative from the installed CPR2 routing graph with zero historical '
-            'traffic congestion, driven by production ml_pref_arcs search and calibrated '
-            'ETA variance (active route stays normal route colour with no yellow bypass).'
-        )
-        reports['v224-ml-slowdowns.gif']['routing_provenance'] = (
-            'Real York (Station to Heworth) route from the installed CPR2 routing graph '
-            'with production ml_observe_decel() / ml_hazard_level() / traffic_scan_ex() '
-            'demonstrating warm repeat slowdown alerts, deduplication, cold-only silence '
-            'at 18C, cold-weather slowdown alerts at 1C and winter-calibrated ETA.'
-        )
-        reports['v224-ml-parking-and-pois.gif']['routing_provenance'] = (
-            'Real Newcastle city-centre routing and offline CPM5 POI tiles, with '
-            'controlled local ML parking, recurring-stop and fuel-affinity records '
-            'driving production confirmation sheets, route-coloured POI highlighting '
-            'and Nearby POI ranking.'
-        )
-        reports['v224-ml-adaptive-hud.gif']['routing_provenance'] = (
-            'Real Newcastle map tiles demonstrating production ml_note_zoom_override() '
-            'speed-band Auto-zoom personalisation and ml_learned_brightness() automatic '
-            'Day-to-Night brightness adjustment on an Auto theme transition.'
-        )
+                'not a claim about actual traffic conditions.'),
+            'v223-view-diversion.gif': (
+                'Real Newcastle route and legal alternative geometry from '
+                'the installed CPR2 routing graph. Historical congestion '
+                'observations are controlled examples. The production traffic '
+                'search, shared-geometry rendering, BT CTRL, Explore diversion '
+                'preview and direct map confirmation handler are used. This is '
+                'not a claim about actual traffic conditions.'),
+            'v223-secondary-manoeuvre.gif': (
+                'Real Newcastle city-centre route calculated by production routing '
+                'from the installed CPR2 routing graph. Vehicle movement along route '
+                'vertices is simulated; production nav_maneuver_find() and '
+                'nav_next_maneuver_find() drive both Turn cards.'),
+            'v223-nearby-pois.gif': (
+                'Real Newcastle POI tiles scanned offline by production nearby_scan() '
+                'from the installed CPM5 map bundle (Z5 3x3 inner pass plus Z3 expanding '
+                'rings), using production remote handlers to add a stop to the itinerary.'),
+            'v224-ml-eta-and-habits.gif': (
+                'Real Durham (Gilesgate to Neville\'s Cross) route and legal usual-route '
+                'alternative from the installed CPR2 routing graph with zero historical '
+                'traffic congestion, driven by production ml_pref_arcs search and calibrated '
+                'ETA variance (active route stays normal route colour with no yellow bypass).'),
+            'v224-ml-slowdowns.gif': (
+                'Real York (Station to Heworth) route from the installed CPR2 routing graph '
+                'with production ml_observe_decel() / ml_hazard_level() / traffic_scan_ex() '
+                'demonstrating warm repeat slowdown alerts, deduplication, cold-only silence '
+                'at 18C, cold-weather slowdown alerts at 1C and winter-calibrated ETA.'),
+            'v224-ml-parking-and-pois.gif': (
+                'Real Newcastle city-centre routing and offline CPM5 POI tiles, with '
+                'controlled local ML parking, recurring-stop and fuel-affinity records '
+                'driving production confirmation sheets, route-coloured POI highlighting '
+                'and Nearby POI ranking.'),
+            'v224-ml-adaptive-hud.gif': (
+                'Real Newcastle map tiles demonstrating production ml_note_zoom_override() '
+                'speed-band Auto-zoom personalisation and ml_learned_brightness() automatic '
+                'Day-to-Night brightness adjustment on an Auto theme transition.'),
+            'v225-gps-panel.gif': (
+                'Real Newcastle driving map demonstrating the expandable Clock/GPS HUD pill: '
+                'double-OK expansion from the driving map (first OK shows road name and ETA, '
+                'second OK expands the clock pill with live seconds, recessed compass, heading, '
+                'GST accuracy, signal bars/satellites, altitude and coordinates), non-overlapping '
+                'BT CTRL status pill, compact 52 px strip above a centred confirmation popup, '
+                'seconds-only menu fold, and smooth return to full driving GPS HUD.'),
+        }
+        for name, note in provenance.items():
+            if name in reports:
+                reports[name]['routing_provenance'] = note
         generator_paths = ('tools/render_previews.py', 'tools/render_gallery.py', 'tools/text_engine.py', 'tools/mobility_stories.py',
                            'tests/native.c', 'tests/splash.c', 'tests/fixtures/route.h', 'clio843/font.bin')
+        merged_previews = {}
+        manifest_path = output / 'manifest.json'
+        if args.only and manifest_path.is_file():
+            merged_previews = json.loads(manifest_path.read_text()).get('previews', {})
+        merged_previews.update(reports)
         manifest = {
             'schema': 'clioplay-readme-previews-1',
             'framebuffer': '480x272 RGB565 from production C draw() and key_handle()',
@@ -296,7 +345,7 @@ def main():
             'native_sources': capture['native_sources'],
             'executables': capture['executables'],
             'generator_inputs': {path: sha(ROOT / path) for path in generator_paths},
-            'previews': reports,
+            'previews': merged_previews,
         }
         (work / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
         for name in (*reports, 'manifest.json'):

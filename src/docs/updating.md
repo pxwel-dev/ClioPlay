@@ -94,11 +94,11 @@ The update backup contains its own checksums and version information.
 ## 4. Compatibility
 
 File preservation and format compatibility are different things. The updater
-does not migrate old data. ClioPlay 2.2.4 (Unreleased) uses CTR4 trips, CLP2
+does not migrate old data. ClioPlay 2.2.5 uses CTR4 trips, CLP2
 saved places, CPM5 display maps, CPR2 v5 routing and optional QAD7, with
 version-2 navigation bundle manifests, plus the optional companion
 `mobility-ml.dat` (`MML1`) learning file alongside unchanged `mobility.dat`
-(`MOB1`). Current 2.1.8–2.2.3 maps and state remain usable without rebuilding.
+(`MOB1`). Current 2.1.8–2.2.4 maps and state remain usable without rebuilding.
 When rebuilding maps with fresh OSM extracts, run `python3 tools/replay_history.py`
 locally to migrate raw driving history onto the new map geometry. To add map
 coverage with multiple extracts, use the fresh installation workflow.

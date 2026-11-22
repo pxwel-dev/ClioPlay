@@ -364,11 +364,16 @@ static void two_diversions(void){
  key_handle(K_ROTCW);assert(sheet_focus==2);
  key_handle(K_ROTCW);assert(sheet_focus==0);
  key_handle(K_ROTCCW);assert(sheet_focus==2);
- /* Selecting View diversion closes the popup and frames the diversion in Explore. */
+ /* Selecting View diversion closes the popup and frames the diversion tightly in Explore. */
  key_handle(K_ENTER);
  assert(screen==SCR_MAP&&sheet_page==P_CLOSED&&freecam&&diversion_preview_active);
  assert(cam_lat>=route_lat[traffic_begin_idx]&&cam_lat<=route_lat[traffic_join_idx]);
  assert(cam_lon>=route_lon[traffic_begin_idx]&&cam_lon<=traffic_path[1].lon);
+ assert(freecam_zoom>=5);
+ for(int k=0;k<traffic_offer_n;k++){
+  int sx,sy;world_to_screen(traffic_path[k].lat,traffic_path[k].lon,freecam_zoom,&sx,&sy);
+  assert(sx>=14&&sx<=W-14&&sy>=14&&sy<=H-14);
+ }
  /* Panning and zooming while inspecting keeps preview active; MAP returns and re-opens. */
  key_handle(K_UP);key_handle(K_ESC);assert(freecam&&diversion_preview_active);
  key_handle(K_MAP);
@@ -494,8 +499,10 @@ static void ml_features(void){
  pref.autozoom=1;
  for(int i=0;i<4;i++){memzero(ml_zoom_nudged,sizeof(ml_zoom_nudged));ml_note_zoom_override(120,1);ml_note_zoom_override(500,-1);}
  assert(ml_autozoom_offset(120)==1&&ml_autozoom_offset(500)==-1);
- gps.mph10=500;auto_zoom_level=4;assert(speed_auto_zoom()==4); /* clamped at 4 */
- gps.mph10=300;auto_zoom_level=5;assert(speed_auto_zoom()==5);
+ gps.mph10=700;auto_zoom_level=4;assert(speed_auto_zoom()==4); /* clamped at 4 */
+ gps.mph10=0;auto_zoom_level=9;assert(speed_auto_zoom()==9); /* clamped at 9 */
+ gps.mph10=120;auto_zoom_level=7;assert(speed_auto_zoom()==8); /* learned +1 shifts Z7->Z8 */
+ gps.mph10=300;auto_zoom_level=6;assert(speed_auto_zoom()==6);
  ml_note_brightness(0,90);ml_note_brightness(0,90);
  ml_note_brightness(1,30);ml_note_brightness(1,30);
  assert(ml_learned_brightness(0)==90&&ml_learned_brightness(1)==30);

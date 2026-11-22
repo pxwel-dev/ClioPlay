@@ -156,6 +156,135 @@ static void bluetooth(void){
  FILE*f=fopen(BT_CMD_PATH,"r");assert(f);char cmd[128];assert(fgets(cmd,sizeof(cmd),f));fclose(f);assert(strstr(cmd,"DISCONNECT 00:11:22:33:44:01"));
  sheet_focus=1;key_handle(K_ENTER);nbtdev=0;menu_sync(hud_now_ms());assert(sheet_page==P_PHONE);
 }
+static void nmea_line(const char*s){char b[128];snprintf(b,sizeof(b),"%s",s);parse_nmea(b);}
+static void gps_panel(void){
+ reset();key_handle(K_MAP);assert(screen==SCR_MAP);
+ memset(&gps,0,sizeof(gps));gps.hour=12;gps.min=35;track_course=-1;
+ assert(gps_accuracy_dm()<0&&gps_panel_heading()<0);
+ nmea_line("$GPRMC,123507,A,4729.887,N,01902.420,E,010.0,091.0,171126,,,A*00");
+ nmea_line("$GPGGA,123507,4729.887,N,01902.420,E,1,07,1.4,120.0,M,,M,,*00");
+ assert(gps.fix&&gps.sats==7&&gps.hdop10==14&&gps_accuracy_dm()==70&&gps.alt_valid&&gps.alt_dm==1200);
+ /* Fresh GST error estimates take precedence over the HDOP estimate. */
+ nmea_line("$GPGST,123507,1.2,2.1,1.6,30.0,3.0,4.0,4.0*00");assert(gps.gst_dm==50&&gps_accuracy_dm()==50);
+ gps_gst_ms=s_now_ms()-GPS_GST_FRESH_MS-1;assert(gps_accuracy_dm()==70);
+ nmea_line("$GPGST,123508,,,,,,,*00");assert(gps_accuracy_dm()==70);
+ nmea_line("$GPGGA,123509,,,,,0,00,,,M,,M,,*00");assert(!gps.fix&&!gps.hdop10&&!gps.alt_valid&&gps_accuracy_dm()<0);
+ nmea_line("$GPGGA,123510,3130.000,N,03530.000,E,1,05,1.0,-415.6,M,,M,,*00");assert(gps.alt_valid&&gps.alt_dm==-4156);
+ nmea_line("$GPGGA,123511,3130.000,N,03530.000,E,1,05,1.0,,M,,M,,*00");assert(gps.fix&&!gps.alt_valid);
+ /* Heading follows the map course, stays visible when stopped and needs a fix. */
+ display_course_valid=0;track_course=-1;gps.fix=1;gps.course=91;gps.mph10=0;assert(gps_panel_heading()==91);
+ display_course=200;display_course_valid=1;assert(gps_panel_heading()==200);
+ gps.fix=0;assert(gps_panel_heading()<0);gps.fix=1;display_course_valid=0;
+ char b[32];pref.units=1;gps_accuracy_text(b,sizeof(b),34);assert(streq(b,"3 m"));
+ gps_accuracy_text(b,sizeof(b),2);assert(streq(b,"1 m"));gps_accuracy_text(b,sizeof(b),20000);assert(streq(b,">999 m"));
+ gps_altitude_text(b,sizeof(b),1204);assert(streq(b,"120 m"));gps_altitude_text(b,sizeof(b),-4156);assert(streq(b,"-416 m"));
+ pref.units=2;gps_accuracy_text(b,sizeof(b),40);assert(streq(b,"13 ft"));gps_altitude_text(b,sizeof(b),1200);assert(streq(b,"394 ft"));pref.units=0;
+ pref.hoff=1;pref.moff=0;gps.hour=23;gps.min=59;gps.sec=7;gps_time_text(b,sizeof(b));assert(streq(b,"00:59:07"));pref.hoff=0;
+ gps.hour=-1;gps_time_text(b,sizeof(b));assert(streq(b,"--:--:--"));gps.hour=12;gps.min=35;
+ /* Degrees and decimal minutes: 2-digit latitude, 3-digit longitude degrees. */
+ gps_coordinate_text(b,sizeof(b),4749811,'N','S');assert(streq(b,"47° 29.887' N"));
+ gps_coordinate_text(b,sizeof(b),-165638,'E','W');assert(streq(b,"001° 39.383' W"));
+ gps_coordinate_text(b,sizeof(b),-5,'N','S');assert(streq(b,"00° 00.003' S"));
+ gps_coordinate_text(b,sizeof(b),17999999,'E','W');assert(streq(b,"179° 59.999' E"));
+ gps_coordinate_text(b,sizeof(b),0,'E','W');assert(streq(b,"000° 00.000' E"));
+ /* Direct toggle expands/collapses the live clock/GPS HUD without blocking the map. */
+ pref.gps_hud=0;assert(gps_hud_mode()==GPS_HUD_OFF);
+ gps_hud_toggle();assert(pref.gps_hud&&screen==SCR_MAP&&gps_hud_mode()==GPS_HUD_FULL);
+ gps_hud_toggle();assert(!pref.gps_hud&&screen==SCR_MAP&&gps_hud_mode()==GPS_HUD_OFF);
+ /* Double-OK on the driving map toggles the GPS HUD within 4 s, even with no fix/route. */
+ hud_capture_clock=1;
+ for(int has_fix=0;has_fix<2;has_fix++){
+  reset();pref.gps_hud=0;key_handle(K_MAP);assert(screen==SCR_MAP);
+  gps.fix=has_fix;trip.active=has_fix;route_status=has_fix?R_READY:R_IDLE;
+  roadctx.valid=has_fix;copystr(roadctx.street,sizeof(roadctx.street),has_fix?"Quayside":"");
+  hud_capture_ms=20000;key_handle(K_ENTER);assert(screen==SCR_MAP&&!pref.gps_hud);
+  hud_capture_ms=23999;key_handle(K_ENTER);assert(screen==SCR_MAP&&pref.gps_hud&&gps_hud_mode()==GPS_HUD_FULL);
+  /* Triple-tap starts a fresh first press; does not immediately collapse. */
+  hud_capture_ms=24200;key_handle(K_ENTER);assert(pref.gps_hud);
+  /* A second OK within 4 s turns it back off cleanly. */
+  hud_capture_ms=25000;key_handle(K_ENTER);assert(!pref.gps_hud&&gps_hud_mode()==GPS_HUD_OFF);
+ }
+ /* After 4 s, OK starts a fresh first press instead of toggling GPS. */
+ reset();pref.gps_hud=0;key_handle(K_MAP);hud_capture_ms=30000;key_handle(K_ENTER);assert(!pref.gps_hud);
+ hud_capture_ms=34000;key_handle(K_ENTER);assert(!pref.gps_hud);
+ hud_capture_ms=35000;key_handle(K_ENTER);assert(pref.gps_hud);
+ /* Any intervening key cancels the double-OK window. */
+ hud_capture_ms=40000;key_handle(K_ENTER);assert(pref.gps_hud);
+ hud_capture_ms=40500;key_handle(K_CONSOLE_THEME);
+ hud_capture_ms=41000;key_handle(K_ENTER);assert(pref.gps_hud);
+ /* Existing OK priorities (OK-to-review invitation, BT CTRL, Explore) always win. */
+ reset();pref.gps_hud=0;key_handle(K_MAP);gps.fix=track_valid=1;gps.lat=track_lat=5497800;gps.lon=track_lon=-161700;
+ trip.active=trip.count=0;pref.learn_history=pref.destination_predictions=1;mob_declined_n=0;
+ hud_capture_ms=50000;key_handle(K_ENTER);assert(screen==SCR_MAP&&!pref.gps_hud);
+ mob_suggest_valid=1;mob_suggest_serial++;
+ mob_suggest_point=(struct MobPoint){5497800,-161700};nfaves=1;faves[0].lat=5497800;faves[0].lon=-161700;copystr(faves[0].name,sizeof(faves[0].name),"Home");
+ assert(suggested_place(&hud_suggestion_place));hud_suggestion_invited=mob_suggest_serial;
+ assert(hud_suggestion_shortcut_ready());
+ hud_capture_ms=50500;key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&confirm_kind==4&&!pref.gps_hud);
+ mob_suggest_valid=0;hud_suggestion_invited=0;pref.learn_history=0;key_handle(K_MAP);
+ hud_capture_ms=60000;key_handle(K_ENTER);assert(screen==SCR_MAP&&!pref.gps_hud);
+ btui.connected=1;hw_bluetooth_enabled=1;set_band("CD");bt_control_mode=1;
+ hud_capture_ms=60500;key_handle(K_ENTER);assert(screen==SCR_MAP&&!pref.gps_hud&&bt_control_mode);
+ bt_control_mode=0;
+ hud_capture_ms=70000;key_handle(K_ENTER);assert(screen==SCR_MAP&&!pref.gps_hud);
+ freecam=1;cam_lat=gps.lat;cam_lon=gps.lon;
+ hud_capture_ms=70500;key_handle(K_ENTER);assert(modal==MOD_ROUTE_POINT&&!pref.gps_hud);
+ modal=MOD_NONE;freecam=0;
+ /* Adaptive tiers: FULL on drive map, COMPACT (52 px) for all popups keeping them
+  * vertically centred, MIN (27 px, seconds still visible!) for Menus and Explore. */
+ reset();load_font();pref.gps_hud=1;gps.fix=track_valid=1;gps.hour=12;gps.min=35;gps.sec=7;gps.sats=9;gps.hdop10=8;gps.alt_valid=1;gps.alt_dm=620;
+ car.tempok=1;car.temp=18;screen=SCR_MAP;freecam=0;modal=MOD_NONE;
+ hud_capture_ms=80000;hud_prepare(5,80000,1);
+ assert(gps_hud_mode()==GPS_HUD_FULL&&hud_tween[HC_CLOCK].target.box.w==GPS_HUD_W&&hud_tween[HC_CLOCK].target.box.h==GPS_HUD_FULL_H);
+ assert(streq(hud_tween[HC_CLOCK].target.title,"12:35:07"));
+ /* Status pill stays cleanly beside the expanded GPS card without overlapping. */
+ btui.connected=1;hw_bluetooth_enabled=1;set_band("CD");bt_control_mode=1;
+ hud_prepare(5,80050,1);
+ assert(hud_tween[HC_STATUS].target.box.x+hud_tween[HC_STATUS].target.box.w+8<=hud_tween[HC_CLOCK].target.box.x);
+ bt_control_mode=0;
+ /* Popups use COMPACT (52 px) and stay vertically centred identically to GPS-off. */
+ pref.gps_hud=0;confirm_kind=0;menu_open(P_CONFIRM,1,80075);hud_prepare(5,80075,1);menu_prepare(80075);
+ int centered_confirm_y=sheet_to_box.y;
+ pref.gps_hud=1;hud_prepare(5,80100,1);menu_prepare(80100);
+ assert(gps_hud_mode()==GPS_HUD_COMPACT&&hud_tween[HC_CLOCK].target.box.h==GPS_HUD_COMPACT_H);
+ assert(sheet_to_box.y==centered_confirm_y&&streq(hud_tween[HC_CLOCK].target.title,"12:35:07"));
+ menu_close(80125);pref.gps_hud=0;modal=MOD_RESUME_TRIP;hud_prepare(5,80125,1);popup_prepare(80125);
+ int centered_modal_y=popup.to.y;
+ pref.gps_hud=1;hud_prepare(5,80150,1);popup_prepare(80150);
+ assert(gps_hud_mode()==GPS_HUD_COMPACT&&hud_tween[HC_CLOCK].target.box.h==GPS_HUD_COMPACT_H);
+ assert(popup.to.y==centered_modal_y);
+ modal=MOD_SOURCE_PICK;hud_prepare(5,80200,1);popup_prepare(80200);
+ assert(gps_hud_mode()==GPS_HUD_COMPACT&&popup.to.y>=hud_tween[HC_CLOCK].target.box.y+hud_tween[HC_CLOCK].target.box.h+8);
+ modal=MOD_NONE;
+ /* Menus and Explore collapse smoothly to MIN (27 px) while keeping seconds visible. */
+ key_handle(K_MENU);hud_prepare(5,80250,0);
+ assert(sheet_page==P_HOME&&gps_hud_mode()==GPS_HUD_MIN&&hud_tween[HC_CLOCK].target.box.h==27);
+ assert(hud_tween[HC_CLOCK].target.box.w==GPS_HUD_MIN_TEMP_W&&streq(hud_tween[HC_CLOCK].target.title,"12:35:07"));
+ key_handle(K_MAP);hud_prepare(5,80300,1);
+ assert(screen==SCR_MAP&&gps_hud_mode()==GPS_HUD_FULL);
+ freecam=1;hud_prepare(5,80350,1);
+ assert(gps_hud_mode()==GPS_HUD_MIN&&hud_tween[HC_CLOCK].target.box.h==27&&streq(hud_tween[HC_CLOCK].target.title,"12:35:07"));
+ freecam=0;
+ /* Render all active tiers in both Day/Night and Clock-left/Clock-right without clip leaks. */
+ for(int night=0;night<2;night++)for(int swap=0;swap<2;swap++){
+  apply_palette(night);pref.top_swap=swap;
+  const int mods[]={MOD_NONE,MOD_RESUME_TRIP};
+  for(unsigned k=0;k<2;k++){
+   modal=mods[k];hud_prepare(5,80400+k*100,1);hud_settle_for_capture(80400+k*100);
+   hud_draw_card(HC_CLOCK,80400+k*100);
+   assert(clip_x==0&&clip_y==0&&clip_right==W&&clip_bottom==H&&hud_ink_alpha==16);
+  }
+ }
+ modal=MOD_NONE;pref.top_swap=0;
+ /* Persistence through real prefs.ini I/O. */
+ mkdir(CLIO_HOST_ROOT "clio843",0777);
+ pref.gps_hud=1;save_prefs();pref.gps_hud=0;load_prefs();assert(pref.gps_hud==1);
+ pref.gps_hud=0;save_prefs();pref.gps_hud=1;load_prefs();assert(pref.gps_hud==0);
+ hud_capture_clock=0;
+ /* Home menu stays compact (Trip, Bluetooth, Settings) without a GPS row. */
+ reset();key_handle(K_MENU);assert(sheet_page==P_HOME&&menu_count(P_HOME)==3);
+ key_handle(K_MAP);assert(screen==SCR_MAP);
+}
 static void seed_poi_tile(int slot,u8 lvl,s32 tx,s32 ty,const int*kinds,const s32*lats,const s32*lons,const char*const*names,int count){
  struct Tile*t=&tc[slot];memzero(t,sizeof(*t));t->valid=1;t->lvl=lvl;t->tx=tx;t->ty=ty;t->age=++agec;
  u8*p=t->data;p[0]=0;p[1]=0;p[2]=(u8)count;p[3]=(u8)(count>>8);p[4]=p[5]=p[6]=p[7]=0;p+=8;
@@ -284,4 +413,4 @@ static void input_wrap(void){
  }
  pref_keyboard_language=-1;
 }
-int main(void){input_wrap();tabs();saved_places();nearby_pois_workflow();itinerary();long_itinerary();itinerary_connector_bounds();bluetooth();bounds();confirmation_typography();settings_categories();puts("Menu sheets: four tabs/remembered selections, nearby POIs, compact scrolling places, naming/real coordinates, reviewed stops, ten-target persistence and unsupported-format rejection, reorder/remove/cancel, connector bounds, pinned pairing, address-stable phone actions, theme/HUD bounds passed.");}
+int main(void){input_wrap();tabs();saved_places();nearby_pois_workflow();itinerary();long_itinerary();itinerary_connector_bounds();bluetooth();gps_panel();bounds();confirmation_typography();settings_categories();puts("Menu sheets: four tabs/remembered selections, nearby POIs, compact scrolling places, naming/real coordinates, reviewed stops, ten-target persistence and unsupported-format rejection, reorder/remove/cancel, connector bounds, pinned pairing, address-stable phone actions, GPS panel accuracy/heading/toggle, theme/HUD bounds passed.");}

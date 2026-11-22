@@ -1,16 +1,18 @@
-# ClioPlay version 2.2.4 (Unreleased)
+# ClioPlay version 2.2.5
 
-Version 2.2.4 (Unreleased) expands ClioPlay's opt-in, strictly offline local
-learning with personal road-class and cold-weather (`<= 3 °C`) ETA calibration,
-`~X-Y min` ETA reliability ranges, dwell-time trip chains and recurring
-intermediate stop prompts, non-ambiguous **Traffic diversion available** vs
-**Usual route available** recommendations, **Usual parking** reviews, learned
-Nearby-POI affinity badges, adaptive Auto-zoom and Day/Night brightness
-personalisation, repeat hard-braking slowdown alerts, route-coloured stop and
-destination map endpoints, an expandable roundabout secondary manoeuvre pill,
-and the desktop `tools/replay_history.py` map-rebuild migration tool. See
-[intelligent navigation](docs/intelligent-navigation.md) and the
-[changelog](docs/changelog.md).
+Version 2.2.5 adds an expandable live **GPS** HUD built directly into the top
+clock/temperature pill (live seconds, recessed compass dial, heading,
+`$GPGST`/HDOP accuracy, signal bars/satellites, altitude and marine coordinates,
+persisted across restarts, adapting cleanly to popups and folding to a
+seconds-only clock in menus and Explore — toggled via double-pressing
+**Centre / OK** or pressing console **REPEAT**), expands **Auto zoom** and
+manual driving zoom across **Z9–Z4** with hysteresis and full close-up vector
+precision and street names at **Z7–Z9**, and tightens **View diversion** /
+**View route** framing to fill the `480 × 272` screen — building on ClioPlay’s
+offline local learning, Nearby POIs, expandable roundabout secondary manoeuvre
+pill, AVRCP 1.3 instant Bluetooth notifications and desktop
+migration/favourites tools. See [intelligent navigation](docs/intelligent-navigation.md)
+and the [changelog](docs/changelog.md).
 
 ## Set up a card
 
@@ -162,7 +164,7 @@ uses its normal vehicle configuration to supply physical console events.
 | INFO | Briefly show the current road name and, during guidance, the journey estimate. |
 | MENU | Open Menu. |
 | LIGHT | Cycle Day, Night and custom-schedule Auto. |
-| REPEAT | Redisplay the current road name and, during guidance, the journey estimate. |
+| REPEAT | Toggle the live expandable GPS HUD in the clock pill on or off. |
 | DEST | Open Trip directly, unless a confirmation is awaiting a decision. |
 | MAP | The existing Auto/manual zoom, Explore and return-to-map behaviour. |
 | Joystick | The existing arrow actions, including Explore panning. |
@@ -179,9 +181,11 @@ Default mappings work without a configuration file. For overrides, copy
 [the contributed example](card-template/cswmap.example.ini) to the card as
 `clio843/cswmap.ini` (or `cswmap.ini` in the card root, which takes precedence).
 The example contains the contributor’s conservative bindings; it disables LIGHT
-and REPEAT and maps DEST to Menu. Change `btn6=THEME`, `btn7=INFO`, `btn8=TRIP`
+and REPEAT and maps DEST to Menu. Change `btn6=THEME`, `btn7=GPS`, `btn8=TRIP`
 and `btn4=INFO` to keep the integrated defaults. Actions accept upper/lower case;
 `ROTNEXT`/`ROTPREV` or `knob+`/`knob-` select contextual knob movement.
+`GPS` toggles the live GPS HUD in the clock pill on or off (default on `btn7` /
+REPEAT; can be moved to another button or replaced with `INFO` or `NONE`).
 `NONE` disables a control. Add `verbose=1` for interpreted console-field logging
 while Debug is enabled. File edits, including same-size edits, reload within
 five seconds; invalid/oversize files keep the last valid bindings. Deleting the
@@ -245,7 +249,7 @@ bindings; the defaults provide complete remote-equivalent control.
 | **MAP** | Restore Auto zoom after a temporary manual adjustment; otherwise enter map browsing. | Return to the driving view and the configured zoom mode. | Leave BT CTRL; restore Auto zoom if temporarily adjusted, otherwise enter map browsing. |
 | **MENU** | Open Menu. | Open Menu. | Leave BT CTRL and open Menu. |
 | **BACK** | Enter BT CTRL when Bluetooth audio is selected and a phone is connected. | | Leave BT CTRL. |
-| **Centre / OK** | Briefly show the current road name when known. During guidance, also show the estimated time and distance remaining. | Open the route or add-stop prompt for the point under the crosshair. | Play or pause. |
+| **Centre / OK** | Press once to briefly show the current road name and (during guidance) ETA and remaining distance; press again within 4 seconds to toggle the live expandable **GPS** HUD on or off. | Open the route or add-stop prompt for the point under the crosshair. | Play or pause. |
 | **Up / Down** | Enter map browsing and pan. | Pan up or down. | |
 | **Left / Right** | Enter map browsing and pan. | Pan left or right. | Previous or next track. |
 | **Left / right soft keys** | Zoom out or in. With Auto zoom enabled, this sets a temporary override. | Zoom out or in. | Zoom out or in on the driving map. |
@@ -254,7 +258,11 @@ With Auto zoom enabled, the soft keys temporarily adjust the driving zoom and
 show **Manual zoom**. **MAP** restores Auto zoom without entering Explore; a
 subsequent **MAP** enters Explore. Arrow keys can enter Explore and pan directly,
 including from temporary manual zoom. **OK** briefly shows the road name in
-the centre pill and, during guidance, the journey estimate in the status pill.
+the centre pill and, during guidance, the journey estimate in the status pill;
+pressing **OK** a second time within 4 seconds toggles the live expandable
+**GPS** HUD in the clock pill on or off (even with no GPS fix or active route,
+while keeping existing **OK to review** invitations, Explore selection and
+**BT CTRL** playback priority intact). The state is saved in `prefs.ini`.
 The estimate also appears when a route calculation or reroute finishes.
 
 Explore shows one entry notice. Zooming and panning within Explore neither replay
@@ -265,6 +273,21 @@ styling, transitions and temporary display time.
 Confirming a point selected in Explore returns directly to the driving map with
 the reverse rotation/tilt animation. The time/temperature pill remains visible;
 calculation uses the existing five-frame-per-second cap. Declining keeps Explore.
+
+#### Auto zoom and close-up street names
+
+Auto zoom selects across **Z9–Z4**, giving closer views at low speeds while keeping roughly 33–51 seconds of forward sightline across driving speeds. Manual driving zoom (soft keys / knob rotation) also reaches **Z9** on standard Z6 map packs. Separate speed thresholds for speeding up (zooming out) and slowing down (zooming in) create a hysteresis band around each boundary so small speed fluctuations do not keep changing the zoom; large speed jumps step straight to the matching level. When **Learn driving history** is enabled, learned Adaptive Auto-zoom adjustments (`±1` level) are clamped across the full **Z4–Z9** range.
+
+| Zoom | Default speed band | Zooms out (speeding up) | Zooms in (slowing down) | Forward view | Where it fits |
+| --- | --- | --- | --- | --- | --- |
+| **Z9** | `< 5 mph` (`< 8 km/h`) | `≥ 6 mph` (`≥ 10 km/h`) → Z8 | — | ~92 m | Parking and walking-pace manoeuvres |
+| **Z8** | `5 to < 12 mph` (`8–19 km/h`) | `≥ 14 mph` (`≥ 23 km/h`) → Z7 | `≤ 4 mph` (`≤ 6 km/h`) → Z9 | ~184 m | Car parks, queues and tight streets |
+| **Z7** | `12 to < 25 mph` (`19–40 km/h`) | `≥ 27 mph` (`≥ 43 km/h`) → Z6 | `≤ 10 mph` (`≤ 16 km/h`) → Z8 | ~367 m | Residential streets and town centres |
+| **Z6** | `25 to < 45 mph` (`40–72 km/h`) | `≥ 48 mph` (`≥ 77 km/h`) → Z5 | `≤ 23 mph` (`≤ 37 km/h`) → Z7 | ~735 m | Urban through roads and suburban driving |
+| **Z5** | `45 to < 65 mph` (`72–105 km/h`) | `≥ 68 mph` (`≥ 109 km/h`) → Z4 | `≤ 42 mph` (`≤ 68 km/h`) → Z6 | ~1.47 km | Faster A-roads and dual carriageways |
+| **Z4** | `≥ 65 mph` (`≥ 105 km/h`) | — | `≤ 62 mph` (`≤ 100 km/h`) → Z5 | ~2.94 km | Motorway lookahead |
+
+At **Z7–Z9**, roads preserve all four fractional bits of Z6’s 12-bit tile coordinates for smooth close-up geometry, and road names from the installed map are placed beside visible clipped road segments where there is room on screen (keeping clear of the active route, car marker, Explore crosshair and HUD cards, and handing off cleanly with the temporary bottom street-name pill). Existing map packs support both improvements with no rebuild required.
 
 ### Menu, Trip and Bluetooth
 
@@ -294,6 +317,26 @@ calculation uses the existing five-frame-per-second cap. Declining keeps Explore
   select it and press **OK** to start pairing. **Up / Down** or the knob
   selects a device, **OK** opens its Connect/Disconnect and Forget actions, and
   **Up / Down** selects the action. **OK** confirms; **BACK** returns to the list.
+- **GPS HUD (expandable clock pill):** toggle on or off from the driving map by
+  pressing **Centre / OK** (or pushing the console knob) twice within 4 seconds,
+  or with a single press of the console **REPEAT** button (`GPS` action); the
+  preference persists across restarts (`gpshud` in `prefs.ini`). When enabled,
+  the top clock/temperature pill adds live seconds (`HH:MM:SS`, always visible
+  even when collapsed) and smoothly expands downward on the driving map into a
+  non-blocking instrument card (`164 × 148 px`) with a recessed Day/Night
+  compass dial and heading needle, bold **Heading** with cardinal direction,
+  colour-coded horizontal **Accuracy** (preferring `$GPGST` error estimates,
+  otherwise HDOP × 5 m; green up to 5 m, amber up to 15 m, red beyond), rising
+  signal-quality bars with satellite count, and a recessed tray showing
+  **Altitude** above sea level and marine degrees/decimal-minutes **Lat** /
+  **Lon** (mirrored right-to-left in Arabic and Hebrew, following Metric/Imperial
+  units). Without a fix, values show `--` and **No fix**. All driving controls,
+  status notices and `BT CTRL` remain usable beside it. When a popup opens, the
+  card switches smoothly to a compact live GPS strip (`164 × 52 px`: mini
+  compass, heading, accuracy and satellite signal bars) so popups stay centred,
+  and folds to a `27 px` clock pill with seconds while browsing menus or
+  Explore, returning automatically on the driving map. Mirrors cleanly with
+  **Clock left** (`hudtopswap`).
 
 All these pages are animated frosted-glass sheets over the live map. Menu,
 Settings, Bluetooth, Trip, coordinates and review use compact sheets between
@@ -305,8 +348,8 @@ position and notice timers across page changes.
 ### Intelligent navigation
 
 Optional offline learning uses completed Barcelona power-off driving sessions, even without an active route. Enable **Learn driving history** in Settings → Driving history. The empty Itinerary retains the original destination-entry layout. With no active trip and sufficient evidence, the map status pill displays a green Suggested destination and blue OK to review (BACK to review during BT CTRL). OK opens a default-Yes confirmation; No suppresses that destination for the recording session, Back leaves it eligible, and ignoring it never changes the route. On a later stationary startup, five completed visits across three distinct dates in the last 90 days can prompt Add to favourites? for the current place. No is the safe default. Yes opens the existing Favourite naming keyboard with an editable inferred name (or an empty field); only Save adds the Favourite and returns to the map. The prompt is shown at most once per place until driving history is cleared, and never starts navigation. The predictor reconciles the stored starting point with live GPS, combines day/time, recency and early trajectory evidence, and resolves destinations via named Favourites/Recents, nearby offline map names or coordinates. During guidance, a historical traffic warning may appear and a **Diversion** action is available in Trip if a beneficial legal local alternative is found. Shared geometry stays solid magenta, bypassed geometry is yellow/gold and the distinct proposed diversion is dashed aqua/teal. The glass status pill continuously displays a single line with the success-green Faster route available announcement and blue OK to review (BACK to review when BT CTRL is active). A centred, anti-aliased frosted-glass badge near the actual decision point shows the approximate saving when space permits. The invitation disappears at the decision point if ignored. Press OK twice from the driving map to accept; with BT CTRL active, press Back first. Normal zoom and Bluetooth controls are preserved. The confirmation opens on Yes, alongside No and a **View diversion** button.
-Selecting **View diversion** closes the popup and opens Explore framed around
-the proposed bypass so you can pan and zoom to inspect it; pressing **MAP**
+Selecting **View diversion** (or **View route** for a usual-route proposal) closes the popup and opens Explore tightly framed and vertically centred around
+the proposed bypass across the full `480 × 272` viewport (up to Z9) so you can pan and zoom to inspect it; pressing **MAP**
 returns to the driving view and re-opens the same confirmation (if still valid).
 Declining it keeps the original route, warning and adjusted ETA, and only suppresses alternative offers overlapping that section. Later independent diversions remain eligible. No live traffic or automatic route selection is used. Learning still relies only on completed power-off sessions, not arrival prompts. Destination suggestions and diversions can be enabled separately; **Clear driving history** removes the private learned data after confirmation. Raw GPS time is independent of the UI clock adjustment. See [intelligent navigation](docs/intelligent-navigation.md) for the complete behavior and limitations.
 

@@ -102,9 +102,10 @@ Trip → Itinerary → **Diversion** remains another way to open the same
 confirmation. The confirmation opens **Take traffic diversion?** (showing the
 approximate saving and **Likely traffic ahead**) with **Yes** selected
 alongside **No** and a **View diversion** button below them (use **Up / Down**
-or the console knob to focus **View diversion**). Selecting **View diversion**
-closes the popup and opens north-up Explore framed around the proposed
-diversion split, bypass and rejoin points so you can pan and zoom to review it;
+or the console knob to focus **View diversion**). Selecting **View diversion** (or **View route** on a usual-route confirmation)
+closes the popup and opens north-up Explore tightly framed and vertically
+centred around the proposed split, bypass and rejoin points across the full
+`480 × 272` viewport (up to Z9) so you can pan and zoom to review it;
 pressing **MAP** returns to the driving view and automatically re-opens the
 same **Take traffic diversion?** confirmation if the offer is still valid (or
 shows **Diversion unavailable** if it expired). No automatic zoom, countdown,
@@ -199,7 +200,7 @@ alternatives.
 - **Auto-zoom:** consistent manual zoom overrides while driving in **Auto zoom**
   are tracked across three speed bands (`< 20 mph`, `20–40 mph`, `>= 40 mph`).
   After at least three consistent sessions in a band, Auto-zoom gently shifts by
-  at most `±1` zoom level, always clamped to Z4–Z6.
+  at most `±1` zoom level, always clamped to Z4–Z9.
 - **Brightness:** manual brightness changes in **Settings → Display** are
   remembered separately for Day and Night palettes. Once at least two
   adjustments are learned for a theme, **Auto** Day↔Night switches automatically

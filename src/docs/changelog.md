@@ -1,7 +1,25 @@
 # Version history
 
-This history records implemented changes. Entries marked **Unreleased** are prepared locally and have not been published.
+This history records implemented changes for each release.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
+
+## Version 2.2.5 — Release
+
+- Added an **expandable live GPS HUD inside the top clock/temperature pill** (building on `qspi`'s NMEA `$GPGST`/HDOP/altitude and compass dial contribution in PR #8), designed to stay genuinely usable while driving without blocking the map, car arrow, status notices or controls:
+  - **Adaptive three-tier layout with persistent seconds:** toggling the GPS HUD on immediately adds live seconds (`HH:MM:SS`) to the clock pill (persisted in `prefs.ini` as `gpshud=1`) and expands smoothly downward (`164 × 148 px`) on the driving map to display a recessed antialiased compass dial with pivot-aligned `N/E/S/W` markers, centre pivot cap and theme-tuned Day/Night heading needle, bold heading (`074° NE`), colour-coded horizontal accuracy (`$GPGST` error estimate with HDOP × 5 m fallback, green/amber/red at `≤ 5 m` / `≤ 15 m` / `> 15 m`), 3-bar signal indicator with satellite count, and a recessed key–value tray for **Altitude**, **Lat** and **Lon** (marine degrees & decimal minutes, right-to-left mirrored in Arabic and Hebrew, Metric/Imperial units).
+  - **Popup-aware & non-blocking:** stays fully expanded while driving and alongside active status notices (`ETA`, `VOL`, `BT CTRL`, slowdown alerts and `OK to review` invitations), automatically switches to a **Compact** live strip (`164 × 52 px`: header + mini live compass, heading, accuracy and signal-bar count) above popups so confirmation and modal dialogs remain vertically centred, and folds cleanly to **Minimised** (`27 px`, keeping seconds visible) while browsing **Menus** or **Explore** — then smoothly glides back open on returning to the driving map. Mirrors cleanly with **Clock left** (`hudtopswap`).
+  - **Direct toggle controls:** kept **Menu** compact (`Trip`, `Bluetooth`, `Settings`); toggle the live GPS HUD on/off from the driving map by pressing **Centre / OK** (or pushing the console knob) **twice within 4 seconds** (the first press still shows road name/ETA, and existing `OK to review`, Explore and `BT CTRL` priorities stay intact) or with one press of the physical console **REPEAT** button (`btn7`, default `GPS`, remappable via `cswmap.ini`).
+  - Added full translations across all 18 languages, native regression tests, and a real-map demo preview (`src/docs/demo/v225-gps-panel.gif`).
+- Expanded **Auto zoom** from Z6–Z4 to **Z9–Z4** (and allowed manual driving zoom and persisted `manualzoom` up to Z9 on standard Z6 map packs), widening the Adaptive Auto-zoom clamp to Z4–Z9. Default speed bands and hysteresis thresholds (`mph` / approx. `km/h`):
+  - **Z9:** `< 5 mph` (`< 8 km/h`), zooms out to Z8 at `≥ 6 mph` (`10 km/h`).
+  - **Z8:** `5 to < 12 mph` (`8–19 km/h`), zooms out to Z7 at `≥ 14 mph` (`23 km/h`), zooms in to Z9 at `≤ 4 mph` (`6 km/h`).
+  - **Z7:** `12 to < 25 mph` (`19–40 km/h`), zooms out to Z6 at `≥ 27 mph` (`43 km/h`), zooms in to Z8 at `≤ 10 mph` (`16 km/h`).
+  - **Z6:** `25 to < 45 mph` (`40–72 km/h`), zooms out to Z5 at `≥ 48 mph` (`77 km/h`), zooms in to Z7 at `≤ 23 mph` (`37 km/h`).
+  - **Z5:** `45 to < 65 mph` (`72–105 km/h`), zooms out to Z4 at `≥ 68 mph` (`109 km/h`), zooms in to Z6 at `≤ 42 mph` (`68 km/h`).
+  - **Z4:** `≥ 65 mph` (`≥ 105 km/h`), zooms in to Z5 at `≤ 62 mph` (`100 km/h`).
+- Preserved full sub-unit vertex precision at cropped zooms **Z7–Z9** (retaining all four fractional bits of Z6’s 12-bit road vertices) and placed street names beside visible screen-clipped road segments where there is room, avoiding the car marker, HUD cards, clipped route geometry and temporary bottom street-name pill (refreshing once on handoff) and deduplicating full-length road names. Works with existing map packs.
+- Tightened **View diversion** / **View route** Explore framing to use the full `480 × 272` viewport (`448 × 240` fit box up to Z9, visually centred vertically) instead of dropping out prematurely.
+- Added `--only` / `--gif` and `--list` support to `tools/regenerate_gifs.py`, `tools/render_previews.py` and `tools/render_mapless_gifs.py` so individual demo GIFs can be re-rendered in seconds (merging cleanly into `docs/demo/manifest.json`), and regenerated all demo GIFs with Auto zoom enabled at road-matched driving speeds (or `0 mph` / Z9 for stationary workflows).
 
 ## Version 2.2.4 — Release
 

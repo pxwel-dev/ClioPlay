@@ -99,7 +99,8 @@ static struct HudBox menu_box_at_top(int p,int top){
  }
  if(p==P_SOURCE){w=356;h=174;}
  if(h>bottom-top)h=bottom-top;
- int y=top+(bottom-top-h)/2;
+ int y=p==P_CONFIRM?MENU_TOP+(bottom-MENU_TOP-h)/2:top+(bottom-top-h)/2;
+ if(y<top)y=top;
  return (struct HudBox){(W-w)/2,y,w,h,p?256:0};
 }
 static struct HudBox menu_box(int p){
@@ -215,12 +216,19 @@ static void menu_view_diversion(u32 now){
  s32 mid_lat=min_lat+(max_lat-min_lat)/2;
  s32 mid_lon=lon_delta(base_lon+min_dlon+(max_dlon-min_dlon)/2);
  s32 lat_span=max_lat-min_lat,lon_span=lon_scale(max_dlon-min_dlon,coslat_q15(mid_lat));
- int lo=mapok?(int)mh.minlvl:0,best_z=lo;
- for(int z=6;z>=lo;z--){
-  u32 scale_q8=65536u>>(14-z);
-  u32 pw=((u32)lon_span*scale_q8)>>8,ph=((u32)lat_span*scale_q8)>>8;
-  if(pw<=340u&&ph<=112u){best_z=z;break;}
+ int hi=MAX_EXPLORE_ZOOM,lo=mapok?(int)mh.minlvl:0,best_z=lo;
+ for(int z=hi;z>=lo;z--){
+  int sh=14-z;
+  unsigned long long pw=((unsigned long long)(u32)lon_span*256u)>>sh;
+  unsigned long long ph=((unsigned long long)(u32)lat_span*256u)>>sh;
+  if(pw<=448u&&ph<=240u){best_z=z;break;}
  }
+ /* Centre the route box vertically at H/2 (16 px margins all round) rather
+  * than at FREECAM_ANCHOR_Y=160 so the full 480x272 Explore view is used. */
+ s32 y_shift=(s32)(((((long long)(FREECAM_ANCHOR_Y-H/2))<<(14-best_z))+128)>>8);
+ s32 view_lat_target=mid_lat-y_shift;
+ if(view_lat_target< -8500000)view_lat_target=-8500000;
+ if(view_lat_target>8500000)view_lat_target=8500000;
  diversion_preview_active=1;
  diversion_preview_from_map=confirm_diversion_map;
  diversion_preview_kind=confirm_diversion_kind;
@@ -229,7 +237,7 @@ static void menu_view_diversion(u32 now){
  diversion_preview_begin=confirm_diversion_begin;
  diversion_preview_join=confirm_diversion_join;
  menu_close(now);
- enter_freecam_at(mid_lat,mid_lon,best_z);
+ enter_freecam_at(view_lat_target,mid_lon,best_z);
  hud_pulse(&hud_navigation,HUD_EXPLORE,1800);
 }
 static void start_name(int origin,u32 now){
@@ -869,11 +877,13 @@ static void menu_contents(int p,int selected,struct HudBox b,int opacity,u32 now
 
 static int menu_blocks_phone(void){return screen!=SCR_MAP&&(sheet_page==P_SOURCE||sheet_page==P_PLACE||sheet_page==P_STOP||sheet_page==P_DEST||sheet_page==P_CONFIRM||sheet_page==P_NAME||sheet_page==P_COORD||sheet_page==P_REVIEW||(sheet_page==P_LANG&&language_keyboard));}
 static void menu_reset(u32 now){
+ driving_info_ok_armed=0;
  sheet_page=sheet_old_page=P_CLOSED;sheet_focus=sheet_old_focus=sheet_depth=0;places_picker=review_from_place=place_from_nearby=0;confirm_top_focus=0;diversion_preview_clear();
  sheet_from_box=sheet_to_box=(struct HudBox){0};bottom_from=bottom_to=256;bottom_at=menu_at=focus_at=now-320u;
  menu_interaction_at=menu_presented_at=now-320u;menu_pending=0;memzero(trip_tab_focus,sizeof(trip_tab_focus));pk_reset();
 }
 static void menu_open(int p,int selected,u32 now){
+ driving_info_ok_armed=0;
  if(!hw_bluetooth_enabled&&(p==P_PHONE||p==P_PHONE_ACTIONS||p==P_PAIR))p=P_HOME;
  coordinates_active=0;bt_control_mode=0;sheet_depth=0;
  if(p==P_NAME){keyboard_origin=kbd_action;pk_reset();pk_prepare();}

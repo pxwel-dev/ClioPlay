@@ -439,8 +439,8 @@ static void text_center_fit(int cx,int y,int maxw,const char*s,u16 c){
 static int fb_flush(void){long fd=s_open(FB_PATH,O_WRONLY_|O_CREAT_,0666);if(fd<0)return 0;s_lseek((int)fd,0,SEEK_SET_);long n=s_write((int)fd,fb,sizeof(fb));s_close((int)fd);return n==(long)sizeof(fb);}
 
 enum { THEME_DAY=0, THEME_NIGHT=1, THEME_AUTO=2 };
-struct Prefs {int bright,hoff,moff,autozoom,debug,theme,units,cameras,clock_auto,language,day_start,night_start,top_swap,bottom_swap,learn_history,destination_predictions,diversions;};
-static struct Prefs pref={50,0,0,1,0,THEME_AUTO,0,1,1,0,CLIO_DAY_START,CLIO_NIGHT_START,0,0,0,1,1};
+struct Prefs {int bright,hoff,moff,autozoom,debug,theme,units,cameras,clock_auto,language,day_start,night_start,top_swap,bottom_swap,learn_history,destination_predictions,diversions,gps_hud;};
+static struct Prefs pref={50,0,0,1,0,THEME_AUTO,0,1,1,0,CLIO_DAY_START,CLIO_NIGHT_START,0,0,0,1,1,0};
 static int pref_keyboard_language=-1;
 /* The TomTom hardware export is authoritative when present; unknown hardware
  * keeps Bluetooth visible when the hardware export is unavailable. */
@@ -475,6 +475,7 @@ static const char*place_display_name(const char*s){if(!s)return "";if(streq(s,"M
 static const char*bt_label(void){return pref.language==0?"Bluetooth":ui_tr("Phone connection");}
 static const char*bt_source_label(void){return "BT";}
 static const char*bt_unavailable_label(void){return pref.language==0?"Bluetooth unavailable":ui_tr("Phone connection unavailable");}
+#define MAX_EXPLORE_ZOOM 9
 static int manual_zoom=5;
 static int prefs_dirty=0,prefs_delay=0;
 static void parse_pref_line(char*ln){char*eq=ln;while(*eq&&*eq!='=')eq++;if(!*eq)return;*eq++=0;if(streq(ln,"daystart")){pref.day_start=clio_theme_time(eq,CLIO_DAY_START);return;}if(streq(ln,"nightstart")){pref.night_start=clio_theme_time(eq,CLIO_NIGHT_START);return;}int v=atoi0(eq);if(streq(ln,"bright"))pref.bright=v;else if(streq(ln,"hoff"))pref.hoff=v;else if(streq(ln,"moff"))pref.moff=v;else if(streq(ln,"autozoom"))pref.autozoom=v?1:0;else if(streq(ln,"debug"))pref.debug=v?1:0;else if(streq(ln,"theme"))pref.theme=v;else if(streq(ln,"units"))pref.units=v;else if(streq(ln,"cameras"))pref.cameras=v>=0&&v<=2?v:1;else if(streq(ln,"clockauto"))pref.clock_auto=v?1:0;else if(streq(ln,"language"))pref.language=v>=0&&v<UI_LANGUAGE_COUNT?v:0;else if(streq(ln,"manualzoom"))manual_zoom=v;else if(streq(ln,"keyboardlanguage"))pref_keyboard_language=v>=0&&v<UI_LANGUAGE_COUNT?v:-1;
@@ -482,8 +483,9 @@ static void parse_pref_line(char*ln){char*eq=ln;while(*eq&&*eq!='=')eq++;if(!*eq
  else if(streq(ln,"hudbottomswap"))pref.bottom_swap=v?1:0;
  else if(streq(ln,"learnhistory"))pref.learn_history=v?1:0;
  else if(streq(ln,"destpredictions"))pref.destination_predictions=v?1:0;
- else if(streq(ln,"diversions"))pref.diversions=v?1:0;}
-static void load_prefs(void){pref.day_start=CLIO_DAY_START;pref.night_start=CLIO_NIGHT_START;char b[512],ln[96];unsigned u=0;long fd=s_open(PREF_PATH,O_RDONLY_,0);if(fd>=0){long n=s_read((int)fd,b,sizeof(b));s_close((int)fd);if(n>0){for(long i=0;i<n;i++){char c=b[i];if(c=='\r'||c=='\n'){if(u){ln[u]=0;parse_pref_line(ln);u=0;}}else if(u+1<sizeof(ln))ln[u++]=c;}if(u){ln[u]=0;parse_pref_line(ln);}}}if(pref.bright<10)pref.bright=10;if(pref.bright>100)pref.bright=100;if(pref.theme<THEME_DAY||pref.theme>THEME_AUTO)pref.theme=THEME_AUTO;if(pref.units<0||pref.units>2)pref.units=0;if(pref.hoff*60+pref.moff< -720||pref.hoff*60+pref.moff>840)pref.hoff=pref.moff=0;if(manual_zoom<0)manual_zoom=0;if(manual_zoom>6)manual_zoom=6;if(!clio_theme_schedule_valid(pref.day_start,pref.night_start)){pref.day_start=CLIO_DAY_START;pref.night_start=CLIO_NIGHT_START;}}
+ else if(streq(ln,"diversions"))pref.diversions=v?1:0;
+ else if(streq(ln,"gpshud"))pref.gps_hud=v?1:0;}
+static void load_prefs(void){pref.day_start=CLIO_DAY_START;pref.night_start=CLIO_NIGHT_START;char b[512],ln[96];unsigned u=0;long fd=s_open(PREF_PATH,O_RDONLY_,0);if(fd>=0){long n=s_read((int)fd,b,sizeof(b));s_close((int)fd);if(n>0){for(long i=0;i<n;i++){char c=b[i];if(c=='\r'||c=='\n'){if(u){ln[u]=0;parse_pref_line(ln);u=0;}}else if(u+1<sizeof(ln))ln[u++]=c;}if(u){ln[u]=0;parse_pref_line(ln);}}}if(pref.bright<10)pref.bright=10;if(pref.bright>100)pref.bright=100;if(pref.theme<THEME_DAY||pref.theme>THEME_AUTO)pref.theme=THEME_AUTO;if(pref.units<0||pref.units>2)pref.units=0;if(pref.hoff*60+pref.moff< -720||pref.hoff*60+pref.moff>840)pref.hoff=pref.moff=0;if(manual_zoom<0)manual_zoom=0;if(manual_zoom>MAX_EXPLORE_ZOOM)manual_zoom=MAX_EXPLORE_ZOOM;if(!clio_theme_schedule_valid(pref.day_start,pref.night_start)){pref.day_start=CLIO_DAY_START;pref.night_start=CLIO_NIGHT_START;}}
 /* Shared with the splash; the definition follows the wall-clock helpers. */
 static void seed_boot_theme(void);
 static void save_prefs(void){char b[512];b[0]=0;appendstr(b,sizeof(b),"version=8\nbright=");append_int(b,sizeof(b),pref.bright);appendstr(b,sizeof(b),"\nhoff=");append_int(b,sizeof(b),pref.hoff);appendstr(b,sizeof(b),"\nmoff=");append_int(b,sizeof(b),pref.moff);appendstr(b,sizeof(b),"\nautozoom=");append_int(b,sizeof(b),pref.autozoom);appendstr(b,sizeof(b),"\ndebug=");append_int(b,sizeof(b),pref.debug);appendstr(b,sizeof(b),"\ntheme=");append_int(b,sizeof(b),pref.theme);appendstr(b,sizeof(b),"\nunits=");append_int(b,sizeof(b),pref.units);appendstr(b,sizeof(b),"\ncameras=");append_int(b,sizeof(b),pref.cameras);appendstr(b,sizeof(b),"\nclockauto=");append_int(b,sizeof(b),pref.clock_auto);appendstr(b,sizeof(b),"\nlanguage=");append_int(b,sizeof(b),pref.language);appendstr(b,sizeof(b),"\ndaystart=");append_int(b,sizeof(b),pref.day_start);appendstr(b,sizeof(b),"\nnightstart=");append_int(b,sizeof(b),pref.night_start);appendstr(b,sizeof(b),"\nmanualzoom=");append_int(b,sizeof(b),manual_zoom);appendstr(b,sizeof(b),"\nkeyboardlanguage=");append_int(b,sizeof(b),pref_keyboard_language);
@@ -492,6 +494,7 @@ static void save_prefs(void){char b[512];b[0]=0;appendstr(b,sizeof(b),"version=8
  appendstr(b,sizeof(b),"\nlearnhistory=");append_int(b,sizeof(b),pref.learn_history);
  appendstr(b,sizeof(b),"\ndestpredictions=");append_int(b,sizeof(b),pref.destination_predictions);
  appendstr(b,sizeof(b),"\ndiversions=");append_int(b,sizeof(b),pref.diversions);
+ appendstr(b,sizeof(b),"\ngpshud=");append_int(b,sizeof(b),pref.gps_hud);
  appendstr(b,sizeof(b),"\n");long fd=s_open(PREF_TMP_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd>=0){s_write((int)fd,b,slen(b));s_close((int)fd);s_sync();if(s_rename(PREF_TMP_PATH,PREF_PATH)<0){fd=s_open(PREF_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd>=0){s_write((int)fd,b,slen(b));s_close((int)fd);}}s_sync();}prefs_dirty=0;prefs_delay=0;}
 static void prefs_mark_dirty(void){prefs_dirty=1;prefs_delay=10;}
 static void prefs_service(void){if(!prefs_dirty)return;if(prefs_delay>0){prefs_delay--;return;}save_prefs();}
@@ -512,8 +515,12 @@ static void apply_brightness(void){int mx=read_int_file(BL_MAX,100);if(mx<1)mx=1
 
 static u32 udiv32(u32 n,u32 d);
 
-struct GPS {int fix,sats; s32 lat,lon; int mph10,course; int hour,min,sec,day,mon,year;};
-static struct GPS gps;static u32 gps_fix_ms=0;
+struct GPS {int fix,sats; s32 lat,lon; int mph10,course; int hour,min,sec,day,mon,year; int hdop10,gst_dm,alt_valid,alt_dm;};
+static struct GPS gps;static u32 gps_fix_ms=0,gps_gst_ms=0;
+/* Horizontal accuracy for the GPS panel. $GPGST error estimates win while
+ * fresh; otherwise the GGA HDOP is scaled by a typical 5 m range error. */
+#define GPS_GST_FRESH_MS 3000u
+#define GPS_HDOP_UERE_DM 50
 #define DISPLAY_COURSE_UPDATE_MPH10 30 /* >=3.0 mph: GPS course is useful; below this freeze the last moving orientation. */
 
 /* persist one tiny trusted last-fix record so a cold start can show
@@ -537,6 +544,7 @@ static long theme_wall_clock_utc(void){
 static void seed_boot_theme(void){apply_palette(clio_boot_night(pref.theme,theme_wall_clock_utc(),pref.hoff*60+pref.moff,pref.day_start,pref.night_start,read_theme_state_raw()));}
 static int save_last_fix(void){if(!lastfix_valid)return 0;struct LastFixDisk d;d.magic[0]='L';d.magic[1]='G';d.magic[2]='P';d.magic[3]='1';d.lat=lastfix_lat;d.lon=lastfix_lon;d.course=(u16)(lastfix_course>=0&&lastfix_course<=359?lastfix_course:0);d.pad=0;d.check=lastfix_check(d.lat,d.lon,d.course);long fd=s_open(LASTGPS_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd<0)return-1;long n=s_write((int)fd,&d,sizeof(d));s_close((int)fd);return n==(long)sizeof(d)?1:-1;}
 static void remember_live_fix(void){if(!gps.fix)return;lastfix_lat=gps.lat;lastfix_lon=gps.lon;/* Preserve the last trustworthy moving orientation instead of overwriting it with stationary GPS-course noise. */if(!lastfix_valid||gps.mph10>=DISPLAY_COURSE_UPDATE_MPH10)lastfix_course=gps.course;lastfix_valid=1;if(!lastfix_live_seen){save_last_fix();lastfix_live_seen=1;}}
+static u32 isqrt32(u32 v){u32 r=0,bit=1u<<30;while(bit>v)bit>>=2;while(bit){if(v>=r+bit){v-=r+bit;r=(r>>1)+bit;}else r>>=1;bit>>=2;}return r;}
 static int parse_dec10(const char*s){int v=0,frac=0,neg=0;if(*s=='-'){neg=1;s++;}while(*s>='0'&&*s<='9'){v=v*10+(*s-'0');s++;}if(*s=='.'&&s[1]>='0'&&s[1]<='9')frac=s[1]-'0';return neg?-(v*10+frac):(v*10+frac);}
 static s32 nmea_coord_e5(const char*s,int islon,char hemi){int deg=0;int digs=islon?3:2;for(int i=0;i<digs;i++){if(s[i]<'0'||s[i]>'9')return 0;deg=deg*10+s[i]-'0';}s+=digs;int min10k=0;int whole=0;while(*s>='0'&&*s<='9'){whole=whole*10+(*s-'0');s++;}min10k=whole*10000;if(*s=='.'){s++;int m=1000;while(*s>='0'&&*s<='9'&&m){min10k+=(*s-'0')*m;m/=10;s++;}}s32 e5=(s32)deg*100000+(s32)(min10k/6);if(hemi=='S'||hemi=='W')e5=-e5;return e5;}
 static void parse_hhmmss(const char*s){
@@ -580,7 +588,16 @@ static void parse_nmea(char*ln){char*f[20];int n;if(starts(ln,"$GPRMC,")||starts
  int valid=gps.fix&&mobility_digits(f[3],4)&&mobility_digits(f[5],5)&&(f[4][0]=='N'||f[4][0]=='S')&&(f[6][0]=='E'||f[6][0]=='W');
  mob_rmc(s_now_ms(),epoch,valid,gps.lat,gps.lon,gps.mph10,gps.course);
  }}
-else if(starts(ln,"$GPGGA,")||starts(ln,"$GNGGA,")){n=split_csv(ln,f,20);if(n>7){parse_hhmmss(f[1]);int q=atoi0(f[6]);gps.sats=atoi0(f[7]);if(q>0){gps.fix=1;gps.lat=nmea_coord_e5(f[2],0,f[3][0]);gps.lon=nmea_coord_e5(f[4],1,f[5][0]);}else gps.fix=0;}}
+else if(starts(ln,"$GPGGA,")||starts(ln,"$GNGGA,")){n=split_csv(ln,f,20);if(n>7){parse_hhmmss(f[1]);int q=atoi0(f[6]);gps.sats=atoi0(f[7]);gps.hdop10=q>0&&n>8&&f[8][0]>='0'&&f[8][0]<='9'?parse_dec10(f[8]):0;gps.alt_valid=q>0&&n>9&&((f[9][0]>='0'&&f[9][0]<='9')||(f[9][0]=='-'&&f[9][1]>='0'&&f[9][1]<='9'));gps.alt_dm=gps.alt_valid?parse_dec10(f[9]):0;if(q>0){gps.fix=1;gps.lat=nmea_coord_e5(f[2],0,f[3][0]);gps.lon=nmea_coord_e5(f[4],1,f[5][0]);}else gps.fix=0;}}
+else if(starts(ln,"$GPGST,")||starts(ln,"$GNGST,")){n=split_csv(ln,f,20);if(n>7&&f[6][0]>='0'&&f[6][0]<='9'&&f[7][0]>='0'&&f[7][0]<='9'){int a=parse_dec10(f[6]),b=parse_dec10(f[7]);if(a>9999)a=9999;if(b>9999)b=9999;gps.gst_dm=(int)isqrt32((u32)(a*a+b*b));if(!gps.gst_dm)gps.gst_dm=1;gps_gst_ms=s_now_ms();}}
+}
+/* Estimated horizontal error in decimetres, or -1 when unknown. GST age is
+ * measured on the same clock that stamped the sentence. */
+static int gps_accuracy_dm(void){
+ u32 now=s_now_ms();if(!gps.fix)return -1;
+ if(gps.gst_dm>0&&now-gps_gst_ms<GPS_GST_FRESH_MS)return gps.gst_dm;
+ if(gps.hdop10>0)return gps.hdop10*GPS_HDOP_UERE_DM/10;
+ return -1;
 }
 
 static char gpsbuf[1024],gpsline[256];static unsigned gpsused=0;static int gpsfd=-1;
@@ -1022,7 +1039,7 @@ static struct Tile tc[TILE_CACHE];static u32 agec=1;
 static u16 rd16(const u8*p){return(u16)(p[0]|((u16)p[1]<<8));}
 static u32 rd32u(const u8*p){return(u32)p[0]|((u32)p[1]<<8)|((u32)p[2]<<16)|((u32)p[3]<<24);}
 #include "atlas_catalog.h"
-static int load_map(void){mapok=0;mapfmt=0;if(mapfd>=0){s_close(mapfd);mapfd=-1;}load_atlas();mapfd=(int)s_open(atlas_ready?atlas_map_path:MAP_PATH,O_RDONLY_,0);if(mapfd<0)return 0;if(s_read(mapfd,&mh,sizeof(mh))!=(long)sizeof(mh)){s_close(mapfd);mapfd=-1;return 0;}if(mh.magic[0]=='C'&&mh.magic[1]=='P'&&mh.magic[2]=='M'&&mh.magic[3]=='5'&&mh.ver==5)mapfmt=5;else mapfmt=0;if(!mapfmt||mh.minlvl>mh.maxlvl||mh.maxlvl>6){s_close(mapfd);mapfd=-1;return 0;}mapok=1;manual_zoom=manual_zoom<(int)mh.minlvl?(int)mh.minlvl:manual_zoom;manual_zoom=manual_zoom>(int)mh.maxlvl?(int)mh.maxlvl:manual_zoom;return 1;}
+static int load_map(void){mapok=0;mapfmt=0;if(mapfd>=0){s_close(mapfd);mapfd=-1;}load_atlas();mapfd=(int)s_open(atlas_ready?atlas_map_path:MAP_PATH,O_RDONLY_,0);if(mapfd<0)return 0;if(s_read(mapfd,&mh,sizeof(mh))!=(long)sizeof(mh)){s_close(mapfd);mapfd=-1;return 0;}if(mh.magic[0]=='C'&&mh.magic[1]=='P'&&mh.magic[2]=='M'&&mh.magic[3]=='5'&&mh.ver==5)mapfmt=5;else mapfmt=0;if(!mapfmt||mh.minlvl>mh.maxlvl||mh.maxlvl>6){s_close(mapfd);mapfd=-1;return 0;}mapok=1;int hi=mh.maxlvl>=6?MAX_EXPLORE_ZOOM:(int)mh.maxlvl;manual_zoom=manual_zoom<(int)mh.minlvl?(int)mh.minlvl:manual_zoom;manual_zoom=manual_zoom>hi?hi:manual_zoom;return 1;}
 static int keycmp(u8 l,s32 x,s32 y,const struct CpmIndex*e){if(l<e->lvl)return-1;if(l>e->lvl)return 1;if(x<e->tx)return-1;if(x>e->tx)return 1;if(y<e->ty)return-1;if(y>e->ty)return 1;return 0;}
 static int find_index(u8 l,s32 x,s32 y,u8 page,struct CpmIndex*out){u32 lo=0,hi=mh.count;u32 size=24;while(lo<hi){u32 mid=lo+(hi-lo)/2;u8 b[24];s_lseek(mapfd,(long)(mh.index_off+mid*size),SEEK_SET_);if(s_read(mapfd,b,size)!=(long)size)return 0;struct CpmIndex e;e.lvl=b[0];e.flags=b[1];e.tx=(s32)rd32u(b+4);e.ty=(s32)rd32u(b+8);unsigned k=12;e.off=rd32u(b+k);e.len=rd32u(b+k+4);e.features=rd16(b+k+8);e.pad=rd16(b+k+10);int c=keycmp(l,x,y,&e);if(!c)c=page<e.flags?-1:(page>e.flags?1:0);if(c==0){*out=e;return 1;}if(c<0)hi=mid;else lo=mid+1;}return 0;}
 static struct Tile* get_tile_page_raw(u8 l,s32 x,s32 y,u8 page){int i,best=0;u32 ba=0xffffffff;for(i=0;i<TILE_CACHE;i++){if(tc[i].valid&&tc[i].lvl==l&&tc[i].page==page&&tc[i].tx==x&&tc[i].ty==y){tc[i].age=agec++;return tc[i].valid==2?0:&tc[i];}if(!tc[i].valid){best=i;ba=0;break;}if(tc[i].age<ba){ba=tc[i].age;best=i;}}struct CpmIndex e;if(!find_index(l,x,y,page,&e)){tc[best].valid=2;tc[best].lvl=l;tc[best].page=page;tc[best].tx=x;tc[best].ty=y;tc[best].len=0;tc[best].age=agec++;return 0;}if(e.len>TILE_MAX)return 0;s_lseek(mapfd,(long)(mh.data_off+e.off),SEEK_SET_);if(s_read(mapfd,tc[best].data,e.len)!=(long)e.len)return 0;tc[best].valid=1;tc[best].lvl=l;tc[best].page=page;tc[best].tx=x;tc[best].ty=y;tc[best].len=e.len;tc[best].age=agec++;return &tc[best];}
@@ -1035,6 +1052,8 @@ static struct Tile* get_tile_page(u8 l,s32 x,s32 y,u8 page){
 static struct Tile* get_tile(u8 l,s32 x,s32 y){return get_tile_page(l,x,y,0);}
 static int span_for_level(int z){if(z>=8&&z<=11)z-=8;static const int sp[7]={16384,8192,4096,2048,1024,512,256};if(z<0)z=0;if(z>6)z=6;return sp[z];}
 static int clamp_map_zoom(int z){int lo=mapok?(int)mh.minlvl:0,hi=mapok?(int)mh.maxlvl:6;if(lo<0)lo=0;if(hi>6)hi=6;if(z<lo)z=lo;if(z>hi)z=hi;return z;}
+static int max_view_zoom(void){int hi=mapok?(int)mh.maxlvl:6;return hi>=6?MAX_EXPLORE_ZOOM:hi;}
+static int clamp_view_zoom(int z){int lo=mapok?(int)mh.minlvl:0,hi=max_view_zoom();if(lo<0)lo=0;if(z<lo)z=lo;if(z>hi)z=hi;return z;}
 static int tile_div(int a,int z){int sh=14-z;if(a>=0)return a>>sh;return -(((-a)+(1<<sh)-1)>>sh);}
 static int coslat_q15(s32 lat){static s32 previous;static int cached,valid;if(valid&&lat==previous)return cached;previous=lat;valid=1;int d=lat<0?-lat:lat;d/=100;if(d>=90000){cached=0;return 0;}static const u16 c[91]={32767,32762,32747,32722,32687,32642,32587,32523,32448,32364,32269,32165,32051,31927,31794,31650,31498,31335,31163,30982,30791,30591,30381,30162,29934,29697,29451,29196,28932,28659,28377,28087,27788,27481,27165,26841,26509,26169,25821,25465,25101,24730,24351,23964,23571,23170,22762,22347,21925,21497,21062,20621,20173,19720,19260,18794,18323,17846,17364,16876,16384,15886,15383,14876,14364,13848,13328,12803,12275,11743,11207,10668,10126,9580,9032,8481,7927,7371,6813,6252,5690,5126,4560,3993,3425,2856,2286,1715,1144,572,0};int i=d/1000,f=d%1000;cached=c[i]+((int)c[i+1]-c[i])*f/1000;return cached;}
 static s32 lon_delta(s32 d){if(d>18000000)d-=36000000;if(d< -18000000)d+=36000000;return d;}
@@ -1060,7 +1079,6 @@ static int shown_course(void){return track_course>=0?track_course:gps.course;}
 static void update_display_course(void){if(!gps.fix)return;int c=shown_course();if(c<0||c>=360)return;if(!display_course_valid){/* A persisted heading is preferred, but on a first-ever boot this gives us a usable orientation until movement confirms it. */display_course=c;display_course_valid=1;return;}/* track_course is already smoothed; while moving, mirror it exactly so UI1 adds no extra steering lag. Below the threshold, deliberately do nothing and freeze. */if(gps.mph10>=DISPLAY_COURSE_UPDATE_MPH10)display_course=c;}
 static int map_course(void){if(display_course_valid)return display_course;return shown_course();}
 
-#define MAX_EXPLORE_ZOOM 9
 #define FREECAM_ORIENT_ANIM_MS 500u
 #define FC_ANIM_NONE 0
 #define FC_ANIM_TO_NORTH 1
@@ -1080,20 +1098,28 @@ static int freecam_anim_tilt_from=256;
 /* 256=driving perspective, 0=top-down Explore; rotation and tilt share time. */
 static int map_tilt_q8=256;
 
-/* Driving autozoom now uses only Z6/Z5/Z4.  Hysteresis keeps the existing
- * 18/22 mph low-speed headroom and adds a 38/42 mph Z5/Z4 boundary. */
+/* Driving autozoom covers Z9-Z4 with proportional speed hysteresis so speed
+ * fluctuations near a boundary do not keep changing zoom. Indexed by z-4. */
 static int speed_auto_zoom(void){
+ static const int out_mph10[5]={680,480,270,140,60}; /* Z5->4, Z6->5, Z7->6, Z8->7, Z9->8 */
+ static const int in_mph10[5]={620,420,230,100,40};  /* Z4->5, Z5->6, Z6->7, Z7->8, Z8->9 */
  int s=gps.mph10;
- if(auto_zoom_level<4||auto_zoom_level>6){
-  if(s>=400)auto_zoom_level=4;else if(s>=200)auto_zoom_level=5;else auto_zoom_level=6;
- }else if(auto_zoom_level==6){if(s>=220)auto_zoom_level=5;}
- else if(auto_zoom_level==5){if(s<=180)auto_zoom_level=6;else if(s>=420)auto_zoom_level=4;}
- else{if(s<=380)auto_zoom_level=5;}
+ if(auto_zoom_level<4||auto_zoom_level>MAX_EXPLORE_ZOOM){
+  if(s>=650)auto_zoom_level=4;
+  else if(s>=450)auto_zoom_level=5;
+  else if(s>=250)auto_zoom_level=6;
+  else if(s>=120)auto_zoom_level=7;
+  else if(s>=50)auto_zoom_level=8;
+  else auto_zoom_level=9;
+ }else{
+  while(auto_zoom_level>4&&s>=out_mph10[auto_zoom_level-5])auto_zoom_level--;
+  while(auto_zoom_level<MAX_EXPLORE_ZOOM&&s<=in_mph10[auto_zoom_level-4])auto_zoom_level++;
+ }
  int z=auto_zoom_level+ml_autozoom_offset(s);
- if(z<4)z=4;if(z>6)z=6;
+ if(z<4)z=4;if(z>MAX_EXPLORE_ZOOM)z=MAX_EXPLORE_ZOOM;
  return z;
 }
-static int active_zoom(void){int z;if(freecam){int lo=mapok?(int)mh.minlvl:0;z=freecam_zoom;if(z<lo)z=lo;if(z>MAX_EXPLORE_ZOOM)z=MAX_EXPLORE_ZOOM;return z;}if(pref.autozoom)z=zoom_override>=0?zoom_override:speed_auto_zoom();else z=manual_zoom;return clamp_map_zoom(z);}
+static int active_zoom(void){int z;if(freecam){int lo=mapok?(int)mh.minlvl:0;z=freecam_zoom;if(z<lo)z=lo;if(z>MAX_EXPLORE_ZOOM)z=MAX_EXPLORE_ZOOM;return z;}if(pref.autozoom)z=zoom_override>=0?zoom_override:speed_auto_zoom();else z=manual_zoom;return clamp_view_zoom(z);}
 static int span_for_view_zoom(int z){if(z<=6)return span_for_level(z);if(z>MAX_EXPLORE_ZOOM)z=MAX_EXPLORE_ZOOM;return 256>>(z-6);}
 static s32 car_lat(void){return track_valid?track_lat:gps.lat;}static s32 car_lon(void){return track_valid?track_lon:gps.lon;}
 static s32 view_lat(void){return freecam?cam_lat:car_lat();}static s32 view_lon(void){return freecam?cam_lon:car_lon();}
@@ -1252,10 +1278,9 @@ static void geom_style(int layer,int style,int zoom,u16*col,int*wid){if(layer==0
 #include "map_raster.h"
 /* Keep road/route vertices below pixel precision until rasterization. The
  * driving camera and route engine are unchanged; only drawing gains precision. */
-static void map_project_q8(s32 lat,s32 lon,int z,int*ox,int*oy){
- if(!MAP_ANTIALIAS){world_to_screen(lat,lon,z,ox,oy);*ox*=256;*oy*=256;return;}
- s32 dx=lon_delta(lon-view_lon()),dy=lat-view_lat();int sh=14-z,cq=coslat_q15(view_lat());
- long long x=((long long)dx*cq)>>(sh-1),y=-(long long)dy*(65536>>sh);
+static void map_project_delta_q8(s32 dy,s32 dx,int z,int frac,int*ox,int*oy){
+ int sh=14-z+frac,cq=coslat_q15(view_lat());
+ long long x=((long long)dx*cq)>>(sh-1),y=-(((long long)dy*65536)>>sh);
  if(view_rotates()){int c,ss;view_trig(&ss,&c);long long rx=(x*c+y*ss)>>15,ry=(-x*ss+y*c)>>15;x=rx;y=ry;}
  if(y<0&&map_tilt_q8>0){int q;long long forward=-y;
   perspective_scale_update();
@@ -1264,6 +1289,10 @@ static void map_project_q8(s32 lat,s32 lon,int z,int*ox,int*oy){
   x=(x*q)>>12;y=(y*q)>>12;
  }
  if(x>4194304)x=4194304;if(x< -4194304)x=-4194304;if(y>4194304)y=4194304;if(y< -4194304)y=-4194304;*ox=MAP_ANCHOR_X*256+(int)x;*oy=view_anchor_y()*256+(int)y;
+}
+static void map_project_q8(s32 lat,s32 lon,int z,int*ox,int*oy){
+ if(!MAP_ANTIALIAS){world_to_screen(lat,lon,z,ox,oy);*ox*=256;*oy*=256;return;}
+ map_project_delta_q8(lat-view_lat(),lon_delta(lon-view_lon()),z,0,ox,oy);
 }
 
 /* The top-centred journey/zoom card reserves only its actual footprint. */
@@ -1327,13 +1356,41 @@ static void draw_closed_area(struct Tile*t,int span,int layer,int style,int np,c
     }
   }
 }
-static void draw_path(struct Tile*t,int span,int layer,int style,int np,const u8**pp,const u8*end,int viewz){
+static void crop_label_from_path(const int*x,const int*y,int n,int cls,const u8*meta);
+static const u8* cpm_meta_start(struct Tile*t,u16*nm);
+static int crop_road_meta_offsets(struct Tile*t,u16 offsets[255]){
+ u16 count=0;
+ const u8*p=cpm_meta_start(t,&count),*end=t->data+t->len;
+ if(!p||count>255)return 0;
+ for(int i=0;i<count;i++){
+  if(end-p<5||p[4]>end-p-5)return i;
+  offsets[i]=p[4]&&p[4]<=112?(u16)(p-t->data):0;
+  p+=5+p[4];
+ }
+ return count;
+}
+static void draw_path(struct Tile*t,int span,int layer,int style,int np,const u8**pp,const u8*end,int viewz,const u8*meta){
  const u8*p=*pp;if(np<2||np>255||p+np*4>end){*pp=end;return;}u16 col;int wid;geom_style(layer,style,viewz,&col,&wid);
  map_mask_select(layer==0?((style>=1&&style<=5)?6-style:0):(layer==1?0:(layer==2?1:2)));
- int x[255],y[255];for(int i=0;i<np;i++){int lx=rd16(p),ly=rd16(p+2);p+=4;
-  s32 lon=(s32)t->tx*span+map_tile_offset(lx,(u32)span),lat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);
-  map_project_q8(lat,lon,viewz,&x[i],&y[i]);
- }map_stroke_polyline(x,y,np,col,wid);*pp=p;
+ int x[255],y[255];
+ s32 lon=(s32)t->tx*span,lat=(s32)t->ty*span;
+ if(layer==0&&viewz>6&&span==256){
+  /* Z6 stores 12-bit vertices over 256 world units. At close zooms keep
+   * all four fractional bits, including the shared tile-edge coordinate. */
+  s32 dx=lon_delta(lon-view_lon())*16,dy=(lat-view_lat())*16;
+  for(int i=0;i<np;i++,p+=4){
+   u32 lx=rd16(p),ly=rd16(p+2);
+   map_project_delta_q8(dy+(s32)(ly+(ly>=2048)),dx+(s32)(lx+(lx>=2048)),viewz,4,&x[i],&y[i]);
+  }
+ }else{
+  for(int i=0;i<np;i++,p+=4){
+   s32 px=lon+map_tile_offset(rd16(p),(u32)span),py=lat+map_tile_offset(rd16(p+2),(u32)span);
+   map_project_q8(py,px,viewz,&x[i],&y[i]);
+  }
+ }
+ map_stroke_polyline(x,y,np,col,wid);
+ if(meta)crop_label_from_path(x,y,np,style,meta);
+ *pp=p;
 }
 enum {MAP_DRAW_CONTEXT=0,MAP_DRAW_AREAS=1,MAP_DRAW_ROADS=2,MAP_DRAW_OCEAN=3};
 static void draw_tile_geometry(struct Tile*t,int viewz,int pass){
@@ -1341,9 +1398,11 @@ static void draw_tile_geometry(struct Tile*t,int viewz,int pass){
   if(!t)return;const u8*p=t->data,*end=t->data+t->len;int span=span_for_level((int)t->lvl);
 
   int hs=8;if(t->len<(u32)hs)return;u16 ng=rd16(p);p+=hs;
+  u16 meta_offsets[255];
+  int meta_count=pass==MAP_DRAW_ROADS&&viewz>6&&t->lvl==6?crop_road_meta_offsets(t,meta_offsets):0;
   for(u16 f=0;f<ng&&p+4<=end;f++){
     if(!(f&7))render_checkpoint();
-    int layer=*p++,style=*p++,np=*p++;p++;if(p+np*4>end)return;
+    int layer=*p++,style=*p++,np=*p++,mi=*p++;if(p+np*4>end)return;
     int ocean=layer==1&&style==(128|5);
     if(pass==MAP_DRAW_AREAS||pass==MAP_DRAW_OCEAN){
       if((pass==MAP_DRAW_OCEAN)==ocean)draw_closed_area(t,span,layer,style,np,p,viewz);p+=np*4;
@@ -1351,7 +1410,10 @@ static void draw_tile_geometry(struct Tile*t,int viewz,int pass){
     else{
       int area=(style&128);
       int wanted=!area&&((pass==MAP_DRAW_ROADS&&layer==0)||(pass==MAP_DRAW_CONTEXT&&layer!=0));
-      if(wanted)draw_path(t,span,layer,style,np,&p,end,viewz);else p+=np*4;
+      if(wanted){
+        const u8*meta=mi<meta_count&&meta_offsets[mi]?t->data+meta_offsets[mi]:0;
+        draw_path(t,span,layer,style,np,&p,end,viewz,meta);
+      }else p+=np*4;
     }
   }
 }
@@ -1365,22 +1427,23 @@ static void draw_tile_geometry(struct Tile*t,int viewz,int pass){
 #define DRIVE_ROAD_LABELS 6
 #define MAP_POI_LABELS 16
 #define DRIVE_ROUTE_SEGS 128
-struct DriveLabel {char name[113];s16 x,y;u8 kind,prio;int score;};
+struct DriveLabel {char name[113];s16 x,y;u8 kind,prio,vertical;int score;};
 struct DriveRouteSeg {s16 x0,y0,x1,y1;};
 static struct DriveLabel drive_labels[DRIVE_LABEL_CANDIDATES];
 static struct DriveRouteSeg drive_route_segs[DRIVE_ROUTE_SEGS];
 static int ndrive_labels=0,ndrive_route_segs=0;
 static int drive_turn_valid=0,drive_turn_x=0,drive_turn_y=0;
+static int crop_car_valid,crop_car_x,crop_car_y;
 static void drive_label_offer(int x,int y,int kind,int prio,const char*name);
 static void drive_label_prepare(int z);
-static void drive_label_render(void);
+static void drive_label_render(int z);
 struct LBox{s16 x0,y0,x1,y1;};
 #define LABEL_BOXES 40
 static struct LBox lbox[LABEL_BOXES];static int nlbox=0;
 #define LABEL_TEXTS 24
 static char ltxt[LABEL_TEXTS][113];static int nltxt=0;
 static int label_text_seen(const char*s){for(int i=0;i<nltxt;i++)if(streq(ltxt[i],s))return 1;return 0;}
-static void label_text_add(const char*s){if(nltxt<LABEL_TEXTS)copystr(ltxt[nltxt++],29,s);}
+static void label_text_add(const char*s){if(nltxt<LABEL_TEXTS)copystr(ltxt[nltxt++],sizeof(ltxt[0]),s);}
 static int label_space_free(int x0,int y0,int x1,int y1,int avoid_status){
  if(x0<4||x1>W-4||y1<MAP_TOP+3||y1>MAP_BOTTOM-3)return 0;
  if(x1>=350&&y0<=38)return 0; /* clock and temperature */
@@ -2295,7 +2358,10 @@ static void draw_route_overlay(int z){
   }
   map_project_q8(route_lat[i],route_lon[i],z,&x[n],&y[n]);
   int visible=!((x[n-1]<-20*256&&x[n]<-20*256)||(x[n-1]>(W+20)*256&&x[n]>(W+20)*256)||(y[n-1]<(MAP_TOP-3)*256&&y[n]<(MAP_TOP-3)*256)||(y[n-1]>(MAP_BOTTOM+3)*256&&y[n]>(MAP_BOTTOM+3)*256));
-  if(visible&&!freecam&&ndrive_route_segs<DRIVE_ROUTE_SEGS&&x[n-1]>-2048*256&&x[n-1]<2048*256&&y[n-1]>-2048*256&&y[n-1]<2048*256&&x[n]>-2048*256&&x[n]<2048*256&&y[n]>-2048*256&&y[n]<2048*256){
+  int label_route=z>6||(!freecam&&
+   x[n-1]>-2048*256&&x[n-1]<2048*256&&y[n-1]>-2048*256&&y[n-1]<2048*256&&
+   x[n]>-2048*256&&x[n]<2048*256&&y[n]>-2048*256&&y[n]<2048*256);
+  if(visible&&label_route&&ndrive_route_segs<DRIVE_ROUTE_SEGS){
    struct DriveRouteSeg*r=&drive_route_segs[ndrive_route_segs++];r->x0=(s16)(x[n-1]>>8);r->y0=(s16)(y[n-1]>>8);r->x1=(s16)(x[n]>>8);r->y1=(s16)(y[n]>>8);
   }
   n++;if(n==255){map_stroke_polyline(x,y,n,slot?C_ROUTE_SKIPPED:C_ROUTE,3);x[0]=x[n-1];y[0]=y[n-1];n=1;}
@@ -2319,6 +2385,8 @@ static int drive_iabs(int x){return x<0?-x:x;}
 static int drive_label_eq(const char*a,const char*b){while(*a&&*b&&upc(*a)==upc(*b)){a++;b++;}return *a==*b;}
 static void drive_label_prepare(int z){
   ndrive_labels=ndrive_route_segs=0;drive_turn_valid=0;
+  crop_car_valid=z>6&&gps.fix;
+  if(crop_car_valid)world_to_screen(car_lat(),car_lon(),z,&crop_car_x,&crop_car_y);
   if(!freecam&&route_status==R_READY&&nav_man_type!=MAN_NONE&&
      nav_man_idx>=route_head&&nav_man_idx<route_n){
     world_to_screen(route_lat[nav_man_idx],route_lon[nav_man_idx],z,&drive_turn_x,&drive_turn_y);
@@ -2339,35 +2407,73 @@ static int drive_label_primary(const struct DriveLabel*d){
   return d->prio<=159 && (d->y>=124||d->prio<=31) &&
          (d->y>=151||d->prio<=79);
 }
-static void drive_label_offer(int x,int y,int kind,int prio,const char*name){
-  if(freecam||!name||!name[0])return;
-  if(kind>=6){poi_offer(x,y,kind,prio);return;}else{
-    int w=textw(name,1),x0=x-w/2;
-    if(x0<8||x0+w>W-8||y<80||y>202)return;
-    if(roadctx.valid&&roadctx.street[0]&&drive_label_eq(name,roadctx.street))return;
-    if(drive_iabs(x-MAP_ANCHOR_X)<31&&y>view_anchor_y()-29)return; /* car/near road */
-  }
-  int score=drive_label_score(x,y,kind,prio);
-  /* Different tiles can repeat a road name. Keep the most useful position. */
-  if(kind<6)for(int i=0;i<ndrive_labels;i++){
-    if(drive_labels[i].kind<6&&drive_label_eq(drive_labels[i].name,name)){
-      if(score>=drive_labels[i].score)return;
-      drive_labels[i].x=x;drive_labels[i].y=y;
-      drive_labels[i].kind=(u8)kind;drive_labels[i].prio=(u8)prio;
-      drive_labels[i].score=score;return;
+static void drive_label_add(int x,int y,int kind,int prio,const char*name,int cropped,int vertical){
+  int score=drive_label_score(x,y,kind,prio),at=ndrive_labels;
+  /* Keep distant close-zoom anchors as alternatives if the best one is blocked. */
+  for(int i=0;i<ndrive_labels;i++){
+    struct DriveLabel*d=&drive_labels[i];
+    if(cropped&&(drive_iabs(x-d->x)>48||drive_iabs(y-d->y)>32))continue;
+    if(drive_label_eq(d->name,name)){
+      if(score>=d->score)return;
+      at=i;break;
     }
   }
-  int at=ndrive_labels;
-  if(at>=DRIVE_LABEL_CANDIDATES){
-    at=0;for(int i=1;i<DRIVE_LABEL_CANDIDATES;i++)
-      if(drive_labels[i].score>drive_labels[at].score)at=i;
-    if(score>=drive_labels[at].score)return;
-  }else ndrive_labels++;
+  if(at==ndrive_labels){
+    if(at<DRIVE_LABEL_CANDIDATES)ndrive_labels++;
+    else{
+      at=0;
+      for(int i=1;i<DRIVE_LABEL_CANDIDATES;i++)if(drive_labels[i].score>drive_labels[at].score)at=i;
+      if(score>=drive_labels[at].score)return;
+    }
+  }
   struct DriveLabel*d=&drive_labels[at];
   copystr(d->name,sizeof(d->name),name);
-  d->x=x;d->y=y;d->kind=(u8)kind;d->prio=(u8)prio;d->score=score;
+  d->x=x;d->y=y;d->kind=(u8)kind;d->prio=(u8)prio;d->score=score;d->vertical=(u8)vertical;
 }
-static int drive_label_hits_route(int x0,int y0,int x1,int y1){
+static void drive_label_offer(int x,int y,int kind,int prio,const char*name){
+  if(freecam||!name||!name[0])return;
+  if(kind>=6){poi_offer(x,y,kind,prio);return;}
+  int w=textw(name,1),x0=x-w/2;
+  if(x0<8||x0+w>W-8||y<80||y>202)return;
+  if(roadctx.valid&&roadctx.street[0]&&drive_label_eq(name,roadctx.street))return;
+  if(drive_iabs(x-MAP_ANCHOR_X)<31&&y>view_anchor_y()-29)return; /* car/near road */
+  drive_label_add(x,y,kind,prio,name,0,0);
+}
+static int map_clip_outside(int x,int y,int left,int top,int right,int bottom){
+  return (x<left?1:x>right?2:0)|(y<top?4:y>bottom?8:0);
+}
+/* Screen-space clipping also handles a crossing with both endpoints offscreen.
+ * Projected coordinates are bounded before clipping, so products fit in int. */
+static int map_clip_segment(int*x0,int*y0,int*x1,int*y1,int left,int top,int right,int bottom){
+  int a=map_clip_outside(*x0,*y0,left,top,right,bottom);
+  int b=map_clip_outside(*x1,*y1,left,top,right,bottom);
+  while(a|b){
+    if(a&b)return 0;
+    int x,y,out=a?a:b;
+    if(out&12){y=out&4?top:bottom;x=*x0+(*x1-*x0)*(y-*y0)/(*y1-*y0);}
+    else{x=out&1?left:right;y=*y0+(*y1-*y0)*(x-*x0)/(*x1-*x0);}
+    if(a){*x0=x;*y0=y;a=map_clip_outside(x,y,left,top,right,bottom);}
+    else{*x1=x;*y1=y;b=map_clip_outside(x,y,left,top,right,bottom);}
+  }
+  return 1;
+}
+static void crop_label_from_path(const int*x,const int*y,int n,int cls,const u8*meta){
+  int best=15,ax=0,ay=0,vertical=0;
+  int bottom=freecam?MAP_BOTTOM-21:HUD_BOTTOM_Y-17;
+  for(int i=1;i<n;i++){
+    int x0=x[i-1]>>8,y0=y[i-1]>>8,x1=x[i]>>8,y1=y[i]>>8;
+    if(!map_clip_segment(&x0,&y0,&x1,&y1,10,51,W-11,bottom))continue;
+    int dx=drive_iabs(x1-x0),dy=drive_iabs(y1-y0);
+    int length=dx>dy?dx+dy/2:dy+dx/2;
+    if(length>best){best=length;ax=(x0+x1)/2;ay=(y0+y1)/2;vertical=dy>dx;}
+  }
+  if(best<16)return;
+  char name[113];
+  for(int i=0;i<meta[4];i++)name[i]=(char)meta[5+i];
+  name[meta[4]]=0;
+  if(name[0])drive_label_add(ax,ay,2,24+cls*4,name,1,vertical);
+}
+static int drive_label_hits_route(int x0,int y0,int x1,int y1,int cropped){
   /* Segment rectangles are recorded while the route is already being drawn,
    * avoiding a second route projection pass or map-data access. */
   for(int i=0;i<ndrive_route_segs;i++){
@@ -2376,12 +2482,38 @@ static int drive_label_hits_route(int x0,int y0,int x1,int y1){
     int rx1=r->x0>r->x1?r->x0:r->x1;
     int ry0=r->y0<r->y1?r->y0:r->y1;
     int ry1=r->y0>r->y1?r->y0:r->y1;
-    if(x1+5>=rx0&&x0-5<=rx1&&y1+5>=ry0&&y0-5<=ry1)return 1;
+    if(x1+5>=rx0&&x0-5<=rx1&&y1+5>=ry0&&y0-5<=ry1){
+      if(!cropped)return 1;
+      int ax=r->x0,ay=r->y0,bx=r->x1,by=r->y1;
+      if(map_clip_segment(&ax,&ay,&bx,&by,x0-5,y0-5,x1+5,y1+5))return 1;
+    }
   }
   return 0;
 }
-static void drive_label_render(void){
-  if(freecam)return;
+static int crop_label_hits_hud(int x0,int y0,int x1,int y1);
+static int crop_label_repeats_hud(const char*name);
+static int crop_label_covers_point(int x0,int y0,int x1,int y1,int x,int y){
+  return x1>=x-16&&x0<=x+16&&y1>=y-16&&y0<=y+16;
+}
+static int crop_label_draw(const struct DriveLabel*d){
+  if(crop_label_repeats_hud(d->name))return 0;
+  int w=textw(d->name,1);
+  for(int side=-1;side<=1;side+=2){
+    int x0=d->x-w/2+(d->vertical?side*(w/2+10):0);
+    if(!d->vertical){if(x0<7)x0=7;if(x0+w>W-7)x0=W-7-w;}
+    int y0=d->y-6+(d->vertical?0:side*13),x1=x0+w,y1=y0+13;
+    if(crop_car_valid&&crop_label_covers_point(x0,y0,x1,y1,crop_car_x,crop_car_y))continue;
+    if(freecam&&crop_label_covers_point(x0,y0,x1,y1,MAP_ANCHOR_X,FREECAM_ANCHOR_Y))continue;
+    if(crop_label_hits_hud(x0,y0,x1,y1)||drive_label_hits_route(x0,y0,x1,y1,1))continue;
+    if(!label_free(x0-3,y0-3,x1+3,y1+2))continue;
+    text(x0+1,y0+1,d->name,C_BG,1);
+    text(x0,y0,d->name,C_WHITE,1);
+    return 1;
+  }
+  return 0;
+}
+static void drive_label_render(int z){
+  int cropped=z>6;
   int road_count=0,order[DRIVE_LABEL_CANDIDATES];
   for(int i=0;i<ndrive_labels;i++)order[i]=i;
   /* A small, bounded insertion sort; no allocations or tile re-reads. */
@@ -2393,15 +2525,20 @@ static void drive_label_render(void){
     order[j]=idx;
   }
   nltxt=0;
-  for(int pass=0;pass<2&&road_count<DRIVE_ROAD_LABELS;pass++){
+  for(int pass=0;pass<(cropped?1:2)&&road_count<DRIVE_ROAD_LABELS;pass++){
     /* Pass 0: unobtrusive names, ordered by road priority/vicinity.
      * Pass 1: only if under six, admit distant/minor names into free space. */
     for(int k=0;k<ndrive_labels&&road_count<DRIVE_ROAD_LABELS;k++){
       struct DriveLabel*d=&drive_labels[order[k]];
-      if(d->kind>=6||drive_label_primary(d)!=(pass==0))continue;
+      if(label_text_seen(d->name))continue;
+      if(cropped){
+        if(crop_label_draw(d)){label_text_add(d->name);road_count++;}
+        continue;
+      }
+      if(drive_label_primary(d)!=(pass==0))continue;
       int w=textw(d->name,1),x0=d->x-w/2,y0=d->y-6;
-      if(drive_label_hits_route(x0,y0,x0+w,y0+12))continue;
-      if(!label_text_seen(d->name)&&label_free(x0-3,y0-3,x0+w+3,y0+15)){
+      if(drive_label_hits_route(x0,y0,x0+w,y0+12,0))continue;
+      if(label_free(x0-3,y0-3,x0+w+3,y0+15)){
         u16 c=label_color(d->kind);
         text(x0+1,y0+1,d->name,C_BG,1);
         text(x0,y0,d->name,c,1);
@@ -2418,8 +2555,11 @@ static void freecam_orientation_anim_update(u32 now);
 /* Hard recenter is reserved for programmatic state changes (arrival/trip/etc.).
  * User MAP toggling uses leave_freecam() below so it gets the reverse animation. */
 static void recenter_map(void){freecam=0;map_tilt_q8=256;freecam_course_valid=0;freecam_anim_mode=FC_ANIM_NONE;freecam_anim_at=0;freecam_anim_serial++;freecam_buffered=0;freecam_anim_tilt_from=256;zoom_override=-1;if(pref.autozoom)auto_zoom_level=-1;}
-static void enter_freecam(void){if(freecam||freecam_transition_active()||(!gps.fix&&!track_valid))return;int z=active_zoom();int c=map_course();if(c<0||c>=360)c=0;freecam_course=c;freecam_course_valid=1;/* Tilt still animates even when already facing north. */freecam_anim_mode=FC_ANIM_TO_NORTH;freecam_anim_serial++;freecam_buffered=0;freecam_anim_from=c;freecam_anim_at=hud_now_ms();freecam_anim_tilt_from=256;map_tilt_q8=256;freecam=1;freecam_zoom=z;zoom_override=-1;/* MAP entry begins exactly at the car's current/last tracked position. */cam_lat=car_lat();cam_lon=car_lon();}
+static int driving_info_ok_armed;
+static u32 driving_info_ok_at;
+static void enter_freecam(void){if(freecam||freecam_transition_active()||(!gps.fix&&!track_valid))return;driving_info_ok_armed=0;int z=active_zoom();int c=map_course();if(c<0||c>=360)c=0;freecam_course=c;freecam_course_valid=1;/* Tilt still animates even when already facing north. */freecam_anim_mode=FC_ANIM_TO_NORTH;freecam_anim_serial++;freecam_buffered=0;freecam_anim_from=c;freecam_anim_at=hud_now_ms();freecam_anim_tilt_from=256;map_tilt_q8=256;freecam=1;freecam_zoom=z;zoom_override=-1;/* MAP entry begins exactly at the car's current/last tracked position. */cam_lat=car_lat();cam_lon=car_lon();}
 static void enter_freecam_at(s32 lat,s32 lon,int z){
+ driving_info_ok_armed=0;
  int lo=mapok?(int)mh.minlvl:0;
  if(z<lo)z=lo;if(z>MAX_EXPLORE_ZOOM)z=MAX_EXPLORE_ZOOM;
  freecam=1;freecam_zoom=z;zoom_override=-1;
@@ -2568,6 +2708,7 @@ static void draw_map_geometry(int z){npoi=poi_visible=0;nlbox=nltxt=0;fill(0,MAP
     for(int ty=ty0;ty<=ty1;ty++)for(int tx=tx0;tx<=tx1;tx++)
       if(map_tile_in_pack(sourcez,tx,ty))draw_tile_labels(get_tile((u8)sourcez,tx,ty),z,256,256);
     poi_reserve();
+    if(z>6)return; /* Close views place road names from projected geometry. */
     static const int cuts[5]={0,16,32,48,256};
     for(int b=0;b<4;b++)for(int ty=ty0;ty<=ty1;ty++)for(int tx=tx0;tx<=tx1;tx++)
       if(map_tile_in_pack(sourcez,tx,ty))draw_tile_labels(get_tile((u8)sourcez,tx,ty),z,cuts[b],cuts[b+1]-1);
@@ -2600,6 +2741,7 @@ static s32 kbd_place_lat=0,kbd_place_lon=0;static int kbd_fave_idx=-1;
 #define K_CONSOLE_INFO 4096
 #define K_CONSOLE_TRIP 4097
 #define K_CONSOLE_THEME 4098
+#define K_CONSOLE_GPS 4099
 /* A list or row keeps its sole choice selected and wraps in either direction. */
 static int wrap_focus(int focus,int delta,int count){
  if(count<=0)return 0;
@@ -2641,6 +2783,23 @@ static char notice_text[96]; /* Latest action, also used by native checks. */
 
 static int suggested_place(struct SavedPlace*out);
 #include "hud.h"
+static int crop_label_hits_hud(int x0,int y0,int x1,int y1){
+  static const u8 cards[]={HC_CLOCK,HC_SPEED,HC_ROAD,HC_TURN,HC_TURN_NEXT};
+  u32 now=hud_now_ms();
+  for(unsigned i=0;i<sizeof(cards);i++){
+    const struct HudTween*t=&hud_tween[cards[i]];
+    if(!t->seen)continue;
+    struct HudBox b=hud_pose(t,now);
+    if(b.a>0&&x1>=b.x-3&&x0<=b.x+b.w+3&&y1>=b.y-3&&y0<=b.y+b.h+3)return 1;
+  }
+  return 0;
+}
+static int crop_road_hud_shown(u32 now){
+  return !freecam&&hud_road_live&&roadctx.valid&&now-hud_road_at<HUD_ROAD_NAME_MS;
+}
+static int crop_label_repeats_hud(const char*name){
+  return crop_road_hud_shown(hud_now_ms())&&drive_label_eq(name,roadctx.street);
+}
 
 /* A single anti-aliased saving badge belongs beside the real decision
  * point, not halfway along the alternative. Only place it in clear map
@@ -2747,8 +2906,8 @@ static void draw_trip_markers(int z){
 }
 static void draw_map_at_zoom(int z){
  perspective_scale_update();
- if(!freecam)drive_label_prepare(z);
- draw_map_geometry(z);draw_route_overlay(z);if(!freecam)drive_label_render();poi_trip_prepare(z);poi_render();draw_diversion_markers(z);draw_trip_markers(z);
+ if(!freecam||z>6)drive_label_prepare(z);
+ draw_map_geometry(z);draw_route_overlay(z);if(!freecam||z>6)drive_label_render(z);poi_trip_prepare(z);poi_render();draw_diversion_markers(z);draw_trip_markers(z);
  draw_car_marker(z);draw_explore_crosshair();
 }
 static void draw_map_background(void){draw_map_at_zoom(active_zoom());}
@@ -3129,6 +3288,7 @@ static int modal_action_count(void){if(modal==MOD_RECENT)return trip.active?3:2;
 #include "menu_keyboard.h"
 #include "menu_layout.h"
 #include "menu_sheet.h"
+#include "gps_panel.h"
 
 static void draw(void){
  u32 now=hud_now_ms();freecam_orientation_anim_update(now);clock_service();region_service();camera_service();refresh_theme();
@@ -3152,6 +3312,7 @@ static void key_handle_state(int code){render_background_dirty=1;keydiag(code);
 /* Arrival/resume prompts cannot be silently escaped with MAP/BACK. */
 if(code==K_MAP&&screen!=SCR_MAP&&modal!=MOD_RESUME_TRIP&&modal!=MOD_ARRIVED_STOP&&modal!=MOD_ARRIVED_DEST){coordinates_active=0;modal=MOD_NONE;dest_pick_action=DEST_PICK_NONE;trip_pick_mode=DEST_PICK_NONE;screen=SCR_MAP;recenter_map();return;}
 if(modal!=MOD_NONE){
+  driving_info_ok_armed=0;
   int yesno=modal==MOD_ROUTE_POINT||modal==MOD_CANCEL_ROUTE||modal==MOD_REMOVE_STOP||modal==MOD_RESUME_TRIP;
   if(code==K_BACK&&modal!=MOD_ARRIVED_STOP&&modal!=MOD_ARRIVED_DEST&&modal!=MOD_RESUME_TRIP){if(modal==MOD_SOURCE_PICK)dest_pick_action=DEST_PICK_NONE;modal=MOD_NONE;return;}
   int count=yesno?2:modal_action_count();
@@ -3208,7 +3369,7 @@ if(screen==SCR_MAP){
   if(bt_control_mode){
     if(code==K_LEFT){bt_transport_command(BT_TRANSPORT_PREVIOUS);return;}
     if(code==K_RIGHT){bt_transport_command(BT_TRANSPORT_NEXT);return;}
-    if(code==K_ENTER){bt_transport_command(BT_TRANSPORT_PLAY_PAUSE);return;}
+    if(code==K_ENTER){driving_info_ok_armed=0;bt_transport_command(BT_TRANSPORT_PLAY_PAUSE);return;}
     if(code==K_UP||code==K_DOWN)return;
   }
   if(code==K_MAP){bt_control_mode=0;
@@ -3221,11 +3382,22 @@ if(screen==SCR_MAP){
     }
     if(!freecam&&pref.autozoom&&zoom_override>=0){zoom_override=-1;auto_zoom_level=-1;hud_pulse(&hud_navigation,HUD_AUTO_ZOOM,1800);return;}
     int was=freecam;toggle_freecam();if(was!=freecam)hud_pulse(&hud_navigation,freecam?HUD_EXPLORE:(pref.autozoom?HUD_AUTO_ZOOM:HUD_MANUAL_ZOOM),1800);return;}
-  if(code==K_ENTER){if(freecam){pending_lat=cam_lat;pending_lon=cam_lon;pending_point_stop=trip.active?1:0;modal=MOD_ROUTE_POINT;modal_choice=0;}else hud_show_driving_info();return;}
+  if(code==K_ENTER){
+    if(freecam){driving_info_ok_armed=0;pending_lat=cam_lat;pending_lon=cam_lon;pending_point_stop=trip.active?1:0;modal=MOD_ROUTE_POINT;modal_choice=0;}
+    else{
+      u32 now=hud_now_ms();
+      if(driving_info_ok_armed&&now-driving_info_ok_at<HUD_ROAD_NAME_MS){
+        driving_info_ok_armed=0;gps_hud_toggle();
+      }else{
+        hud_show_driving_info();driving_info_ok_at=now;driving_info_ok_armed=1;
+      }
+    }
+    return;
+  }
   if(code==K_UP||code==K_DOWN||code==K_LEFT||code==K_RIGHT){int was=freecam;pan_freecam(code);if(!was&&freecam)hud_pulse(&hud_navigation,HUD_EXPLORE,1800);return;}
   if(code==K_ESC||code==K_SR){
     int z=active_zoom(),up=code==K_SR,lo=mapok?(int)mh.minlvl:0;
-    int hi=freecam?MAX_EXPLORE_ZOOM:(mapok?(int)mh.maxlvl:6);if(!freecam&&hi>6)hi=6;
+    int hi=freecam?MAX_EXPLORE_ZOOM:max_view_zoom();
     int next=z+(up?1:-1);
     if(next>=lo&&next<=hi){
       if(freecam)freecam_zoom=next;
@@ -3266,24 +3438,27 @@ static int control_key(int code){
 static void key_handle(int code){
  overlay_input_serial++;
  boot_fade_cancel();
+ if(code!=K_ENTER)driving_info_ok_armed=0;
  if(code==K_CONSOLE_THEME){pref.theme=(pref.theme+1)%3;prefs_mark_dirty();refresh_theme();render_background_dirty=1;return;}
  if(code==K_CONSOLE_INFO){if(screen==SCR_MAP&&modal==MOD_NONE)hud_show_driving_info();return;}
  if(code==K_CONSOLE_TRIP){if(modal!=MOD_NONE)return;diversion_preview_clear();coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;menu_open(P_TRIP,trip.active_idx,hud_now_ms());return;}
+ if(code==K_CONSOLE_GPS){if(modal!=MOD_NONE)return;gps_hud_toggle();return;}
  menu_sync(hud_now_ms());
  if(modal==MOD_NONE&&(code==K_MENU||screen!=SCR_MAP)){
+  driving_info_ok_armed=0;
   keydiag(code);if(code==K_MENU&&screen==SCR_MAP){diversion_preview_clear();menu_open(P_HOME,0,hud_now_ms());}else menu_dispatch(code,hud_now_ms());return;
  }
  if(code==K_ENTER&&hud_suggestion_shortcut_ready()){
-  hud_suggestion_invited=0;bt_control_mode=0;menu_open_suggestion(hud_now_ms());return;
+  driving_info_ok_armed=0;hud_suggestion_invited=0;bt_control_mode=0;menu_open_suggestion(hud_now_ms());return;
  }
  if(code==K_ENTER&&hud_diversion_shortcut_ready()){
-  hud_diversion_invited=0;bt_control_mode=0;menu_open_diversion(1,hud_now_ms());return;
+  driving_info_ok_armed=0;hud_diversion_invited=0;bt_control_mode=0;menu_open_diversion(1,hud_now_ms());return;
  }
  if(code==K_ENTER&&hud_parking_shortcut_ready()){
-  hud_parking_invited=0;bt_control_mode=0;menu_open_parking(hud_now_ms());return;
+  driving_info_ok_armed=0;hud_parking_invited=0;bt_control_mode=0;menu_open_parking(hud_now_ms());return;
  }
  if(code==K_ENTER&&hud_stop_shortcut_ready()){
-  hud_stop_invited=0;bt_control_mode=0;menu_open_stop(hud_now_ms());return;
+  driving_info_ok_armed=0;hud_stop_invited=0;bt_control_mode=0;menu_open_stop(hud_now_ms());return;
  }
  code=control_key(code);if(!code)return;
  int dirty=render_background_dirty,old_screen=screen,old_popup=popup_requested_key();
@@ -3325,13 +3500,13 @@ static void control_log(const char*tag,int source,int value){
  }s_close((int)fd);
 }
 static void csw_defaults(u16*map){
- const u16 defaults[17]={K_ESC,K_BACK,K_SR,K_CONSOLE_INFO,K_MENU,K_CONSOLE_THEME,K_CONSOLE_INFO,K_CONSOLE_TRIP,K_MAP,
+ const u16 defaults[17]={K_ESC,K_BACK,K_SR,K_CONSOLE_INFO,K_MENU,K_CONSOLE_THEME,K_CONSOLE_GPS,K_CONSOLE_TRIP,K_MAP,
   K_UP,K_DOWN,K_RIGHT,K_LEFT,K_ROTCCW,K_ROTCW,K_ENTER,0};
  for(int i=0;i<17;i++)map[i]=defaults[i];
 }
 static int csw_action(const char*name){
- static const char*names[]={"UP","DOWN","LEFT","RIGHT","OK","ENTER","BACK","ESC","ZOOMOUT","ZOOMIN","SR","MAP","MENU","ROTNEXT","ROTPREV","KNOB+","KNOB-","INFO","TRIP","THEME","NONE","IGNORE"};
- static const u16 codes[]={K_UP,K_DOWN,K_LEFT,K_RIGHT,K_ENTER,K_ENTER,K_BACK,K_ESC,K_ESC,K_SR,K_SR,K_MAP,K_MENU,K_ROTCW,K_ROTCCW,K_ROTCW,K_ROTCCW,K_CONSOLE_INFO,K_CONSOLE_TRIP,K_CONSOLE_THEME,0,0};
+ static const char*names[]={"UP","DOWN","LEFT","RIGHT","OK","ENTER","BACK","ESC","ZOOMOUT","ZOOMIN","SR","MAP","MENU","ROTNEXT","ROTPREV","KNOB+","KNOB-","INFO","TRIP","THEME","GPS","NONE","IGNORE"};
+ static const u16 codes[]={K_UP,K_DOWN,K_LEFT,K_RIGHT,K_ENTER,K_ENTER,K_BACK,K_ESC,K_ESC,K_SR,K_SR,K_MAP,K_MENU,K_ROTCW,K_ROTCCW,K_ROTCW,K_ROTCCW,K_CONSOLE_INFO,K_CONSOLE_TRIP,K_CONSOLE_THEME,K_CONSOLE_GPS,0,0};
  for(unsigned i=0;i<sizeof(codes)/sizeof(codes[0]);i++)if(streq(name,names[i]))return codes[i];return -1;
 }
 /* Parse into a temporary map. A bad/truncated edit cannot half-apply bindings. */

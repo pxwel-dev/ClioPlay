@@ -2,6 +2,7 @@
 
 | Preview | What it shows |
 | --- | --- |
+| [Live GPS HUD (expandable clock pill)](v225-gps-panel.gif) | Real Newcastle driving map showing double-**OK** expanding the top time/temperature pill into the live non-blocking **GPS** HUD (`HH:MM:SS` seconds, recessed compass dial, heading, colour-coded `$GPGST` accuracy, signal bars/satellites, altitude and marine coordinates), staying active beside `BT CTRL`, switching smoothly to the compact `52 px` live strip above a centred confirmation popup, folding to a seconds-only clock pill in **Menu**, and returning smoothly on the driving map. |
 | [Usual route & calibrated ETA ranges](v224-ml-eta-and-habits.gif) | Real clear-road **Durham** (`Gilesgate` → `Neville's Cross`) route with zero traffic congestion, keeping the active route in its normal colour (no yellow) alongside the dashed teal usual road, showing a learned ETA reliability band (`~3-7 min`), **Usual route available · OK to review**, **Use usual route?** (**Based on your usual route**, **View route**), and **Usual route selected** on acceptance. |
 | [Frequent & cold-weather slowdown alerts](v224-ml-slowdowns.gif) | Real **York** (`Station` → `Heworth`) route covering every repeat hard-braking scenario (with traffic diversions off and a solid-magenta route): warm `18 °C` **Frequent slowdown ahead** alert (`40–350 m` ahead), once-per-arc deduplication and automatic 4-second clear, silence at `18 °C` on a cold-only hotspot, **Cold-weather slowdown ahead** firing automatically when temperature drops to `1 °C` (`<= 3 °C`), and a winter-calibrated ETA check via **OK**. |
 | [Usual parking, recurring stops & preferred POIs](v224-ml-parking-and-pois.gif) | Real Newcastle city-centre navigation demonstrating **Usual parking available** → **Route to usual parking?** (**Claremont Road Car Park**, tinting its mapped Parking POI badge in route colour instead of drawing a dot over it), recurring intermediate stop **Usual stop available** → **Add usual stop?** (**Coffee Stop**, marked with a route-coloured stop ring alongside the highlighted Parking POI), and **Trip → Nearby → Fuel** ranking a preferred station first with a cyan star badge. |
@@ -80,13 +81,20 @@ Build and copy the current executables as described in [BUILDING.md](../../BUILD
 With Pillow and a host C/C++ compiler, run from `src/`:
 
 ```sh
+# Regenerate all published GIFs
 python3 tools/regenerate_gifs.py --maps /path/to/clio843/maps
+
+# Regenerate one or more individual GIFs (updates manifest.json in place)
+python3 tools/regenerate_gifs.py --maps /path/to/clio843/maps --only v223-view-diversion
+python3 tools/regenerate_gifs.py --maps /path/to/clio843/maps --list
+
 python3 tools/refresh_latest.py
 ```
 
-Without maps, `python3 tools/regenerate_gifs.py` produces only seven quick
-mapless previews. Use the full map-backed command above before publication;
-it refreshes all GIFs and the provenance manifest.
+Without maps, `python3 tools/regenerate_gifs.py` produces only the mapless
+previews (also supporting `--only` and `--list`). Use the full map-backed
+command above before publication; it refreshes all GIFs and the provenance
+manifest.
 
 The [manifest](manifest.json) records preview, source and executable hashes.
 The map bundle is read in place. Captured PNGs, raw framebuffers and host

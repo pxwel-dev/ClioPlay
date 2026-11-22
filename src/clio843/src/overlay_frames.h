@@ -29,7 +29,7 @@ static void render_paint_overlay(u32 now,u8*rows){
  * Include the raw menu inputs as well as the prepared HUD and popup views. */
 static u32 overlay_model(void){
  u32 hash=2166136261u;
- const int context[]={screen,theme_resolved,pref.language,route_status,freecam,
+ const int context[]={screen,theme_resolved,pref.language,pref.gps_hud,gps_hud_mode(),route_status,freecam,
   bt_control_mode,bt_controls_available(),hud_speed_over,hud_speed_from,
   traffic_offer_valid(),mob_suggest_valid,ml_park_valid,ml_stop_valid,ml_offer_kind,hw_bluetooth_enabled,
   sheet_page,sheet_old_page,sheet_focus,sheet_old_focus,places_tab,sheet_old_tab,
@@ -71,6 +71,10 @@ static u32 overlay_model(void){
   if(screen==SCR_COORDINATES||sheet_old_page==P_COORD||sheet_old_page==P_REVIEW) {
    OVERLAY_HASH(coordinates);
   }
+ }
+ if(pref.gps_hud){
+  const int gps_state[]={gps.fix,local_clock_minutes(),gps.sec,gps.sats,gps.hdop10,gps.gst_dm,gps.alt_valid,gps.alt_dm,gps.lat,gps.lon,gps_accuracy_dm(),gps_panel_heading()};
+  OVERLAY_HASH(gps_state);
  }
  if(popup.from.a||popup.to.a){
   OVERLAY_HASH(popup.card);OVERLAY_HASH(popup.previous);

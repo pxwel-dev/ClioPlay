@@ -4,7 +4,7 @@
 static u16 render_maps[2][FB_PIX] __attribute__((aligned(4)));
 static u16 (*render_front)[FB_PIX]=&render_maps[0],(*render_work)[FB_PIX]=&render_maps[1];
 struct RenderMapScene {
- int zoom;
+ int zoom,close_road_hud;
  u32 state[18];
 };
 static struct {
@@ -106,11 +106,11 @@ static void frame_fb_present(int full,const u8*rows){
  if(fb_flush())render_stats.fb_bytes+=sizeof(fb);
 }
 
-/* Include only inputs that can change the background even with a parked car.
- * Live HUD geometry does not invalidate the held map or its label placement. */
+/* Keep labels steady through HUD animation. Close views refresh once when the
+ * current street moves between the temporary HUD name and the map labels. */
 static struct RenderMapScene render_map_scene(void){
- int route=route_status==R_READY,offer=traffic_offer_valid();
- return (struct RenderMapScene){active_zoom(),{
+ int z=active_zoom(),route=route_status==R_READY,offer=traffic_offer_valid();
+ return (struct RenderMapScene){z,z>6&&crop_road_hud_shown(hud_now_ms()),{
   (u32)freecam,freecam?(u32)cam_lat:0,freecam?(u32)cam_lon:0,
   (u32)gps.fix,(u32)track_valid,(u32)display_course_valid,(u32)mapok,(u32)mapfmt,
   (u32)route,route?(u32)route_n:0,route?(u32)route_head:0,
@@ -119,7 +119,7 @@ static struct RenderMapScene render_map_scene(void){
  }};
 }
 static int render_same_scene(const struct RenderMapScene*a,const struct RenderMapScene*b){
- if(a->zoom!=b->zoom)return 0;
+ if(a->zoom!=b->zoom||a->close_road_hud!=b->close_road_hud)return 0;
  for(unsigned i=0;i<sizeof(a->state)/sizeof(a->state[0]);i++)if(a->state[i]!=b->state[i])return 0;
  return 1;
 }

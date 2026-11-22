@@ -8,7 +8,10 @@ static void console_test_key(int code){
  unsigned source=0,direction=5,rotation=3,pressed=0;
  switch(code){
  case K_ESC:source=1;break;case K_BACK:source=2;break;
- case K_SR:source=3;break;case K_MENU:source=5;break;case K_MAP:source=9;break;
+ case K_SR:source=3;break;case K_CONSOLE_INFO:source=4;break;
+ case K_MENU:source=5;break;case K_CONSOLE_THEME:source=6;break;
+ case K_CONSOLE_GPS:source=7;break;case K_CONSOLE_TRIP:source=8;break;
+ case K_MAP:source=9;break;
  case K_UP:direction=1;break;case K_DOWN:direction=2;break;
  case K_RIGHT:direction=3;break;case K_LEFT:direction=4;break;
  case K_ENTER:pressed=1;break;

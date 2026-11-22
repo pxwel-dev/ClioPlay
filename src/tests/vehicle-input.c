@@ -15,7 +15,7 @@ static void reset_console(void){
 static void write_text(const char*p,const char*s){FILE*f=fopen(p,"wb");assert(f);fputs(s,f);fclose(f);}
 static void console_protocol(void){
  u8 b[28];reset_console();
- const int buttons[]={K_ESC,K_BACK,K_SR,K_CONSOLE_INFO,K_MENU,K_CONSOLE_THEME,K_CONSOLE_INFO,K_CONSOLE_TRIP,K_MAP};
+ const int buttons[]={K_ESC,K_BACK,K_SR,K_CONSOLE_INFO,K_MENU,K_CONSOLE_THEME,K_CONSOLE_GPS,K_CONSOLE_TRIP,K_MAP};
  for(unsigned src=1;src<=9;src++){
   memset(b,255,sizeof(b));put32(b,src);csw_record(b,1000);assert(csw_next()==buttons[src-1]);assert(!csw_next());
   csw_record(b,1100);assert(!csw_next());csw_record(b,1250);assert(!csw_next());csw_record(b,1500);assert(csw_next()==buttons[src-1]);
@@ -45,6 +45,11 @@ static void console_protocol(void){
  write_text(CSW_MAP_PATH,"btn5=OK\n");csw_config_load();assert(csw.map[4]==K_ENTER);
  write_text(CSW_MAP_PATH,"btn5=NOPE\n");csw_config_load();assert(csw.map[4]==K_ENTER);
  s_unlink(CSW_MAP_PATH);csw_config_load();assert(csw.map[4]==K_MENU);
+ /* Repeat (BTN7) defaults to GPS and remains remappable via cswmap.ini. */
+ assert(csw.map[6]==K_CONSOLE_GPS);
+ char gps_map[]="btn4=gps\nbtn7=info\n";assert(csw_parse_config(gps_map,map,&verbose)&&map[3]==K_CONSOLE_GPS&&map[6]==K_CONSOLE_INFO);
+ write_text(CSW_MAP_PATH,"btn7=INFO\n");csw_config_load();memset(b,255,sizeof(b));put32(b,7);csw_record(b,9000);assert(csw_next()==K_CONSOLE_INFO&&!csw_next());
+ s_unlink(CSW_MAP_PATH);csw_config_load();assert(csw.map[6]==K_CONSOLE_GPS);
  puts("Console protocol: buttons with garbage tails, release/hold edges, neutral suppression, detents, framing, queue bounds and atomic same-size config reload passed.");
 }
 static void console_ui(void){
@@ -63,6 +68,15 @@ static void console_ui(void){
  hud_driver_prepare(hud_now_ms());
  assert(hud_tween[HC_ROAD_NAME].target.box.a&&streq(hud_tween[HC_ROAD_NAME].target.title,"Quayside"));
  gps.fix=roadctx.valid=0;
+ /* GPS action toggles the live GPS HUD, stays non-blocking on menus, and defers to modals. */
+ pref.gps_hud=0;
+ key_handle(K_CONSOLE_GPS);assert(pref.gps_hud&&screen==SCR_MAP&&gps_hud_mode()==GPS_HUD_FULL);
+ key_handle(K_CONSOLE_GPS);assert(!pref.gps_hud&&screen==SCR_MAP&&gps_hud_mode()==GPS_HUD_OFF);
+ key_handle(K_CONSOLE_TRIP);assert(sheet_page==P_TRIP);
+ key_handle(K_CONSOLE_GPS);assert(sheet_page==P_TRIP&&pref.gps_hud&&gps_hud_mode()==GPS_HUD_MIN);
+ key_handle(K_MAP);assert(screen==SCR_MAP&&pref.gps_hud&&gps_hud_mode()==GPS_HUD_FULL);
+ key_handle(K_CONSOLE_GPS);assert(!pref.gps_hud);
+ modal=MOD_RESUME_TRIP;key_handle(K_CONSOLE_GPS);assert(modal==MOD_RESUME_TRIP&&!pref.gps_hud);modal=MOD_NONE;
  modal=MOD_RESUME_TRIP;key_handle(K_CONSOLE_TRIP);assert(modal==MOD_RESUME_TRIP&&screen==SCR_MAP);modal=MOD_NONE;
  /* An evdev remote stays usable while the independent console queue runs. */
  int fds[2];assert(pipe(fds)==0);fcntl(fds[0],F_SETFL,O_NONBLOCK);

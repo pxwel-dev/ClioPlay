@@ -143,11 +143,18 @@ It requires Pillow and a host C compiler. Review the changed previews.
 It does not regenerate the complete set or update full publication provenance.
 See the [demo catalogue](demo/README.md).
 
-For maintainers who need to regenerate the complete published preview set:
+For maintainers who need to regenerate the complete published preview set (or
+quickly re-render one or more individual GIFs during development):
 
 ```sh
 python3 tools/regenerate_gifs.py --maps /path/to/your/maps
+python3 tools/regenerate_gifs.py --maps /path/to/your/maps --only v223-view-diversion
+python3 tools/regenerate_gifs.py --maps /path/to/your/maps --list
 ```
+
+Passing `--only` (or `--gif`, with or without `.gif`) renders only the scenes
+and themes required for those previews and merges their updated entries into
+the existing `docs/demo/manifest.json`.
 
 Replace the placeholder with the location of an existing compatible built map
 bundle, directly containing `build.json`, `fonts.cpf` and navigation data.

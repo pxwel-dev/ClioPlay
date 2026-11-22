@@ -171,8 +171,7 @@ V223_VIEW_DIVERSION_EVENTS = (
     (4400, 'draw();assert(hud_diversion_shortcut_ready());key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&confirm_kind==3&&confirm_diversion_kind==0&&sheet_focus==0);'),
     (5600, 'key_handle(K_DOWN);assert(sheet_page==P_CONFIRM&&sheet_focus==2);'),
     (6400, 'key_handle(K_ENTER);assert(sheet_page==P_CLOSED&&freecam&&diversion_preview_active);'),
-    (7700, 'key_handle(K_SR);assert(freecam&&diversion_preview_active);'),
-    (8500, 'key_handle(K_SR);assert(freecam&&diversion_preview_active);'),
+    (8100, 'key_handle(K_SR);assert(freecam&&diversion_preview_active);'),
     (9600, 'key_handle(K_MAP);assert(!freecam&&!diversion_preview_active&&sheet_page==P_CONFIRM&&confirm_kind==3&&sheet_focus==0);'),
     (11000,
      'int expected_n=route_n+traffic_offer_n-1-'
@@ -208,9 +207,9 @@ V224_ML_SLOWDOWNS_EVENTS = (
 V224_ML_SLOWDOWNS_SAMPLES = sorted({0} | {at+step for at,_ in V224_ML_SLOWDOWNS_EVENTS for step in TWEEN_STEPS} | {10700})
 
 V224_ML_ADAPTIVE_HUD_EVENTS = (
-    (1200, 'key_handle(K_SR);assert(active_zoom()==6);for(int i=0;i<3;i++){memzero(ml_zoom_nudged,sizeof(ml_zoom_nudged));ml_note_zoom_override(260,1);}assert(ml_autozoom_offset(260)==1);'),
-    (2600, 'key_handle(K_MAP);assert(zoom_override<0&&active_zoom()==6);'),
-    (4000, 'gps.mph10=460;render_background_dirty=1;assert(active_zoom()==4);'),
+    (1200, 'key_handle(K_SR);assert(active_zoom()==7);for(int i=0;i<3;i++){memzero(ml_zoom_nudged,sizeof(ml_zoom_nudged));ml_note_zoom_override(300,1);}assert(ml_autozoom_offset(300)==1);'),
+    (2600, 'key_handle(K_MAP);assert(zoom_override<0&&active_zoom()==7);'),
+    (4000, 'roadctx.speed=50;roadctx.reverse_speed=50;gps.mph10=500;render_background_dirty=1;assert(active_zoom()==5);'),
     (5300, 'menu_open_setting(0,hud_now_ms());assert(sheet_page==P_SET_DISPLAY&&theme_resolved==0&&pref.bright==90);'),
     (7000, 'gps.hour=20;gps.min=5;refresh_theme();render_background_dirty=1;assert(theme_resolved==1&&pref.bright==30);'),
     (8800, 'key_handle(K_MAP);assert(screen==SCR_MAP&&theme_resolved==1&&pref.bright==30);'),
@@ -228,6 +227,16 @@ V224_ML_PARKING_POIS_EVENTS = (
     (8700, 'key_handle(K_ENTER);assert(sheet_page==P_NEARBY_LIST&&nearby_category==NEARBY_CAT_FUEL&&nearby_count>0&&nearby_pois[0].preferred);'),
 )
 V224_ML_PARKING_POIS_SAMPLES = sorted({0} | {at+step for at,_ in V224_ML_PARKING_POIS_EVENTS for step in TWEEN_STEPS} | {10400})
+
+V225_GPS_PANEL_EVENTS = (
+    (700,  'key_handle(K_ENTER);assert(screen==SCR_MAP&&!pref.gps_hud&&hud_navigation.kind==HUD_JOURNEY);'),
+    (1800, 'gps.sec=5;gps_gst_ms=s_now_ms();key_handle(K_ENTER);assert(screen==SCR_MAP&&pref.gps_hud&&gps_hud_mode()==GPS_HUD_FULL);'),
+    (3000, 'gps.sec=6;gps.sats=10;gps.gst_dm=30;gps_gst_ms=s_now_ms();gps.alt_dm=630;display_course=track_course=gps.course=74;key_handle(K_BACK);assert(bt_control_mode&&gps_hud_mode()==GPS_HUD_FULL);'),
+    (4300, 'gps.sec=7;gps_gst_ms=s_now_ms();key_handle(K_BACK);assert(!bt_control_mode);confirm_kind=0;menu_open(P_CONFIRM,1,hud_now_ms());assert(gps_hud_mode()==GPS_HUD_COMPACT);'),
+    (5800, 'gps.sec=8;gps.gst_dm=40;gps_gst_ms=s_now_ms();gps.alt_dm=640;display_course=track_course=gps.course=76;key_handle(K_MENU);assert(sheet_page==P_HOME&&gps_hud_mode()==GPS_HUD_MIN);'),
+    (7300, 'gps.sec=9;gps_gst_ms=s_now_ms();key_handle(K_MAP);assert(screen==SCR_MAP&&gps_hud_mode()==GPS_HUD_FULL);'),
+)
+V225_GPS_PANEL_SAMPLES = sorted({0} | {at+step for at,_ in V225_GPS_PANEL_EVENTS for step in TWEEN_STEPS} | {8600})
 
 
 
@@ -270,7 +279,7 @@ def catalog(sender_receipts=None):
         key('Scrollbars',f'scrollbar-{name}-bottom',name+' · last page',setup,'key_handle(K_DOWN);'*steps)
 
     motion('Popup animations', 'preview-popups', 'Glass confirmations, animated choices, resizing and dismissal',
-           'preview_enter_explore();settle();', POPUP_EVENTS, POPUP_SAMPLES)
+           'gps.mph10=0;auto_zoom_level=-1;preview_enter_explore();settle();', POPUP_EVENTS, POPUP_SAMPLES)
     status_events = (
         (0, 'gps.fix=0;'),
         (800, 'set_volume(16);'),
@@ -309,7 +318,7 @@ def catalog(sender_receipts=None):
     add('Playback progress','hud-playback-calc','Playback progress and routing progress remain distinct',
         'key_handle(K_BACK);btui.pos=65;btui.dur=180;route_status=R_CALC;set_volume(18);show_phone_connection();draw();hud_capture_ms+=400u;')
     motion('Map', 'preview-zoom-modes', 'Manual zoom, MAP restores Auto, and Explore notices occur once',
-           'settle();pref.autozoom=1;zoom_override=-1;auto_zoom_level=5;hud_capture_ms+=4500u;draw();hud_capture_ms+=350u;draw();',
+           'settle();pref.autozoom=1;zoom_override=-1;auto_zoom_level=-1;hud_capture_ms+=4500u;draw();hud_capture_ms+=350u;draw();',
            ZOOM_MODE_EVENTS, ZOOM_MODE_SAMPLES)
     add('Audio sources','source-aux-unpaired','AUX without a phone',
         'set_band("AUX");btui.connected=btui.playing=0;btui.title[0]=btui.artist[0]=btui.album[0]=0;bt_source_service();')
@@ -366,7 +375,7 @@ def catalog(sender_receipts=None):
            BLUETOOTH_EVENTS, BLUETOOTH_SAMPLES)
     motion('HUD motion', 'hud-speed-warning', 'Speeding warning', road_cleared,
            ((400, 'gps.mph10=390;assert(hud_is_overspeed());'),
-            (2640, 'gps.mph10=240;assert(!hud_is_overspeed());')), SPEED_WARNING_SAMPLES)
+            (2640, 'gps.mph10=300;assert(!hud_is_overspeed());')), SPEED_WARNING_SAMPLES)
     for name, title, setup in [('explore','Explore map','preview_enter_explore();'), ('menu','Main menu','screen=SCR_MENU;'), ('trip-recents','Recent destinations','screen=SCR_TRIP;'), ('trip-favourites','Favourite destinations','screen=SCR_TRIP;trip_tab=1;'), ('itinerary','Current itinerary','screen=SCR_TRIP;trip_pane=1;'), ('phone','Phone connection','screen=SCR_BT;'), ('settings','Settings','screen=SCR_SET;'), ('keyboard','Name a favourite','name_keyboard();')]:
         add('Overview',name,title,setup)
     for i,title in enumerate(('Destinations','Bluetooth','Settings')):
@@ -529,7 +538,7 @@ def catalog(sender_receipts=None):
         key('Arrivals',f'arrived-{name}-continue',f'Confirm arrival at {name}',state,'key_handle(K_ENTER);','assert(modal==MOD_NONE);')
         add('Arrivals',f'arrived-{name}-timeout',f'Automatic arrival completion · {name}',state+'arrival_modal_deadline=s_now_ms()-1;arrival_modal_service();')
     add('Phone destinations','incoming-native-name','Received native destination name','screen=SCR_TRIP;incoming("東京駅 · محطة",\'N\');')
-    phone_received = ('screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;modal=MOD_NONE;settle();'
+    phone_received = ('gps.mph10=0;auto_zoom_level=-1;screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;modal=MOD_NONE;settle();'
                       'incoming_sender("Central Station",1,\'N\',5497370,-161331);'
                       'assert(modal==MOD_NONE&&trip.active&&streq(trip.target[0].name,"Central Station"));'
                       'trip_service();trip_service();')
@@ -598,7 +607,7 @@ def catalog(sender_receipts=None):
         key('Languages','language-'+code,'Language · '+code,'menu_open_setting(7,hud_now_ms());pref.language=0;','key_handle(K_RIGHT);'*i,f'assert(pref.language=={i});')
     key('Languages','language-enter','Choose a language using the picker','menu_open_setting(7,hud_now_ms());pref.language=0;','key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_ENTER);','assert(pref.language==1&&sheet_page==P_SET_SYSTEM);')
     key('Languages','language-backward','Cycle language backwards','menu_open_setting(7,hud_now_ms());','key_handle(K_LEFT);',f'assert(pref.language=={len(languages)-1});')
-    roundabout = 'region_flags|=4;nav_man_type=MAN_ROUNDABOUT;nav_man_exit=3;nav_man_idx=route_head+8;nav_man_m=180;'
+    roundabout = 'roadctx.speed=20;roadctx.speed_flags=2;roadctx.reverse_speed=20;roadctx.reverse_flags=2;gps.mph10=200;auto_zoom_level=-1;region_flags|=4;nav_man_type=MAN_ROUNDABOUT;nav_man_exit=3;nav_man_idx=route_head+8;nav_man_m=180;'
     add('Navigation states','roundabout-guidance','Roundabout circulation and exit number',roundabout,
         note='Controlled third-exit guidance state; production clockwise HUD glyph.')
     motion('HUD motion', 'preview-roundabout-eta', 'Roundabout and journey overview', roundabout + road_cleared,
@@ -658,7 +667,7 @@ def catalog(sender_receipts=None):
     for name,setup in [('stop','MOD_ARRIVED_STOP'),('destination','MOD_ARRIVED_DEST')]:
         key('Dialog controls','arrival-protected-'+name,'Arrival prompt awaits confirmation · '+name,
             f'modal={setup};','key_handle(K_BACK);key_handle(K_MAP);',f'assert(modal=={setup});')
-    for name,setup in [('map-min','manual_zoom=mh.minlvl;'),('map-max','manual_zoom=mh.maxlvl;'),('explore-min','preview_enter_explore();freecam_zoom=mh.minlvl;'),('explore-max','preview_enter_explore();freecam_zoom=MAX_EXPLORE_ZOOM;')]:
+    for name,setup in [('map-min','pref.autozoom=0;manual_zoom=mh.minlvl;'),('map-max','pref.autozoom=0;manual_zoom=mh.maxlvl;'),('explore-min','preview_enter_explore();freecam_zoom=mh.minlvl;'),('explore-max','preview_enter_explore();freecam_zoom=MAX_EXPLORE_ZOOM;')]:
         key('Map boundaries','zoom-boundary-'+name,'Zoom boundary · '+name,setup,
             'key_handle(K_ESC);' if name.endswith('min') else 'key_handle(K_SR);')
     for name,setup in [('disconnected','btui.connected=0;'),('no-track',''),('unavailable','btui.connected=0;copystr(btui.status,sizeof(btui.status),"BT DAEMON ERROR");screen=SCR_BT;')]:
@@ -743,25 +752,25 @@ def modern_menus():
             (7800,'key_handle(K_DOWN);'),(8600,'key_handle(K_ENTER);assert(sheet_page==P_SET_HUD);'),(9400,'key_handle(K_MAP);'))
     samples=sorted({at+step for at,_ in events for step in TWEEN_STEPS}|{9800})
     motion('Menu sheets','preview-menu-tour','On-map Menu, three Trip tabs, Bluetooth actions and Settings',
-           'settle();set_volume(16);draw();hud_capture_ms+=400u;draw();',events,samples)
+           'gps.mph10=0;auto_zoom_level=-1;settle();set_volume(16);draw();hud_capture_ms+=400u;draw();',events,samples)
     motion('Compact Trips', 'preview-trips-layout', 'Itinerary, Recents, Favourites, destination and review',
-           'settle();', TRIPS_LAYOUT_EVENTS, TRIPS_LAYOUT_SAMPLES)
+           'gps.mph10=0;auto_zoom_level=-1;settle();', TRIPS_LAYOUT_EVENTS, TRIPS_LAYOUT_SAMPLES)
     motion('Compact Trips', 'preview-trips-empty', 'Empty trip and coordinate input',
-           'settle();', TRIPS_EMPTY_EVENTS, TRIPS_EMPTY_SAMPLES)
+           'gps.mph10=0;auto_zoom_level=-1;settle();', TRIPS_EMPTY_EVENTS, TRIPS_EMPTY_SAMPLES)
     motion('Compact Trips', 'preview-popups-layout', 'Confirmations and expanded typing keyboard with compact picker',
-           'settle();', POPUPS_LAYOUT_EVENTS, POPUPS_LAYOUT_SAMPLES)
+           'gps.mph10=0;auto_zoom_level=-1;settle();', POPUPS_LAYOUT_EVENTS, POPUPS_LAYOUT_SAMPLES)
     motion('Version 2.1.7', 'preview-v216-coordinates', 'Soft keys cycle axis/delete, Next validates, then name and review',
-           'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_COORDINATES_EVENTS, V216_COORDINATES_SAMPLES)
+           'gps.mph10=0;auto_zoom_level=-1;settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_COORDINATES_EVENTS, V216_COORDINATES_SAMPLES)
     motion('Version 2.1.6', 'preview-v216-hud-settings', 'Top and bottom HUD card side preferences',
-           'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_HUD_SETTINGS_EVENTS, V216_HUD_SETTINGS_SAMPLES)
+           'gps.mph10=0;auto_zoom_level=-1;settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_HUD_SETTINGS_EVENTS, V216_HUD_SETTINGS_SAMPLES)
     motion('Version 2.1.6', 'preview-v216-bluetooth-hidden', 'Simulated Bluetooth hardware flag hides UI entries',
-           'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_BLUETOOTH_HIDDEN_EVENTS, V216_BLUETOOTH_HIDDEN_SAMPLES)
+           'gps.mph10=0;auto_zoom_level=-1;settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_BLUETOOTH_HIDDEN_EVENTS, V216_BLUETOOTH_HIDDEN_SAMPLES)
     motion('Version 2.1.8', 'preview-v216-itinerary', 'Scroll the itinerary and wrap between footer actions',
-           'settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_ITINERARY_EVENTS, V216_ITINERARY_SAMPLES)
+           'gps.mph10=0;auto_zoom_level=-1;settle();pref.top_swap=pref.bottom_swap=0;hw_bluetooth_enabled=1;', V216_ITINERARY_EVENTS, V216_ITINERARY_SAMPLES)
     motion('Intelligent navigation', 'preview-v220-frequent-place', 'Stationary startup: offer, editable Favourite name, save',
-           'settle();', FREQUENT_PLACE_EVENTS, V220_FREQUENT_PLACE_SAMPLES)
+           'gps.mph10=0;auto_zoom_level=-1;settle();', FREQUENT_PLACE_EVENTS, V220_FREQUENT_PLACE_SAMPLES)
     motion('Intelligent navigation', 'preview-v220-destination-prediction', 'Learned destination: BT CTRL, map invitation and confirmation',
-           'settle();', DESTINATION_EVENTS, V220_DESTINATION_SAMPLES)
+           'gps.mph10=0;auto_zoom_level=-1;settle();', DESTINATION_EVENTS, V220_DESTINATION_SAMPLES)
     motion(
         'Intelligent navigation',
         'preview-v220-intelligent-diversions',
@@ -795,7 +804,7 @@ def modern_menus():
         V223_VIEW_DIVERSION_SAMPLES
     )
     motion(
-        'Version 2.2.4 (Unreleased)',
+        'Version 2.2.4',
         'preview-v224-ml-eta-and-habits',
         'Clear-road usual-route proposal and calibrated ETA reliability range on Durham map',
         'preview_ml_eta_habits_seed();settle();',
@@ -803,7 +812,7 @@ def modern_menus():
         V224_ML_ETA_HABITS_SAMPLES
     )
     motion(
-        'Version 2.2.4 (Unreleased)',
+        'Version 2.2.4',
         'preview-v224-ml-slowdowns',
         'Warm repeat hard-braking alert, deduplication, cold-only silence and frosty cold-weather slowdown cue in York',
         'preview_ml_slowdowns_seed();settle();',
@@ -811,7 +820,7 @@ def modern_menus():
         V224_ML_SLOWDOWNS_SAMPLES
     )
     motion(
-        'Version 2.2.4 (Unreleased)',
+        'Version 2.2.4',
         'preview-v224-ml-parking-and-pois',
         'Usual parking confirmation, recurring intermediate stop and preferred Nearby POI ranking',
         'preview_ml_parking_pois_seed();settle();',
@@ -819,15 +828,23 @@ def modern_menus():
         V224_ML_PARKING_POIS_SAMPLES
     )
     motion(
-        'Version 2.2.4 (Unreleased)',
+        'Version 2.2.4',
         'preview-v224-ml-adaptive-hud',
         'Adaptive Auto-zoom per speed band and automatic Day/Night learned brightness switch',
         'preview_ml_adaptive_hud_seed();settle();',
         V224_ML_ADAPTIVE_HUD_EVENTS,
         V224_ML_ADAPTIVE_HUD_SAMPLES
     )
-    add('Menu sheets','empty-receive','Empty itinerary receives phone destinations automatically','trip.active=trip.count=0;menu_open(P_TRIP,0,hud_now_ms());')
-    add_stop='key_handle(K_MENU);key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_DOWN);'
+    motion(
+        'Version 2.2.5',
+        'preview-v225-gps-panel',
+        'Double-OK expands the clock pill into a live driving GPS HUD that stays active beside status pills, adapts cleanly to a compact live strip above centred popups, and folds to a seconds-only clock during menus/Explore',
+        'pref.gps_hud=0;copystr(hud_last_road,sizeof(hud_last_road),"Quayside");hud_road_live=0;gps.sec=4;gps.sats=9;gps.hdop10=8;gps.gst_dm=40;gps_gst_ms=s_now_ms();gps.alt_valid=1;gps.alt_dm=620;settle();',
+        V225_GPS_PANEL_EVENTS,
+        V225_GPS_PANEL_SAMPLES
+    )
+    add('Menu sheets','empty-receive','Empty itinerary receives phone destinations automatically','gps.mph10=0;auto_zoom_level=-1;trip.active=trip.count=0;menu_open(P_TRIP,0,hud_now_ms());')
+    add_stop='gps.mph10=0;auto_zoom_level=-1;key_handle(K_MENU);key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_DOWN);'
     source=add_stop+'key_handle(K_ENTER);key_handle(K_DOWN);'
     favourite=source+'key_handle(K_ENTER);key_handle(K_DOWN);'
     add('Menu sheets','preview-add-stop','Choose Add stop',add_stop,check='assert(sheet_page==P_TRIP&&sheet_focus==trip.count);')
@@ -1094,10 +1111,15 @@ static void preview_map_diversion_seed(void)
 
     display_course_valid = 1;
 
-    /* Match the normal gallery driving zoom, without auto-zoom changes. */
-    pref.autozoom = 0;
-    manual_zoom = 5;
+    /* Drive at the 50 mph dual-carriageway limit so Auto zoom selects Z5. */
+    pref.autozoom = 1;
+    auto_zoom_level = -1;
     zoom_override = -1;
+    roadctx.speed = 50;
+    roadctx.speed_flags = 2;
+    roadctx.reverse_speed = 50;
+    roadctx.reverse_flags = 2;
+    gps.mph10 = 500;
 
     trip.active = 1;
     trip.paused = 0;
@@ -1161,9 +1183,10 @@ static void preview_nearby_seed(void)
     gps.fix = 1;
     gps.course = track_course = display_course = 35;
     display_course_valid = 1;
-    pref.autozoom = 0;
-    manual_zoom = 5;
+    pref.autozoom = 1;
+    auto_zoom_level = -1;
     zoom_override = -1;
+    gps.mph10 = 0;
     hud_road_live = 0;
     hud_last_road[0] = 0;
     roadctx.street[0] = 0;
@@ -1228,11 +1251,15 @@ static void preview_chained_seed(void)
     trip.target[0].lat = route_target_lat = 5498400;
     trip.target[0].lon = route_target_lon = -161900;
     copystr(trip.target[0].name, sizeof(trip.target[0].name), "Royal Victoria Infirmary");
-    pref.autozoom = 0;
-    manual_zoom = 5;
+    pref.autozoom = 1;
+    auto_zoom_level = -1;
     zoom_override = -1;
     gps.fix = 1;
-    gps.mph10 = 260;
+    roadctx.speed = 20;
+    roadctx.speed_flags = 2;
+    roadctx.reverse_speed = 20;
+    roadctx.reverse_flags = 2;
+    gps.mph10 = 200;
     region_flags |= 4;
     hud_road_live = 0;
     hud_last_road[0] = 0;
@@ -1396,9 +1423,14 @@ static void preview_ml_eta_habits_seed(void)
     if (heading >= 0 && heading < 360)
         gps.course = track_course = display_course = heading;
     display_course_valid = 1;
-    pref.autozoom = 0;
-    manual_zoom = 5;
+    pref.autozoom = 1;
+    auto_zoom_level = -1;
     zoom_override = -1;
+    roadctx.speed = 30;
+    roadctx.speed_flags = 2;
+    roadctx.reverse_speed = 30;
+    roadctx.reverse_flags = 2;
+    gps.mph10 = 300;
     trip.active = 1;
     trip.paused = 0;
     trip.count = 1;
@@ -1424,6 +1456,14 @@ static void preview_ml_eta_habits_seed(void)
 static void preview_ml_parking_pois_seed(void)
 {
     preview_nearby_seed();
+    roadctx.speed = 30;
+    roadctx.speed_flags = 2;
+    roadctx.reverse_speed = 30;
+    roadctx.reverse_flags = 2;
+    gps.mph10 = 300;
+    pref.autozoom = 1;
+    auto_zoom_level = -1;
+    zoom_override = -1;
     pref.learn_history = 1;
     pref.destination_predictions = 1;
     pref.diversions = 1;
@@ -1568,11 +1608,15 @@ static void preview_ml_slowdowns_seed(void)
     trip.target[0].lat = route_target_lat = 5396900;
     trip.target[0].lon = route_target_lon = -106400;
     copystr(trip.target[0].name, sizeof(trip.target[0].name), "Heworth");
-    pref.autozoom = 0;
-    manual_zoom = 5;
+    pref.autozoom = 1;
+    auto_zoom_level = -1;
     zoom_override = -1;
+    roadctx.speed = 30;
+    roadctx.speed_flags = 2;
+    roadctx.reverse_speed = 30;
+    roadctx.reverse_flags = 2;
+    gps.mph10 = 300;
     gps.fix = 1;
-    gps.mph10 = 280;
     region_flags |= 4;
     gps.lat = track_lat = route_lat[0];
     gps.lon = track_lon = route_lon[0];
@@ -1604,8 +1648,12 @@ static void preview_ml_adaptive_hud_seed(void)
     pref.moff = 0;
     gps.hour = 13;
     gps.min = 35;
-    gps.mph10 = 260;
-    auto_zoom_level = 5;
+    roadctx.speed = 30;
+    roadctx.speed_flags = 2;
+    roadctx.reverse_speed = 30;
+    roadctx.reverse_flags = 2;
+    gps.mph10 = 300;
+    auto_zoom_level = -1;
     zoom_override = -1;
     ml_note_brightness(0, 90);
     ml_note_brightness(0, 90);
@@ -1619,12 +1667,13 @@ static void preview_ml_adaptive_hud_seed(void)
     hud_observed_route = R_IDLE;
     hud_navigation.kind = HUD_NONE;
     render_background_dirty = 1;
-    assert(theme_resolved == 0 && pref.bright == 90 && active_zoom() == 5);
+    assert(theme_resolved == 0 && pref.bright == 90 && active_zoom() == 6);
 }
 static void preview_enter_explore(void){enter_freecam();explore_sample(500);}
 static void name_keyboard(void){screen=SCR_KEY;keyboard_open_fave_name(5497370,-161331);}
 static void coordinate_digits(const char*s){while(*s){char c=*s++;coordinates.focus=c=='-'?COORD_SIGN:c=='.'?COORD_DOT:c=='0'?COORD_ZERO:c-'1';key_handle(K_ENTER);}}
 static void coordinate_preview(const char*stage){
+ gps.mph10=0;auto_zoom_level=-1;
  clear_trip();menu_open(P_TRIP,0,hud_now_ms());key_handle(K_ENTER);
  assert(screen==SCR_COORDINATES&&coordinates_active&&sheet_page==P_COORD);
  if(streq(stage,"entry"))return;
@@ -1658,7 +1707,7 @@ static void coordinate_route_start(void){
  trip_service();trip_service();assert(route_status==R_CALC);
 }
 static void map_point_preview(const char*stage){
- clear_trip();gps.mph10=0;screen=SCR_MAP;hud_navigation.kind=HUD_NONE;
+ clear_trip();gps.mph10=0;auto_zoom_level=-1;screen=SCR_MAP;hud_navigation.kind=HUD_NONE;
  settle(); /* Seed the persistent clock before any Explore/route transition. */
  u32 clock_at=hud_tween[HC_CLOCK].position_at;
  if(streq(stage,"driving"))return;
@@ -1696,7 +1745,7 @@ static void show_phone_connection(void){
 }
 static void boot_preview(unsigned elapsed){
  spl_render(gallery_night);boot_image_save(fb);boot_fade_load();assert(boot_fade.image);
- gps.fix=0;track_valid=1;trip.active=0;route_status=hud_observed_route=R_IDLE;
+ gps.fix=0;gps.mph10=0;auto_zoom_level=-1;track_valid=1;trip.active=0;route_status=hud_observed_route=R_IDLE;
  route_n=0;memzero(&roadctx,sizeof(roadctx));
  car.tempok=0;car.source[0]=car.volume[0]=0;audio_source_live=0;
  btui.connected=btui.playing=0;bt_control_mode=0;memzero(&af,sizeof(af));
@@ -1706,7 +1755,7 @@ static void gallery_reset(int night){
  hud_capture_clock=1;hud_capture_ms=s_now_ms();gallery_motion=0;diversion_preview_clear();ml_reset();
  bt_hud_link=0;bt_hud_peer[0]=0;bt_active_written=-1;coordinates_active=0;memzero(&coordinates,sizeof(coordinates));
  route_cancel();fixture();restore_route();atlas_active=0;atlas_future_m=atlas_future_cost=0;
- pref=(struct Prefs){50,1,0,0,0,night?THEME_NIGHT:THEME_DAY,0,1,0,0,CLIO_DAY_START,CLIO_NIGHT_START};apply_palette(night);
+ pref=(struct Prefs){50,1,0,1,0,night?THEME_NIGHT:THEME_DAY,0,1,0,0,CLIO_DAY_START,CLIO_NIGHT_START};apply_palette(night);
  mapok=1;screen=SCR_MAP;trip_pane=trip_tab=trip_focus=trip_right_focus=0;menu_focus=set_focus=0;
  bt_page_focus=bt_page_connected_choice=bt_page_dialog_choice=0;
  trip_pick_mode=dest_pick_action=DEST_PICK_NONE;modal_choice=0;modal_index=-1;pending_point_stop=0;
@@ -1715,7 +1764,7 @@ static void gallery_reset(int night){
  kbd_focus=0;kbd_action=KBD_NAME_FAVE;kbd_fave_idx=-1;kbd_text[0]=0;theme_time_part=0;
  btui.album[0]=af.station[0]=af.freq[0]=0;copystr(btui.status,sizeof(btui.status),"BT READY");
  manual_zoom=freecam_zoom=5;zoom_override=-1;auto_zoom_level=-1;route_rerouting=0;
- ui_anim_tick=0;lastfix_valid=1;gps.hour=12;gps.min=35;gps.sec=0;gps.day=21;gps.mon=10;gps.year=2026;gps_fix_ms=s_now_ms();
+ ui_anim_tick=0;lastfix_valid=1;gps.mph10=300;gps.hour=12;gps.min=35;gps.sec=0;gps.day=21;gps.mon=10;gps.year=2026;gps_fix_ms=s_now_ms();
  track_lat=gps.lat;track_lon=gps.lon;display_course=track_course=gps.course=70;
  roadctx.speed=30;roadctx.speed_flags=2;roadctx.reverse_speed=30;roadctx.reverse_flags=2;
  camera_clear();camera_next_ms=s_now_ms()+60000;clock_next_ms=0;region_next_ms=0;region_resolve(gps.lat,gps.lon);
@@ -1770,8 +1819,11 @@ def main():
     ap.add_argument('--frames-only',action='store_true',help='skip gallery pages and overview/GIF assets')
     args=ap.parse_args();maps=args.maps.resolve();out=args.output.resolve();out.mkdir(parents=True,exist_ok=True)
     scenes=catalog(json.loads(args.sender_receipts.read_text()) if args.sender_receipts else None);assert len({s['id'] for s in scenes})==len(scenes)
+    need_splash = True
     if args.scene_ids:
-        selected=set(json.loads(args.scene_ids.read_text()))-{'splash'}
+        raw_selected=set(json.loads(args.scene_ids.read_text()))
+        need_splash='splash' in raw_selected
+        selected=raw_selected-{'splash'}
         scenes=[s for s in scenes if s['id'] in selected]
         assert {s['id'] for s in scenes}==selected, 'Unknown selected scene'
     for theme in args.themes:(out/theme).mkdir(exist_ok=True)
@@ -1808,11 +1860,13 @@ for(int night=0;night<2;night++){THEME_FILTER gallery_night=night;for(unsigned i
         subprocess.run(['c++','-fsanitize=undefined',str(obj),str(build_text('host-pool')),'-o',str(exe)],check=True)
         result=subprocess.run([str(exe),str(temp)],text=True,capture_output=True,timeout=900)
         if result.returncode:raise RuntimeError(result.stdout[-2000:]+'\n'+result.stderr)
-        splash=temp/'splash';subprocess.run(['cc',*[f for f in flags if f!='-DCLIO_UNICODE=1'],str(ROOT/'tests/splash.c'),'-o',str(splash)],check=True)
-        subprocess.run([str(splash),str(temp)],check=True)
+        if need_splash:
+            splash=temp/'splash';subprocess.run(['cc',*[f for f in flags if f!='-DCLIO_UNICODE=1'],str(ROOT/'tests/splash.c'),'-o',str(splash)],check=True)
+            subprocess.run([str(splash),str(temp)],check=True)
         frames={}
         for theme in args.themes:
-            shutil.copyfile(temp/('splash-'+theme+'.rgb565'),temp/theme/'splash.rgb565')
+            if need_splash:
+                shutil.copyfile(temp/('splash-'+theme+'.rgb565'),temp/theme/'splash.rgb565')
             for capture in (temp/theme).rglob('*.rgb565'):
                 raw=capture.read_bytes();png=(out/theme/capture.relative_to(temp/theme)).with_suffix('.png')
                 try:
@@ -1826,7 +1880,8 @@ for(int night=0;night<2;night++){THEME_FILTER gallery_night=night;for(unsigned i
                 decoded.save(png,optimize=True)
                 frames[str(png.relative_to(out))]={'rgb565_sha256':hashlib.sha256(raw).hexdigest(),'png_sha256':sha(png),'width':480,'height':272}
         capture_log=result.stdout.splitlines();print(capture_log[0]);print('Captured',len(frames),'frames.')
-    scenes=[dict(group='Overview',id='splash',title='Boot splash',kind='state',note='Production cliospl framebuffer; grouped image and wordmark.')]+scenes
+    if need_splash:
+        scenes=[dict(group='Overview',id='splash',title='Boot splash',kind='state',note='Production cliospl framebuffer; grouped image and wordmark.')]+scenes
     manifest={'schema':'clioplay-framebuffer-gallery-1','renderer':'Production C draw(), key_handle(), cliospl; native Unicode engine; host UBSan','framebuffer':'480x272 RGB565 decoded to PNG without repainting the UI','map_source':map_manifest['source'],'baseline_route':capture_log[0],'native_sources':native_sources,'executables':binaries,'scenes':[{k:v for k,v in s.items() if k not in ('setup','action','check')} for s in scenes],'frames':frames,'hardware':'Not tested; external events are simulated. Remote commands and state invariants asserted in the harness.'}
     manifest['themes']=args.themes
     final_frames={theme+'/'+scene['id']+'.png' for theme in args.themes for scene in scenes}

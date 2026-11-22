@@ -110,7 +110,8 @@ static void popup_fit_between_pills(struct PopupView*v){
  struct HudBox old=v->box;
  if(!old.a)return;
  int available=bottom-top,h=old.h<available?old.h:available;
- int y=top+(available-h)/2;
+ int y=44+(bottom-44-h)/2;
+ if(y<top)y=top;
  if(y==old.y&&h==old.h)return;
  for(int i=0;i<v->count;i++){
   int rel=v->item[i].y-old.y;
