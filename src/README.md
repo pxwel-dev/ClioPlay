@@ -1,16 +1,18 @@
 # ClioPlay version 2.2.5
 
-Version 2.2.5 adds a live **GPS** information panel (compass dial, heading,
-GPS time to the second, `$GPGST`/HDOP accuracy, satellite count, altitude and
-marine coordinates via double-pressing **Centre / OK** or pressing console
-**REPEAT**), expands **Auto zoom** and manual driving zoom across **Z9–Z4**
-with hysteresis and full close-up vector precision and street names at **Z7–Z9**,
-and tightens **View diversion** / **View route** framing to fill the `480 × 272`
-screen — building on ClioPlay’s offline local learning, Nearby POIs, expandable
-roundabout secondary manoeuvre pill, AVRCP 1.3 instant Bluetooth notifications
-and desktop migration/favourites tools. See
-[intelligent navigation](docs/intelligent-navigation.md) and the
-[changelog](docs/changelog.md).
+Version 2.2.5 adds an expandable live **GPS** HUD built directly into the top
+clock/temperature pill (live seconds, recessed compass dial, heading,
+`$GPGST`/HDOP accuracy, signal bars/satellites, altitude and marine coordinates,
+persisted across restarts, adapting cleanly to popups and folding to a
+seconds-only clock in menus and Explore — toggled via double-pressing
+**Centre / OK** or pressing console **REPEAT**), expands **Auto zoom** and
+manual driving zoom across **Z9–Z4** with hysteresis and full close-up vector
+precision and street names at **Z7–Z9**, and tightens **View diversion** /
+**View route** framing to fill the `480 × 272` screen — building on ClioPlay’s
+offline local learning, Nearby POIs, expandable roundabout secondary manoeuvre
+pill, AVRCP 1.3 instant Bluetooth notifications and desktop
+migration/favourites tools. See [intelligent navigation](docs/intelligent-navigation.md)
+and the [changelog](docs/changelog.md).
 
 ## Set up a card
 
@@ -162,7 +164,7 @@ uses its normal vehicle configuration to supply physical console events.
 | INFO | Briefly show the current road name and, during guidance, the journey estimate. |
 | MENU | Open Menu. |
 | LIGHT | Cycle Day, Night and custom-schedule Auto. |
-| REPEAT | Open and close the live GPS information panel directly. |
+| REPEAT | Toggle the live expandable GPS HUD in the clock pill on or off. |
 | DEST | Open Trip directly, unless a confirmation is awaiting a decision. |
 | MAP | The existing Auto/manual zoom, Explore and return-to-map behaviour. |
 | Joystick | The existing arrow actions, including Explore panning. |
@@ -182,8 +184,8 @@ The example contains the contributor’s conservative bindings; it disables LIGH
 and REPEAT and maps DEST to Menu. Change `btn6=THEME`, `btn7=GPS`, `btn8=TRIP`
 and `btn4=INFO` to keep the integrated defaults. Actions accept upper/lower case;
 `ROTNEXT`/`ROTPREV` or `knob+`/`knob-` select contextual knob movement.
-`GPS` opens the GPS panel and closes it again (default on `btn7` / REPEAT; can
-be moved to another button or replaced with `INFO` or `NONE`).
+`GPS` toggles the live GPS HUD in the clock pill on or off (default on `btn7` /
+REPEAT; can be moved to another button or replaced with `INFO` or `NONE`).
 `NONE` disables a control. Add `verbose=1` for interpreted console-field logging
 while Debug is enabled. File edits, including same-size edits, reload within
 five seconds; invalid/oversize files keep the last valid bindings. Deleting the
@@ -247,7 +249,7 @@ bindings; the defaults provide complete remote-equivalent control.
 | **MAP** | Restore Auto zoom after a temporary manual adjustment; otherwise enter map browsing. | Return to the driving view and the configured zoom mode. | Leave BT CTRL; restore Auto zoom if temporarily adjusted, otherwise enter map browsing. |
 | **MENU** | Open Menu. | Open Menu. | Leave BT CTRL and open Menu. |
 | **BACK** | Enter BT CTRL when Bluetooth audio is selected and a phone is connected. | | Leave BT CTRL. |
-| **Centre / OK** | Press once to briefly show the current road name and (during guidance) ETA and remaining distance; press again within 4 seconds to open the live **GPS** panel. | Open the route or add-stop prompt for the point under the crosshair. | Play or pause. |
+| **Centre / OK** | Press once to briefly show the current road name and (during guidance) ETA and remaining distance; press again within 4 seconds to toggle the live expandable **GPS** HUD on or off. | Open the route or add-stop prompt for the point under the crosshair. | Play or pause. |
 | **Up / Down** | Enter map browsing and pan. | Pan up or down. | |
 | **Left / Right** | Enter map browsing and pan. | Pan left or right. | Previous or next track. |
 | **Left / right soft keys** | Zoom out or in. With Auto zoom enabled, this sets a temporary override. | Zoom out or in. | Zoom out or in on the driving map. |
@@ -257,9 +259,10 @@ show **Manual zoom**. **MAP** restores Auto zoom without entering Explore; a
 subsequent **MAP** enters Explore. Arrow keys can enter Explore and pan directly,
 including from temporary manual zoom. **OK** briefly shows the road name in
 the centre pill and, during guidance, the journey estimate in the status pill;
-pressing **OK** a second time within 4 seconds opens the live **GPS** panel
-(even with no GPS fix or active route, while keeping existing **OK to review**
-invitations, Explore selection and **BT CTRL** playback priority intact).
+pressing **OK** a second time within 4 seconds toggles the live expandable
+**GPS** HUD in the clock pill on or off (even with no GPS fix or active route,
+while keeping existing **OK to review** invitations, Explore selection and
+**BT CTRL** playback priority intact). The state is saved in `prefs.ini`.
 The estimate also appears when a route calculation or reroute finishes.
 
 Explore shows one entry notice. Zooming and panning within Explore neither replay
@@ -314,21 +317,26 @@ At **Z7–Z9**, roads preserve all four fractional bits of Z6’s 12-bit tile co
   select it and press **OK** to start pairing. **Up / Down** or the knob
   selects a device, **OK** opens its Connect/Disconnect and Forget actions, and
   **Up / Down** selects the action. **OK** confirms; **BACK** returns to the list.
-- **GPS:** a live information panel opened directly from the driving map by
+- **GPS HUD (expandable clock pill):** toggle on or off from the driving map by
   pressing **Centre / OK** (or pushing the console knob) twice within 4 seconds,
-  or with a single press of the console **REPEAT** button (`GPS` action). A
-  large compass on the left shows the heading as a light red arrow. Beside it
-  are the GPS time to the second and three columns: **Heading** in degrees with
-  N/NE/E…, estimated horizontal **Accuracy** with the satellite count, and
-  **Altitude** above sea level. The position runs along the bottom in marine
-  degrees and decimal minutes, for example `47° 29.887' N   019° 02.420' E`
-  (mirrored right-to-left in Arabic and Hebrew). When the car stops, the heading
-  and arrow hold the last course, as the map does; without a fix the values show
-  `--` and the bottom row reads **No fix**. Accuracy uses the receiver’s
-  `$GPGST` error estimate when present, otherwise HDOP × 5 m; green, amber and
-  red mark up to 5 m, up to 15 m and worse. Accuracy and altitude follow the
-  Metric/Imperial setting. Press **BACK**, **MAP**, or **REPEAT** again to
-  return directly to the driving map.
+  or with a single press of the console **REPEAT** button (`GPS` action); the
+  preference persists across restarts (`gpshud` in `prefs.ini`). When enabled,
+  the top clock/temperature pill adds live seconds (`HH:MM:SS`, always visible
+  even when collapsed) and smoothly expands downward on the driving map into a
+  non-blocking instrument card (`164 × 148 px`) with a recessed Day/Night
+  compass dial and heading needle, bold **Heading** with cardinal direction,
+  colour-coded horizontal **Accuracy** (preferring `$GPGST` error estimates,
+  otherwise HDOP × 5 m; green up to 5 m, amber up to 15 m, red beyond), rising
+  signal-quality bars with satellite count, and a recessed tray showing
+  **Altitude** above sea level and marine degrees/decimal-minutes **Lat** /
+  **Lon** (mirrored right-to-left in Arabic and Hebrew, following Metric/Imperial
+  units). Without a fix, values show `--` and **No fix**. All driving controls,
+  status notices and `BT CTRL` remain usable beside it. When a popup opens, the
+  card switches smoothly to a compact live GPS strip (`164 × 52 px`: mini
+  compass, heading, accuracy and satellite signal bars) so popups stay centred,
+  and folds to a `27 px` clock pill with seconds while browsing menus or
+  Explore, returning automatically on the driving map. Mirrors cleanly with
+  **Clock left** (`hudtopswap`).
 
 All these pages are animated frosted-glass sheets over the live map. Menu,
 Settings, Bluetooth, Trip, coordinates and review use compact sheets between

@@ -9,6 +9,13 @@ enum {HUD_BOTTOM_MARGIN=8,HUD_SIDE_W=128,HUD_TURN_X=W-HUD_BOTTOM_MARGIN-HUD_SIDE
 #include "hud_status.h"
 #include "hud_playback.h"
 
+enum {GPS_HUD_OFF=0,GPS_HUD_MIN=1,GPS_HUD_COMPACT=2,GPS_HUD_FULL=3};
+enum {GPS_HUD_W=164,GPS_HUD_MIN_TEMP_W=142,GPS_HUD_MIN_W=88,
+ GPS_HUD_COMPACT_H=52,GPS_HUD_FULL_H=148};
+static int gps_hud_mode(void);
+static void gps_time_text(char*b,unsigned cap);
+static void gps_hud_draw(struct HudBox b,const struct HudCard*c,const struct HudTween*t,u32 now);
+
 static int hud_kind,hud_observed_route=R_IDLE;
 static int hud_status_map=-1,hud_status_page=-1;
 static u32 hud_status_frame_at;
@@ -27,7 +34,6 @@ static const char* hud_page_title(void){
  case SCR_BT:return bt_label();
  case SCR_KEY:return ui_tr("Rename");
  case SCR_COORDINATES:return coordinates_title();
- case SCR_GPS:return ui_tr("GPS");
  default:return ui_tr("Settings");
  }
 }
@@ -170,17 +176,28 @@ static void keyboard_surface(int x,int y,int w,int h,int selected){
 }
 static void hud_clock_prepare(u32 now){
  struct HudCard c={0};
- int minute=local_clock_minutes();
- if(minute>=0){
-  int h=minute/60,m=minute%60;
-  c.title[0]='0'+h/10;c.title[1]='0'+h%10;c.title[2]=':';c.title[3]='0'+m/10;c.title[4]='0'+m%10;
+ int mode=gps_hud_mode();
+ c.value=mode;
+ if(mode!=GPS_HUD_OFF){
+  gps_time_text(c.title,sizeof(c.title));
+ }else{
+  int minute=local_clock_minutes();
+  if(minute>=0){
+   int h=minute/60,m=minute%60;
+   c.title[0]='0'+h/10;c.title[1]='0'+h%10;c.title[2]=':';c.title[3]='0'+m/10;c.title[4]='0'+m%10;
+  }
  }
  if(car.tempok&&car_temp_valid(car.temp)){
   int f=pref.units==2||(pref.units==0&&region_iso[0]=='U'&&region_iso[1]=='S');
   append_int(c.detail,sizeof(c.detail),f?car.temp*9/5+32:car.temp);
   appendstr(c.detail,sizeof(c.detail),f?"°F":"°C");
  }
- if(c.title[0]||c.detail[0]){
+ if(mode!=GPS_HUD_OFF){
+  int w=mode==GPS_HUD_MIN?(c.detail[0]?GPS_HUD_MIN_TEMP_W:GPS_HUD_MIN_W):GPS_HUD_W;
+  int h=mode==GPS_HUD_FULL?GPS_HUD_FULL_H:mode==GPS_HUD_COMPACT?GPS_HUD_COMPACT_H:27;
+  int x=pref.top_swap?8:W-8-w;
+  c.box=hud_box(x,8,w,h);
+ }else if(c.title[0]||c.detail[0]){
   int x=c.title[0]&&c.detail[0]?HUD_CLOCK_X:HUD_CLOCK_X+50;
   int w=W-x-8;
   if(pref.top_swap)x=8;
@@ -401,7 +418,11 @@ static void hud_prepare(int z,u32 now,int map){
    if(w>available)w=available;
    if(w<28)w=28;
    x=W-8-w;
-  }else if(map){if(w>HUD_CLOCK_X-16)w=HUD_CLOCK_X-16;}
+  }else if(map){
+   int clock_left=hud_tween[HC_CLOCK].target.box.a?hud_tween[HC_CLOCK].target.box.x:HUD_CLOCK_X;
+   int limit=(clock_left<HUD_CLOCK_X?clock_left:HUD_CLOCK_X)-16;
+   if(w>limit)w=limit;
+  }
   else{
    int left=HUD_MENU_TITLE_X+hud_menu_title.w+HUD_MENU_GAP;
    struct HudBox clock=hud_tween[HC_CLOCK].target.box;
@@ -749,6 +770,16 @@ static struct HudClockLayout hud_clock_content_layout(struct HudBox b){
   left?b.x+b.w-49:b.x+b.w-69
  };
 }
+static struct HudClockLayout hud_clock_header_layout(struct HudBox b,int with_seconds){
+ if(!with_seconds)return hud_clock_content_layout(b);
+ int left=b.x+b.w/2<W/2;
+ int divider=left?b.x+89:b.x+b.w-89;
+ return (struct HudClockLayout){
+  left?b.x+45:b.x+b.w-45,
+  left?(divider+1+b.x+b.w-4)/2:(b.x+4+divider)/2,
+  divider
+ };
+}
 static void hud_draw_card(int id,u32 now){
  if(id==HC_STATUS)hud_diversion_invited=hud_suggestion_invited=hud_parking_invited=hud_stop_invited=0;
  struct HudTween*t=&hud_tween[id];if(!t->seen)return;
@@ -766,6 +797,10 @@ static void hud_draw_card(int id,u32 now){
  switch(id){
  case HC_STATUS:hud_draw_status(b,c,now);break;
  case HC_CLOCK:{
+  if(t->target.value!=GPS_HUD_OFF||b.h>27){
+   gps_hud_draw(b,c,t,now);
+   break;
+  }
   struct HudClockLayout layout=hud_clock_content_layout(b);
   if(!c->title[0]){
    compact_center(x+w/2,y+5,w-12,1,c->detail,C_WHITE);

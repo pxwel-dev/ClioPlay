@@ -1,30 +1,30 @@
 {
   "machine": "ARM7TDMI / ARMv4T",
   "abi": "ELF32 EABI5 soft-float; Linux OABI syscalls",
-  "entry": "0x8e1f4",
-  "bytes": 1178016,
-  "sha256": "a1b14a40b80e31c3dfbdd80055a3f97bbd9046d6716abe3ddb12a94765af86a0",
+  "entry": "0x8e1fc",
+  "bytes": 1183324,
+  "sha256": "16d57fc19bdf947da1852970d51cdb3ae4a0680684f10f438afc4aaafe11f209",
   "sections": {
     ".text": {
-      "address": "0x8e000",
-      "bytes": 544600
+      "address": "0x8e008",
+      "bytes": 549540
     },
     ".rodata": {
       "address": "0x10108",
-      "bytes": 450294
+      "bytes": 450302
     },
     ".data": {
-      "address": "0x122f58",
-      "bytes": 1528
+      "address": "0x1242b0",
+      "bytes": 1536
     },
     ".bss": {
-      "address": "0x123550",
+      "address": "0x1248b0",
       "bytes": 11310128
     }
   },
   "version": "2.2.5",
   "source": "clio843/src/clio040.c",
-  "source_tree_sha256": "fe01072207af20a666b9cf47669ee4ae4f1a4d122a9832b49b5baa969bbee9e4",
+  "source_tree_sha256": "73508fbc6f584d68d48836a935979d11afddd3f5dbd18bffda198856b7285b10",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "7c1c5599a121e702a0fe7ac89fc957e07086e27f20aaf1511971d197de3a39a0",
@@ -36,7 +36,7 @@
     "clio843/src/boot_handoff.h": "085fda60af400019c684dd5ea9d12e799442cfc9b5e54456caf8d2415f66e23b",
     "clio843/src/boot_theme.h": "fa46f1bda9c0f37306c90f34d497192953aa718b30fa688291bbc7a66ddab746",
     "clio843/src/boot_transition.h": "8ea391927a52cf8eaa9f010a70b8f8e012b768346ca9cd297110e40e6a850007",
-    "clio843/src/clio040.c": "34bff4e0ffdc0b96d89acb8bde795d960416314f3651a43861b8913d32d5fb40",
+    "clio843/src/clio040.c": "d472fb8a827d3744561b8f328d4b4417ba1f6fda860eb4089a7cd990e6499f47",
     "clio843/src/clioa2dp.c": "eee113f0a920ca591c740ab0bb429f2765d0e66c3e8829b625a473ce14e037da",
     "clio843/src/cliospl.c": "523530da194e4a859de29b448926f347d70c6c6c243d08d9b048fb68e08e3d33",
     "clio843/src/coordinates.h": "303c229e4c186fab01b092a770a434fca622047b792515df940ddec1983109ef",
@@ -50,8 +50,8 @@
     "clio843/src/global_regions.h": "00772a81c56fefdcf466ce0594c05a9d62983861a6f81be872fb7e474956d647",
     "clio843/src/global_text.cc": "fcc87baf5b5a8073e1043c6a82f4021299f8757b32a8897966f1ed7f8c19cc4f",
     "clio843/src/global_text.h": "afb6807676750c41030d6e6723b933c538774e622881251056c8091a00b48695",
-    "clio843/src/gps_panel.h": "1e7bc00d76730d1ed38dcf108db2d8a57e549f36548540c69157989d7e91e3cc",
-    "clio843/src/hud.h": "9ebd9a16ce8a53d7d0ad0ca0ddc5c75aca251c599f295e9032ade8eb4441c460",
+    "clio843/src/gps_panel.h": "31e8561c3c3087a9e8970faad199049b021d3800d138ae4c386d303b763166f0",
+    "clio843/src/hud.h": "a5de546f9239b007e41b32e6df72d35df9c1b9429504259cb41ce2a4ee117088",
     "clio843/src/hud_glass.h": "e34158dabf25b53ec7e5aa55945305dc69e85001108a7f506fd83f00a1a25f23",
     "clio843/src/hud_playback.h": "a2757e57a552bf1e03a30b7b62b60bf2ade02cf62ddf565531d2eb753f86f881",
     "clio843/src/hud_status.h": "91f9d2cc57aeae72deebee57974292a8c3033631b4cd11b83d57fdececbaeaed",
@@ -66,14 +66,14 @@
     "clio843/src/map_thin_coverage.h": "d4632a1dd789176be35ded06a21b84d272d69910532f31e05dc03fbfc092e5fb",
     "clio843/src/menu_keyboard.h": "394310c060e073c651cbc61a64c69d5ba61cfd4072e43277f70c40b8344e77f9",
     "clio843/src/menu_layout.h": "c413f261277151f8bd9be15f08cc896a41fc186619ec607501c1a18a463bd23e",
-    "clio843/src/menu_sheet.h": "d3b63c7d918a41d2e9ef3bf48c28ac8168bc9d2f702a31d967896bd81118b552",
+    "clio843/src/menu_sheet.h": "e2068ba47e7e7dd4ad49d6c2b40eae7dcfe7fd5477b8338d9217709bde5428eb",
     "clio843/src/mobility.h": "211cdf5c443e18d287cd455c9b6e6bfbabc0ae260fc1c319b326cbc5cdfa5fc5",
     "clio843/src/mobility_ml.h": "8f24e0362a9623227c2bd063a8cb5cdd544b010b3b22e7d7b57eb7c4c5c790c2",
     "clio843/src/nav_roundabout.h": "470390303a8f18184a020710012ea0353d0425c26a1381bbaa4064ca2d7f39be",
     "clio843/src/nearby_pois.h": "10ef610b741b7f7a49810350875f827068c8115330549ff5da5e74690a0e8038",
-    "clio843/src/overlay_frames.h": "a6095b5b460d500664a7075c677a6b7f4b5e69f11e317a387efe73a47e92ebfa",
+    "clio843/src/overlay_frames.h": "b1b6e79491dad7a2a62004f999793bccfef7bb6580b3a877777c284f4537557c",
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
-    "clio843/src/popups.h": "be8c8b0af2e7b9d833ad7733a48670204ff37d227ba15dfc8cfb3b3f3095fe59",
+    "clio843/src/popups.h": "b16c75163580e2fbbe17a9359bc473d368a57c3c8c2347b5d5f56ce73295f61d",
     "clio843/src/release_version.h": "80d77ba41b0c0f7da2c3bd0cc39dcc7aebfae809619f1007d693d768c96c917f",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
     "clio843/src/splash_icon.h": "1c0cb3bf3be97ce49cdf626bc0184b0736b49fee877a92f5bf2e5cb2d0ec17eb",

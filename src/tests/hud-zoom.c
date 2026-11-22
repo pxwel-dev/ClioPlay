@@ -77,10 +77,12 @@ static void driving_info(void){
   assert(screen==SCR_MAP&&!!name->target.box.a==named);
   hud_driver_prepare(20000);assert(!name->target.box.a);
   assert(!!hud_tween[HC_ROAD].target.box.a==guidance);
-  /* Pressing OK twice within 4 s opens the GPS panel; BACK returns to the map. */
-  prepare(20500);key_handle(K_ENTER);assert(screen==SCR_MAP);
-  prepare(21500);key_handle(K_ENTER);assert(screen==SCR_GPS&&sheet_page==P_GPS&&!sheet_depth);
-  key_handle(K_BACK);assert(screen==SCR_MAP&&sheet_page==P_CLOSED);
+  /* Pressing OK twice within 4 s toggles the live GPS HUD on/off on the map. */
+  pref.gps_hud=0;
+  prepare(20500);key_handle(K_ENTER);assert(screen==SCR_MAP&&!pref.gps_hud);
+  prepare(21500);key_handle(K_ENTER);assert(screen==SCR_MAP&&pref.gps_hud&&gps_hud_mode()==GPS_HUD_FULL);
+  prepare(22500);key_handle(K_ENTER);assert(screen==SCR_MAP&&pref.gps_hud);
+  prepare(23000);key_handle(K_ENTER);assert(screen==SCR_MAP&&!pref.gps_hud&&gps_hud_mode()==GPS_HUD_OFF);
  }
  camera_clear();roadctx=(struct RoadCtx){0};
 }

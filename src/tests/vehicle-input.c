@@ -68,11 +68,15 @@ static void console_ui(void){
  hud_driver_prepare(hud_now_ms());
  assert(hud_tween[HC_ROAD_NAME].target.box.a&&streq(hud_tween[HC_ROAD_NAME].target.title,"Quayside"));
  gps.fix=roadctx.valid=0;
- /* GPS action toggles its panel, BACK closes it, and it replaces an open sheet. */
- key_handle(K_CONSOLE_GPS);assert(sheet_page==P_GPS&&screen==SCR_GPS);key_handle(K_CONSOLE_GPS);assert(screen==SCR_MAP);
- key_handle(K_CONSOLE_GPS);key_handle(K_BACK);assert(screen==SCR_MAP);
- key_handle(K_CONSOLE_TRIP);key_handle(K_CONSOLE_GPS);assert(sheet_page==P_GPS);key_handle(K_BACK);assert(screen==SCR_MAP);
- modal=MOD_RESUME_TRIP;key_handle(K_CONSOLE_GPS);assert(modal==MOD_RESUME_TRIP&&screen==SCR_MAP);modal=MOD_NONE;
+ /* GPS action toggles the live GPS HUD, stays non-blocking on menus, and defers to modals. */
+ pref.gps_hud=0;
+ key_handle(K_CONSOLE_GPS);assert(pref.gps_hud&&screen==SCR_MAP&&gps_hud_mode()==GPS_HUD_FULL);
+ key_handle(K_CONSOLE_GPS);assert(!pref.gps_hud&&screen==SCR_MAP&&gps_hud_mode()==GPS_HUD_OFF);
+ key_handle(K_CONSOLE_TRIP);assert(sheet_page==P_TRIP);
+ key_handle(K_CONSOLE_GPS);assert(sheet_page==P_TRIP&&pref.gps_hud&&gps_hud_mode()==GPS_HUD_MIN);
+ key_handle(K_MAP);assert(screen==SCR_MAP&&pref.gps_hud&&gps_hud_mode()==GPS_HUD_FULL);
+ key_handle(K_CONSOLE_GPS);assert(!pref.gps_hud);
+ modal=MOD_RESUME_TRIP;key_handle(K_CONSOLE_GPS);assert(modal==MOD_RESUME_TRIP&&!pref.gps_hud);modal=MOD_NONE;
  modal=MOD_RESUME_TRIP;key_handle(K_CONSOLE_TRIP);assert(modal==MOD_RESUME_TRIP&&screen==SCR_MAP);modal=MOD_NONE;
  /* An evdev remote stays usable while the independent console queue runs. */
  int fds[2];assert(pipe(fds)==0);fcntl(fds[0],F_SETFL,O_NONBLOCK);

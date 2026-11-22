@@ -25,9 +25,10 @@ static void test_hardware(void){
  key_handle(K_BACK);assert(sheet_page==P_HOME);
  menu_open(P_PHONE,0,hud_now_ms());assert(sheet_page==P_HOME);
  screen=SCR_MAP;menu_sync(hud_now_ms());key_handle(K_BACK);assert(!bt_control_mode);
- /* GPS panel stays directly reachable without Bluetooth hardware. */
- key_handle(K_CONSOLE_GPS);assert(sheet_page==P_GPS&&screen==SCR_GPS&&!sheet_depth);
- key_handle(K_BACK);assert(screen==SCR_MAP&&sheet_page==P_CLOSED);
+ /* GPS HUD toggle stays directly reachable without Bluetooth hardware. */
+ pref.gps_hud=0;
+ key_handle(K_CONSOLE_GPS);assert(pref.gps_hud&&screen==SCR_MAP&&gps_hud_mode()==GPS_HUD_FULL);
+ key_handle(K_CONSOLE_GPS);assert(!pref.gps_hud&&screen==SCR_MAP&&gps_hud_mode()==GPS_HUD_OFF);
  pref.cameras=2;char b[96];assert(streq(setting_value(4,b),ui_tr("Visual")));
  set_focus=4;settings_key(K_RIGHT);assert(pref.cameras<2);
  hardware_file("  export hw_bluetooth='1'\n");
@@ -48,6 +49,15 @@ static void test_clock_stays_outside(void){
  /* A lone time value remains anchored near the outer edge. */
  assert(hud_clock_content_layout(hud_box(8,8,68,27)).time_x<45);
  assert(hud_clock_content_layout(hud_box(W-76,8,68,27)).time_x>W-45);
+ /* Expanded GPS header with seconds keeps identical left/right mirror symmetry. */
+ for(int i=0;i<2;i++){
+  int w=i?GPS_HUD_W:GPS_HUD_MIN_TEMP_W;
+  struct HudClockLayout gl=hud_clock_header_layout(hud_box(8,8,w,27),1);
+  struct HudClockLayout gr=hud_clock_header_layout(hud_box(W-8-w,8,w,27),1);
+  assert(gl.time_x<gl.divider_x&&gl.divider_x<gl.temp_x);
+  assert(gr.temp_x<gr.divider_x&&gr.divider_x<gr.time_x);
+  assert(gl.time_x==W-gr.time_x&&gl.temp_x==W-gr.temp_x&&gl.divider_x==W-gr.divider_x);
+ }
 }
 static void test_speed_stays_outside(void){
  /* Speed faces the outer edge; the speed-limit inset faces the map. */

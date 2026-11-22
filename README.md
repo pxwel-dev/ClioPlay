@@ -11,7 +11,7 @@
 
 ## Version 2.2.5
 
-- **Live GPS information panel:** displays a large antialiased compass dial with heading arrow, GPS time to the second, **Heading** (degrees and cardinal), colour-coded horizontal **Accuracy** (preferring NMEA `$GPGST` error estimates with HDOP × 5 m fallback) and satellite count, **Altitude** above sea level, and marine degrees/decimal-minutes coordinates across all 18 languages (including RTL mirroring for Arabic/Hebrew) and Metric/Imperial units. Open directly from the driving map by pressing **Centre / OK** (or pushing the console knob) twice within 4 seconds, or with one press of the console **REPEAT** button (`btn7`); press **BACK**, **MAP**, or **REPEAT** again to close.
+- **Expandable live GPS HUD (built into the clock pill):** smoothly expands the top time/temperature pill downward on the driving map to show live seconds (`HH:MM:SS`), a recessed Day/Night compass dial with aligned cardinal markers and heading needle, bold heading (`074° NE`), colour-coded horizontal **Accuracy** (`$GPGST` with HDOP × 5 m fallback), signal bars with satellite count, and a recessed **Altitude / Lat / Lon** tray across all 18 languages (RTL-mirrored in Arabic/Hebrew), Metric/Imperial units, and **Clock left/right** layouts. Stays active and non-blocking beside status notices and `BT CTRL`, switches cleanly to a compact live GPS strip (`52 px`) above popups so popups stay centred, folds to a seconds-only clock pill during menus and Explore, and persists across restarts (`prefs.ini`). Toggle on/off by pressing **Centre / OK** (or the console knob) twice within 4 seconds on the driving map, or with one press of console **REPEAT** (`btn7`).
 - **Expanded Auto zoom (Z9–Z4) & close-up manual zoom:** selects Z9 (`< 5 mph`), Z8 (`5–12 mph`), Z7 (`12–25 mph`), Z6 (`25–45 mph`), Z5 (`45–65 mph`) and Z4 (`≥ 65 mph`) with proportional speed hysteresis (`4/6`, `10/14`, `23/27`, `42/48`, `62/68 mph`) so speed fluctuations near a boundary never oscillate zoom; manual driving zoom and Adaptive Auto-zoom clamping also extend across Z4–Z9.
 - **Close-up vector precision & street names (Z7–Z9):** preserves full sub-unit Z6 vertex precision and places street names beside visible road segments at Z7–Z9 (avoiding the route, car marker and HUD pills) using existing map packs with no rebuild required.
 - **Tighter View diversion / View route framing:** opens Explore tightly fitted and vertically centred around the proposed diversion or usual-route loop across the full `480 × 272` viewport (up to Z9).
@@ -23,6 +23,18 @@ See [version history](CHANGELOG.md) for implemented changes by version, [intelli
 
 See the [full preview index](src/docs/demo/README.md) for all animations.
 
+| Live expandable GPS HUD | View and take a diversion |
+| --- | --- |
+| ![Double-OK expands the clock pill into a live driving GPS HUD with seconds, compass dial, heading, accuracy, satellites, altitude and coordinates, adapting cleanly to popups and menus](src/docs/demo/v225-gps-panel.gif) | ![Preview a proposed real-map diversion tightly framed in Explore, inspect the junction, return via MAP and accept](src/docs/demo/v223-view-diversion.gif) |
+
+| Dynamically-resizing, animated frosted-glass menu | Expandable secondary manoeuvre cue |
+| --- | --- |
+| ![Animated on-map menus, Itinerary, Recents, Favourites, Bluetooth actions and Settings](src/docs/demo/menus.gif) | ![Secondary Then pill expanding for a follow-up roundabout with exit number visible and staying compact for normal turns](src/docs/demo/v223-secondary-manoeuvre.gif) |
+
+| Send a destination with [ClioPlay Send](https://pxwel-dev.github.io/ClioPlay-Send/) | Bluetooth playback and volume |
+| --- | --- |
+| <img src="src/docs/demo/phone-destination.gif" width="391"> | <img src="src/docs/demo/bluetooth.gif" width="391"> |
+
 | Usual route & calibrated ETA ranges | Frequent & cold-weather slowdown alerts |
 | --- | --- |
 | ![Clear-road Durham route showing calibrated ETA reliability range, Usual route available with normal active route colour plus dashed teal alternative, and Use usual route? confirmation](src/docs/demo/v224-ml-eta-and-habits.gif) | ![Real York route showing warm Frequent slowdown ahead alert, deduplication, silence on a cold-only spot at 18 C, Cold-weather slowdown ahead at 1 C and winter-calibrated ETA](src/docs/demo/v224-ml-slowdowns.gif) |
@@ -31,41 +43,29 @@ See the [full preview index](src/docs/demo/README.md) for all animations.
 | --- | --- |
 | ![Usual parking review with route-coloured Parking POI highlight, recurring intermediate stop ring and preferred Fuel POI star ranking in Newcastle](src/docs/demo/v224-ml-parking-and-pois.gif) | ![Adaptive Auto-zoom learning speed-band preferences and Auto Day-to-Night theme transition automatically applying learned brightness levels](src/docs/demo/v224-ml-adaptive-hud.gif) |
 
-| Offline Nearby POIs | Expandable secondary manoeuvre cue |
+| Offline Nearby POIs | Driving and camera alerts |
 | --- | --- |
-| ![Browse nearby hospitals and fuel stations offline in Newcastle and add a stop to the itinerary](src/docs/demo/v223-nearby-pois.gif) | ![Secondary Then pill expanding for a follow-up roundabout with exit number visible and staying compact for normal turns](src/docs/demo/v223-secondary-manoeuvre.gif) |
-
-| View and take a diversion | Destination prediction |
-| --- | --- |
-| ![Preview a proposed real-map diversion in Explore, inspect the junction, return via MAP and accept](src/docs/demo/v223-view-diversion.gif) | ![Learned destination in the driving HUD with explicit review](src/docs/demo/v220-destination-prediction.gif) |
-
-| Frequent-place suggestion | Send a destination with [ClioPlay Send](https://pxwel-dev.github.io/ClioPlay-Send/) |
-| --- | --- |
-| <img src="src/docs/demo/v220-frequent-place.gif" width="391"> | <img src="src/docs/demo/phone-destination.gif" width="391"> |
-
-| Driving and camera alerts | Dynamically-resizing, animated frosted-glass menu |
-| --- | --- |
-| ![Driving with a temporary road name and a camera warning](src/docs/demo/driving.gif) | ![Animated on-map menus, Itinerary, Recents, Favourites, Bluetooth actions and Settings](src/docs/demo/menus.gif) |
-
-| Bluetooth playback and volume | Shared status notifications |
-| --- | --- |
-| ![Temporary volume notice, Bluetooth playback controls and track progress](src/docs/demo/bluetooth.gif) | ![GPS acquisition and recovery, phone connection, volume and no-active-route notices share one animated pill](src/docs/demo/status-notifications.gif) |
+| ![Browse nearby hospitals and fuel stations offline in Newcastle and add a stop to the itinerary](src/docs/demo/v223-nearby-pois.gif) | ![Driving with a temporary road name and a camera warning](src/docs/demo/driving.gif) |
 
 | Speeding warning | Browse and zoom the map |
 | --- | --- |
 | ![The speed pill pulses red above a confirmed limit and settles when speed drops](src/docs/demo/speed-warning.gif) | ![Switching to map browsing, panning, zooming and returning to guidance](src/docs/demo/map-browsing.gif) |
 
-| Roundabout route guidance and ETA | Add a stop from favourites |
+| Destination prediction | Frequent-place suggestion |
 | --- | --- |
-| ![Third-exit roundabout guidance and journey overview on pressing OK](src/docs/demo/roundabout-eta.gif) | ![Adding a saved favourite to the itinerary before the destination](src/docs/demo/add-stop.gif) |
+| ![Learned destination in the driving HUD with explicit review](src/docs/demo/v220-destination-prediction.gif) | ![Stationary startup frequent-place suggestion opening the editable favourite keyboard](src/docs/demo/v220-frequent-place.gif) |
 
-| Manual coordinate route | Route to a point on the map |
+| Route to a point on the map | Manual coordinate route |
 | --- | --- |
-| ![Enter latitude and longitude, name the destination, calculate the route and find it in Recents](src/docs/demo/coordinate-route.gif) | ![Enter Explore, pan the crosshair, press OK and confirm a route to the selected point](src/docs/demo/map-point-route.gif) |
+| ![Enter Explore, pan the crosshair, press OK and confirm a route to the selected point](src/docs/demo/map-point-route.gif) | ![Enter latitude and longitude, name the destination, calculate the route and find it in Recents](src/docs/demo/coordinate-route.gif) |
 
-| HUD Customisability | Song and radio updates |
+| HUD customisability | Roundabout route guidance and ETA |
 | --- | --- |
-| ![Change top and bottom bar pill positions in settings](src/docs/demo/v216-hud-settings.gif) | ![A new song appears, updates inside Bluetooth control, then radio tuning changes the frequency](src/docs/demo/metadata-updates.gif) |
+| ![Change top and bottom bar pill positions in settings](src/docs/demo/v216-hud-settings.gif) | ![Third-exit roundabout guidance and journey overview on pressing OK](src/docs/demo/roundabout-eta.gif) |
+
+| Song and radio updates | Shared status notifications |
+| --- | --- |
+| ![A new song appears, updates inside Bluetooth control, then radio tuning changes the frequency](src/docs/demo/metadata-updates.gif) | ![GPS acquisition and recovery, phone connection, volume and no-active-route notices share one animated pill](src/docs/demo/status-notifications.gif) |
 
 ## Compatibility
 
@@ -147,7 +147,7 @@ upper-right console buttons act as the remote's soft keys.
 | **MAP** | **MAP** | Restore Auto zoom after temporary manual zoom; return from **View diversion** to re-open the confirmation; otherwise switch between driving and map browsing, or return to driving from a menu. |
 | **MENU** | **MENU** | Open the menu for Trip, Bluetooth and Settings. |
 | **BACK** | **BACK** | Go back or dismiss a dialog. On the driving map with Bluetooth audio selected and a phone connected, toggle **BT CTRL**. |
-| **Centre / OK** | **Press the knob** | On the driving map, press once to briefly show the current road name and (during guidance) ETA/distance, or press twice within 4 seconds to open the live **GPS** panel. In map browsing, select the crosshair point. In **BT CTRL**, play/pause. In menus, select or confirm. |
+| **Centre / OK** | **Press the knob** | On the driving map, press once to briefly show the current road name and (during guidance) ETA/distance, or press twice within 4 seconds to toggle the live expandable **GPS** HUD. In map browsing, select the crosshair point. In **BT CTRL**, play/pause. In menus, select or confirm. |
 | **Up / Down** | **Joystick up / down** | Enter map browsing and pan, or move through menu rows. |
 | **Left / Right** | **Joystick left / right** | Enter map browsing and pan, change tabs/options/settings, or select dialog choices. In **BT CTRL**, previous/next track. |
 | **Left soft key** | **Upper-left button** | Zoom out; delete a character in coordinate/name entry. |
@@ -161,14 +161,14 @@ the row's OK action. Back returns to the category list.
 
 Console shortcuts: **DEST** opens Trip; **LIGHT** cycles Day/Night/Auto;
 **INFO** shows the current road name on the driving map and adds the journey
-estimate during guidance; **REPEAT** opens and closes the live GPS panel.
+estimate during guidance; **REPEAT** toggles the live expandable GPS HUD.
 Resume and arrival prompts must still be confirmed. No long press is needed for any remote action.
 
 If you adjust the zoom while Auto zoom is enabled, **MAP** restores Auto zoom
 without entering Explore. Press **MAP** again to enter Explore, or use an arrow
 to enter Explore and pan directly. **OK** shows the road name and, during
-guidance, the ETA; pressing **OK** a second time within 4 seconds opens the live
-GPS panel. This also works during temporary Manual zoom.
+guidance, the ETA; pressing **OK** a second time within 4 seconds toggles the
+live GPS HUD on or off. This also works during temporary Manual zoom.
 
 See the [full remote and console controls guide](src/README.md#remote-and-console-controls) for actions in
 each screen, including settings, pairing and the favourite keyboard.
@@ -214,7 +214,7 @@ Original ClioPlay development includes:
 ### Contributions and acknowledgements
 
 - [bobczan/Renatka](https://github.com/bobczan/Renatka) — physical Renault console protocol, button mappings and alternative vehicle temperature interface, subsequently integrated into ClioPlay's native application.
-- [qspi](https://github.com/qspi) — live GPS information panel layout and NMEA `$GPGST`/HDOP/altitude support ([PR #8](https://github.com/pxwel-dev/ClioPlay/pull/8)).
+- [qspi](https://github.com/qspi) — NMEA `$GPGST`/HDOP/altitude parsing, antialiased compass dial and initial GPS information panel ([PR #8](https://github.com/pxwel-dev/ClioPlay/pull/8)), subsequently adapted into the expandable live GPS HUD.
 - [OpenStreetMap](https://www.openstreetmap.org/copyright) and its contributors — geographic and navigation data.
 - [Geofabrik](https://www.geofabrik.de/) — distribution of regional OpenStreetMap extracts.
 

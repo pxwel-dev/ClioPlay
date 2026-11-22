@@ -229,13 +229,14 @@ V224_ML_PARKING_POIS_EVENTS = (
 V224_ML_PARKING_POIS_SAMPLES = sorted({0} | {at+step for at,_ in V224_ML_PARKING_POIS_EVENTS for step in TWEEN_STEPS} | {10400})
 
 V225_GPS_PANEL_EVENTS = (
-    (800,  'key_handle(K_ENTER);assert(screen==SCR_MAP&&sheet_page==P_CLOSED&&hud_navigation.kind==HUD_JOURNEY);'),
-    (2000, 'gps.sec=5;gps_gst_ms=s_now_ms();key_handle(K_ENTER);assert(screen==SCR_GPS&&sheet_page==P_GPS&&!sheet_depth);'),
-    (3000, 'gps.sec=6;gps.sats=10;gps.gst_dm=30;gps_gst_ms=s_now_ms();gps.alt_dm=630;display_course=track_course=gps.course=74;'),
-    (4000, 'gps.sec=7;gps.sats=10;gps.gst_dm=40;gps_gst_ms=s_now_ms();gps.alt_dm=640;display_course=track_course=gps.course=76;'),
-    (5200, 'gps.sec=8;key_handle(K_BACK);assert(screen==SCR_MAP&&sheet_page==P_CLOSED);'),
+    (700,  'key_handle(K_ENTER);assert(screen==SCR_MAP&&!pref.gps_hud&&hud_navigation.kind==HUD_JOURNEY);'),
+    (1800, 'gps.sec=5;gps_gst_ms=s_now_ms();key_handle(K_ENTER);assert(screen==SCR_MAP&&pref.gps_hud&&gps_hud_mode()==GPS_HUD_FULL);'),
+    (3000, 'gps.sec=6;gps.sats=10;gps.gst_dm=30;gps_gst_ms=s_now_ms();gps.alt_dm=630;display_course=track_course=gps.course=74;key_handle(K_BACK);assert(bt_control_mode&&gps_hud_mode()==GPS_HUD_FULL);'),
+    (4300, 'gps.sec=7;gps_gst_ms=s_now_ms();key_handle(K_BACK);assert(!bt_control_mode);confirm_kind=0;menu_open(P_CONFIRM,1,hud_now_ms());assert(gps_hud_mode()==GPS_HUD_COMPACT);'),
+    (5800, 'gps.sec=8;gps.gst_dm=40;gps_gst_ms=s_now_ms();gps.alt_dm=640;display_course=track_course=gps.course=76;key_handle(K_MENU);assert(sheet_page==P_HOME&&gps_hud_mode()==GPS_HUD_MIN);'),
+    (7300, 'gps.sec=9;gps_gst_ms=s_now_ms();key_handle(K_MAP);assert(screen==SCR_MAP&&gps_hud_mode()==GPS_HUD_FULL);'),
 )
-V225_GPS_PANEL_SAMPLES = sorted({0} | {at+step for at,_ in V225_GPS_PANEL_EVENTS for step in TWEEN_STEPS} | {6100})
+V225_GPS_PANEL_SAMPLES = sorted({0} | {at+step for at,_ in V225_GPS_PANEL_EVENTS for step in TWEEN_STEPS} | {8600})
 
 
 
@@ -837,8 +838,8 @@ def modern_menus():
     motion(
         'Version 2.2.5',
         'preview-v225-gps-panel',
-        'Double-OK from driving map opens the live GPS panel (compass, time, heading, accuracy, altitude, coordinates) and BACK closes it',
-        'copystr(hud_last_road,sizeof(hud_last_road),"Quayside");hud_road_live=0;gps.sec=4;gps.sats=9;gps.hdop10=8;gps.gst_dm=40;gps_gst_ms=s_now_ms();gps.alt_valid=1;gps.alt_dm=620;settle();',
+        'Double-OK expands the clock pill into a live driving GPS HUD that stays active beside status pills, adapts cleanly to a compact live strip above centred popups, and folds to a seconds-only clock during menus/Explore',
+        'pref.gps_hud=0;copystr(hud_last_road,sizeof(hud_last_road),"Quayside");hud_road_live=0;gps.sec=4;gps.sats=9;gps.hdop10=8;gps.gst_dm=40;gps_gst_ms=s_now_ms();gps.alt_valid=1;gps.alt_dm=620;settle();',
         V225_GPS_PANEL_EVENTS,
         V225_GPS_PANEL_SAMPLES
     )

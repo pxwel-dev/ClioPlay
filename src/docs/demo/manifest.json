@@ -9,8 +9,8 @@
     "clio843/src/map_thin_coverage.h": "d4632a1dd789176be35ded06a21b84d272d69910532f31e05dc03fbfc092e5fb",
     "clio843/src/atlas_router.h": "06460b55663bd7b617e3cff557b1ac39abd178f27af0ba703615c39ec5349941",
     "clio843/src/boot_art.h": "367249c4bf35acfa7ce5092dce4a906c566d5e9e818d1bbd3d65c35ba128dbeb",
-    "clio843/src/popups.h": "be8c8b0af2e7b9d833ad7733a48670204ff37d227ba15dfc8cfb3b3f3095fe59",
-    "clio843/src/hud.h": "9ebd9a16ce8a53d7d0ad0ca0ddc5c75aca251c599f295e9032ade8eb4441c460",
+    "clio843/src/popups.h": "b16c75163580e2fbbe17a9359bc473d368a57c3c8c2347b5d5f56ce73295f61d",
+    "clio843/src/hud.h": "a5de546f9239b007e41b32e6df72d35df9c1b9429504259cb41ce2a4ee117088",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
     "clio843/src/audio_schedule.h": "bf37e189f7a0f372567287380820a357878fc1aaf519f85309224cd0d5ae85a6",
     "clio843/src/coordinates.h": "303c229e4c186fab01b092a770a434fca622047b792515df940ddec1983109ef",
@@ -25,9 +25,9 @@
     "clio843/src/traffic.h": "59d35b21add0f00e334e3e526b57fd5f5ffbdc29a8eac622b5e8dfb5fbd0e13b",
     "clio843/src/map_raster.h": "ec43a401a89354fc27ded7fb3d6320ed04226de4daa5a86ed9a8da0bf11eafe1",
     "clio843/src/global_regions.h": "00772a81c56fefdcf466ce0594c05a9d62983861a6f81be872fb7e474956d647",
-    "clio843/src/overlay_frames.h": "a6095b5b460d500664a7075c677a6b7f4b5e69f11e317a387efe73a47e92ebfa",
+    "clio843/src/overlay_frames.h": "b1b6e79491dad7a2a62004f999793bccfef7bb6580b3a877777c284f4537557c",
     "clio843/src/boot_transition.h": "8ea391927a52cf8eaa9f010a70b8f8e012b768346ca9cd297110e40e6a850007",
-    "clio843/src/menu_sheet.h": "d3b63c7d918a41d2e9ef3bf48c28ac8168bc9d2f702a31d967896bd81118b552",
+    "clio843/src/menu_sheet.h": "e2068ba47e7e7dd4ad49d6c2b40eae7dcfe7fd5477b8338d9217709bde5428eb",
     "clio843/src/release_version.h": "80d77ba41b0c0f7da2c3bd0cc39dcc7aebfae809619f1007d693d768c96c917f",
     "clio843/src/vehicle_icon.h": "dfcb48775858684a323506e4cb6f61eba56ce3d8c7507a5ef86b58d917f24b4a",
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
@@ -40,14 +40,14 @@
     "clio843/src/hud_glass.h": "e34158dabf25b53ec7e5aa55945305dc69e85001108a7f506fd83f00a1a25f23",
     "clio843/src/keyboard.h": "f3237bf2ace7761c42968234f93ada0f25ea906498e8afa5437b83f127fe5649",
     "clio843/src/nav_roundabout.h": "470390303a8f18184a020710012ea0353d0425c26a1381bbaa4064ca2d7f39be",
-    "clio843/src/gps_panel.h": "1e7bc00d76730d1ed38dcf108db2d8a57e549f36548540c69157989d7e91e3cc",
+    "clio843/src/gps_panel.h": "31e8561c3c3087a9e8970faad199049b021d3800d138ae4c386d303b763166f0",
     "clio843/src/mobility.h": "211cdf5c443e18d287cd455c9b6e6bfbabc0ae260fc1c319b326cbc5cdfa5fc5",
     "clio843/src/hud_turn_masks.h": "14ff4606db601d4376a3790b13213f2f175c611eedf63f91e4e05111862ce493",
     "clio843/src/menu_layout.h": "c413f261277151f8bd9be15f08cc896a41fc186619ec607501c1a18a463bd23e",
     "clio843/src/global_cameras.h": "d07e8dabf65f3513a5ec88eb15e34bdcad628cdb291f08a518eb46a3ebed9cd9",
     "clio843/src/urban_speed_defaults.h": "a719a3d065f16bc39727b01d7ed73f412beeb4d8703b5bde73a8c6ff1c35ac10",
     "clio843/src/cswd.c": "707aa0a1fdcd8048d2fa252a14ce32176fae347d512e11869f2905a69380530c",
-    "clio843/src/clio040.c": "34bff4e0ffdc0b96d89acb8bde795d960416314f3651a43861b8913d32d5fb40",
+    "clio843/src/clio040.c": "d472fb8a827d3744561b8f328d4b4417ba1f6fda860eb4089a7cd990e6499f47",
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/vstatd.c": "a359d214853cdd511fb79e905fafc52f5413b635bb3288b268d04c15724a666f",
     "clio843/src/audio_chime.h": "184c222e448db2707fc752bc38f7f6c735b6cb1f4d168d88ddc7da7cf20f4d75",
@@ -512,13 +512,13 @@
     "clio843/src/vendor/sheenbidi/Headers/SheenBidi/SheenBidi.h": "44a644a72edf2300838d32c3e32aa14a7cb66b584fb9da643b8311aa21991cbe"
   },
   "executables": {
-    "clio040": "a1b14a40b80e31c3dfbdd80055a3f97bbd9046d6716abe3ddb12a94765af86a0",
+    "clio040": "16d57fc19bdf947da1852970d51cdb3ae4a0680684f10f438afc4aaafe11f209",
     "cliospl": "00fe4888b2bddc9c8dae8d2815c3e9dde07830f88d40022e3bcd0892fcf475a5",
     "clioa2dp": "5bd0e68819e8fe175bcdbf2e4b5787b8fd4c75de384306920da61396ab682368"
   },
   "generator_inputs": {
-    "tools/render_previews.py": "fb531d46d8d8ff5b106745b9f655278ee8e4fb61eb683b06f2bf26c5987f456e",
-    "tools/render_gallery.py": "8a82653219f16d71e736cf99e09a76533618b28145688d7ecb8fce2ad1256c6e",
+    "tools/render_previews.py": "5a5b750291537a229164029572573263a8d800175e2fb3f8709fce9546310fee",
+    "tools/render_gallery.py": "5e853fbffc54ee70b1acd019fdd9fa770b7a325ea4da63140ca77c00dfb50ee3",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
     "tools/mobility_stories.py": "99df64698df1e87482f2b8635518a7d5af8330598f9ec9786dbc0604676acfa9",
     "tests/native.c": "f125852e4e0c57f557417c378d8168db0eb36efa7e29938adcaf40528d660b37",
@@ -8633,9 +8633,9 @@
       ]
     },
     "v225-gps-panel.gif": {
-      "sha256": "02cbb74a13ce48dc4c699b1a316fac1e12451399d46d39dd4aed1c378dfa18c0",
-      "frames": 23,
-      "duration_ms": 6200,
+      "sha256": "520f40429c855dd0f806f729ceec20f3c787969d2fbe38f089ac7936e5165612",
+      "frames": 47,
+      "duration_ms": 8700,
       "reserved_pointer_colours": [
         [
           239,
@@ -8664,171 +8664,203 @@
           "rgb565_sha256": "67d56911938d78099d86ccc5b295cf19a6f0a42a964379cbbf80593afcbcc755"
         },
         {
-          "frame": "night/preview-v225-gps-panel-0800.png",
+          "frame": "night/preview-v225-gps-panel-0700.png",
           "rgb565_sha256": "67d56911938d78099d86ccc5b295cf19a6f0a42a964379cbbf80593afcbcc755"
         },
         {
-          "frame": "night/preview-v225-gps-panel-0850.png",
+          "frame": "night/preview-v225-gps-panel-0750.png",
           "rgb565_sha256": "8b72559383ec48709566809f534dd7718cfff05e48a870c9b63117b97faf6370"
         },
         {
-          "frame": "night/preview-v225-gps-panel-0900.png",
+          "frame": "night/preview-v225-gps-panel-0800.png",
           "rgb565_sha256": "28b2bb030688eb8308a55712d100fd3259ede93e666567e5f4562f135a461230"
         },
         {
-          "frame": "night/preview-v225-gps-panel-0950.png",
+          "frame": "night/preview-v225-gps-panel-0850.png",
           "rgb565_sha256": "2295d37798a99a036fe85e05692b7da28b99e3c9bd034d886af4f62150da8a8a"
         },
         {
-          "frame": "night/preview-v225-gps-panel-1000.png",
+          "frame": "night/preview-v225-gps-panel-0900.png",
           "rgb565_sha256": "663e8fcd204b42ba32a562009d16583f7fa91fd2d028fc6c9e7326fa532220bb"
         },
         {
-          "frame": "night/preview-v225-gps-panel-1050.png",
+          "frame": "night/preview-v225-gps-panel-0950.png",
           "rgb565_sha256": "2ff5832554b890a2faf00e3872d51673cd1e471e09dfe2fdd366b1997b82bfdb"
         },
         {
-          "frame": "night/preview-v225-gps-panel-1100.png",
+          "frame": "night/preview-v225-gps-panel-1000.png",
           "rgb565_sha256": "1b9251d6b9966bd256fae0416a087d7dc705aceb4a2013ea9d15918db55436ca"
         },
         {
-          "frame": "night/preview-v225-gps-panel-1150.png",
+          "frame": "night/preview-v225-gps-panel-1050.png",
           "rgb565_sha256": "1b9251d6b9966bd256fae0416a087d7dc705aceb4a2013ea9d15918db55436ca"
+        },
+        {
+          "frame": "night/preview-v225-gps-panel-1800.png",
+          "rgb565_sha256": "e18259fff6c6596e99082acc064ef7e78e224c3e35e5241848cb1a5f544c0138"
+        },
+        {
+          "frame": "night/preview-v225-gps-panel-1850.png",
+          "rgb565_sha256": "d2e3b0dcc056fdf05239a6d90df91138a065909e10ee1c1a9e794ec25601014b"
+        },
+        {
+          "frame": "night/preview-v225-gps-panel-1900.png",
+          "rgb565_sha256": "fd909e65fa120dbbc9e552f44a9d7a955452c80f4f4e94c1f3318e3e57b4c860"
+        },
+        {
+          "frame": "night/preview-v225-gps-panel-1950.png",
+          "rgb565_sha256": "6329cecaa217fb2d8c39ae6b7f38b350c73c29f23d125a7776a9215a1de8a302"
         },
         {
           "frame": "night/preview-v225-gps-panel-2000.png",
-          "rgb565_sha256": "1b9251d6b9966bd256fae0416a087d7dc705aceb4a2013ea9d15918db55436ca"
+          "rgb565_sha256": "425ba71332dd82e26d65dcd66858d38b8afd22df86e4f105e9f13c246e9ed507"
         },
         {
           "frame": "night/preview-v225-gps-panel-2050.png",
-          "rgb565_sha256": "ba08f6491722bfb618cf1f229604a6a1d26c52e8c8281eb3d47a374bd381ab02"
+          "rgb565_sha256": "3f42629571d49f65cd1ba842f005723c55bce54c61e94b68a34568d6ad0fe1a1"
         },
         {
           "frame": "night/preview-v225-gps-panel-2100.png",
-          "rgb565_sha256": "7960ca1e22023d27298ad4863efd5d9942f50a102d867b204da2db4926af2b21"
+          "rgb565_sha256": "874f372f449e2f00c4d0656bb4a72a068c2bc636190cfbe47e6af4ef53edaf95"
         },
         {
           "frame": "night/preview-v225-gps-panel-2150.png",
-          "rgb565_sha256": "7368e59437c47ee0c08e419e66b182f951a84938fdd2a77d707faf8ead6d0911"
-        },
-        {
-          "frame": "night/preview-v225-gps-panel-2200.png",
-          "rgb565_sha256": "9d61f9c506aeff76b6754cb48d919bc49e339f5e4365b3f8acb042c69fdede0c"
-        },
-        {
-          "frame": "night/preview-v225-gps-panel-2250.png",
-          "rgb565_sha256": "d98db165338d74b282dcdafae442470fdd2e758da3bce9a64819e8144bb05c75"
-        },
-        {
-          "frame": "night/preview-v225-gps-panel-2300.png",
-          "rgb565_sha256": "59646b2464677d1f033dbe7eea919e6b114e03eda2cacaa86f9f8e8b03523e50"
-        },
-        {
-          "frame": "night/preview-v225-gps-panel-2350.png",
-          "rgb565_sha256": "2764cdaab6d1bf6d1ad12b453788cee5180faeb02601146fc5aad7974c3c02a8"
+          "rgb565_sha256": "26698518be451bff003e55c923932c78f26a03bad8b0dadb8d0838c32cd99bb4"
         },
         {
           "frame": "night/preview-v225-gps-panel-3000.png",
-          "rgb565_sha256": "cd86fd2ed3206162449e584f7aaaa134e7d2a0896a20d8f1fd1a550c17d0d3e9"
+          "rgb565_sha256": "67d938baf7271340f43e3411ec2b86087b02e950d6a188cf3fc814aef59f5af2"
         },
         {
           "frame": "night/preview-v225-gps-panel-3050.png",
-          "rgb565_sha256": "cd86fd2ed3206162449e584f7aaaa134e7d2a0896a20d8f1fd1a550c17d0d3e9"
+          "rgb565_sha256": "85b4dfb1232e112e470bbddad00ff54b34d84daed6bf6d0c0fb8c15439630f00"
         },
         {
           "frame": "night/preview-v225-gps-panel-3100.png",
-          "rgb565_sha256": "cd86fd2ed3206162449e584f7aaaa134e7d2a0896a20d8f1fd1a550c17d0d3e9"
+          "rgb565_sha256": "03ff9cfa2de3e2b15405b4884fd7971b79bc2775900d531f9b4c84e75540d714"
         },
         {
           "frame": "night/preview-v225-gps-panel-3150.png",
-          "rgb565_sha256": "cd86fd2ed3206162449e584f7aaaa134e7d2a0896a20d8f1fd1a550c17d0d3e9"
+          "rgb565_sha256": "86b03cbdfb42f38aaa0877c5b08af08516b567d749bd1c30046327e473296cef"
         },
         {
           "frame": "night/preview-v225-gps-panel-3200.png",
-          "rgb565_sha256": "cd86fd2ed3206162449e584f7aaaa134e7d2a0896a20d8f1fd1a550c17d0d3e9"
+          "rgb565_sha256": "49b08dd3ca234a83bf30e7a8e8f6a5944a50ce66895962b17cdfd5d0693e32d9"
         },
         {
           "frame": "night/preview-v225-gps-panel-3250.png",
-          "rgb565_sha256": "cd86fd2ed3206162449e584f7aaaa134e7d2a0896a20d8f1fd1a550c17d0d3e9"
+          "rgb565_sha256": "12820979943bafda2271e12eb25e198ab6a619a37e7334899f0526234857a41e"
         },
         {
           "frame": "night/preview-v225-gps-panel-3300.png",
-          "rgb565_sha256": "cd86fd2ed3206162449e584f7aaaa134e7d2a0896a20d8f1fd1a550c17d0d3e9"
+          "rgb565_sha256": "1b6072cb867c635266e295b1165ef3f8b8679107055372cf4543ab8326cc0912"
         },
         {
           "frame": "night/preview-v225-gps-panel-3350.png",
-          "rgb565_sha256": "cd86fd2ed3206162449e584f7aaaa134e7d2a0896a20d8f1fd1a550c17d0d3e9"
-        },
-        {
-          "frame": "night/preview-v225-gps-panel-4000.png",
-          "rgb565_sha256": "15815ea037dd0297903a99a95c56bc4bddb567c7b76052433ee8c616a1c23553"
-        },
-        {
-          "frame": "night/preview-v225-gps-panel-4050.png",
-          "rgb565_sha256": "15815ea037dd0297903a99a95c56bc4bddb567c7b76052433ee8c616a1c23553"
-        },
-        {
-          "frame": "night/preview-v225-gps-panel-4100.png",
-          "rgb565_sha256": "15815ea037dd0297903a99a95c56bc4bddb567c7b76052433ee8c616a1c23553"
-        },
-        {
-          "frame": "night/preview-v225-gps-panel-4150.png",
-          "rgb565_sha256": "15815ea037dd0297903a99a95c56bc4bddb567c7b76052433ee8c616a1c23553"
-        },
-        {
-          "frame": "night/preview-v225-gps-panel-4200.png",
-          "rgb565_sha256": "15815ea037dd0297903a99a95c56bc4bddb567c7b76052433ee8c616a1c23553"
-        },
-        {
-          "frame": "night/preview-v225-gps-panel-4250.png",
-          "rgb565_sha256": "15815ea037dd0297903a99a95c56bc4bddb567c7b76052433ee8c616a1c23553"
+          "rgb565_sha256": "aff7c50b5fddb9d6bb3d6b2cec334ab321839e87f897ada11b0af15f88eb23cb"
         },
         {
           "frame": "night/preview-v225-gps-panel-4300.png",
-          "rgb565_sha256": "15815ea037dd0297903a99a95c56bc4bddb567c7b76052433ee8c616a1c23553"
+          "rgb565_sha256": "6f96819cef515717399cd8b509d4670f2971e4aad50e9cbb1ee0f41879d3c7d8"
         },
         {
           "frame": "night/preview-v225-gps-panel-4350.png",
-          "rgb565_sha256": "15815ea037dd0297903a99a95c56bc4bddb567c7b76052433ee8c616a1c23553"
+          "rgb565_sha256": "2153e1fefb69d25550ceaafa950d4a83ee21915330b5299fdb6c8695668875ea"
         },
         {
-          "frame": "night/preview-v225-gps-panel-5200.png",
-          "rgb565_sha256": "a8ea852e052c3950c3a52f0a7a5873829a918b542159172325f57d7126ffedd8"
+          "frame": "night/preview-v225-gps-panel-4400.png",
+          "rgb565_sha256": "87a2264588e9c51206f38c27659c53e3c555d2dd315fc651fa298b38c76f4b78"
         },
         {
-          "frame": "night/preview-v225-gps-panel-5250.png",
-          "rgb565_sha256": "d0349b9e6410504f8fd89d6bafe501d09e1eec388d07d372f5152d358acb4d82"
+          "frame": "night/preview-v225-gps-panel-4450.png",
+          "rgb565_sha256": "55b82a871c3fafa133615a66fa819d693810d7f1b31c45f2bcd54edb5c949fb4"
         },
         {
-          "frame": "night/preview-v225-gps-panel-5300.png",
-          "rgb565_sha256": "bc1d35bd6ebc528b29f7cc406e05dd5746484d0b70b4f2edccf0698ff89b10d9"
+          "frame": "night/preview-v225-gps-panel-4500.png",
+          "rgb565_sha256": "a107e7feac8a044b85e59c0cd824577b6718561e92967731e50a817f9d345b0c"
         },
         {
-          "frame": "night/preview-v225-gps-panel-5350.png",
-          "rgb565_sha256": "c366bad1a4a1dd8c33c6ce472009ac26c50885a8db466aa22d5e3b6560123057"
+          "frame": "night/preview-v225-gps-panel-4550.png",
+          "rgb565_sha256": "8252ceb849c41e119438f8be0770acb34031037fce27bbb5098b17de042c93b2"
         },
         {
-          "frame": "night/preview-v225-gps-panel-5400.png",
-          "rgb565_sha256": "18a8084c1d4c40702ebe59698dfcf7402f59ae69f0ab7056812ebcba669c5b77"
+          "frame": "night/preview-v225-gps-panel-4600.png",
+          "rgb565_sha256": "20e8a5e7c5fd4a4019ec1d1c9dc6cefb4e1b52035305090cdf5faa2297e69e28"
         },
         {
-          "frame": "night/preview-v225-gps-panel-5450.png",
-          "rgb565_sha256": "1738005f3a2c18c17123118fd59525e10496a4b2c5ecec1586b6e62c95fbc73b"
+          "frame": "night/preview-v225-gps-panel-4650.png",
+          "rgb565_sha256": "8c00fa1c231a3339abe10fab3b2d0ff48219e661d0aeb866d21e60497a69654a"
         },
         {
-          "frame": "night/preview-v225-gps-panel-5500.png",
-          "rgb565_sha256": "d212162cf0286c0f3aaeebf6d66644371c87b79e6bf7ee172ef70303beb0c539"
+          "frame": "night/preview-v225-gps-panel-5800.png",
+          "rgb565_sha256": "5ec1561532fb05f723bfcae39fbf381dee9a09e6a9b34ac01de81fae251bf175"
         },
         {
-          "frame": "night/preview-v225-gps-panel-5550.png",
-          "rgb565_sha256": "d212162cf0286c0f3aaeebf6d66644371c87b79e6bf7ee172ef70303beb0c539"
+          "frame": "night/preview-v225-gps-panel-5850.png",
+          "rgb565_sha256": "f9e4f5f33a7cbb321092a4969cd465517cc495e2a0f433851fa94071e5fdceab"
+        },
+        {
+          "frame": "night/preview-v225-gps-panel-5900.png",
+          "rgb565_sha256": "a58f823162cbb5cc0323540e9d8b9f132034757ee6cc872f6fc81c0a394c525d"
+        },
+        {
+          "frame": "night/preview-v225-gps-panel-5950.png",
+          "rgb565_sha256": "40eae07e0b3a81c51c1ba0109c84d74f2994a391b25525ba0e418c1b181aac7d"
+        },
+        {
+          "frame": "night/preview-v225-gps-panel-6000.png",
+          "rgb565_sha256": "f87030afa2fff9aae4afff8f697d9da695ff5f5dcc868e08d20164190cdf9bf2"
+        },
+        {
+          "frame": "night/preview-v225-gps-panel-6050.png",
+          "rgb565_sha256": "348d0fbf336dd94e09ae856be54bc166a49772b944615944bc0fb3eebf92fd51"
         },
         {
           "frame": "night/preview-v225-gps-panel-6100.png",
-          "rgb565_sha256": "d212162cf0286c0f3aaeebf6d66644371c87b79e6bf7ee172ef70303beb0c539"
+          "rgb565_sha256": "218c16c15f379bf1b9c5e61247cc262bd620e985cd92cfa8582ed329da8d342a"
+        },
+        {
+          "frame": "night/preview-v225-gps-panel-6150.png",
+          "rgb565_sha256": "8047b98438a6fa72bf980864dc9dd65a5eff8d10c2caa18746aed8e3292a06cd"
+        },
+        {
+          "frame": "night/preview-v225-gps-panel-7300.png",
+          "rgb565_sha256": "33395a8ab84da3dccb7be3f00145d84fdcd42e6a776d20aa741a2168a9ae0f30"
+        },
+        {
+          "frame": "night/preview-v225-gps-panel-7350.png",
+          "rgb565_sha256": "cf04dbd04dd9bd4f24d5e1a527873924576cb2517c0872f47873a3c2b05838a8"
+        },
+        {
+          "frame": "night/preview-v225-gps-panel-7400.png",
+          "rgb565_sha256": "2000a95ffdc784bd253ddf5d54831a62d9c2e9f25b978e41f128127f1b17aee5"
+        },
+        {
+          "frame": "night/preview-v225-gps-panel-7450.png",
+          "rgb565_sha256": "79b5447a5f5d79ff1aa47c9ec1c594a09dfd17808786e9dcfd600e4741e4813b"
+        },
+        {
+          "frame": "night/preview-v225-gps-panel-7500.png",
+          "rgb565_sha256": "d0042b326585091ca85e9fc3e65d4386c8d1dd78db86ec2f2fe01cf9db117907"
+        },
+        {
+          "frame": "night/preview-v225-gps-panel-7550.png",
+          "rgb565_sha256": "1f354a0679e429844da1c53cccfc1ba18f072bfde23c00507ab29e98a27af561"
+        },
+        {
+          "frame": "night/preview-v225-gps-panel-7600.png",
+          "rgb565_sha256": "78fb46eb8a0a7b6f5f558564e7e2ea05315d76689e006ac0b642e223813e7670"
+        },
+        {
+          "frame": "night/preview-v225-gps-panel-7650.png",
+          "rgb565_sha256": "4e14c6b79ca33a846e54e1f3d26c16abd8ef284190ae61f317f0c6dc10929d80"
+        },
+        {
+          "frame": "night/preview-v225-gps-panel-8600.png",
+          "rgb565_sha256": "4e14c6b79ca33a846e54e1f3d26c16abd8ef284190ae61f317f0c6dc10929d80"
         }
       ],
-      "routing_provenance": "Real Newcastle driving map demonstrating production double-OK entry from the driving map (first OK shows road name and ETA, second OK within 4 s opens the live GPS panel), 1 Hz GPS telemetry updates (compass dial, heading, GST accuracy, satellites, altitude and coordinates), and BACK dismissal."
+      "routing_provenance": "Real Newcastle driving map demonstrating the expandable Clock/GPS HUD pill: double-OK expansion from the driving map (first OK shows road name and ETA, second OK expands the clock pill with live seconds, recessed compass, heading, GST accuracy, signal bars/satellites, altitude and coordinates), non-overlapping BT CTRL status pill, compact 52 px strip above a centred confirmation popup, seconds-only menu fold, and smooth return to full driving GPS HUD."
     }
   }
 }

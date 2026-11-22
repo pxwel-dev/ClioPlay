@@ -439,8 +439,8 @@ static void text_center_fit(int cx,int y,int maxw,const char*s,u16 c){
 static int fb_flush(void){long fd=s_open(FB_PATH,O_WRONLY_|O_CREAT_,0666);if(fd<0)return 0;s_lseek((int)fd,0,SEEK_SET_);long n=s_write((int)fd,fb,sizeof(fb));s_close((int)fd);return n==(long)sizeof(fb);}
 
 enum { THEME_DAY=0, THEME_NIGHT=1, THEME_AUTO=2 };
-struct Prefs {int bright,hoff,moff,autozoom,debug,theme,units,cameras,clock_auto,language,day_start,night_start,top_swap,bottom_swap,learn_history,destination_predictions,diversions;};
-static struct Prefs pref={50,0,0,1,0,THEME_AUTO,0,1,1,0,CLIO_DAY_START,CLIO_NIGHT_START,0,0,0,1,1};
+struct Prefs {int bright,hoff,moff,autozoom,debug,theme,units,cameras,clock_auto,language,day_start,night_start,top_swap,bottom_swap,learn_history,destination_predictions,diversions,gps_hud;};
+static struct Prefs pref={50,0,0,1,0,THEME_AUTO,0,1,1,0,CLIO_DAY_START,CLIO_NIGHT_START,0,0,0,1,1,0};
 static int pref_keyboard_language=-1;
 /* The TomTom hardware export is authoritative when present; unknown hardware
  * keeps Bluetooth visible when the hardware export is unavailable. */
@@ -483,7 +483,8 @@ static void parse_pref_line(char*ln){char*eq=ln;while(*eq&&*eq!='=')eq++;if(!*eq
  else if(streq(ln,"hudbottomswap"))pref.bottom_swap=v?1:0;
  else if(streq(ln,"learnhistory"))pref.learn_history=v?1:0;
  else if(streq(ln,"destpredictions"))pref.destination_predictions=v?1:0;
- else if(streq(ln,"diversions"))pref.diversions=v?1:0;}
+ else if(streq(ln,"diversions"))pref.diversions=v?1:0;
+ else if(streq(ln,"gpshud"))pref.gps_hud=v?1:0;}
 static void load_prefs(void){pref.day_start=CLIO_DAY_START;pref.night_start=CLIO_NIGHT_START;char b[512],ln[96];unsigned u=0;long fd=s_open(PREF_PATH,O_RDONLY_,0);if(fd>=0){long n=s_read((int)fd,b,sizeof(b));s_close((int)fd);if(n>0){for(long i=0;i<n;i++){char c=b[i];if(c=='\r'||c=='\n'){if(u){ln[u]=0;parse_pref_line(ln);u=0;}}else if(u+1<sizeof(ln))ln[u++]=c;}if(u){ln[u]=0;parse_pref_line(ln);}}}if(pref.bright<10)pref.bright=10;if(pref.bright>100)pref.bright=100;if(pref.theme<THEME_DAY||pref.theme>THEME_AUTO)pref.theme=THEME_AUTO;if(pref.units<0||pref.units>2)pref.units=0;if(pref.hoff*60+pref.moff< -720||pref.hoff*60+pref.moff>840)pref.hoff=pref.moff=0;if(manual_zoom<0)manual_zoom=0;if(manual_zoom>MAX_EXPLORE_ZOOM)manual_zoom=MAX_EXPLORE_ZOOM;if(!clio_theme_schedule_valid(pref.day_start,pref.night_start)){pref.day_start=CLIO_DAY_START;pref.night_start=CLIO_NIGHT_START;}}
 /* Shared with the splash; the definition follows the wall-clock helpers. */
 static void seed_boot_theme(void);
@@ -493,6 +494,7 @@ static void save_prefs(void){char b[512];b[0]=0;appendstr(b,sizeof(b),"version=8
  appendstr(b,sizeof(b),"\nlearnhistory=");append_int(b,sizeof(b),pref.learn_history);
  appendstr(b,sizeof(b),"\ndestpredictions=");append_int(b,sizeof(b),pref.destination_predictions);
  appendstr(b,sizeof(b),"\ndiversions=");append_int(b,sizeof(b),pref.diversions);
+ appendstr(b,sizeof(b),"\ngpshud=");append_int(b,sizeof(b),pref.gps_hud);
  appendstr(b,sizeof(b),"\n");long fd=s_open(PREF_TMP_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd>=0){s_write((int)fd,b,slen(b));s_close((int)fd);s_sync();if(s_rename(PREF_TMP_PATH,PREF_PATH)<0){fd=s_open(PREF_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd>=0){s_write((int)fd,b,slen(b));s_close((int)fd);}}s_sync();}prefs_dirty=0;prefs_delay=0;}
 static void prefs_mark_dirty(void){prefs_dirty=1;prefs_delay=10;}
 static void prefs_service(void){if(!prefs_dirty)return;if(prefs_delay>0){prefs_delay--;return;}save_prefs();}
@@ -781,7 +783,7 @@ static void poll_car(void){
  *   /tmp/clbtmeta  : KEY=VALUE lines (DEVICE/TITLE/ARTIST/ALBUM/...)
  *   /tmp/clbtcmd   : monotonically sequenced "<n> <COMMAND>" command record
  */
-enum {SCR_MAP=0,SCR_MENU=1,SCR_TRIP=2,SCR_BT=3,SCR_SET=4,SCR_KEY=5,SCR_COORDINATES=6,SCR_GPS=7};static int screen=SCR_MAP;
+enum {SCR_MAP=0,SCR_MENU=1,SCR_TRIP=2,SCR_BT=3,SCR_SET=4,SCR_KEY=5,SCR_COORDINATES=6};static int screen=SCR_MAP;
 enum {MENU_BODY_Y=42};
 struct BtUi {
   char status[28],device[33],device_addr[18],title[193],artist[161],album[161];
@@ -3285,8 +3287,8 @@ static int modal_action_count(void){if(modal==MOD_RECENT)return trip.active?3:2;
 #include "popups.h"
 #include "menu_keyboard.h"
 #include "menu_layout.h"
-#include "gps_panel.h"
 #include "menu_sheet.h"
+#include "gps_panel.h"
 
 static void draw(void){
  u32 now=hud_now_ms();freecam_orientation_anim_update(now);clock_service();region_service();camera_service();refresh_theme();
@@ -3385,8 +3387,7 @@ if(screen==SCR_MAP){
     else{
       u32 now=hud_now_ms();
       if(driving_info_ok_armed&&now-driving_info_ok_at<HUD_ROAD_NAME_MS){
-        driving_info_ok_armed=0;diversion_preview_clear();coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;
-        menu_open(P_GPS,0,now);sheet_depth=0;
+        driving_info_ok_armed=0;gps_hud_toggle();
       }else{
         hud_show_driving_info();driving_info_ok_at=now;driving_info_ok_armed=1;
       }
@@ -3441,7 +3442,7 @@ static void key_handle(int code){
  if(code==K_CONSOLE_THEME){pref.theme=(pref.theme+1)%3;prefs_mark_dirty();refresh_theme();render_background_dirty=1;return;}
  if(code==K_CONSOLE_INFO){if(screen==SCR_MAP&&modal==MOD_NONE)hud_show_driving_info();return;}
  if(code==K_CONSOLE_TRIP){if(modal!=MOD_NONE)return;diversion_preview_clear();coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;menu_open(P_TRIP,trip.active_idx,hud_now_ms());return;}
- if(code==K_CONSOLE_GPS){if(modal!=MOD_NONE)return;diversion_preview_clear();coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;gps_panel_toggle(hud_now_ms());return;}
+ if(code==K_CONSOLE_GPS){if(modal!=MOD_NONE)return;gps_hud_toggle();return;}
  menu_sync(hud_now_ms());
  if(modal==MOD_NONE&&(code==K_MENU||screen!=SCR_MAP)){
   driving_info_ok_armed=0;

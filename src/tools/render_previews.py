@@ -47,7 +47,7 @@ def previews():
         'v224-ml-slowdowns.gif': timeline('night', timed_scenes('preview-v224-ml-slowdowns', V224_ML_SLOWDOWNS_SAMPLES, 10800)),
         'v224-ml-parking-and-pois.gif': timeline('night', timed_scenes('preview-v224-ml-parking-and-pois', V224_ML_PARKING_POIS_SAMPLES, 10500)),
         'v224-ml-adaptive-hud.gif': timeline('day', timed_scenes('preview-v224-ml-adaptive-hud', V224_ML_ADAPTIVE_HUD_SAMPLES, 10100)),
-        'v225-gps-panel.gif': timeline('night', timed_scenes('preview-v225-gps-panel', V225_GPS_PANEL_SAMPLES, 6200)),
+        'v225-gps-panel.gif': timeline('night', timed_scenes('preview-v225-gps-panel', V225_GPS_PANEL_SAMPLES, 8700)),
         'v220-frequent-place.gif': timeline('night', timed_scenes('preview-v220-frequent-place', V220_FREQUENT_PLACE_SAMPLES, 5900)),
         'v220-destination-prediction.gif': timeline('night', timed_scenes('preview-v220-destination-prediction', V220_DESTINATION_SAMPLES, 6500)),
         'v220-intelligent-diversions.gif': timeline('night', timed_scenes('preview-v220-intelligent-diversions', V220_DIVERSION_SAMPLES, 6200)),
@@ -317,10 +317,12 @@ def main():
                 'speed-band Auto-zoom personalisation and ml_learned_brightness() automatic '
                 'Day-to-Night brightness adjustment on an Auto theme transition.'),
             'v225-gps-panel.gif': (
-                'Real Newcastle driving map demonstrating production double-OK entry from '
-                'the driving map (first OK shows road name and ETA, second OK within 4 s '
-                'opens the live GPS panel), 1 Hz GPS telemetry updates (compass dial, '
-                'heading, GST accuracy, satellites, altitude and coordinates), and BACK dismissal.'),
+                'Real Newcastle driving map demonstrating the expandable Clock/GPS HUD pill: '
+                'double-OK expansion from the driving map (first OK shows road name and ETA, '
+                'second OK expands the clock pill with live seconds, recessed compass, heading, '
+                'GST accuracy, signal bars/satellites, altitude and coordinates), non-overlapping '
+                'BT CTRL status pill, compact 52 px strip above a centred confirmation popup, '
+                'seconds-only menu fold, and smooth return to full driving GPS HUD.'),
         }
         for name, note in provenance.items():
             if name in reports:
