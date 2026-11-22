@@ -2,29 +2,29 @@
   "machine": "ARM7TDMI / ARMv4T",
   "abi": "ELF32 EABI5 soft-float; Linux OABI syscalls",
   "entry": "0x8e204",
-  "bytes": 1192312,
-  "sha256": "4767a5d93fad9b0fccf559fb9ce6a604e04cca786d3288a0b7b7a70b88ca1011",
+  "bytes": 1192852,
+  "sha256": "7750c8147c045965bc69410b83774141d50a5237a3f07133a5e059f965172091",
   "sections": {
     ".text": {
       "address": "0x8e010",
-      "bytes": 557612
+      "bytes": 558120
     },
     ".rodata": {
       "address": "0x10108",
       "bytes": 450310
     },
     ".data": {
-      "address": "0x126240",
+      "address": "0x126438",
       "bytes": 1552
     },
     ".bss": {
-      "address": "0x126850",
+      "address": "0x126a50",
       "bytes": 11310288
     }
   },
   "version": "2.2.6",
   "source": "clio843/src/clio040.c",
-  "source_tree_sha256": "e23e968d89d7e59a83a18143b854c644bd18ccbb593f074aa9b45fa06e76bdef",
+  "source_tree_sha256": "5a63e3c847258b3f46d1a51f10e5b979d4d54fa6ccc4258f23f8936fde83cb5b",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "7c1c5599a121e702a0fe7ac89fc957e07086e27f20aaf1511971d197de3a39a0",
@@ -67,8 +67,8 @@
     "clio843/src/menu_keyboard.h": "394310c060e073c651cbc61a64c69d5ba61cfd4072e43277f70c40b8344e77f9",
     "clio843/src/menu_layout.h": "c413f261277151f8bd9be15f08cc896a41fc186619ec607501c1a18a463bd23e",
     "clio843/src/menu_sheet.h": "e2068ba47e7e7dd4ad49d6c2b40eae7dcfe7fd5477b8338d9217709bde5428eb",
-    "clio843/src/mobility.h": "211cdf5c443e18d287cd455c9b6e6bfbabc0ae260fc1c319b326cbc5cdfa5fc5",
-    "clio843/src/mobility_ml.h": "cd59f4698f0ec22c44c2d8dd6142e98b3680813573fd9da3cd2098077221e529",
+    "clio843/src/mobility.h": "1d273f5222008c317917874383a259480e0495aa28a4e7e9485b88b9c1129a2a",
+    "clio843/src/mobility_ml.h": "beb1d1932b992f275ae343cfad1fa2b3c507f29e80b50d2981d8d0666aa01429",
     "clio843/src/nav_roundabout.h": "470390303a8f18184a020710012ea0353d0425c26a1381bbaa4064ca2d7f39be",
     "clio843/src/nearby_pois.h": "10ef610b741b7f7a49810350875f827068c8115330549ff5da5e74690a0e8038",
     "clio843/src/overlay_frames.h": "b1b6e79491dad7a2a62004f999793bccfef7bb6580b3a877777c284f4537557c",
@@ -77,7 +77,7 @@
     "clio843/src/release_version.h": "4f3b899ea5254234f16b5f0157d66acbabcbb73504eed7317fb4b9df6745ff5c",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
     "clio843/src/splash_icon.h": "1c0cb3bf3be97ce49cdf626bc0184b0736b49fee877a92f5bf2e5cb2d0ec17eb",
-    "clio843/src/traffic.h": "25c847055fcb0f1f520f677d198a3142d8fb7bf1fe64ddc871a201194494af00",
+    "clio843/src/traffic.h": "49c020633b82e3224512520466fc445f8f033dccfd9c4197a18b637e11d9db20",
     "clio843/src/ui_raster.h": "50767eb3a56c5192daabb07944b255b34d4e77b1db48b14a30a6914871420284",
     "clio843/src/ui_translations.h": "36941894289b1b32128985af003e2b9b3925d9bbfeaf6d8c6224ceaa88282215",
     "clio843/src/unicode_support.c": "43a20e8dde712fbdb5e087062ad68d3ae5aec704c1ab864dec9c57a99fd54b77",

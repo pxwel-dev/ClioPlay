@@ -107,7 +107,9 @@ static u32 mob_epoch(int y,int m,int d,int h,int min,int sec){
  for(int mm=1;mm<m;mm++)days+=md[mm-1]+(mm==2&&y%4==0);
  return (days+(unsigned)(d-1))*86400u+(u32)h*3600u+(u32)min*60u+(u32)(sec==60?59:sec);
 }
+/* Epoch 0 is 2000-01-01 (Saturday): 0=Sat, 1=Sun, 2..6=Mon..Fri. */
 static unsigned mob_day(u32 t){return (t/86400u)%7u;}
+static int mob_is_weekend(u32 t){return mob_day(t)<2u;}
 static unsigned mob_bucket(u32 t){return mob_day(t)*12u+(t%86400u)/7200u;}
 static unsigned mob_hour_diff(u32 a,u32 b){
  unsigned x=(a%86400u)/60u,y=(b%86400u)/60u,d=x>y?x-y:y-x;return d>720u?1440u-d:d;
@@ -400,10 +402,14 @@ static u32 mob_journey_weight(const struct MobJourney*j,u32 epoch,unsigned day_s
   /* Narrow peak at the habitual departure time; a soft tail tolerates
    * irregular schedules. Pool all day indices, favour matching days. */
   unsigned t=241u-delta;w=w*t/241u;w=w*t/241u;
-  /* A well-observed exact-day schedule is more informative than a
-   * pooled pattern. With sparse day evidence, fall back gracefully to
-   * other days rather than treating a single weekday visit as a rule. */
-  if(mob_day(epoch)!=mob_day(j->depart))w=w*(day_support>=3u?30u:65u)/100u;
+  /* Exact-day routines lead when well observed; otherwise pool strongly within
+   * the same weekday/weekend regime (Mon-Fri vs Sat-Sun) while damping cross
+   * weekday<->weekend leakage so weekday commutes don't drown out weekends. */
+  if(mob_day(epoch)!=mob_day(j->depart)){
+   int same_group=mob_is_weekend(epoch)==mob_is_weekend(j->depart);
+   unsigned pct=same_group?(day_support>=3u?35u:75u):(day_support>=3u?20u:25u);
+   w=w*pct/100u;
+  }
   if(epoch>=j->depart){u32 days=(epoch-j->depart)/86400u;if(days>730u)days=730u;w=w*180u/(180u+days);}
  }else if(epoch!=MOB_UNKNOWN)w/=3u;
  unsigned age=mob.serial-j->serial;w=w*128u/(128u+(age>1024u?1024u:age));

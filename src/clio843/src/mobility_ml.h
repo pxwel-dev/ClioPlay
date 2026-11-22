@@ -136,6 +136,7 @@ static u32 ml_route_var_ds = 0;
 static int ml_offer_kind = 0;
 
 static u8 ml_poi_recorded_session = 0;
+static u8 ml_session_saw_cold = 0;
 
 static void ml_zoom_cancel_override(void){
  ml_zoom_pend_band = -1;
@@ -150,6 +151,7 @@ static void ml_session_reset(void){
  memzero(ml_zoom_nudged, sizeof(ml_zoom_nudged));
  ml_zoom_cancel_override();
  ml_poi_recorded_session = 0;
+ ml_session_saw_cold = 0;
  ml_prev_speed = -1;
  ml_prev_speed_ms = 0;
  ml_park_valid = 0;
@@ -822,25 +824,56 @@ static struct MobHazard *ml_hazard_find(u32 key, int create){
  mob_ml.hazards[slot].key = key;
  return &mob_ml.hazards[slot];
 }
+static int ml_stage_brake_has(u32 key){
+ for(unsigned i = 0; i < ml_stage_brake_n; i++) if(ml_stage_brake[i].key == key) return 1;
+ return 0;
+}
 static void ml_commit_hazards(void){
  u16 st = (u16)(mob.serial & 0xffffu); if(!st) st = 1u;
+ /* Cap counters so fixed roadworks/potholes can recover via smooth passes. */
  for(unsigned i = 0; i < ml_stage_brake_n; i++){
   struct MobHazard *h = ml_hazard_find(ml_stage_brake[i].key, 1);
   if(!h) continue;
   h->lat = ml_stage_brake[i].lat;
   h->lon = ml_stage_brake[i].lon;
-  if(h->count < 250u) h->count++;
-  if(ml_stage_brake[i].cold && h->cold_count < 250u) h->cold_count++;
+  if(h->count < 6u) h->count++;
+  else if(h->count > 6u) h->count = 6u;
+  if(ml_stage_brake[i].cold){
+   if(h->cold_count < 5u) h->cold_count++;
+   else if(h->cold_count > 5u) h->cold_count = 5u;
+  }
   h->stamp = st;
  }
+ /* Slow asymmetric smooth-pass decay: when a hazard arc is traversed smoothly
+  * (no hard brake this session) after >= 4 journeys since its last update, step
+  * count down by 1 (and cold_count only when cold <= 3 C, so summer never wipes
+  * winter ice spots). Free the slot once both reach 0. */
+ int cold_session = ml_is_cold() || ml_session_saw_cold;
+ for(unsigned i = 0; i < ml_stage_pref_n; i++){
+  if(ml_stage_pref[i].delta <= 0) continue;
+  u32 key = ml_stage_pref[i].key;
+  if(!key || ml_stage_brake_has(key)) continue;
+  struct MobHazard *h = ml_hazard_find(key, 0);
+  if(!h || !h->key) continue;
+  u16 age = h->stamp ? (u16)(st - h->stamp) : 0u;
+  if(age < 4u || age >= 32768u) continue;
+  if(h->count > 0u) h->count--;
+  if(cold_session && h->cold_count > 0u) h->cold_count--;
+  h->stamp = st;
+  if(!h->count && !h->cold_count) memzero(h, sizeof(*h));
+ }
 }
-/* Returns 2 for cold-weather repeat hazard, 1 for general repeat slowdown, 0 otherwise. */
+/* Returns 2 for cold-weather repeat hazard, 1 for general repeat slowdown, 0 otherwise.
+ * Expires unvisited hotspots after 256 journeys (warm) or 512 journeys (cold). */
 static int ml_hazard_level(u32 key, int cold){
  if(!pref.learn_history || !key) return 0;
  const struct MobHazard *h = ml_hazard_find(key, 0);
  if(!h) return 0;
- if(cold && h->cold_count >= 2u) return 2;
- if(h->count >= 3u) return 1;
+ u16 st = (u16)(mob.serial & 0xffffu); if(!st) st = 1u;
+ u16 age = h->stamp ? (u16)(st - h->stamp) : 0u;
+ if(age >= 32768u) age = 0u;
+ if(cold && h->cold_count >= 2u && age <= 512u) return 2;
+ if(h->count >= 3u && age <= 256u) return 1;
  return 0;
 }
 static int ml_slowdown_already_seen(u32 key){

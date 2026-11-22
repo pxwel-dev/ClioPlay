@@ -185,6 +185,7 @@ static void traffic_learn_sample(void){
    mob_stage_road(tl_key,tl_epoch,ds);
    struct CprBase b;
    if(route_read_base(tl_arc,&b))ml_stage_class(b.cls,(b.flags&4)!=0,b.cost,ds,ml_is_cold());
+   if(ml_is_cold())ml_session_saw_cold=1u;
    ml_stage_pref_arc(tl_key,10);
    tl_done=1;
   }

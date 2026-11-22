@@ -821,7 +821,7 @@ def replay(
                     e[1] = sc
                     e[2] = st16
 
-            # Commit braking hazards
+            # Commit braking hazards (capped at 6 so fixed roadworks can recover)
             for key, (hlat, hlon) in stage_brakes.items():
                 found = None
                 for h in hazards:
@@ -831,7 +831,7 @@ def replay(
                 if found is not None:
                     found[1] = hlat
                     found[2] = hlon
-                    found[3] = min(250, found[3] + 1)
+                    found[3] = min(6, found[3] + 1)
                     found[5] = st16
                 else:
                     if len(hazards) < MOB_ML_HAZARDS:
@@ -839,6 +839,20 @@ def replay(
                     else:
                         oldest_i = min(range(len(hazards)), key=lambda i: hazards[i][5])
                         hazards[oldest_i] = [key, hlat, hlon, 1, 0, st16]
+            # Slow smooth-pass decay (>= 4 journeys since last update, no hard brake this trip)
+            for key, delta in stage_pref.items():
+                if delta <= 0 or key in stage_brakes:
+                    continue
+                for idx, h in enumerate(hazards):
+                    if h[0] == key:
+                        age = (st16 - h[5]) & 0xFFFF
+                        if 4 <= age < 32768:
+                            if h[3] > 0:
+                                h[3] -= 1
+                            h[5] = st16
+                            if h[3] == 0 and h[4] == 0:
+                                hazards.pop(idx)
+                        break
 
             # Commit trip chains & recurring intermediate stop habits
             if (last_valid and depart_epoch != MOB_UNKNOWN and last_arrival != MOB_UNKNOWN and

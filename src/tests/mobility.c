@@ -129,6 +129,23 @@ static void predictor_quality(void){
  unsigned indices[]={MOB_JOURNEYS-1u,0,1};
  for(unsigned i=0;i<3;i++){struct MobJourney*j=&mob.journey[indices[i]];j->origin=pred_origin;j->dest=pred_north;j->dest.lat+=(s32)i*3;j->serial=MOB_JOURNEYS-2u+i;}
  assert(mob_predict(now+1000)&&mob_suggest_point.lat==pred_north.lat+6);
+ /* Weekday vs weekend regime weighting: 2026-10-19 is Monday (mob_day==2),
+  * 2026-10-21 is Wednesday (mob_day==4), 2026-10-24 is Saturday (mob_day==0). */
+ u32 mon=mob_epoch(2026,10,19,8,0,0),wed=mob_epoch(2026,10,21,8,0,0),sat=mob_epoch(2026,10,24,8,0,0);
+ assert(!mob_is_weekend(mon)&&!mob_is_weekend(wed)&&mob_is_weekend(sat));
+ /* Sparse Wednesday: Mon/Tue weekday commutes (75%) beat Sat weekend trips (25%). */
+ prediction_fixture(now,wed);
+ for(int i=0;i<2;i++){
+  prediction_visit(pred_north,mon-(u32)i*7u*86400u,1);
+  prediction_visit(pred_north,mon+86400u-(u32)i*7u*86400u,1);
+  prediction_visit(pred_south,sat-(u32)(i+1)*7u*86400u,0);
+ }
+ assert(mob_predict(now+1000)&&mob_suggest_point.lat==pred_north.lat);
+ /* Saturday with 3 Saturday visits beats 5 weekday commutes (20% cross-regime weight). */
+ prediction_fixture(now,sat);
+ for(int i=0;i<5;i++)prediction_visit(pred_north,mon+(u32)i*86400u,1);
+ for(int i=0;i<3;i++)prediction_visit(pred_south,sat-(u32)(i+1)*7u*86400u,0);
+ assert(mob_predict(now+1000)&&mob_suggest_point.lat==pred_south.lat);
  mob_clear();
 }
 static void prediction_draw(void){
@@ -583,6 +600,42 @@ static void ml_features(void){
   ml_commit_hazards();ml_session_reset();
  }
  assert(ml_hazard_level(992u,0)==0&&ml_hazard_level(992u,1)==2);
+ /* 8b: Dynamic hazard capping, anti-flicker smooth-pass decay, season-safe cold decay & age expiry */
+ {
+  u32 saved_ser=mob.serial;
+  /* Cap check: 8 hard brakes cap count at 6 and cold_count at 5 */
+  car.temp=1;
+  for(int i=0;i<8;i++){
+   mob_recording=mob_started=1;ml_prev_speed=-1;ml_prev_speed_ms=0;
+   ml_observe_decel(1000,280,993u,5497700,-161000);
+   ml_observe_decel(2000,140,993u,5497750,-161000);
+   ml_commit_hazards();ml_session_reset();
+  }
+  struct MobHazard*hc=ml_hazard_find(993u,0);
+  assert(hc&&hc->count==6u&&hc->cold_count==5u);
+  /* Smooth pass < 4 journeys later must NOT decay (anti-flicker) */
+  mob.serial+=3u;car.temp=15;mob_recording=mob_started=1;
+  ml_stage_pref_arc(993u,10);ml_commit_hazards();ml_session_reset();
+  assert(hc->count==6u&&hc->cold_count==5u);
+  /* Warm smooth pass >= 4 journeys later decays count (6->5) but preserves cold_count (5) */
+  mob.serial+=1u;car.temp=15;mob_recording=mob_started=1;
+  ml_stage_pref_arc(993u,10);ml_commit_hazards();ml_session_reset();
+  assert(hc->count==5u&&hc->cold_count==5u);
+  /* Cold smooth pass >= 4 journeys later decays both count (5->4) and cold_count (5->4) */
+  mob.serial+=4u;car.temp=1;mob_recording=mob_started=1;
+  ml_stage_pref_arc(993u,10);ml_commit_hazards();ml_session_reset();
+  assert(hc->count==4u&&hc->cold_count==4u);
+  /* 4 more cold smooth passes spaced >= 4 journeys apart clear the slot completely */
+  for(int i=0;i<4;i++){mob.serial+=4u;car.temp=1;mob_recording=mob_started=1;ml_stage_pref_arc(993u,10);ml_commit_hazards();ml_session_reset();}
+  assert(ml_hazard_find(993u,0)==0&&ml_hazard_level(993u,1)==0);
+  /* Age expiry: warm expires after >256 journeys; cold survives 300 journeys, expires after >512 */
+  mob.serial=saved_ser+300u;
+  assert(ml_hazard_level(991u,0)==0&&ml_hazard_level(992u,1)==2);
+  mob.serial=saved_ser+520u;
+  assert(ml_hazard_level(992u,1)==0);
+  mob.serial=saved_ser;
+  assert(ml_hazard_level(991u,0)==1&&ml_hazard_level(992u,1)==2);
+ }
  /* 3: Preferred-route ("Usual route available") diversion offer on small graph */
  {
   struct PrefGraph {

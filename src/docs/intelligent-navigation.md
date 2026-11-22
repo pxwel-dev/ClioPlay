@@ -258,7 +258,8 @@ alternatives.
 
 On every snapped 1 Hz sample while driving at `>= 20 mph` (guided or unguided),
 sharp deceleration events (`>= 9.0 mph/s`) are staged per directed arc and
-committed on clean shutdown. When a learned hotspot ahead (`40–350 m`) has
+committed on clean shutdown (capped at `6` warm / `5` cold sessions so fixed
+roadworks can recover). When a learned hotspot ahead (`40–350 m`) has
 triggered across at least three sessions (or two sessions in `<= 3 °C` cold
 weather), ClioPlay surfaces a non-intrusive amber **Frequent slowdown ahead**
 (or **Cold-weather slowdown ahead**) status cue at most once per arc per trip —
@@ -266,6 +267,15 @@ both along an active route and during unguided driving (verified against the
 directed road arc’s heading and a tight forward bearing cone to ignore opposite
 carriageways and cross streets) — and applies a virtual penalty against
 repeat-hazard rat-runs during diversion ranking.
+
+Hotspots also self-correct dynamically rather than lingering forever: traversing
+a learned hazard road smoothly (with no sharp braking on that trip) steps its
+counter down by `1` whenever at least four journeys have elapsed since its last
+update (preventing single-pass flickering while clearing fixed roadworks or
+consistently gentle passes over time). Cold-weather counts only decay on cold
+(`<= 3 °C`) smooth passes so summer driving never erases winter icy-road alerts.
+Unvisited hotspots also expire automatically after `256` journeys (warm) or
+`512` journeys (cold), and slots are reclaimed once both counters reach zero.
 
 ## Recording and successful sessions
 
@@ -301,13 +311,15 @@ session does not count as a successful journey. Intermediate stops with
 Carminat still powered are part of the same session.
 
 Raw date/time is assumed consistent, even if the actual calendar is wrong.
-The seven day indices are independent categories, not hardcoded weekdays and
-weekends. The display time adjustment, timezone and automatic theme continue
-to work exactly as before. They do not change the history clock. Traversal
-times use the monotonic clock. If time is unavailable after a valid live position, prediction uses a more
-conservative spatial/frequency model. A previously confirmed position must
-remain fresh (within 15 seconds) to support an invitation; road-speed learning
-and traffic estimation still require valid raw time.
+Road-speed profiles remain independent across all seven day indices, while
+destination prediction distinguishes exact days and weekday/weekend regimes
+(Monday–Friday vs Saturday–Sunday). The display time adjustment, timezone and
+automatic theme continue to work exactly as before. They do not change the
+history clock. Traversal times use the monotonic clock. If time is unavailable
+after a valid live position, prediction uses a more conservative
+spatial/frequency model. A previously confirmed position must remain fresh
+(within 15 seconds) to support an invitation; road-speed learning and traffic
+estimation still require valid raw time.
 
 ## Model and routing
 
@@ -315,10 +327,12 @@ The contextual destination model stores up to 512 completed sessions in the
 existing model format. A bounded weighted scan compares origins within 300 m,
 cyclic time-of-day distance (up to four hours), learned day-specific patterns
 and both session and calendar recency. A quadratic time kernel favours usual
-departure times. With at least three relevant same-day observations, the
-model favours that day more strongly; sparse day evidence falls back to
-pooled days rather than treating one observation as a routine. All seven day
-indices remain independent of hardcoded weekday/weekend assumptions.
+departure times. Exact-day observations receive full weight (`100%`); different
+days in the same weekday/weekend regime (Monday–Friday vs Saturday–Sunday)
+receive `75%` weight while exact-day history is sparse (and `35%` once three or
+more exact-day observations exist so distinct weekday schedules still separate),
+while cross weekday↔weekend trips are damped (`20–25%`) so weekday commutes do
+not overwhelm weekend routines.
 
 During movement, a forward-only segment match compares the first 32
 approximately 75 m-spaced trajectory samples against a bounded window of

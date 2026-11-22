@@ -5,7 +5,7 @@
   "native_sources": {
     "clio843/src/frame_schedule.h": "1a564fd03b4d72aa20eab4fbaff200ea40458efc0d6d38bd83b73546c7588bbb",
     "clio843/src/global_clock.h": "5fbcf43cb8aceb59e87d6f8118d121ce5798eec064c0ed5a7586a2eb25de8512",
-    "clio843/src/mobility_ml.h": "cd59f4698f0ec22c44c2d8dd6142e98b3680813573fd9da3cd2098077221e529",
+    "clio843/src/mobility_ml.h": "beb1d1932b992f275ae343cfad1fa2b3c507f29e80b50d2981d8d0666aa01429",
     "clio843/src/map_thin_coverage.h": "d4632a1dd789176be35ded06a21b84d272d69910532f31e05dc03fbfc092e5fb",
     "clio843/src/atlas_router.h": "06460b55663bd7b617e3cff557b1ac39abd178f27af0ba703615c39ec5349941",
     "clio843/src/boot_art.h": "367249c4bf35acfa7ce5092dce4a906c566d5e9e818d1bbd3d65c35ba128dbeb",
@@ -22,7 +22,7 @@
     "clio843/src/clioa2dp.c": "eee113f0a920ca591c740ab0bb429f2765d0e66c3e8829b625a473ce14e037da",
     "clio843/src/atlas_catalog.h": "7c1c5599a121e702a0fe7ac89fc957e07086e27f20aaf1511971d197de3a39a0",
     "clio843/src/menu_keyboard.h": "394310c060e073c651cbc61a64c69d5ba61cfd4072e43277f70c40b8344e77f9",
-    "clio843/src/traffic.h": "25c847055fcb0f1f520f677d198a3142d8fb7bf1fe64ddc871a201194494af00",
+    "clio843/src/traffic.h": "49c020633b82e3224512520466fc445f8f033dccfd9c4197a18b637e11d9db20",
     "clio843/src/map_raster.h": "ec43a401a89354fc27ded7fb3d6320ed04226de4daa5a86ed9a8da0bf11eafe1",
     "clio843/src/global_regions.h": "00772a81c56fefdcf466ce0594c05a9d62983861a6f81be872fb7e474956d647",
     "clio843/src/overlay_frames.h": "b1b6e79491dad7a2a62004f999793bccfef7bb6580b3a877777c284f4537557c",
@@ -41,7 +41,7 @@
     "clio843/src/keyboard.h": "f3237bf2ace7761c42968234f93ada0f25ea906498e8afa5437b83f127fe5649",
     "clio843/src/nav_roundabout.h": "470390303a8f18184a020710012ea0353d0425c26a1381bbaa4064ca2d7f39be",
     "clio843/src/gps_panel.h": "31e8561c3c3087a9e8970faad199049b021d3800d138ae4c386d303b763166f0",
-    "clio843/src/mobility.h": "211cdf5c443e18d287cd455c9b6e6bfbabc0ae260fc1c319b326cbc5cdfa5fc5",
+    "clio843/src/mobility.h": "1d273f5222008c317917874383a259480e0495aa28a4e7e9485b88b9c1129a2a",
     "clio843/src/hud_turn_masks.h": "14ff4606db601d4376a3790b13213f2f175c611eedf63f91e4e05111862ce493",
     "clio843/src/menu_layout.h": "c413f261277151f8bd9be15f08cc896a41fc186619ec607501c1a18a463bd23e",
     "clio843/src/global_cameras.h": "d07e8dabf65f3513a5ec88eb15e34bdcad628cdb291f08a518eb46a3ebed9cd9",
@@ -512,7 +512,7 @@
     "clio843/src/vendor/sheenbidi/Headers/SheenBidi/SheenBidi.h": "44a644a72edf2300838d32c3e32aa14a7cb66b584fb9da643b8311aa21991cbe"
   },
   "executables": {
-    "clio040": "4767a5d93fad9b0fccf559fb9ce6a604e04cca786d3288a0b7b7a70b88ca1011",
+    "clio040": "7750c8147c045965bc69410b83774141d50a5237a3f07133a5e059f965172091",
     "cliospl": "36f99bd4d3bb195469743d59eedae3a8d6370d8310e1fe890cadd58d776796f5",
     "clioa2dp": "f43669f92d6de3c00bce0d16b7027a5aad0ec04fe9e0aeba265a37f121d02e5f"
   },
@@ -2747,7 +2747,7 @@
       ]
     },
     "v220-destination-prediction.gif": {
-      "sha256": "a7b622b002d7278be56b15fc4276998c5a0deb1da7b4bcae64f5e8eeb55ed9be",
+      "sha256": "7188fd686c0528de76c50076f3a0cf06025d9093de22c0f77379e8f4ae0c3f40",
       "frames": 31,
       "duration_ms": 6500,
       "reserved_pointer_colours": [
@@ -2843,23 +2843,23 @@
         },
         {
           "frame": "night/preview-v220-destination-prediction-2650.png",
-          "rgb565_sha256": "e9c860613f7ee2250e6c2b7de7411594bb2bd4fa8452a96864610ce03761f894"
+          "rgb565_sha256": "c01712dfa64ca1727a1bcd6a8878026364527af2780318ea06c0d760086caed5"
         },
         {
           "frame": "night/preview-v220-destination-prediction-2700.png",
-          "rgb565_sha256": "28150d00bc851478246e40d97e07434863ec5b875250de992b0c50005b4445b8"
+          "rgb565_sha256": "ad6025610759bd45f4957974fb5a5dc4e3d4dcd401b31402a4a01aa1e0dd64ed"
         },
         {
           "frame": "night/preview-v220-destination-prediction-2750.png",
-          "rgb565_sha256": "34bc5acf2b084ed48136ed6121a90ca0c0440187cc2b92ff758e5a669e519f03"
+          "rgb565_sha256": "75dec98ee64383280256e1c3f3ee6e490ec7e1147865996f53d323f80a39d4b4"
         },
         {
           "frame": "night/preview-v220-destination-prediction-2800.png",
-          "rgb565_sha256": "3bcbad43d95cffb7a2d1528e937d5ebf440a61ce138009a48e2eb1827e5a0669"
+          "rgb565_sha256": "a7cf190d403ebb94807f82c1074865abd495480784d757ed5a9449fc30305271"
         },
         {
           "frame": "night/preview-v220-destination-prediction-2850.png",
-          "rgb565_sha256": "b000be99f5ad7c836a3e732906dc02f02a30155cdcae772d24a9aec3ec58e495"
+          "rgb565_sha256": "cb57236475a72e988377d07fee9c5917d244641747366d68ea37a6e68abafc38"
         },
         {
           "frame": "night/preview-v220-destination-prediction-2900.png",
