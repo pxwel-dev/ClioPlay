@@ -71,6 +71,10 @@ static u32 overlay_model(void){
   if(screen==SCR_COORDINATES||sheet_old_page==P_COORD||sheet_old_page==P_REVIEW) {
    OVERLAY_HASH(coordinates);
   }
+  if(sheet_page==P_GPS||sheet_old_page==P_GPS){
+   const int gps_state[]={gps.fix,local_clock_minutes(),gps.sec,gps.sats,gps.hdop10,gps.gst_dm,gps.alt_valid,gps.alt_dm,gps.lat,gps.lon,gps_accuracy_dm(),gps_panel_heading()};
+   OVERLAY_HASH(gps_state);
+  }
  }
  if(popup.from.a||popup.to.a){
   OVERLAY_HASH(popup.card);OVERLAY_HASH(popup.previous);

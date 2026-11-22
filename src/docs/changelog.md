@@ -1,10 +1,14 @@
 # Version history
 
-This history records implemented changes. Entries marked **Unreleased** are prepared locally and have not been published.
+This history records implemented changes for each release.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
 
-## Version 2.2.5 — Unreleased
+## Version 2.2.5 — Release
 
+- Added a **live GPS information panel** (initial panel and NMEA `$GPGST`/HDOP/altitude implementation contributed by `qspi` in PR #8): displays a large antialiased compass dial with heading arrow, GPS time to the second, **Heading** (degrees and 8-point cardinal), estimated horizontal **Accuracy** (preferring `$GPGST` error ellipses with an HDOP × 5 m fallback, colour-coded green/amber/red at `≤ 5 m` / `≤ 15 m` / `> 15 m`) with satellite count, **Altitude** above sea level, and marine degrees/decimal-minutes position (with right-to-left label ordering in Arabic and Hebrew, Metric/Imperial unit support, and live overlay-frame invalidation).
+  - Kept **Menu** compact (`Trip`, `Bluetooth`, `Settings`) and exposed the GPS panel directly from the driving map by pressing **Centre / OK** (or pushing the console knob) **twice within 4 seconds** — the first press still flashes the current road name and/or ETA, existing **OK to review** invitations, Explore selection and **BT CTRL** playback retain priority, and double-press works even without a GPS fix or active route.
+  - Bound the physical console **REPEAT** button (`btn7`) to `GPS` by default (opening and closing the GPS panel directly, while **INFO** keeps showing road name/ETA and `cswmap.ini` overrides remain supported); **BACK** or **MAP** returns cleanly to the driving map.
+  - Added full translations across all 18 languages, native regression tests, and a real-map demo preview (`src/docs/demo/v225-gps-panel.gif`).
 - Expanded **Auto zoom** from Z6–Z4 to **Z9–Z4** (and allowed manual driving zoom and persisted `manualzoom` up to Z9 on standard Z6 map packs), widening the Adaptive Auto-zoom clamp to Z4–Z9. Default speed bands and hysteresis thresholds (`mph` / approx. `km/h`):
   - **Z9:** `< 5 mph` (`< 8 km/h`), zooms out to Z8 at `≥ 6 mph` (`10 km/h`).
   - **Z8:** `5 to < 12 mph` (`8–19 km/h`), zooms out to Z7 at `≥ 14 mph` (`23 km/h`), zooms in to Z9 at `≤ 4 mph` (`6 km/h`).
@@ -14,7 +18,7 @@ Release dates are added when a version is published; older versions are not reco
   - **Z4:** `≥ 65 mph` (`≥ 105 km/h`), zooms in to Z5 at `≤ 62 mph` (`100 km/h`).
 - Preserved full sub-unit vertex precision at cropped zooms **Z7–Z9** (retaining all four fractional bits of Z6’s 12-bit road vertices) and placed street names beside visible screen-clipped road segments where there is room, avoiding the car marker, HUD cards, clipped route geometry and temporary bottom street-name pill (refreshing once on handoff) and deduplicating full-length road names. Works with existing map packs.
 - Tightened **View diversion** / **View route** Explore framing to use the full `480 × 272` viewport (`448 × 240` fit box up to Z9, visually centred vertically) instead of dropping out prematurely.
-- Added `--only` / `--gif` and `--list` support to `tools/regenerate_gifs.py`, `tools/render_previews.py` and `tools/render_mapless_gifs.py` so individual demo GIFs can be re-rendered in seconds (merging cleanly into `docs/demo/manifest.json`), and regenerated all 33 demo GIFs with Auto zoom enabled at road-matched driving speeds (or `0 mph` / Z9 for stationary workflows).
+- Added `--only` / `--gif` and `--list` support to `tools/regenerate_gifs.py`, `tools/render_previews.py` and `tools/render_mapless_gifs.py` so individual demo GIFs can be re-rendered in seconds (merging cleanly into `docs/demo/manifest.json`), and regenerated all demo GIFs with Auto zoom enabled at road-matched driving speeds (or `0 mph` / Z9 for stationary workflows).
 
 ## Version 2.2.4 — Release
 

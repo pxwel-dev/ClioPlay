@@ -11,25 +11,13 @@
 
 ## Version @@VERSION@@
 
-- **Expanded local on-device ML (100% offline, opt-in):** builds on driving-history learning via a bounded integer-only companion model (`mobility-ml.dat`, wiped by **Clear driving history**) adding personal road-class and cold-weather (`<= 3 °C`) ETA calibration, **`~X-Y min`** ETA reliability ranges, and subtle amber **Frequent slowdown ahead** / **Cold-weather slowdown ahead** braking alerts.
-- **Unambiguous Traffic Diversion vs Usual Route recommendations:** traffic bypasses highlight the slow section in yellow and announce **Traffic diversion available** → **Take traffic diversion?** (**Likely traffic ahead**, **View diversion**, **Diversion selected**), while learned road preferences keep the active route in its normal colour alongside the dashed teal usual road and announce **Usual route available** → **Use usual route?** (**Based on your usual route**, **View route**, **Usual route selected**), with off-route detours during active congestion prevented from polluting permanent route preferences.
-- **Trip chains, recurring stops, usual parking & preferred POIs:** improves destination prediction with dwell-time and multi-leg trip chains across reboots; offers explicit **Usual stop available** (**Add usual stop?**) and **Usual parking available** (**Route to usual parking?**) reviews; and marks preferred Fuel/Parking/Hospital stations with a cyan star in **Trip → Nearby**.
-- **Map endpoint markers, route-coloured destination POIs & expandable roundabout secondary manoeuvre:** draws route-coloured endpoint rings on every active/upcoming stop and a bullseye ring on the final destination — and when heading directly to a map POI (Parking, Fuel or Hospital), tints the POI badge itself in the route colour instead of drawing a circle over it; expands the **Then …** secondary manoeuvre pill smoothly from `24 px` to `43 px` for follow-up roundabouts so the full roundabout icon and exit number stay legible while remaining compact for normal turns.
-- **Adaptive Auto-zoom & Day/Night brightness:** learns consistent per-speed-band Auto-zoom adjustments (`±1` level, clamped Z4–Z6) and remembers separate Day and Night brightness levels applied automatically on **Auto** theme switches.
-- **Offline history replay & map-rebuild migration:** new `tools/replay_history.py` desktop CLI replays raw `history.dat` traces onto newly rebuilt single-pack or multi-region `atlas.cpa` maps with pure-Python DBSCAN endpoint denoising while keeping all personal data strictly local.
-- **Carried forward from 2.2.3:** offline Nearby POIs, **View diversion** Explore preview, AVRCP 1.3 instant Bluetooth notifications, lazy regional atlas validation, centred scrollable Itinerary connectors and `tools/favourites_tool.py`.
-
-See [version history](CHANGELOG.md) for implemented changes by version.
-
-See [intelligent navigation](src/docs/intelligent-navigation.md) for configuration, model behaviour and privacy.
-
-## In development for v2.2.5
-
-- **Expanded Auto zoom (Z9–Z4) & close-up manual zoom:** selects Z9 (`< 5 mph`), Z8 (`5–12 mph`), Z7 (`12–25 mph`), Z6 (`25–45 mph`), Z5 (`45–65 mph`) and Z4 (`≥ 65 mph`) with proportional speed hysteresis (`4/6`, `10/14`, `23/27`, `42/48`, `62/68 mph`) so speed fluctuations near a boundary never oscillate zoom; manual driving zoom and Adaptive Auto-zoom clamping also extend to Z9.
-- **Close-up vector precision & street names (Z7–Z9):** preserves full sub-unit Z6 vertex precision and places street names beside visible road segments at Z7–Z9 (avoiding the route, car marker and HUD pills) using existing map packs.
+- **Live GPS information panel:** displays a large antialiased compass dial with heading arrow, GPS time to the second, **Heading** (degrees and cardinal), colour-coded horizontal **Accuracy** (preferring NMEA `$GPGST` error estimates with HDOP × 5 m fallback) and satellite count, **Altitude** above sea level, and marine degrees/decimal-minutes coordinates across all 18 languages (including RTL mirroring for Arabic/Hebrew) and Metric/Imperial units. Open directly from the driving map by pressing **Centre / OK** (or pushing the console knob) twice within 4 seconds, or with one press of the console **REPEAT** button (`btn7`); press **BACK**, **MAP**, or **REPEAT** again to close.
+- **Expanded Auto zoom (Z9–Z4) & close-up manual zoom:** selects Z9 (`< 5 mph`), Z8 (`5–12 mph`), Z7 (`12–25 mph`), Z6 (`25–45 mph`), Z5 (`45–65 mph`) and Z4 (`≥ 65 mph`) with proportional speed hysteresis (`4/6`, `10/14`, `23/27`, `42/48`, `62/68 mph`) so speed fluctuations near a boundary never oscillate zoom; manual driving zoom and Adaptive Auto-zoom clamping also extend across Z4–Z9.
+- **Close-up vector precision & street names (Z7–Z9):** preserves full sub-unit Z6 vertex precision and places street names beside visible road segments at Z7–Z9 (avoiding the route, car marker and HUD pills) using existing map packs with no rebuild required.
 - **Tighter View diversion / View route framing:** opens Explore tightly fitted and vertically centred around the proposed diversion or usual-route loop across the full `480 × 272` viewport (up to Z9).
+- **Carried forward from 2.2.4 & 2.2.3:** strictly offline on-device ML (`mobility-ml.dat`) for personal/cold-weather ETA calibration, `~X-Y min` ETA reliability ranges, unambiguous Traffic Diversion vs Usual Route recommendations, dwell-time trip chains, Usual Stop & Usual Parking reviews, Frequent/Cold-weather slowdown alerts, Adaptive Auto-zoom & Day/Night brightness, route-coloured stop/destination markers and POI highlights, expandable roundabout **Then …** secondary manoeuvre pill, offline Nearby POIs, AVRCP 1.3 instant Bluetooth notifications, `tools/replay_history.py`, and `tools/favourites_tool.py`.
 
-See the [unreleased changes](src/docs/changelog.md#version-225--unreleased) and [zoom table](src/README.md#auto-zoom-and-close-up-street-names-in-v225-unreleased).
+See [version history](CHANGELOG.md) for implemented changes by version, [intelligent navigation](src/docs/intelligent-navigation.md) for ML behaviour and privacy, and the [zoom & controls guide](src/README.md#auto-zoom-and-close-up-street-names).
 
 ## UI previews
 
@@ -159,7 +147,7 @@ upper-right console buttons act as the remote's soft keys.
 | **MAP** | **MAP** | Restore Auto zoom after temporary manual zoom; return from **View diversion** to re-open the confirmation; otherwise switch between driving and map browsing, or return to driving from a menu. |
 | **MENU** | **MENU** | Open the menu for Trip, Bluetooth and Settings. |
 | **BACK** | **BACK** | Go back or dismiss a dialog. On the driving map with Bluetooth audio selected and a phone connected, toggle **BT CTRL**. |
-| **Centre / OK** | **Press the knob** | On the driving map, briefly show the current road name and, during guidance, the estimated time and distance remaining. In map browsing, select the crosshair point. In **BT CTRL**, play/pause. In menus, select or confirm. |
+| **Centre / OK** | **Press the knob** | On the driving map, press once to briefly show the current road name and (during guidance) ETA/distance, or press twice within 4 seconds to open the live **GPS** panel. In map browsing, select the crosshair point. In **BT CTRL**, play/pause. In menus, select or confirm. |
 | **Up / Down** | **Joystick up / down** | Enter map browsing and pan, or move through menu rows. |
 | **Left / Right** | **Joystick left / right** | Enter map browsing and pan, change tabs/options/settings, or select dialog choices. In **BT CTRL**, previous/next track. |
 | **Left soft key** | **Upper-left button** | Zoom out; delete a character in coordinate/name entry. |
@@ -172,14 +160,15 @@ choose a row, use the joystick left/right to change its value, and press for
 the row's OK action. Back returns to the category list.
 
 Console shortcuts: **DEST** opens Trip; **LIGHT** cycles Day/Night/Auto;
-**INFO** and **REPEAT** show the current road name on the driving map and add
-the journey estimate during guidance. Resume and arrival prompts must still be
-confirmed. No long press is needed for any remote action.
+**INFO** shows the current road name on the driving map and adds the journey
+estimate during guidance; **REPEAT** opens and closes the live GPS panel.
+Resume and arrival prompts must still be confirmed. No long press is needed for any remote action.
 
 If you adjust the zoom while Auto zoom is enabled, **MAP** restores Auto zoom
 without entering Explore. Press **MAP** again to enter Explore, or use an arrow
 to enter Explore and pan directly. **OK** shows the road name and, during
-guidance, the ETA. This also works during temporary Manual zoom.
+guidance, the ETA; pressing **OK** a second time within 4 seconds opens the live
+GPS panel. This also works during temporary Manual zoom.
 
 See the [full remote and console controls guide](src/README.md#remote-and-console-controls) for actions in
 each screen, including settings, pairing and the favourite keyboard.
@@ -225,6 +214,7 @@ Original ClioPlay development includes:
 ### Contributions and acknowledgements
 
 - [bobczan/Renatka](https://github.com/bobczan/Renatka) — physical Renault console protocol, button mappings and alternative vehicle temperature interface, subsequently integrated into ClioPlay's native application.
+- [qspi](https://github.com/qspi) — live GPS information panel layout and NMEA `$GPGST`/HDOP/altitude support ([PR #8](https://github.com/pxwel-dev/ClioPlay/pull/8)).
 - [OpenStreetMap](https://www.openstreetmap.org/copyright) and its contributors — geographic and navigation data.
 - [Geofabrik](https://www.geofabrik.de/) — distribution of regional OpenStreetMap extracts.
 

@@ -27,6 +27,7 @@ static const char* hud_page_title(void){
  case SCR_BT:return bt_label();
  case SCR_KEY:return ui_tr("Rename");
  case SCR_COORDINATES:return coordinates_title();
+ case SCR_GPS:return ui_tr("GPS");
  default:return ui_tr("Settings");
  }
 }
@@ -858,6 +859,7 @@ static void header(void){
 
 #ifdef HOST_TEST
 static void hud_reset_animations(void){
+ driving_info_ok_armed=0;
  menu_reset(hud_now_ms());popup_reset();
  memzero(hud_tween,sizeof(hud_tween));hud_last_road[0]=0;hud_road_at=0;hud_road_live=0;
  hud_status_reset();hud_playback_reset();

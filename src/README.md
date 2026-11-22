@@ -1,14 +1,14 @@
-# ClioPlay version 2.2.4 (Unreleased)
+# ClioPlay version 2.2.5
 
-Version 2.2.4 (Unreleased) expands ClioPlay's opt-in, strictly offline local
-learning with personal road-class and cold-weather (`<= 3 °C`) ETA calibration,
-`~X-Y min` ETA reliability ranges, dwell-time trip chains and recurring
-intermediate stop prompts, non-ambiguous **Traffic diversion available** vs
-**Usual route available** recommendations, **Usual parking** reviews, learned
-Nearby-POI affinity badges, adaptive Auto-zoom and Day/Night brightness
-personalisation, repeat hard-braking slowdown alerts, route-coloured stop and
-destination map endpoints, an expandable roundabout secondary manoeuvre pill,
-and the desktop `tools/replay_history.py` map-rebuild migration tool. See
+Version 2.2.5 adds a live **GPS** information panel (compass dial, heading,
+GPS time to the second, `$GPGST`/HDOP accuracy, satellite count, altitude and
+marine coordinates via double-pressing **Centre / OK** or pressing console
+**REPEAT**), expands **Auto zoom** and manual driving zoom across **Z9–Z4**
+with hysteresis and full close-up vector precision and street names at **Z7–Z9**,
+and tightens **View diversion** / **View route** framing to fill the `480 × 272`
+screen — building on ClioPlay’s offline local learning, Nearby POIs, expandable
+roundabout secondary manoeuvre pill, AVRCP 1.3 instant Bluetooth notifications
+and desktop migration/favourites tools. See
 [intelligent navigation](docs/intelligent-navigation.md) and the
 [changelog](docs/changelog.md).
 
@@ -162,7 +162,7 @@ uses its normal vehicle configuration to supply physical console events.
 | INFO | Briefly show the current road name and, during guidance, the journey estimate. |
 | MENU | Open Menu. |
 | LIGHT | Cycle Day, Night and custom-schedule Auto. |
-| REPEAT | Redisplay the current road name and, during guidance, the journey estimate. |
+| REPEAT | Open and close the live GPS information panel directly. |
 | DEST | Open Trip directly, unless a confirmation is awaiting a decision. |
 | MAP | The existing Auto/manual zoom, Explore and return-to-map behaviour. |
 | Joystick | The existing arrow actions, including Explore panning. |
@@ -179,11 +179,11 @@ Default mappings work without a configuration file. For overrides, copy
 [the contributed example](card-template/cswmap.example.ini) to the card as
 `clio843/cswmap.ini` (or `cswmap.ini` in the card root, which takes precedence).
 The example contains the contributor’s conservative bindings; it disables LIGHT
-and REPEAT and maps DEST to Menu. Change `btn6=THEME`, `btn7=INFO`, `btn8=TRIP`
+and REPEAT and maps DEST to Menu. Change `btn6=THEME`, `btn7=GPS`, `btn8=TRIP`
 and `btn4=INFO` to keep the integrated defaults. Actions accept upper/lower case;
 `ROTNEXT`/`ROTPREV` or `knob+`/`knob-` select contextual knob movement.
-`GPS` opens the GPS panel and closes it again; for example, `btn7=GPS` puts it
-on REPEAT.
+`GPS` opens the GPS panel and closes it again (default on `btn7` / REPEAT; can
+be moved to another button or replaced with `INFO` or `NONE`).
 `NONE` disables a control. Add `verbose=1` for interpreted console-field logging
 while Debug is enabled. File edits, including same-size edits, reload within
 five seconds; invalid/oversize files keep the last valid bindings. Deleting the
@@ -247,7 +247,7 @@ bindings; the defaults provide complete remote-equivalent control.
 | **MAP** | Restore Auto zoom after a temporary manual adjustment; otherwise enter map browsing. | Return to the driving view and the configured zoom mode. | Leave BT CTRL; restore Auto zoom if temporarily adjusted, otherwise enter map browsing. |
 | **MENU** | Open Menu. | Open Menu. | Leave BT CTRL and open Menu. |
 | **BACK** | Enter BT CTRL when Bluetooth audio is selected and a phone is connected. | | Leave BT CTRL. |
-| **Centre / OK** | Briefly show the current road name when known. During guidance, also show the estimated time and distance remaining. | Open the route or add-stop prompt for the point under the crosshair. | Play or pause. |
+| **Centre / OK** | Press once to briefly show the current road name and (during guidance) ETA and remaining distance; press again within 4 seconds to open the live **GPS** panel. | Open the route or add-stop prompt for the point under the crosshair. | Play or pause. |
 | **Up / Down** | Enter map browsing and pan. | Pan up or down. | |
 | **Left / Right** | Enter map browsing and pan. | Pan left or right. | Previous or next track. |
 | **Left / right soft keys** | Zoom out or in. With Auto zoom enabled, this sets a temporary override. | Zoom out or in. | Zoom out or in on the driving map. |
@@ -256,7 +256,10 @@ With Auto zoom enabled, the soft keys temporarily adjust the driving zoom and
 show **Manual zoom**. **MAP** restores Auto zoom without entering Explore; a
 subsequent **MAP** enters Explore. Arrow keys can enter Explore and pan directly,
 including from temporary manual zoom. **OK** briefly shows the road name in
-the centre pill and, during guidance, the journey estimate in the status pill.
+the centre pill and, during guidance, the journey estimate in the status pill;
+pressing **OK** a second time within 4 seconds opens the live **GPS** panel
+(even with no GPS fix or active route, while keeping existing **OK to review**
+invitations, Explore selection and **BT CTRL** playback priority intact).
 The estimate also appears when a route calculation or reroute finishes.
 
 Explore shows one entry notice. Zooming and panning within Explore neither replay
@@ -268,7 +271,7 @@ Confirming a point selected in Explore returns directly to the driving map with
 the reverse rotation/tilt animation. The time/temperature pill remains visible;
 calculation uses the existing five-frame-per-second cap. Declining keeps Explore.
 
-#### Auto zoom and close-up street names in v2.2.5 (Unreleased)
+#### Auto zoom and close-up street names
 
 Auto zoom selects across **Z9–Z4**, giving closer views at low speeds while keeping roughly 33–51 seconds of forward sightline across driving speeds. Manual driving zoom (soft keys / knob rotation) also reaches **Z9** on standard Z6 map packs. Separate speed thresholds for speeding up (zooming out) and slowing down (zooming in) create a hysteresis band around each boundary so small speed fluctuations do not keep changing the zoom; large speed jumps step straight to the matching level. When **Learn driving history** is enabled, learned Adaptive Auto-zoom adjustments (`±1` level) are clamped across the full **Z4–Z9** range.
 
@@ -285,7 +288,7 @@ At **Z7–Z9**, roads preserve all four fractional bits of Z6’s 12-bit tile co
 
 ### Menu, Trip and Bluetooth
 
-- **Menu:** use **Up / Down** to choose Trip, Bluetooth, Settings or GPS. Press **OK**
+- **Menu:** use **Up / Down** to choose Trip, Bluetooth or Settings. Press **OK**
   to open it or **BACK** to return to driving. From a page, **MENU** or **BACK**
   returns to Menu. **MAP** goes directly to the driving map.
 - **Trip:** always opens **Itinerary** first. Use **Left / Right** to cycle
@@ -311,18 +314,21 @@ At **Z7–Z9**, roads preserve all four fractional bits of Z6’s 12-bit tile co
   select it and press **OK** to start pairing. **Up / Down** or the knob
   selects a device, **OK** opens its Connect/Disconnect and Forget actions, and
   **Up / Down** selects the action. **OK** confirms; **BACK** returns to the list.
-- **GPS:** a live information panel. A large compass on the left shows the
-  heading as a light red arrow. Beside it are the GPS time to the second and
-  three columns: **Heading** in degrees with N/NE/E…, estimated horizontal
-  **Accuracy** with the satellite count, and **Altitude** above sea level. The
-  position runs along the bottom in marine degrees and decimal minutes, for
-  example `47° 29.887' N   019° 02.420' E`. When the car stops, the heading and
-  arrow hold the last course, as the map does; without a fix the values show
-  `--` and the bottom row reads **No fix**. Accuracy uses the receiver's `$GPGST` error estimate when present,
-  otherwise HDOP × 5 m; green, amber and red mark up to 5 m, up to 15 m and
-  worse. Accuracy and altitude follow the Metric/Imperial setting. **BACK**
-  returns to Menu. A console button mapped to `GPS` opens the panel directly;
-  the same button or **BACK** then closes it.
+- **GPS:** a live information panel opened directly from the driving map by
+  pressing **Centre / OK** (or pushing the console knob) twice within 4 seconds,
+  or with a single press of the console **REPEAT** button (`GPS` action). A
+  large compass on the left shows the heading as a light red arrow. Beside it
+  are the GPS time to the second and three columns: **Heading** in degrees with
+  N/NE/E…, estimated horizontal **Accuracy** with the satellite count, and
+  **Altitude** above sea level. The position runs along the bottom in marine
+  degrees and decimal minutes, for example `47° 29.887' N   019° 02.420' E`
+  (mirrored right-to-left in Arabic and Hebrew). When the car stops, the heading
+  and arrow hold the last course, as the map does; without a fix the values show
+  `--` and the bottom row reads **No fix**. Accuracy uses the receiver’s
+  `$GPGST` error estimate when present, otherwise HDOP × 5 m; green, amber and
+  red mark up to 5 m, up to 15 m and worse. Accuracy and altitude follow the
+  Metric/Imperial setting. Press **BACK**, **MAP**, or **REPEAT** again to
+  return directly to the driving map.
 
 All these pages are animated frosted-glass sheets over the live map. Menu,
 Settings, Bluetooth, Trip, coordinates and review use compact sheets between

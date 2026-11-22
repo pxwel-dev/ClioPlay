@@ -143,13 +143,19 @@ static void gps_position(struct HudBox b,int centre,int min_x){
  const char*name[2]={ui_tr("Lat"),ui_tr("Lon")};char value[2][24];
  gps_coordinate_text(value[0],sizeof(value[0]),gps.lat,'N','S');
  gps_coordinate_text(value[1],sizeof(value[1]),gps.lon,'E','W');
- int count=2,gap=6,separator=30,total=-separator;
+ int count=2,gap=6,separator=30,total=-separator,rtl=ui_language_rtl();
  for(int i=0;i<count;i++)total+=width(name[i],1)+gap+width(value[i],1)+separator;
  int x=centre-total/2,max_x=b.x+b.w-12-total;if(x>max_x)x=max_x;if(x<min_x)x=min_x;
  int origin=box_text_origin(b.y+b.h-24,18,1,"0");
- for(int i=0;i<count;i++){
-  label(x,origin,1,name[i],C_MUTED,0);x+=width(name[i],1)+gap;
-  label(x,origin,1,value[i],C_WHITE,0);x+=width(value[i],1)+separator;
+ for(int j=0;j<count;j++){
+  int i=rtl?count-1-j:j;
+  if(rtl){
+   label(x,origin,1,value[i],C_WHITE,0);x+=width(value[i],1)+gap;
+   label(x,origin,1,name[i],C_MUTED,0);x+=width(name[i],1)+separator;
+  }else{
+   label(x,origin,1,name[i],C_MUTED,0);x+=width(name[i],1)+gap;
+   label(x,origin,1,value[i],C_WHITE,0);x+=width(value[i],1)+separator;
+  }
  }
 }
 /* The last course while a fix is held. Below the course-update speed the map

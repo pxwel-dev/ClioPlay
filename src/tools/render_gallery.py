@@ -228,6 +228,15 @@ V224_ML_PARKING_POIS_EVENTS = (
 )
 V224_ML_PARKING_POIS_SAMPLES = sorted({0} | {at+step for at,_ in V224_ML_PARKING_POIS_EVENTS for step in TWEEN_STEPS} | {10400})
 
+V225_GPS_PANEL_EVENTS = (
+    (800,  'key_handle(K_ENTER);assert(screen==SCR_MAP&&sheet_page==P_CLOSED&&hud_navigation.kind==HUD_JOURNEY);'),
+    (2000, 'gps.sec=5;gps_gst_ms=s_now_ms();key_handle(K_ENTER);assert(screen==SCR_GPS&&sheet_page==P_GPS&&!sheet_depth);'),
+    (3000, 'gps.sec=6;gps.sats=10;gps.gst_dm=30;gps_gst_ms=s_now_ms();gps.alt_dm=630;display_course=track_course=gps.course=74;'),
+    (4000, 'gps.sec=7;gps.sats=10;gps.gst_dm=40;gps_gst_ms=s_now_ms();gps.alt_dm=640;display_course=track_course=gps.course=76;'),
+    (5200, 'gps.sec=8;key_handle(K_BACK);assert(screen==SCR_MAP&&sheet_page==P_CLOSED);'),
+)
+V225_GPS_PANEL_SAMPLES = sorted({0} | {at+step for at,_ in V225_GPS_PANEL_EVENTS for step in TWEEN_STEPS} | {6100})
+
 
 
 def add(group, name, title, setup='', action='', check='', note=''):
@@ -794,7 +803,7 @@ def modern_menus():
         V223_VIEW_DIVERSION_SAMPLES
     )
     motion(
-        'Version 2.2.4 (Unreleased)',
+        'Version 2.2.4',
         'preview-v224-ml-eta-and-habits',
         'Clear-road usual-route proposal and calibrated ETA reliability range on Durham map',
         'preview_ml_eta_habits_seed();settle();',
@@ -802,7 +811,7 @@ def modern_menus():
         V224_ML_ETA_HABITS_SAMPLES
     )
     motion(
-        'Version 2.2.4 (Unreleased)',
+        'Version 2.2.4',
         'preview-v224-ml-slowdowns',
         'Warm repeat hard-braking alert, deduplication, cold-only silence and frosty cold-weather slowdown cue in York',
         'preview_ml_slowdowns_seed();settle();',
@@ -810,7 +819,7 @@ def modern_menus():
         V224_ML_SLOWDOWNS_SAMPLES
     )
     motion(
-        'Version 2.2.4 (Unreleased)',
+        'Version 2.2.4',
         'preview-v224-ml-parking-and-pois',
         'Usual parking confirmation, recurring intermediate stop and preferred Nearby POI ranking',
         'preview_ml_parking_pois_seed();settle();',
@@ -818,12 +827,20 @@ def modern_menus():
         V224_ML_PARKING_POIS_SAMPLES
     )
     motion(
-        'Version 2.2.4 (Unreleased)',
+        'Version 2.2.4',
         'preview-v224-ml-adaptive-hud',
         'Adaptive Auto-zoom per speed band and automatic Day/Night learned brightness switch',
         'preview_ml_adaptive_hud_seed();settle();',
         V224_ML_ADAPTIVE_HUD_EVENTS,
         V224_ML_ADAPTIVE_HUD_SAMPLES
+    )
+    motion(
+        'Version 2.2.5',
+        'preview-v225-gps-panel',
+        'Double-OK from driving map opens the live GPS panel (compass, time, heading, accuracy, altitude, coordinates) and BACK closes it',
+        'copystr(hud_last_road,sizeof(hud_last_road),"Quayside");hud_road_live=0;gps.sec=4;gps.sats=9;gps.hdop10=8;gps.gst_dm=40;gps_gst_ms=s_now_ms();gps.alt_valid=1;gps.alt_dm=620;settle();',
+        V225_GPS_PANEL_EVENTS,
+        V225_GPS_PANEL_SAMPLES
     )
     add('Menu sheets','empty-receive','Empty itinerary receives phone destinations automatically','gps.mph10=0;auto_zoom_level=-1;trip.active=trip.count=0;menu_open(P_TRIP,0,hud_now_ms());')
     add_stop='gps.mph10=0;auto_zoom_level=-1;key_handle(K_MENU);key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_DOWN);'

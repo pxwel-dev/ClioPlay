@@ -18,7 +18,8 @@ from render_gallery import (ANIMATION_SAMPLE_MS, BLUETOOTH_SAMPLES, MENU_ENTRY_S
                             V220_DESTINATION_SAMPLES, V220_DIVERSION_SAMPLES, V220_FREQUENT_PLACE_SAMPLES,
                             V223_NEARBY_SAMPLES, V223_SECONDARY_MANOEUVRE_SAMPLES, V223_VIEW_DIVERSION_SAMPLES,
                             V224_ML_ETA_HABITS_SAMPLES, V224_ML_SLOWDOWNS_SAMPLES,
-                            V224_ML_PARKING_POIS_SAMPLES, V224_ML_ADAPTIVE_HUD_SAMPLES, ROOT, sha)
+                            V224_ML_PARKING_POIS_SAMPLES, V224_ML_ADAPTIVE_HUD_SAMPLES,
+                            V225_GPS_PANEL_SAMPLES, ROOT, sha)
 
 
 
@@ -46,6 +47,7 @@ def previews():
         'v224-ml-slowdowns.gif': timeline('night', timed_scenes('preview-v224-ml-slowdowns', V224_ML_SLOWDOWNS_SAMPLES, 10800)),
         'v224-ml-parking-and-pois.gif': timeline('night', timed_scenes('preview-v224-ml-parking-and-pois', V224_ML_PARKING_POIS_SAMPLES, 10500)),
         'v224-ml-adaptive-hud.gif': timeline('day', timed_scenes('preview-v224-ml-adaptive-hud', V224_ML_ADAPTIVE_HUD_SAMPLES, 10100)),
+        'v225-gps-panel.gif': timeline('night', timed_scenes('preview-v225-gps-panel', V225_GPS_PANEL_SAMPLES, 6200)),
         'v220-frequent-place.gif': timeline('night', timed_scenes('preview-v220-frequent-place', V220_FREQUENT_PLACE_SAMPLES, 5900)),
         'v220-destination-prediction.gif': timeline('night', timed_scenes('preview-v220-destination-prediction', V220_DESTINATION_SAMPLES, 6500)),
         'v220-intelligent-diversions.gif': timeline('night', timed_scenes('preview-v220-intelligent-diversions', V220_DIVERSION_SAMPLES, 6200)),
@@ -314,6 +316,11 @@ def main():
                 'Real Newcastle map tiles demonstrating production ml_note_zoom_override() '
                 'speed-band Auto-zoom personalisation and ml_learned_brightness() automatic '
                 'Day-to-Night brightness adjustment on an Auto theme transition.'),
+            'v225-gps-panel.gif': (
+                'Real Newcastle driving map demonstrating production double-OK entry from '
+                'the driving map (first OK shows road name and ETA, second OK within 4 s '
+                'opens the live GPS panel), 1 Hz GPS telemetry updates (compass dial, '
+                'heading, GST accuracy, satellites, altitude and coordinates), and BACK dismissal.'),
         }
         for name, note in provenance.items():
             if name in reports:

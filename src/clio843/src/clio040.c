@@ -2553,8 +2553,11 @@ static void freecam_orientation_anim_update(u32 now);
 /* Hard recenter is reserved for programmatic state changes (arrival/trip/etc.).
  * User MAP toggling uses leave_freecam() below so it gets the reverse animation. */
 static void recenter_map(void){freecam=0;map_tilt_q8=256;freecam_course_valid=0;freecam_anim_mode=FC_ANIM_NONE;freecam_anim_at=0;freecam_anim_serial++;freecam_buffered=0;freecam_anim_tilt_from=256;zoom_override=-1;if(pref.autozoom)auto_zoom_level=-1;}
-static void enter_freecam(void){if(freecam||freecam_transition_active()||(!gps.fix&&!track_valid))return;int z=active_zoom();int c=map_course();if(c<0||c>=360)c=0;freecam_course=c;freecam_course_valid=1;/* Tilt still animates even when already facing north. */freecam_anim_mode=FC_ANIM_TO_NORTH;freecam_anim_serial++;freecam_buffered=0;freecam_anim_from=c;freecam_anim_at=hud_now_ms();freecam_anim_tilt_from=256;map_tilt_q8=256;freecam=1;freecam_zoom=z;zoom_override=-1;/* MAP entry begins exactly at the car's current/last tracked position. */cam_lat=car_lat();cam_lon=car_lon();}
+static int driving_info_ok_armed;
+static u32 driving_info_ok_at;
+static void enter_freecam(void){if(freecam||freecam_transition_active()||(!gps.fix&&!track_valid))return;driving_info_ok_armed=0;int z=active_zoom();int c=map_course();if(c<0||c>=360)c=0;freecam_course=c;freecam_course_valid=1;/* Tilt still animates even when already facing north. */freecam_anim_mode=FC_ANIM_TO_NORTH;freecam_anim_serial++;freecam_buffered=0;freecam_anim_from=c;freecam_anim_at=hud_now_ms();freecam_anim_tilt_from=256;map_tilt_q8=256;freecam=1;freecam_zoom=z;zoom_override=-1;/* MAP entry begins exactly at the car's current/last tracked position. */cam_lat=car_lat();cam_lon=car_lon();}
 static void enter_freecam_at(s32 lat,s32 lon,int z){
+ driving_info_ok_armed=0;
  int lo=mapok?(int)mh.minlvl:0;
  if(z<lo)z=lo;if(z>MAX_EXPLORE_ZOOM)z=MAX_EXPLORE_ZOOM;
  freecam=1;freecam_zoom=z;zoom_override=-1;
@@ -3307,6 +3310,7 @@ static void key_handle_state(int code){render_background_dirty=1;keydiag(code);
 /* Arrival/resume prompts cannot be silently escaped with MAP/BACK. */
 if(code==K_MAP&&screen!=SCR_MAP&&modal!=MOD_RESUME_TRIP&&modal!=MOD_ARRIVED_STOP&&modal!=MOD_ARRIVED_DEST){coordinates_active=0;modal=MOD_NONE;dest_pick_action=DEST_PICK_NONE;trip_pick_mode=DEST_PICK_NONE;screen=SCR_MAP;recenter_map();return;}
 if(modal!=MOD_NONE){
+  driving_info_ok_armed=0;
   int yesno=modal==MOD_ROUTE_POINT||modal==MOD_CANCEL_ROUTE||modal==MOD_REMOVE_STOP||modal==MOD_RESUME_TRIP;
   if(code==K_BACK&&modal!=MOD_ARRIVED_STOP&&modal!=MOD_ARRIVED_DEST&&modal!=MOD_RESUME_TRIP){if(modal==MOD_SOURCE_PICK)dest_pick_action=DEST_PICK_NONE;modal=MOD_NONE;return;}
   int count=yesno?2:modal_action_count();
@@ -3363,7 +3367,7 @@ if(screen==SCR_MAP){
   if(bt_control_mode){
     if(code==K_LEFT){bt_transport_command(BT_TRANSPORT_PREVIOUS);return;}
     if(code==K_RIGHT){bt_transport_command(BT_TRANSPORT_NEXT);return;}
-    if(code==K_ENTER){bt_transport_command(BT_TRANSPORT_PLAY_PAUSE);return;}
+    if(code==K_ENTER){driving_info_ok_armed=0;bt_transport_command(BT_TRANSPORT_PLAY_PAUSE);return;}
     if(code==K_UP||code==K_DOWN)return;
   }
   if(code==K_MAP){bt_control_mode=0;
@@ -3376,7 +3380,19 @@ if(screen==SCR_MAP){
     }
     if(!freecam&&pref.autozoom&&zoom_override>=0){zoom_override=-1;auto_zoom_level=-1;hud_pulse(&hud_navigation,HUD_AUTO_ZOOM,1800);return;}
     int was=freecam;toggle_freecam();if(was!=freecam)hud_pulse(&hud_navigation,freecam?HUD_EXPLORE:(pref.autozoom?HUD_AUTO_ZOOM:HUD_MANUAL_ZOOM),1800);return;}
-  if(code==K_ENTER){if(freecam){pending_lat=cam_lat;pending_lon=cam_lon;pending_point_stop=trip.active?1:0;modal=MOD_ROUTE_POINT;modal_choice=0;}else hud_show_driving_info();return;}
+  if(code==K_ENTER){
+    if(freecam){driving_info_ok_armed=0;pending_lat=cam_lat;pending_lon=cam_lon;pending_point_stop=trip.active?1:0;modal=MOD_ROUTE_POINT;modal_choice=0;}
+    else{
+      u32 now=hud_now_ms();
+      if(driving_info_ok_armed&&now-driving_info_ok_at<HUD_ROAD_NAME_MS){
+        driving_info_ok_armed=0;diversion_preview_clear();coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;
+        menu_open(P_GPS,0,now);sheet_depth=0;
+      }else{
+        hud_show_driving_info();driving_info_ok_at=now;driving_info_ok_armed=1;
+      }
+    }
+    return;
+  }
   if(code==K_UP||code==K_DOWN||code==K_LEFT||code==K_RIGHT){int was=freecam;pan_freecam(code);if(!was&&freecam)hud_pulse(&hud_navigation,HUD_EXPLORE,1800);return;}
   if(code==K_ESC||code==K_SR){
     int z=active_zoom(),up=code==K_SR,lo=mapok?(int)mh.minlvl:0;
@@ -3421,25 +3437,27 @@ static int control_key(int code){
 static void key_handle(int code){
  overlay_input_serial++;
  boot_fade_cancel();
+ if(code!=K_ENTER)driving_info_ok_armed=0;
  if(code==K_CONSOLE_THEME){pref.theme=(pref.theme+1)%3;prefs_mark_dirty();refresh_theme();render_background_dirty=1;return;}
  if(code==K_CONSOLE_INFO){if(screen==SCR_MAP&&modal==MOD_NONE)hud_show_driving_info();return;}
  if(code==K_CONSOLE_TRIP){if(modal!=MOD_NONE)return;diversion_preview_clear();coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;menu_open(P_TRIP,trip.active_idx,hud_now_ms());return;}
  if(code==K_CONSOLE_GPS){if(modal!=MOD_NONE)return;diversion_preview_clear();coordinates_active=bt_control_mode=0;trip_pick_mode=DEST_PICK_NONE;gps_panel_toggle(hud_now_ms());return;}
  menu_sync(hud_now_ms());
  if(modal==MOD_NONE&&(code==K_MENU||screen!=SCR_MAP)){
+  driving_info_ok_armed=0;
   keydiag(code);if(code==K_MENU&&screen==SCR_MAP){diversion_preview_clear();menu_open(P_HOME,0,hud_now_ms());}else menu_dispatch(code,hud_now_ms());return;
  }
  if(code==K_ENTER&&hud_suggestion_shortcut_ready()){
-  hud_suggestion_invited=0;bt_control_mode=0;menu_open_suggestion(hud_now_ms());return;
+  driving_info_ok_armed=0;hud_suggestion_invited=0;bt_control_mode=0;menu_open_suggestion(hud_now_ms());return;
  }
  if(code==K_ENTER&&hud_diversion_shortcut_ready()){
-  hud_diversion_invited=0;bt_control_mode=0;menu_open_diversion(1,hud_now_ms());return;
+  driving_info_ok_armed=0;hud_diversion_invited=0;bt_control_mode=0;menu_open_diversion(1,hud_now_ms());return;
  }
  if(code==K_ENTER&&hud_parking_shortcut_ready()){
-  hud_parking_invited=0;bt_control_mode=0;menu_open_parking(hud_now_ms());return;
+  driving_info_ok_armed=0;hud_parking_invited=0;bt_control_mode=0;menu_open_parking(hud_now_ms());return;
  }
  if(code==K_ENTER&&hud_stop_shortcut_ready()){
-  hud_stop_invited=0;bt_control_mode=0;menu_open_stop(hud_now_ms());return;
+  driving_info_ok_armed=0;hud_stop_invited=0;bt_control_mode=0;menu_open_stop(hud_now_ms());return;
  }
  code=control_key(code);if(!code)return;
  int dirty=render_background_dirty,old_screen=screen,old_popup=popup_requested_key();
@@ -3481,7 +3499,7 @@ static void control_log(const char*tag,int source,int value){
  }s_close((int)fd);
 }
 static void csw_defaults(u16*map){
- const u16 defaults[17]={K_ESC,K_BACK,K_SR,K_CONSOLE_INFO,K_MENU,K_CONSOLE_THEME,K_CONSOLE_INFO,K_CONSOLE_TRIP,K_MAP,
+ const u16 defaults[17]={K_ESC,K_BACK,K_SR,K_CONSOLE_INFO,K_MENU,K_CONSOLE_THEME,K_CONSOLE_GPS,K_CONSOLE_TRIP,K_MAP,
   K_UP,K_DOWN,K_RIGHT,K_LEFT,K_ROTCCW,K_ROTCW,K_ENTER,0};
  for(int i=0;i<17;i++)map[i]=defaults[i];
 }

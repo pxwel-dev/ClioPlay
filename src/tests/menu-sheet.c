@@ -192,9 +192,47 @@ static void gps_panel(void){
  key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_ROTCW);assert(sheet_page==P_GPS);
  key_handle(K_BACK);assert(screen==SCR_MAP&&sheet_page==P_CLOSED);
  gps_panel_toggle(hud_now_ms());gps_panel_toggle(hud_now_ms());assert(screen==SCR_MAP&&sheet_page==P_CLOSED);
- /* From Home it is the last row, and BACK returns to Home. */
- key_handle(K_MENU);while(sheet_focus+1<menu_count(P_HOME))key_handle(K_DOWN);key_handle(K_ENTER);
- assert(sheet_page==P_GPS);key_handle(K_BACK);assert(sheet_page==P_HOME);key_handle(K_MAP);assert(screen==SCR_MAP);
+ /* Double-OK on the driving map opens GPS within 4 s, even with no fix/route. */
+ hud_capture_clock=1;
+ for(int has_fix=0;has_fix<2;has_fix++){
+  reset();key_handle(K_MAP);assert(screen==SCR_MAP);
+  gps.fix=has_fix;trip.active=has_fix;route_status=has_fix?R_READY:R_IDLE;
+  roadctx.valid=has_fix;copystr(roadctx.street,sizeof(roadctx.street),has_fix?"Quayside":"");
+  hud_capture_ms=20000;key_handle(K_ENTER);assert(screen==SCR_MAP&&sheet_page==P_CLOSED);
+  hud_capture_ms=23999;key_handle(K_ENTER);assert(screen==SCR_GPS&&sheet_page==P_GPS&&!sheet_depth);
+  key_handle(K_ENTER);assert(sheet_page==P_GPS); /* Triple-tap stays inert. */
+  key_handle(has_fix?K_MAP:K_BACK);assert(screen==SCR_MAP&&sheet_page==P_CLOSED);
+ }
+ /* After 4 s, OK starts a fresh first press instead of opening GPS. */
+ reset();key_handle(K_MAP);hud_capture_ms=30000;key_handle(K_ENTER);assert(screen==SCR_MAP);
+ hud_capture_ms=34000;key_handle(K_ENTER);assert(screen==SCR_MAP&&sheet_page==P_CLOSED);
+ hud_capture_ms=35000;key_handle(K_ENTER);assert(screen==SCR_GPS&&sheet_page==P_GPS);
+ key_handle(K_BACK);assert(screen==SCR_MAP);
+ /* Any intervening key cancels the double-OK window. */
+ hud_capture_ms=40000;key_handle(K_ENTER);assert(screen==SCR_MAP);
+ hud_capture_ms=40500;key_handle(K_CONSOLE_THEME);
+ hud_capture_ms=41000;key_handle(K_ENTER);assert(screen==SCR_MAP&&sheet_page==P_CLOSED);
+ /* Existing OK priorities (OK-to-review invitation, BT CTRL, Explore) always win. */
+ reset();key_handle(K_MAP);gps.fix=track_valid=1;gps.lat=track_lat=5497800;gps.lon=track_lon=-161700;
+ trip.active=trip.count=0;pref.learn_history=pref.destination_predictions=1;mob_declined_n=0;
+ hud_capture_ms=50000;key_handle(K_ENTER);assert(screen==SCR_MAP);
+ mob_suggest_valid=1;mob_suggest_serial++;
+ mob_suggest_point=(struct MobPoint){5497800,-161700};nfaves=1;faves[0].lat=5497800;faves[0].lon=-161700;copystr(faves[0].name,sizeof(faves[0].name),"Home");
+ assert(suggested_place(&hud_suggestion_place));hud_suggestion_invited=mob_suggest_serial;
+ assert(hud_suggestion_shortcut_ready());
+ hud_capture_ms=50500;key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&confirm_kind==4);
+ mob_suggest_valid=0;hud_suggestion_invited=0;pref.learn_history=0;key_handle(K_MAP);
+ hud_capture_ms=60000;key_handle(K_ENTER);assert(screen==SCR_MAP);
+ btui.connected=1;hw_bluetooth_enabled=1;set_band("CD");bt_control_mode=1;
+ hud_capture_ms=60500;key_handle(K_ENTER);assert(screen==SCR_MAP&&sheet_page==P_CLOSED&&bt_control_mode);
+ bt_control_mode=0;
+ hud_capture_ms=70000;key_handle(K_ENTER);assert(screen==SCR_MAP);
+ freecam=1;cam_lat=gps.lat;cam_lon=gps.lon;
+ hud_capture_ms=70500;key_handle(K_ENTER);assert(modal==MOD_ROUTE_POINT&&sheet_page==P_CLOSED);
+ modal=MOD_NONE;freecam=0;hud_capture_clock=0;
+ /* Home menu stays compact (Trip, Bluetooth, Settings) without a GPS row. */
+ reset();key_handle(K_MENU);assert(sheet_page==P_HOME&&menu_count(P_HOME)==3);
+ key_handle(K_MAP);assert(screen==SCR_MAP);
 }
 static void seed_poi_tile(int slot,u8 lvl,s32 tx,s32 ty,const int*kinds,const s32*lats,const s32*lons,const char*const*names,int count){
  struct Tile*t=&tc[slot];memzero(t,sizeof(*t));t->valid=1;t->lvl=lvl;t->tx=tx;t->ty=ty;t->age=++agec;
@@ -282,7 +320,7 @@ static void confirmation_typography(void){
 }
 /* Traverse every category with the real remote/console handler. */
 static void settings_categories(void){
- reset();key_handle(K_MENU);choose(menu_count(P_HOME)-2);assert(sheet_page==P_SETTINGS);
+ reset();key_handle(K_MENU);choose(menu_count(P_HOME)-1);assert(sheet_page==P_SETTINGS);
  unsigned seen=0;
  for(int g=0;g<SETTINGS_GROUP_COUNT;g++){
   choose(g);assert(sheet_page==P_SET_DISPLAY+g&&sheet_focus==0&&screen==SCR_SET);

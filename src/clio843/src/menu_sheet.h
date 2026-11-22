@@ -182,7 +182,7 @@ static void frequent_startup_service(u32 now,int fresh){
 }
 static int place_count(void){return places_tab?nfaves:nrecents;}
 static int menu_count(int p){
- return p==P_HOME?(hw_bluetooth_enabled?4:3):p==P_SOURCE?4:p==P_SETTINGS?SETTINGS_GROUP_COUNT:settings_group(p)>=0?settings_groups[settings_group(p)].count:p==P_TRIP?(trip.count?trip.count+2+traffic_offer_valid():1):p==P_PLACES?place_count():p==P_NEARBY?NEARBY_CAT_COUNT:p==P_NEARBY_LIST?nearby_count:
+ return p==P_HOME?(hw_bluetooth_enabled?3:2):p==P_SOURCE?4:p==P_SETTINGS?SETTINGS_GROUP_COUNT:settings_group(p)>=0?settings_groups[settings_group(p)].count:p==P_TRIP?(trip.count?trip.count+2+traffic_offer_valid():1):p==P_PLACES?place_count():p==P_NEARBY?NEARBY_CAT_COUNT:p==P_NEARBY_LIST?nearby_count:
  p==P_STOP?3:p==P_DEST?3:p==P_PLACE?((!place_from_nearby&&places_tab)?4:3):p==P_PHONE?nbtdev+1:
  p==P_PHONE_ACTIONS?2:p==P_REVIEW?4:p==P_CONFIRM?(confirm_has_view()?3:2):0;
 }
@@ -356,7 +356,7 @@ static void menu_key(int code,u32 now){
   return;
  }
  if(code!=K_ENTER)return;
- if(sheet_page==P_HOME){int last=menu_count(P_HOME)-1;menu_push(sheet_focus==0?P_TRIP:sheet_focus==last?P_GPS:hw_bluetooth_enabled&&sheet_focus==1?P_PHONE:P_SETTINGS,0,now);return;}
+ if(sheet_page==P_HOME){menu_push(sheet_focus==0?P_TRIP:hw_bluetooth_enabled&&sheet_focus==1?P_PHONE:P_SETTINGS,0,now);return;}
  if(sheet_page==P_SETTINGS){theme_time_part=0;menu_push(P_SET_DISPLAY+sheet_focus,0,now);return;}
  if(settings_group(sheet_page)>=0){
   int row=settings_row(sheet_page,sheet_focus);
@@ -814,7 +814,7 @@ static void menu_contents(int p,int selected,struct HudBox b,int opacity,u32 now
  if(p==P_SOURCE){options[0]="Recents";options[1]="Favourites";options[2]="Nearby";options[3]="Coordinates";count=4;}
  if(p==P_HOME){options[0]="Trip";options[1]=hw_bluetooth_enabled?"Bluetooth":"Settings";
   if(hw_bluetooth_enabled)options[2]="Settings";
-  count=hw_bluetooth_enabled?3:2;options[count++]="GPS";}
+  count=hw_bluetooth_enabled?3:2;}
  if(p==P_STOP){options[0]="Move earlier";options[1]="Move later";options[2]="Remove stop";count=3;}
  if(p==P_DEST){options[0]="Change destination";options[1]=trip.count&&fave_contains(trip.target[trip.count-1].lat,trip.target[trip.count-1].lon)>=0?"Remove favourite":"Save favourite";options[2]="Cancel route";count=3;}
  if(p==P_PLACE){options[0]="Route as new";options[1]="Add as stop";options[2]=(!place_from_nearby&&places_tab)?"Rename":"Save favourite";options[3]="Remove favourite";count=(!place_from_nearby&&places_tab)?4:3;}
@@ -877,11 +877,13 @@ static void menu_contents(int p,int selected,struct HudBox b,int opacity,u32 now
 
 static int menu_blocks_phone(void){return screen!=SCR_MAP&&(sheet_page==P_SOURCE||sheet_page==P_PLACE||sheet_page==P_STOP||sheet_page==P_DEST||sheet_page==P_CONFIRM||sheet_page==P_NAME||sheet_page==P_COORD||sheet_page==P_REVIEW||(sheet_page==P_LANG&&language_keyboard));}
 static void menu_reset(u32 now){
+ driving_info_ok_armed=0;
  sheet_page=sheet_old_page=P_CLOSED;sheet_focus=sheet_old_focus=sheet_depth=0;places_picker=review_from_place=place_from_nearby=0;confirm_top_focus=0;diversion_preview_clear();
  sheet_from_box=sheet_to_box=(struct HudBox){0};bottom_from=bottom_to=256;bottom_at=menu_at=focus_at=now-320u;
  menu_interaction_at=menu_presented_at=now-320u;menu_pending=0;memzero(trip_tab_focus,sizeof(trip_tab_focus));pk_reset();
 }
 static void menu_open(int p,int selected,u32 now){
+ driving_info_ok_armed=0;
  if(!hw_bluetooth_enabled&&(p==P_PHONE||p==P_PHONE_ACTIONS||p==P_PAIR))p=P_HOME;
  coordinates_active=0;bt_control_mode=0;sheet_depth=0;
  if(p==P_NAME){keyboard_origin=kbd_action;pk_reset();pk_prepare();}
@@ -923,11 +925,11 @@ static void menu_sync(u32 now){
  int p=screen==SCR_MENU?P_HOME:screen==SCR_GPS?P_GPS:screen==SCR_TRIP?P_TRIP:screen==SCR_BT?P_PHONE:screen==SCR_SET?P_SETTINGS:screen==SCR_KEY?(kbd_picker?P_LANG:P_NAME):coordinates.step==COORD_REVIEW?P_REVIEW:P_COORD;
  int selected=p==P_HOME?menu_focus:p==P_SETTINGS?0:p==P_PHONE?bt_page_focus:p==P_TRIP?trip.active_idx:0;
  if(p==P_NAME||p==P_LANG){keyboard_origin=kbd_action;pk_reset();pk_prepare();language_keyboard=p==P_LANG;}
- sheet_depth=p==P_HOME?0:1;sheet_stack_page[0]=P_HOME;sheet_stack_focus[0]=0;
+ sheet_depth=(p==P_HOME||p==P_GPS)?0:1;sheet_stack_page[0]=P_HOME;sheet_stack_focus[0]=0;
  menu_change(p,selected,now);
 }
-/* The GPS action toggles the panel. Opened directly it has no parent sheet,
- * so BACK closes it; opened from the Home menu, BACK returns there. */
+/* The GPS action toggles the panel directly with no parent sheet, so BACK,
+ * MAP, or pressing the GPS shortcut again closes it back to the map. */
 static void gps_panel_toggle(u32 now){
  menu_sync(now);
  if(sheet_page==P_GPS){menu_close(now);return;}
