@@ -39,29 +39,25 @@ See the [full preview index](src/docs/demo/README.md) for all animations.
 | --- | --- |
 | ![Clear-road Durham route showing calibrated ETA reliability range, Usual route available with normal active route colour plus dashed teal alternative, and Use usual route? confirmation](src/docs/demo/v224-ml-eta-and-habits.gif) | ![Real York route showing warm Frequent slowdown ahead alert, deduplication, silence on a cold-only spot at 18 C, Cold-weather slowdown ahead at 1 C and winter-calibrated ETA](src/docs/demo/v224-ml-slowdowns.gif) |
 
-| Usual parking, recurring stops & preferred POIs | Adaptive Auto-zoom & Day/Night brightness |
+| Usual parking, recurring stops & preferred POIs | Offline Nearby POIs |
 | --- | --- |
-| ![Usual parking review with route-coloured Parking POI highlight, recurring intermediate stop ring and preferred Fuel POI star ranking in Newcastle](src/docs/demo/v224-ml-parking-and-pois.gif) | ![Adaptive Auto-zoom learning speed-band preferences and Auto Day-to-Night theme transition automatically applying learned brightness levels](src/docs/demo/v224-ml-adaptive-hud.gif) |
-
-| Offline Nearby POIs | Driving and camera alerts |
-| --- | --- |
-| ![Browse nearby hospitals and fuel stations offline in Newcastle and add a stop to the itinerary](src/docs/demo/v223-nearby-pois.gif) | ![Driving with a temporary road name and a camera warning](src/docs/demo/driving.gif) |
-
-| Speeding warning | Browse and zoom the map |
-| --- | --- |
-| ![The speed pill pulses red above a confirmed limit and settles when speed drops](src/docs/demo/speed-warning.gif) | ![Switching to map browsing, panning, zooming and returning to guidance](src/docs/demo/map-browsing.gif) |
+| ![Usual parking review with route-coloured Parking POI highlight, recurring intermediate stop ring and preferred Fuel POI star ranking in Newcastle](src/docs/demo/v224-ml-parking-and-pois.gif) | ![Browse nearby hospitals and fuel stations offline in Newcastle and add a stop to the itinerary](src/docs/demo/v223-nearby-pois.gif) |
 
 | Destination prediction | Frequent-place suggestion |
 | --- | --- |
 | ![Learned destination in the driving HUD with explicit review](src/docs/demo/v220-destination-prediction.gif) | ![Stationary startup frequent-place suggestion opening the editable favourite keyboard](src/docs/demo/v220-frequent-place.gif) |
 
+| Speeding warning | Driving and camera alerts |
+| --- | --- |
+| ![The speed pill pulses red above a confirmed limit and settles when speed drops](src/docs/demo/speed-warning.gif) | ![Driving with a temporary road name and a camera warning](src/docs/demo/driving.gif) |
+
+| HUD customisability | Browse and zoom the map |
+| --- | --- |
+| ![Change top and bottom bar pill positions in settings](src/docs/demo/v216-hud-settings.gif) | ![Switching to map browsing, panning, zooming and returning to guidance](src/docs/demo/map-browsing.gif) |
+
 | Route to a point on the map | Manual coordinate route |
 | --- | --- |
 | ![Enter Explore, pan the crosshair, press OK and confirm a route to the selected point](src/docs/demo/map-point-route.gif) | ![Enter latitude and longitude, name the destination, calculate the route and find it in Recents](src/docs/demo/coordinate-route.gif) |
-
-| HUD customisability | Roundabout route guidance and ETA |
-| --- | --- |
-| ![Change top and bottom bar pill positions in settings](src/docs/demo/v216-hud-settings.gif) | ![Third-exit roundabout guidance and journey overview on pressing OK](src/docs/demo/roundabout-eta.gif) |
 
 | Song and radio updates | Shared status notifications |
 | --- | --- |

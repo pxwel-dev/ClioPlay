@@ -1,6 +1,6 @@
 {
   "format": "clioplay-latest-1",
-  "updated_at": "2026-11-22T01:26:08+00:00",
+  "updated_at": "2026-11-22T02:10:38+00:00",
   "edition": "Global",
   "version": "2.2.5",
   "payload": "Source package, current binaries, legacy bootstrap, fresh-install and software-update tools; no vendor firmware, navigation packs or companion website",
@@ -1261,7 +1261,7 @@
     "bootstrap-SHA256.json": "605a7c17125fb3f65571f557eaf9c07dd29b53535738dc2ecfde5d3e4019ff5f",
     "docs/source-status.md": "a0ea6ad82b7f3db1a7699b442f766063fb1def68d991f27f2074fafd17963cef",
     "docs/camera-support.md": "86d7ceb63ef4befddd514a39f5896bbba77dc57c115615c54d7704f114822322",
-    "docs/repository-readme.md": "bd68d7c7ebb44aee291629fec143e881f402f96d186ebca7f8fef57ae84281c4",
+    "docs/repository-readme.md": "c8a7338480d7c83e12819953f6f1287d3c8506fa664b05c19bf2b4b2019ac732",
     "docs/changelog.md": "42a9743a871292b0602f8cdb19fb7af2fbd8afec5784c0788d4f3e5ef0d684f1",
     "docs/updating.md": "08f09cc1d0d0fb251014e1fffc9143bcb0ef6b50fbb33623a7c68072a46c4458",
     "docs/intelligent-navigation.md": "a675f0dd1cb354384440020866da6c338b0473a535aff21bc1b634468f86305d",
@@ -1331,7 +1331,7 @@
     "Install.cmd": "b504a77b6d13c036d2e027a9759f06fa8a30c677144f1ee286f56953d2020fa6",
     "Install.command": "5a3df10333b2db1c445eccf5c2875f9d1051c90b9b86ffacc4da1b1e4d1e3d9a",
     "LICENSE": "b04ac8d0e455fe1b4c2f8b0e42531cd7b67add31f3b06c05d58e600feda6f464",
-    "README.md": "ee904f4c17f1878c629b951e9cfa85bdcecafc592b15b91153b2505b4056a647",
+    "README.md": "be0d539ecb9b644f5914fc1dca7d9d88124d4d0d5a059de68a45e0066827c3a1",
     "SOURCE_STATUS.md": "a0ea6ad82b7f3db1a7699b442f766063fb1def68d991f27f2074fafd17963cef",
     "THIRD_PARTY_NOTICES.md": "b2c9845c83575f1fd185ef796cf8ae020168118fb2aef3d01ddd7362fbd631d9",
     "WINDOWS.md": "a15064ed84d76e09513578ab053f5be041c0cbd4ef0961eba01e3dd4498b6645",
@@ -2421,7 +2421,7 @@
     "src/docs/demo/v225-gps-panel.gif": "520f40429c855dd0f806f729ceec20f3c787969d2fbe38f089ac7936e5165612",
     "src/docs/intelligent-navigation.md": "a675f0dd1cb354384440020866da6c338b0473a535aff21bc1b634468f86305d",
     "src/docs/release-workflow.md": "7f10d940cb3048e5c223559bea9822dd1f4a1fb54cc9fce4ea60d9bdb24a323e",
-    "src/docs/repository-readme.md": "bd68d7c7ebb44aee291629fec143e881f402f96d186ebca7f8fef57ae84281c4",
+    "src/docs/repository-readme.md": "c8a7338480d7c83e12819953f6f1287d3c8506fa664b05c19bf2b4b2019ac732",
     "src/docs/scenic-iii-hardware.md": "fc279b99cb6bff343fc2b2ce2de22c168ef1fbb9fda2747e49c0d6407e74ea88",
     "src/docs/source-status.md": "a0ea6ad82b7f3db1a7699b442f766063fb1def68d991f27f2074fafd17963cef",
     "src/docs/updating.md": "08f09cc1d0d0fb251014e1fffc9143bcb0ef6b50fbb33623a7c68072a46c4458",
@@ -2644,7 +2644,7 @@
     "src/tools/verify_splash.py": "b4070f1f9dde63797bdaeb8f250bfddcfad8880fc11b2fa7f28736e52e1a2a5a",
     "src/tools/verify_text_cache.py": "aa5cad2c209ae1e03e8cf28b60e4b2d5888a484b6a25475d2c2efd4d90b1f80a",
     "src/tools/verify_unicode.py": "ee9416a59d936efa7a266a46b79622d1950a198fe4f7afb8ef922430159fda52",
-    "SHA256SUMS": "0e379482b1c34751314ea85353423b817e7f2c7bf6ab84af51388eb12b81d501"
+    "SHA256SUMS": "8e6075641a6fd76d2ce5d26e6f737fb143dca142165a869b012c2b9c86171ae6"
   },
   "checks": {
     "publication": {
