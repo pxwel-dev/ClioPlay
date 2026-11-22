@@ -667,6 +667,29 @@ static void ml_features(void){
   traffic_invalidate();
   for(int i=0;i<4;i++){mob_recording=mob_started=1;ml_stage_pref_arc(k_avoid,10);ml_commit_pref_arcs();ml_session_reset();}
   traffic_scan(300);assert(!traffic_searching&&!traffic_offer_valid());
+  /* 3c: Unguided historical congestion warning ("Likely traffic ahead") without an active route. */
+  {
+   u32 saved_n=mob.n;if(mob.n<5u)mob.n=5u;
+   u32 tnow=hud_now_ms(),t_ep=mob_time(tnow);assert(t_ep!=MOB_UNKNOWN);
+   unsigned tb=mob_bucket(t_ep);
+   struct MobRoad*mr=mob_road_find(k_avoid,tb,1);assert(mr);
+   mr->count=8u;mr->mean_ds=cost[1]+1600u;mr->stamp=mob.serial;
+   route_status=R_IDLE;pref.diversions=1;gps.fix=1;track_valid=0;gps.mph10=200;freecam=0;screen=SCR_MAP;
+   gps.lat=pts[1].lat;gps.lon=pts[1].lon;gps.course=0;
+   tl_arc=1;tl_key=k_avoid;tl_region=atlas_route_region;tl_last_ms=tnow;
+   ml_congestion_seen_n=0;traffic_un_cong_ms=0;hud_navigation.kind=HUD_NONE;
+   /* Respects pref.diversions == 0 */
+   pref.diversions=0;traffic_service(tnow);assert(hud_navigation.kind==HUD_NONE);
+   /* Fires amber "Likely traffic ahead" when pref.diversions == 1 */
+   pref.diversions=1;traffic_un_cong_ms=0;traffic_service(tnow);
+   assert(hud_navigation.kind==HUD_CONGESTION);
+   hud_reset_animations();hud_prepare(5,tnow,1);hud_settle_for_capture(tnow);
+   assert(streq(hud_tween[HC_STATUS].target.title,"Likely traffic ahead"));
+   /* Deduplicated on same trip */
+   hud_navigation.kind=HUD_NONE;traffic_un_cong_ms=0;traffic_service(tnow+4000u);
+   assert(hud_navigation.kind==HUD_NONE);
+   mr->count=0;mr->key=0;tl_arc=ROUTE_NOARC;mob.n=saved_n;
+  }
   fclose(f);routefd=-1;routeok=0;traffic_invalidate();
  }
  /* 9: Unguided slowdown alerts (warm & cold), forward-cone filtering & once-per-trip dedup */
@@ -766,6 +789,13 @@ static void ml_features(void){
   int found_named_stop=0;
   for(int i=0;i<MOB_ML_STOPS;i++)if(mob_ml.stops[i].count&&mob_dist(mob_ml.stops[i].stop,p_fuel)<=50u&&streq(mob_ml.stops[i].name,"ESSO"))found_named_stop=1;
   assert(found_named_stop);
+  /* POI-aware naming for unguided Destination Predictions & Frequent-Place prompts */
+  nfaves=0;nrecents=0;trip.active=0;trip.count=0;
+  struct SavedPlace named_out;
+  assert(frequent_named_place(p_park,&named_out)&&streq(named_out.name,"TOWN PARK"));
+  mob_suggest_valid=1;mob_suggest_point=p_fuel;
+  assert(suggested_place(&named_out)&&streq(named_out.name,"ESSO"));
+  mob_suggest_valid=0;
   nfaves=saved_nfaves;nrecents=saved_nrecents;memzero(tc,sizeof(tc));mapok=0;
  }
  /* MML1 persistence round-trip, corrupt rejection, and full wipe on mob_clear() */

@@ -606,7 +606,7 @@ static void poll_gps(void){if(gpsfd<0)gpsfd=(int)s_open(GPS_PATH,O_RDONLY_|O_NON
 
 /* One current transient per domain; repeated knob events replace the value
  * without replaying the entrance animation. Millisecond subtraction wraps. */
-enum {HUD_NONE,HUD_SOURCE,HUD_VOLUME,HUD_MANUAL_ZOOM,HUD_JOURNEY,HUD_FAILURE,HUD_MEDIA,HUD_CALC,HUD_NOTICE,HUD_CONNECTION,HUD_BT_FEEDBACK,HUD_SYSTEM,HUD_TRACK,HUD_EXPLORE,HUD_AUTO_ZOOM,HUD_TRAFFIC,HUD_SLOWDOWN};
+enum {HUD_NONE,HUD_SOURCE,HUD_VOLUME,HUD_MANUAL_ZOOM,HUD_JOURNEY,HUD_FAILURE,HUD_MEDIA,HUD_CALC,HUD_NOTICE,HUD_CONNECTION,HUD_BT_FEEDBACK,HUD_SYSTEM,HUD_TRACK,HUD_EXPLORE,HUD_AUTO_ZOOM,HUD_TRAFFIC,HUD_SLOWDOWN,HUD_CONGESTION};
 #ifdef HOST_TEST
 static int hud_capture_clock;
 static u32 hud_capture_ms;
@@ -2976,7 +2976,7 @@ static void set_destination(const char*name,s32 lat,s32 lon){
  memzero(&trip,sizeof(trip));trip.active=1;trip.count=1;trip.active_idx=0;trip.target[0].lat=lat;trip.target[0].lon=lon;
  copystr(trip.target[0].name,sizeof(trip.target[0].name),name&&name[0]?name:"MAP POINT");
  save_trip();add_recent(trip.target[0].name,lat,lon);trip_schedule_route();
- ml_slowdown_seen_n=0;ml_check_parking_offer(lat,lon);
+ ml_slowdown_seen_n=0;ml_congestion_seen_n=0;ml_check_parking_offer(lat,lon);
  if(mob_origin_valid||gps.fix){
   struct MobPoint org=mob_origin_valid?mob_live.origin:(struct MobPoint){car_lat(),car_lon()};
   ml_check_stop_offer(org,(struct MobPoint){lat,lon},mob_time(hud_now_ms()));
@@ -3027,6 +3027,7 @@ static int suggested_road_name(struct MobPoint p,char*out,unsigned cap){
  }
  copystr(out,cap,name);return name[0]!=0;
 }
+static int ml_poi_is_generic(const char*s);
 static int suggested_place(struct SavedPlace*out){
  if(!pref.learn_history||!pref.destination_predictions||!mob_suggest_valid||trip.active||trip.count||mob_declined_destination(mob_suggest_point))return 0;
  struct MobPoint p=mob_suggest_point;
@@ -3037,7 +3038,10 @@ static int suggested_place(struct SavedPlace*out){
  if(chosen&&(!mapok||map_view_covered(chosen->lat,chosen->lon)))*out=*chosen;
  else{
   memzero(out,sizeof(*out));out->lat=p.lat;out->lon=p.lon;
-  if(!suggested_road_name(p,out->name,sizeof(out->name))){mobility_append_coord(out->name,sizeof(out->name),p.lat);appendstr(out->name,sizeof(out->name),", ");mobility_append_coord(out->name,sizeof(out->name),p.lon);}
+  u8 pk=0;s32 plat=0,plon=0;char pname[113];
+  if(ml_find_poi_at(p.lat,p.lon,0,&pk,&plat,&plon,pname,sizeof(pname))&&!ml_poi_is_generic(pname)){
+   copystr(out->name,sizeof(out->name),pname);
+  }else if(!suggested_road_name(p,out->name,sizeof(out->name))){mobility_append_coord(out->name,sizeof(out->name),p.lat);appendstr(out->name,sizeof(out->name),", ");mobility_append_coord(out->name,sizeof(out->name),p.lon);}
  }
  return !mob_declined_destination((struct MobPoint){out->lat,out->lon});
 }
@@ -3060,6 +3064,10 @@ static int frequent_named_place(struct MobPoint p,struct SavedPlace*out){
  u32 best=MOB_DEST_RADIUS+1u;const struct SavedPlace*chosen=0;
  for(int i=0;i<nrecents;i++){u32 d=mob_dist(p,(struct MobPoint){recents[i].lat,recents[i].lon});if(d<best&&recents[i].name[0]&&!streq(recents[i].name,"MAP POINT")&&!streq(recents[i].name,"PHONE DESTINATION")){best=d;chosen=&recents[i];}}
  if(chosen){copystr(out->name,sizeof(out->name),chosen->name);return 1;}
+ u8 pk=0;s32 plat=0,plon=0;char pname[113];
+ if(ml_find_poi_at(p.lat,p.lon,0,&pk,&plat,&plon,pname,sizeof(pname))&&!ml_poi_is_generic(pname)){
+  copystr(out->name,sizeof(out->name),pname);return 1;
+ }
  if(suggested_road_name(p,out->name,sizeof(out->name)))return 1;
  return 0;
 }
@@ -3200,7 +3208,7 @@ static void mobility_service(u32 now){
  ml_dirty_service(now);
  if(prev_offer!=traffic_offer_valid()||prev_warn!=traffic_warn||prev_saving!=traffic_saving)render_background_dirty=1;
 }
-static void clear_trip(void){memzero(&trip,sizeof(trip));save_trip();arrival_ticks=0;trip_need_route=trip_route_defer=0;ml_guided_target_valid=0;ml_park_valid=0;ml_stop_valid=0;ml_slowdown_seen_n=0;route_cancel();}
+static void clear_trip(void){memzero(&trip,sizeof(trip));save_trip();arrival_ticks=0;trip_need_route=trip_route_defer=0;ml_guided_target_valid=0;ml_park_valid=0;ml_stop_valid=0;ml_slowdown_seen_n=0;ml_congestion_seen_n=0;route_cancel();}
 static int trip_add_stop(const char*name,s32 lat,s32 lon){if(!trip.active||trip.count<1||trip.count>=TRIP_MAX_TARGETS)return 0;int ins=trip.count-1;for(int i=trip.count;i>ins;i--)trip.target[i]=trip.target[i-1];trip.target[ins].lat=lat;trip.target[ins].lon=lon;copystr(trip.target[ins].name,sizeof(trip.target[ins].name),name&&name[0]?name:"MAP POINT");trip.count++;if(ins==trip.active_idx)trip_schedule_route();ml_stop_valid=0;if(pref.learn_history&&(mob_origin_valid||gps.fix)){struct MobPoint org=mob_origin_valid?mob_live.origin:(struct MobPoint){car_lat(),car_lon()};struct MobPoint dst={trip.target[trip.count-1].lat,trip.target[trip.count-1].lon};ml_record_stop_habit(org,(struct MobPoint){lat,lon},dst,mob_time(hud_now_ms()),trip.target[ins].name);ml_mark_dirty(hud_now_ms());}save_trip();notice_success(ui_tr("Stop added"));return 1;}
 static void trip_change_destination_notice(const char*name,s32 lat,s32 lon,const char*notice){if(!trip.active||!trip.count){set_destination(name,lat,lon);return;}int i=trip.count-1;int changed=trip.target[i].lat!=lat||trip.target[i].lon!=lon||!streq(trip.target[i].name,name);trip.target[i].lat=lat;trip.target[i].lon=lon;copystr(trip.target[i].name,sizeof(trip.target[i].name),name&&name[0]?name:"MAP POINT");add_recent(trip.target[i].name,lat,lon);save_trip();if(i==trip.active_idx)trip_schedule_route();if(changed&&notice&&notice[0])notice_success(notice);}
 static void trip_change_destination(const char*name,s32 lat,s32 lon){trip_change_destination_notice(name,lat,lon,ui_tr("Destination changed"));}

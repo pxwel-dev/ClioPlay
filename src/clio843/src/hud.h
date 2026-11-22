@@ -217,6 +217,7 @@ static void hud_nav_text(struct HudCard*c,int z,int kind,int tag){
  case HUD_EXPLORE:copystr(c->title,sizeof(c->title),ui_tr("Explore"));break;
  case HUD_MANUAL_ZOOM:copystr(c->title,sizeof(c->title),ui_tr("Manual zoom"));break;
  case HUD_SLOWDOWN:copystr(c->title,sizeof(c->title),ui_tr(ml_slowdown_cold?"Cold-weather slowdown ahead":"Frequent slowdown ahead"));break;
+ case HUD_CONGESTION:copystr(c->title,sizeof(c->title),ui_tr("Likely traffic ahead"));break;
  }
 }
 /* An OK shortcut is armed only by a drawn invitation for this exact
@@ -357,7 +358,7 @@ static void hud_prepare(int z,u32 now,int map){
  }else if(nav&&(!hud_source.kind||!time_before_u32(hud_navigation.changed,hud_source.changed))){
   c.kind=nav;hud_nav_text(&c,z,nav,1);
   if(nav==HUD_FAILURE)c.ink|=HUD_ERROR;
-  else if(nav==HUD_SLOWDOWN)c.ink|=HUD_WARNING;
+  else if(nav==HUD_SLOWDOWN||nav==HUD_CONGESTION)c.ink|=HUD_WARNING;
   if(hud_source.kind){copystr(c.detail,sizeof(c.detail),hud_audio_tag());appendstr(c.detail,sizeof(c.detail),"  ");char source[96];hud_source_text(source,sizeof(source));appendstr(c.detail,sizeof(c.detail),source);}
  }else if(hud_source.kind){
   c.kind=HUD_SOURCE;copystr(c.tag,sizeof(c.tag),hud_audio_tag());hud_source_text(c.title,sizeof(c.title));

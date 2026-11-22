@@ -5,12 +5,12 @@
   "native_sources": {
     "clio843/src/frame_schedule.h": "1a564fd03b4d72aa20eab4fbaff200ea40458efc0d6d38bd83b73546c7588bbb",
     "clio843/src/global_clock.h": "5fbcf43cb8aceb59e87d6f8118d121ce5798eec064c0ed5a7586a2eb25de8512",
-    "clio843/src/mobility_ml.h": "5db34b782eb8e0526334d4b60e35b1d6906853471025164f1e327589d9c26184",
+    "clio843/src/mobility_ml.h": "cd59f4698f0ec22c44c2d8dd6142e98b3680813573fd9da3cd2098077221e529",
     "clio843/src/map_thin_coverage.h": "d4632a1dd789176be35ded06a21b84d272d69910532f31e05dc03fbfc092e5fb",
     "clio843/src/atlas_router.h": "06460b55663bd7b617e3cff557b1ac39abd178f27af0ba703615c39ec5349941",
     "clio843/src/boot_art.h": "367249c4bf35acfa7ce5092dce4a906c566d5e9e818d1bbd3d65c35ba128dbeb",
     "clio843/src/popups.h": "b16c75163580e2fbbe17a9359bc473d368a57c3c8c2347b5d5f56ce73295f61d",
-    "clio843/src/hud.h": "a5de546f9239b007e41b32e6df72d35df9c1b9429504259cb41ce2a4ee117088",
+    "clio843/src/hud.h": "86e07911d6537bfa8b0ba1714c33f713b99101479398471bb4b3b8784a8b79c6",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
     "clio843/src/audio_schedule.h": "bf37e189f7a0f372567287380820a357878fc1aaf519f85309224cd0d5ae85a6",
     "clio843/src/coordinates.h": "303c229e4c186fab01b092a770a434fca622047b792515df940ddec1983109ef",
@@ -22,7 +22,7 @@
     "clio843/src/clioa2dp.c": "eee113f0a920ca591c740ab0bb429f2765d0e66c3e8829b625a473ce14e037da",
     "clio843/src/atlas_catalog.h": "7c1c5599a121e702a0fe7ac89fc957e07086e27f20aaf1511971d197de3a39a0",
     "clio843/src/menu_keyboard.h": "394310c060e073c651cbc61a64c69d5ba61cfd4072e43277f70c40b8344e77f9",
-    "clio843/src/traffic.h": "61db69ab4fd52bf6bcdc61eb53ec42807457e266ecc7b715fc1768d9267893a5",
+    "clio843/src/traffic.h": "25c847055fcb0f1f520f677d198a3142d8fb7bf1fe64ddc871a201194494af00",
     "clio843/src/map_raster.h": "ec43a401a89354fc27ded7fb3d6320ed04226de4daa5a86ed9a8da0bf11eafe1",
     "clio843/src/global_regions.h": "00772a81c56fefdcf466ce0594c05a9d62983861a6f81be872fb7e474956d647",
     "clio843/src/overlay_frames.h": "b1b6e79491dad7a2a62004f999793bccfef7bb6580b3a877777c284f4537557c",
@@ -47,7 +47,7 @@
     "clio843/src/global_cameras.h": "d07e8dabf65f3513a5ec88eb15e34bdcad628cdb291f08a518eb46a3ebed9cd9",
     "clio843/src/urban_speed_defaults.h": "a719a3d065f16bc39727b01d7ed73f412beeb4d8703b5bde73a8c6ff1c35ac10",
     "clio843/src/cswd.c": "707aa0a1fdcd8048d2fa252a14ce32176fae347d512e11869f2905a69380530c",
-    "clio843/src/clio040.c": "46461cf0bd5c50f7a76b9e1899f5ca38bc7170a10e8f15a327d5429edaeedcb1",
+    "clio843/src/clio040.c": "6e3627dd0a300e3d3d6cffc3e1fd36ac6aacbf45b3b59d0cd5e5d2ba07dcd617",
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/vstatd.c": "a359d214853cdd511fb79e905fafc52f5413b635bb3288b268d04c15724a666f",
     "clio843/src/audio_chime.h": "184c222e448db2707fc752bc38f7f6c735b6cb1f4d168d88ddc7da7cf20f4d75",
@@ -512,7 +512,7 @@
     "clio843/src/vendor/sheenbidi/Headers/SheenBidi/SheenBidi.h": "44a644a72edf2300838d32c3e32aa14a7cb66b584fb9da643b8311aa21991cbe"
   },
   "executables": {
-    "clio040": "a817d288527dbbd43cdfff33f2094ad65fe2959e9bf6b4e877dab40e6a885263",
+    "clio040": "4767a5d93fad9b0fccf559fb9ce6a604e04cca786d3288a0b7b7a70b88ca1011",
     "cliospl": "36f99bd4d3bb195469743d59eedae3a8d6370d8310e1fe890cadd58d776796f5",
     "clioa2dp": "f43669f92d6de3c00bce0d16b7027a5aad0ec04fe9e0aeba265a37f121d02e5f"
   },

@@ -123,11 +123,13 @@ static u32 ml_stop_serial = 0;
 static struct MobPoint ml_stop_declined[16];
 static unsigned ml_stop_declined_n = 0;
 
-/* Active repeat-slowdown notice state (at most once per arc per trip). */
+/* Active repeat-slowdown & unguided congestion notice state (once per arc per trip). */
 static u32 ml_slowdown_seen[32];
 static unsigned ml_slowdown_seen_n = 0;
 static u32 ml_slowdown_arc = 0;
 static int ml_slowdown_cold = 0;
+static u32 ml_congestion_seen[32];
+static unsigned ml_congestion_seen_n = 0;
 
 /* Active route ETA variance (deciseconds) & diversion kind (0=traffic, 1=usual). */
 static u32 ml_route_var_ds = 0;
@@ -157,6 +159,7 @@ static void ml_session_reset(void){
  ml_slowdown_seen_n = 0;
  ml_slowdown_arc = 0;
  ml_slowdown_cold = 0;
+ ml_congestion_seen_n = 0;
 }
 static void ml_reset(void){
  memzero(&mob_ml, sizeof(mob_ml));
@@ -847,6 +850,15 @@ static int ml_slowdown_already_seen(u32 key){
 static void ml_slowdown_mark_seen(u32 key){
  if(!ml_slowdown_already_seen(key) && ml_slowdown_seen_n < 32u){
   ml_slowdown_seen[ml_slowdown_seen_n++] = key;
+ }
+}
+static int ml_congestion_already_seen(u32 key){
+ for(unsigned i = 0; i < ml_congestion_seen_n; i++) if(ml_congestion_seen[i] == key) return 1;
+ return 0;
+}
+static void ml_congestion_mark_seen(u32 key){
+ if(!ml_congestion_already_seen(key) && ml_congestion_seen_n < 32u){
+  ml_congestion_seen[ml_congestion_seen_n++] = key;
  }
 }
 

@@ -119,8 +119,9 @@ static u32 traffic_key_for_arc(u32 id,u32*full){
  * directed base arc must be observed from near its entrance to near its
  * exit. Reject ambiguous parallel roads and GPS discontinuities. */
 static u32 tl_arc=ROUTE_NOARC,tl_key,tl_epoch,tl_first_ms,tl_last_ms,tl_first_u,tl_last_u,tl_total,tl_stop_ms;
+static u32 traffic_un_cong_ms=0,traffic_un_cong_arc=ROUTE_NOARC;
 static int tl_region=-2,tl_armed,tl_done;
-static void traffic_learning_reset(void){tl_arc=ROUTE_NOARC;tl_armed=tl_done=0;tl_stop_ms=0;}
+static void traffic_learning_reset(void){tl_arc=ROUTE_NOARC;tl_armed=tl_done=0;tl_stop_ms=0;traffic_un_cong_ms=0;traffic_un_cong_arc=ROUTE_NOARC;}
 static int traffic_heading_delta(int a,int b){int d=a-b;if(d<0)d=-d;return d>180?360-d:d;}
 static void traffic_note_offroute_avoidance(void){
  if(!pref.learn_history||!mob_recording||!mob_started||gps.mph10<50||route_status!=R_READY||route_head+2>=route_n)return;
@@ -466,6 +467,60 @@ static void traffic_unguided_slowdown_service(u32 now){
   hud_pulse_at(&hud_navigation,HUD_SLOWDOWN,now,4000u);
  }
 }
+static int traffic_arc_has_congestion(u32 arc,u32 epoch,u32*out_key){
+ struct CprBase b;
+ if(arc==ROUTE_NOARC||!route_read_base(arc,&b)||!b.cost||b.cost>36000u)return 0;
+ u32 key=traffic_key(arc,&b);
+ if(!key||ml_congestion_already_seen(key))return 0;
+ int known=0;
+ u32 adj=mob_road_cost(key,epoch,b.cost,&known);
+ if(!known||adj<sat_add32(b.cost,600u))return 0;
+ if(out_key)*out_key=key;
+ return 1;
+}
+/* Unguided historical congestion warning: checks the current snapped corridor
+ * and a ~220 m forward probe along gps.course against the current 2-hour time
+ * bucket, firing a one-shot amber "Likely traffic ahead" cue when confirmed
+ * historical delay is >= 60 s (without proposing a diversion). */
+static void traffic_unguided_congestion_service(u32 now){
+ if(!pref.learn_history||!pref.diversions||mob.n<5||!gps.fix||gps.mph10<80||freecam||screen!=SCR_MAP)return;
+ if(!routeok||atlas_probe||(atlas_ready&&atlas_owner(car_lat(),car_lon())!=atlas_route_region))return;
+ if(hud_navigation.kind==HUD_FAILURE||hud_navigation.kind==HUD_CALC||hud_navigation.kind==HUD_SLOWDOWN)return;
+ u32 epoch=mob_time(now);
+ if(epoch==MOB_UNKNOWN)return;
+ if(traffic_un_cong_ms&&(u32)(now-traffic_un_cong_ms)<3000u&&tl_arc==traffic_un_cong_arc)return;
+ traffic_un_cong_ms=now;traffic_un_cong_arc=tl_arc;
+ u32 hit_key=0;
+ int have_tl=tl_arc!=ROUTE_NOARC&&(!atlas_ready||tl_region==atlas_route_region)&&(u32)(now-tl_last_ms)<=3000u;
+ if(have_tl&&traffic_arc_has_congestion(tl_arc,epoch,&hit_key)){
+  ml_congestion_mark_seen(hit_key);
+  hud_pulse_at(&hud_navigation,HUD_CONGESTION,now,4000u);
+  return;
+ }
+ s32 clat=car_lat(),clon=car_lon();
+ int deg=gps.course%360;if(deg<0)deg+=360;
+ int k=deg/10,f=deg%10,nk=(k+1)%36;
+ int sv=(SIN36[k]*(10-f)+SIN36[nk]*f)/10,cv=(COS36[k]*(10-f)+COS36[nk]*f)/10;
+ s32 dlat=(s32)((200*cv)/32767);
+ s32 dlon_m=(s32)((200*sv)/32767);
+ int cq=coslat_q15(clat);
+ s32 dlon=cq>1024?(s32)(((long long)dlon_m<<15)/cq):dlon_m;
+ struct RouteSnapCandidate c[8];
+ int n=route_snap_candidates(clat+dlat,clon+dlon,625u,0,0,c,8);
+ int best=-1;u32 bd=0xffffffffu;
+ for(int i=0;i<n;i++){
+  struct CprBase b;struct CprPoint a,z;
+  if(!route_read_base(c[i].arc,&b)||c[i].geom_seg+1u>=b.geom_count||
+     !route_base_point(&b,c[i].geom_seg,&a)||!route_base_point(&b,c[i].geom_seg+1u,&z))continue;
+  int h=nav_heading10(a.lat,a.lon,z.lat,z.lon);
+  if(h<0||traffic_heading_delta(h,deg)>45)continue;
+  if(c[i].d2<bd){bd=c[i].d2;best=i;}
+ }
+ if(best>=0&&traffic_arc_has_congestion(c[best].arc,epoch,&hit_key)){
+  ml_congestion_mark_seen(hit_key);
+  hud_pulse_at(&hud_navigation,HUD_CONGESTION,now,4000u);
+ }
+}
 static void traffic_scan_ex(u32 now,int allow_divert){
  u32 epoch=mob_time(now);
  int can_divert=allow_divert&&epoch!=MOB_UNKNOWN;
@@ -544,7 +599,10 @@ static void traffic_service(u32 now){
   if(traffic_offer_n)render_background_dirty=1;
   traffic_offer_n=traffic_warn=0;traffic_cal_delta_ds=0;ml_route_var_ds=0;ml_offer_kind=0;
   traffic_search_cancel();
-  if(route_status!=R_READY&&!atlas_probe)traffic_unguided_slowdown_service(now);
+  if(route_status!=R_READY&&!atlas_probe){
+   traffic_unguided_slowdown_service(now);
+   traffic_unguided_congestion_service(now);
+  }
   return;
  }
  int allow_divert=pref.diversions&&mob.n>=5&&mob_time(now)!=MOB_UNKNOWN;

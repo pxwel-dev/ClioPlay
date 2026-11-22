@@ -41,10 +41,11 @@ Starting another trip, disabling suggestions or learning, or entering Explore
 hides the invitation. The normal driving zoom and lower HUD are unchanged.
 
 A named Favourite within 100 m is preferred to a named Recent. Otherwise,
-the model retains the actual learned coordinates and tries the nearest street
-in a small destination-centred map neighbourhood, then a nearby named
-settlement. These names describe the vicinity, not a verified address; the
-last fallback is latitude and longitude. Explicitly accepted suggestions use
+the model retains the actual learned coordinates and checks for a named mapped
+**Fuel**, **Parking** or **Hospital** POI at the destination, then tries the
+nearest street in a small destination-centred map neighbourhood, then a nearby
+named settlement. These names describe the vicinity, not a verified address;
+the last fallback is latitude and longitude. Explicitly accepted suggestions use
 normal route and Recent storage. No new training record is created by either
 confirmation choice: only the usual completed power-off session trains the
 model.
@@ -63,8 +64,9 @@ if driving begins or the position becomes invalid, an open prompt closes.
 
 No is selected by default because saving a favourite modifies personal data.
 The prompt never displays an inferred name. Yes always opens the existing
-Favourite naming keyboard, populated with the best nearby named Recent or
-offline street/settlement name when available. The driver can edit it or
+Favourite naming keyboard, populated with the best nearby named Recent, named
+mapped **Fuel** / **Parking** / **Hospital** POI, or offline street/settlement
+name when available. The driver can edit it or
 enter a name from scratch. Only Save stores the actual learned endpoint
 under the reviewed name and returns to the driving map. Back cancels; if
 the vehicle moves or its position becomes invalid, naming closes without
@@ -76,11 +78,16 @@ starts a journey or adds evidence to the prediction model. Accepting it makes
 future suggestions easier to recognise through a named Favourite; it does not
 artificially increase their statistical confidence.
 
-### Route diversions
+### Route diversions and unguided traffic warnings
 
 During guidance, **Likely traffic ahead** means historical evidence suggests
-a delay, not that a real-time traffic incident was detected. Once a beneficial
-alternative is found, the animated glass status pill reads **Traffic diversion
+a delay, not that a real-time traffic incident was detected. When **Route
+diversions** and **Learn driving history** are enabled, unguided drives also
+check the current snapped corridor and a `~220 m` forward heading probe against
+the current two-hour time bucket, surfacing a one-shot amber **Likely traffic
+ahead** notice (at most once per congested road per trip, when confirmed
+historical delay is `≥ 60 s`) without proposing a diversion. Once a beneficial
+alternative is found during active guidance, the animated glass status pill reads **Traffic diversion
 available** and shows the next available control (distinguishing traffic-based
 bypasses unambiguously from learned **Usual route available** recommendations).
 The shared geometry stays solid magenta; only the bypassed original geometry is
