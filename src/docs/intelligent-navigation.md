@@ -152,26 +152,32 @@ destination` chain table boosts matching multi-leg routines (e.g., short
 `<= 15 min` errand vs full work day `> 5 h`).
 
 When the driver repeatedly stops at the same intermediate point on a familiar
-origin-to-destination trip (either via short `<= 45 min` chained legs or by
-adding the stop explicitly via **Add stop** across at least three trips within a
-3-hour time-of-day window), starting that destination offers **Usual stop
-available · OK to review** in the status pill. Pressing **OK** opens **Add usual
-stop?** (`Yes` inserts the stop into the itinerary; `No` suppresses it for the
-session).
+origin-to-destination trip (either via short `<= 45 min` unguided chained legs
+— automatically labelled from matching saved **Favourites**, mapped
+Fuel/Parking/Hospital POIs or **Recents** — or by adding the stop explicitly via
+**Add stop** across at least three trips within a 3-hour time-of-day window),
+starting that destination offers **Usual stop available · OK to review** in the
+status pill. Pressing **OK** opens **Add usual stop?** (`Yes` inserts the stop
+into the itinerary; `No` suppresses it for the session).
 
 ### Preferred-route ("Usual route") recommendations
 
-On each completed session, traversed directed arcs accumulate positive
-preference scores while arcs voluntarily bypassed during forward off-route forks
-(ignoring U-turns) accumulate negative avoidance scores. Off-route detours taken
-while a historical traffic warning is active — or bypassing arcs already known
-to be congested in the current two-hour time bucket — do not stage permanent
-avoidance scores, keeping temporary traffic detours separate from permanent road
-preferences.
+On each completed session (guided or unguided), traversed directed arcs
+accumulate positive preference scores (`+10` per drive) while arcs voluntarily
+bypassed during forward off-route forks on a guided route (ignoring U-turns)
+accumulate negative avoidance scores. Off-route detours taken while a historical
+traffic warning is active — or bypassing arcs already known to be congested in
+the current two-hour time bucket — do not stage permanent avoidance scores,
+keeping temporary traffic detours separate from permanent road preferences.
 
-If no historical-traffic diversion is active and an upcoming route arc has been
-consistently avoided (`score <= -30`), the bounded turn-state splice search
-looks for a time-competitive alternative using your positively preferred arcs.
+If no historical-traffic diversion is active, the bounded turn-state splice
+search looks for a time-competitive usual alternative in two cases:
+- an upcoming route arc has been consistently avoided (`score <= -30`), or
+- a rejoin junction ahead has an alternate incoming road driven at least four
+  times unguided (`score >= +40`) while the routed arrival road is unfamiliar
+  (`score <= 0`), requiring the reconstructed shortcut to be strictly more
+  familiar than the routed stretch (`alt_pref >= old_pref + 40`).
+
 To avoid any ambiguity with traffic diversions, preferred-route recommendations
 use dedicated wording across every surface:
 
@@ -197,10 +203,17 @@ alternatives.
 
 ### Adaptive Auto-zoom and Day/Night brightness
 
-- **Auto-zoom:** consistent manual zoom overrides while driving in **Auto zoom**
-  are tracked across three speed bands (`< 20 mph`, `20–40 mph`, `>= 40 mph`).
-  After at least three consistent sessions in a band, Auto-zoom gently shifts by
-  at most `±1` zoom level, always clamped to Z4–Z9.
+- **Auto-zoom:** manual zoom overrides while driving in **Auto zoom** are
+  tracked across three speed regimes aligned with Auto zoom’s hysteresis tiers
+  (`< 25 mph` / `Z9–Z7`, `25–45 mph` / `Z6`, `≥ 45 mph` / `Z5–Z4`), inheriting
+  the base `23/27` and `42/48 mph` hysteresis so boundary fluctuations never
+  jitter zoom. An override must be held for at least **20 seconds** before it is
+  counted (at most once per band per drive), so accidental taps that you undo,
+  direction changes before settling, or brief peeks cancelled via **MAP** /
+  **Explore** never bias learning. After four consistent sessions in the same
+  direction, Auto zoom gently shifts by `±1` zoom level in that band (always
+  clamped to Z4–Z9); a single sustained override in the opposite direction
+  cancels the shift back to neutral.
 - **Brightness:** manual brightness changes in **Settings → Display** are
   remembered separately for Day and Night palettes. Once at least two
   adjustments are learned for a theme, **Auto** Day↔Night switches automatically
@@ -208,26 +221,36 @@ alternatives.
 
 ### Learned Nearby-POI affinity and Usual Parking
 
-- **Preferred Nearby POIs:** routing to or adding a **Fuel**, **Parking** or
-  **Hospital** POI from **Trip → Nearby** builds a bounded affinity score. Once
+- **Preferred Nearby POIs:** learns both when you route to or add a **Fuel**,
+  **Parking** or **Hospital** POI from **Trip → Nearby** *and* automatically
+  when an unguided drive (or short chained stop) finishes right at a mapped
+  **Fuel** (`≤ 55 m`), **Parking** (`≤ 75 m`) or **Hospital** (`≤ 100 m`) POI
+  (deduplicated per trip so explicit picks never double-count). Once visited or
   chosen at least twice, that station or car park receives a gentle 600 m
   effective ranking boost in **Trip → Nearby** and displays a crisp cyan star
   indicator beside its highlighted distance.
-- **Usual parking:** if guided trips to a destination repeatedly finish at a
-  consistent parking spot 100–600 m away across at least three sessions, future
-  trips to that destination display **Usual parking available · OK to review**.
+- **Usual parking:** learns both when guided trips to a destination repeatedly
+  finish 100–600 m away *and* automatically when unguided drives finish at a
+  mapped **Parking** POI (`≤ 75 m`) located 100–600 m from a unique saved
+  **Favourite** or **Recent** (skipping any location within 100 m of another
+  saved place or ambiguous between multiple Favourites). After at least three
+  consistent sessions, routing to that destination (or accepting a destination
+  prediction to it) displays **Usual parking available · OK to review**.
   Pressing **OK** opens **Route to usual parking?** (`Yes` updates the
   destination to the learned parking spot; `No` declines it for the session).
 
 ### Repeat hard-braking and unmapped slowdown alerts
 
-On every snapped 1 Hz sample while driving at `>= 20 mph`, sharp deceleration
-events (`>= 9.0 mph/s`) are staged per directed arc and committed on clean
-shutdown. When an arc ahead (`40–350 m`) has triggered across at least three
-sessions (or two sessions in `<= 3 °C` cold weather), ClioPlay surfaces a
-non-intrusive amber **Frequent slowdown ahead** (or **Cold-weather slowdown
-ahead**) status cue at most once per arc per trip, and applies a virtual penalty
-against repeat-hazard rat-runs during diversion ranking.
+On every snapped 1 Hz sample while driving at `>= 20 mph` (guided or unguided),
+sharp deceleration events (`>= 9.0 mph/s`) are staged per directed arc and
+committed on clean shutdown. When a learned hotspot ahead (`40–350 m`) has
+triggered across at least three sessions (or two sessions in `<= 3 °C` cold
+weather), ClioPlay surfaces a non-intrusive amber **Frequent slowdown ahead**
+(or **Cold-weather slowdown ahead**) status cue at most once per arc per trip —
+both along an active route and during unguided driving (verified against the
+directed road arc’s heading and a tight forward bearing cone to ignore opposite
+carriageways and cross streets) — and applies a virtual penalty against
+repeat-hazard rat-runs during diversion ranking.
 
 ## Recording and successful sessions
 

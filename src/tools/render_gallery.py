@@ -207,7 +207,7 @@ V224_ML_SLOWDOWNS_EVENTS = (
 V224_ML_SLOWDOWNS_SAMPLES = sorted({0} | {at+step for at,_ in V224_ML_SLOWDOWNS_EVENTS for step in TWEEN_STEPS} | {10700})
 
 V224_ML_ADAPTIVE_HUD_EVENTS = (
-    (1200, 'key_handle(K_SR);assert(active_zoom()==7);for(int i=0;i<3;i++){memzero(ml_zoom_nudged,sizeof(ml_zoom_nudged));ml_note_zoom_override(300,1);}assert(ml_autozoom_offset(300)==1);'),
+    (1200, 'key_handle(K_SR);assert(active_zoom()==7);ml_poll_zoom_override(hud_now_ms()+ML_ZOOM_SETTLE_MS);for(int i=0;i<3;i++){memzero(ml_zoom_nudged,sizeof(ml_zoom_nudged));ml_note_zoom_override(300,1);}assert(ml_autozoom_offset(300)==1);'),
     (2600, 'key_handle(K_MAP);assert(zoom_override<0&&active_zoom()==7);'),
     (4000, 'roadctx.speed=50;roadctx.reverse_speed=50;gps.mph10=500;render_background_dirty=1;assert(active_zoom()==5);'),
     (5300, 'menu_open_setting(0,hud_now_ms());assert(sheet_page==P_SET_DISPLAY&&theme_resolved==0&&pref.bright==90);'),

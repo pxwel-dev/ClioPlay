@@ -15,7 +15,7 @@ SCRIPTS = ('card-template/ttn', 'card-template/clio843/btstart.sh')
 
 
 def validate_version(version):
-    if not re.fullmatch(r'\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?', version):
+    if not re.fullmatch(r'\d+\.\d+\.\d+(?:\.\d+)?(?:[-+][0-9A-Za-z.-]+)?', version):
         raise ValueError('VERSION must contain a complete release number')
     return version
 

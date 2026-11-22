@@ -567,7 +567,8 @@ static int auto_is_night(void){
  return night>=0?night:theme_resolved;
 }
 static int ml_learned_brightness(int night);
-static int ml_autozoom_offset(int mph10);
+static int ml_zoom_band_for_level(int base_z);
+static int ml_autozoom_offset_band(int band);
 static void traffic_note_offroute_avoidance(void);
 static void refresh_theme(void){
  int night=pref.theme==THEME_NIGHT?1:(pref.theme==THEME_DAY?0:auto_is_night());
@@ -1115,7 +1116,7 @@ static int speed_auto_zoom(void){
   while(auto_zoom_level>4&&s>=out_mph10[auto_zoom_level-5])auto_zoom_level--;
   while(auto_zoom_level<MAX_EXPLORE_ZOOM&&s<=in_mph10[auto_zoom_level-4])auto_zoom_level++;
  }
- int z=auto_zoom_level+ml_autozoom_offset(s);
+ int z=auto_zoom_level+ml_autozoom_offset_band(ml_zoom_band_for_level(auto_zoom_level));
  if(z<4)z=4;if(z>MAX_EXPLORE_ZOOM)z=MAX_EXPLORE_ZOOM;
  return z;
 }
@@ -2298,6 +2299,9 @@ static void nav_next_maneuver_find(int after_idx){
 static int nav_round_scan(int entry,u32 distance,int joined_midway){int exits=0,idx=0;if(!nav_round_scan_ex(entry,joined_midway,&exits,&idx))return 0;nav_man_type=MAN_ROUNDABOUT;nav_man_exit=exits;nav_man_idx=idx;nav_man_m=distance;nav_next_maneuver_find(idx);return 1;}
 static void nav_maneuver_find(void){nav_maneuver_reset();if(route_status!=R_READY||route_n-route_head<3)return;nav_man_scan_head=route_head;u32 dist=0;int end=route_head+ROUTE_MAN_SCAN_POINTS;if(end>route_n-1)end=route_n-1;struct CprBase first;if(nav_round_info(route_head+1,&first)&&(first.flags&4)&&nav_round_scan(route_head,0,1))return;for(int i=route_head+1;i<end;i++){dist=sat_add32(dist,nav_seg_m(route_lat[i-1],route_lon[i-1],route_lat[i],route_lon[i]));u32 in=route_seg_phys[i],out=route_seg_phys[i+1];if(in==ROUTE_NOARC||out==ROUTE_NOARC)continue;if(route_seg_arc[i]!=route_seg_arc[i+1]){struct CprBase a,b;if(nav_round_info(i,&a)&&nav_round_info(i+1,&b)){if(!(a.flags&4)&&(b.flags&4)&&nav_round_scan(i,dist,0))return;if((a.flags|b.flags)&4)continue;}}int t=nav_turn_type(nav_turn_delta(i));if(in==out&&t!=MAN_UTURN)continue;if(t!=MAN_NONE){nav_man_type=t;nav_man_idx=i;nav_man_m=dist;nav_next_maneuver_find(i);return;}}}
 #include "mobility.h"
+static int ml_find_poi_at(s32 lat,s32 lon,int only_kind,u8*out_kind,s32*out_lat,s32*out_lon,char*out_name,unsigned name_cap);
+static int ml_unguided_parking_target(struct MobPoint park,struct MobPoint*out);
+static int ml_resolve_stop_name(struct MobPoint stop,char*out,unsigned cap);
 #include "mobility_ml.h"
 #include "traffic.h"
 static const char* nav_man_text(void){static char exit_text[64];if(nav_man_type==MAN_ROUNDABOUT){if(!nav_man_exit)return ui_tr("Roundabout");copystr(exit_text,sizeof(exit_text),ui_tr("Take exit "));append_int(exit_text,sizeof(exit_text),nav_man_exit);return exit_text;}switch(nav_man_type){case MAN_SLIGHT_LEFT:return ui_tr("Slight left");case MAN_LEFT:return ui_tr("Turn left");case MAN_SHARP_LEFT:return ui_tr("Sharp left");case MAN_SLIGHT_RIGHT:return ui_tr("Slight right");case MAN_RIGHT:return ui_tr("Turn right");case MAN_SHARP_RIGHT:return ui_tr("Sharp right");case MAN_UTURN:return ui_tr("U-turn");default:return"";}}
@@ -2554,15 +2558,15 @@ static int freecam_transition_active(void){return freecam_anim_mode!=FC_ANIM_NON
 static void freecam_orientation_anim_update(u32 now);
 /* Hard recenter is reserved for programmatic state changes (arrival/trip/etc.).
  * User MAP toggling uses leave_freecam() below so it gets the reverse animation. */
-static void recenter_map(void){freecam=0;map_tilt_q8=256;freecam_course_valid=0;freecam_anim_mode=FC_ANIM_NONE;freecam_anim_at=0;freecam_anim_serial++;freecam_buffered=0;freecam_anim_tilt_from=256;zoom_override=-1;if(pref.autozoom)auto_zoom_level=-1;}
+static void recenter_map(void){freecam=0;map_tilt_q8=256;freecam_course_valid=0;freecam_anim_mode=FC_ANIM_NONE;freecam_anim_at=0;freecam_anim_serial++;freecam_buffered=0;freecam_anim_tilt_from=256;zoom_override=-1;ml_zoom_cancel_override();if(pref.autozoom)auto_zoom_level=-1;}
 static int driving_info_ok_armed;
 static u32 driving_info_ok_at;
-static void enter_freecam(void){if(freecam||freecam_transition_active()||(!gps.fix&&!track_valid))return;driving_info_ok_armed=0;int z=active_zoom();int c=map_course();if(c<0||c>=360)c=0;freecam_course=c;freecam_course_valid=1;/* Tilt still animates even when already facing north. */freecam_anim_mode=FC_ANIM_TO_NORTH;freecam_anim_serial++;freecam_buffered=0;freecam_anim_from=c;freecam_anim_at=hud_now_ms();freecam_anim_tilt_from=256;map_tilt_q8=256;freecam=1;freecam_zoom=z;zoom_override=-1;/* MAP entry begins exactly at the car's current/last tracked position. */cam_lat=car_lat();cam_lon=car_lon();}
+static void enter_freecam(void){if(freecam||freecam_transition_active()||(!gps.fix&&!track_valid))return;driving_info_ok_armed=0;int z=active_zoom();int c=map_course();if(c<0||c>=360)c=0;freecam_course=c;freecam_course_valid=1;/* Tilt still animates even when already facing north. */freecam_anim_mode=FC_ANIM_TO_NORTH;freecam_anim_serial++;freecam_buffered=0;freecam_anim_from=c;freecam_anim_at=hud_now_ms();freecam_anim_tilt_from=256;map_tilt_q8=256;freecam=1;freecam_zoom=z;zoom_override=-1;ml_zoom_cancel_override();/* MAP entry begins exactly at the car's current/last tracked position. */cam_lat=car_lat();cam_lon=car_lon();}
 static void enter_freecam_at(s32 lat,s32 lon,int z){
  driving_info_ok_armed=0;
  int lo=mapok?(int)mh.minlvl:0;
  if(z<lo)z=lo;if(z>MAX_EXPLORE_ZOOM)z=MAX_EXPLORE_ZOOM;
- freecam=1;freecam_zoom=z;zoom_override=-1;
+ freecam=1;freecam_zoom=z;zoom_override=-1;ml_zoom_cancel_override();
  freecam_course=0;freecam_course_valid=1;map_tilt_q8=0;
  freecam_anim_mode=FC_ANIM_NONE;freecam_anim_at=0;freecam_anim_serial++;freecam_buffered=0;
  cam_lat=lat;cam_lon=lon;render_background_dirty=1;
@@ -2581,7 +2585,7 @@ static void leave_freecam(void){
  u32 now=hud_now_ms();freecam_orientation_anim_update(now);
  freecam=0;freecam_course_valid=1;freecam_anim_mode=FC_ANIM_TO_CAR;
  freecam_anim_from=freecam_course;freecam_anim_tilt_from=map_tilt_q8;
- freecam_anim_at=now;freecam_anim_serial++;freecam_buffered=0;zoom_override=-1;if(pref.autozoom)auto_zoom_level=-1;
+ freecam_anim_at=now;freecam_anim_serial++;freecam_buffered=0;zoom_override=-1;ml_zoom_cancel_override();if(pref.autozoom)auto_zoom_level=-1;
 }
 static void toggle_freecam(void){if(freecam_transition_active())return;if(freecam)leave_freecam();else enter_freecam();}
 struct FreecamPose {int course,valid,tilt,mode;};
@@ -3059,6 +3063,111 @@ static int frequent_named_place(struct MobPoint p,struct SavedPlace*out){
  if(suggested_road_name(p,out->name,sizeof(out->name)))return 1;
  return 0;
 }
+static int ml_poi_is_generic(const char*s){
+ return !s||!s[0]||streq(s,"FUEL")||streq(s,"PARKING")||streq(s,"HOSPITAL");
+}
+static void ml_scan_poi_tile(struct Tile*t,s32 lat,s32 lon,int only_kind,int*found,u32*best_d,u8*bk,s32*blat,s32*blon,char*bname,unsigned name_cap){
+ if(!t||t->len<8u)return;
+ const u8*p=t->data,*end=t->data+t->len;
+ u16 ng=rd16(p),nl=rd16(p+2);p+=8;
+ for(u16 f=0;f<ng&&p+4<=end;f++){int np=p[2];p+=4+(unsigned)np*4u;if(p>end)return;}
+ int span=span_for_level((int)t->lvl);
+ for(u16 i=0;i<nl&&p+8<=end;i++){
+  int kind=p[0];u16 lx=rd16(p+2),ly=rd16(p+4);int tl=p[6];p+=8;
+  if(p+tl>end)return;
+  if(kind>=6&&kind<=8&&(!only_kind||kind==only_kind)&&tl>0&&tl<113){
+   s32 plon=(s32)t->tx*span+map_tile_offset(lx,(u32)span);
+   s32 plat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);
+   u32 max_d=kind==6?55u:(kind==7?75u:100u);
+   u32 d=geo_seg_m(lat,lon,plat,plon);
+   if(d<=max_d){
+    char b[113];for(int j=0;j<tl;j++)b[j]=(char)p[j];b[tl]=0;
+    int better=!*found||d<*best_d||(d<=*best_d+20u&&ml_poi_is_generic(bname)&&!ml_poi_is_generic(b));
+    if(better){
+     *found=1;*best_d=d;*bk=(u8)kind;*blat=plat;*blon=plon;
+     if(bname&&name_cap)copystr(bname,name_cap,b);
+    }
+   }
+  }
+  p+=tl;
+ }
+}
+static int ml_find_poi_at(s32 lat,s32 lon,int only_kind,u8*out_kind,s32*out_lat,s32*out_lon,char*out_name,unsigned name_cap){
+ if(out_name&&name_cap)out_name[0]=0;
+ if(!mapok)return 0;
+ int found=0;u32 best_d=0xffffffffu;u8 bk=0;s32 blat=0,blon=0;
+ char bname[113];bname[0]=0;
+ int lvls[2]={5,3};
+ for(int li=0;li<2&&!found;li++){
+  int lvl=lvls[li];
+  if(lvl<(int)mh.minlvl||lvl>(int)mh.maxlvl)continue;
+  int cx=tile_div(lon,lvl),cy=tile_div(lat,lvl);
+  for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++){
+   if(map_tile_in_pack(lvl,cx+dx,cy+dy))
+    ml_scan_poi_tile(get_tile((u8)lvl,cx+dx,cy+dy),lat,lon,only_kind,&found,&best_d,&bk,&blat,&blon,bname,sizeof(bname));
+  }
+ }
+ if(!found)return 0;
+ if(out_kind)*out_kind=bk;
+ if(out_lat)*out_lat=blat;
+ if(out_lon)*out_lon=blon;
+ if(out_name&&name_cap)copystr(out_name,name_cap,bname);
+ return 1;
+}
+/* Match an unguided car-park arrival (100-600 m away) to a unique saved
+ * Favourite (or Recent when no Favourite applies), never linking if another
+ * saved place sits closer than 100 m to the parking spot itself. */
+static int ml_unguided_parking_target(struct MobPoint park,struct MobPoint*out){
+ for(int i=0;i<nfaves;i++){
+  if(mob_dist(park,(struct MobPoint){faves[i].lat,faves[i].lon})<100u)return 0;
+ }
+ int hits=0,best=-1;
+ for(int i=0;i<nfaves;i++){
+  u32 d=mob_dist(park,(struct MobPoint){faves[i].lat,faves[i].lon});
+  if(d>=100u&&d<=600u){hits++;best=i;}
+ }
+ if(hits==1){
+  if(out)*out=(struct MobPoint){faves[best].lat,faves[best].lon};
+  return 1;
+ }
+ if(hits>1)return 0;
+ for(int i=0;i<nrecents;i++){
+  if(mob_dist(park,(struct MobPoint){recents[i].lat,recents[i].lon})<100u)return 0;
+ }
+ hits=0;best=-1;
+ for(int i=0;i<nrecents;i++){
+  u32 d=mob_dist(park,(struct MobPoint){recents[i].lat,recents[i].lon});
+  if(d>=100u&&d<=600u){hits++;best=i;}
+ }
+ if(hits==1){
+  if(out)*out=(struct MobPoint){recents[best].lat,recents[best].lon};
+  return 1;
+ }
+ return 0;
+}
+/* Resolve a human-readable label for an unguided recurring intermediate stop:
+ * saved Favourite -> mapped Fuel/Parking/Hospital POI -> saved Recent. */
+static int ml_resolve_stop_name(struct MobPoint stop,char*out,unsigned cap){
+ if(!out||!cap)return 0;
+ out[0]=0;
+ u32 best=121u;const struct SavedPlace*chosen=0;
+ for(int i=0;i<nfaves;i++){
+  u32 d=mob_dist(stop,(struct MobPoint){faves[i].lat,faves[i].lon});
+  if(d<best&&faves[i].name[0]){best=d;chosen=&faves[i];}
+ }
+ if(chosen){copystr(out,cap,chosen->name);return 1;}
+ u8 pk=0;s32 plat=0,plon=0;char pname[113];
+ if(ml_find_poi_at(stop.lat,stop.lon,0,&pk,&plat,&plon,pname,sizeof(pname))&&pname[0]){
+  copystr(out,cap,pname);return 1;
+ }
+ best=121u;chosen=0;
+ for(int i=0;i<nrecents;i++){
+  u32 d=mob_dist(stop,(struct MobPoint){recents[i].lat,recents[i].lon});
+  if(d<best&&recents[i].name[0]&&!streq(recents[i].name,"MAP POINT")&&!streq(recents[i].name,"PHONE DESTINATION")){best=d;chosen=&recents[i];}
+ }
+ if(chosen){copystr(out,cap,chosen->name);return 1;}
+ return 0;
+}
 static void frequent_startup_service(u32 now,int fresh);
 static void mobility_service(u32 now){
  if(!pref.learn_history){if(mob_recording){mob_stop_recording();traffic_learning_reset();}return;}
@@ -3255,7 +3364,7 @@ static void settings_key(int code){
   case 3:
    if(pref.autozoom){manual_zoom=active_zoom();pref.autozoom=0;}
    else{pref.autozoom=1;auto_zoom_level=-1;}
-   zoom_override=-1;break;
+   zoom_override=-1;ml_zoom_cancel_override();break;
   case 4:pref.cameras=(pref.cameras+d+(hw_bluetooth_enabled?3:2))%(hw_bluetooth_enabled?3:2);break;
   case 5:{
    pref.clock_auto=0;int m=pref.hoff*60+pref.moff+d*15;
@@ -3265,7 +3374,7 @@ static void settings_key(int code){
   case 7:pref.language=(pref.language+d+UI_LANGUAGE_COUNT)%UI_LANGUAGE_COUNT;break;
   case 10:pref.top_swap=!pref.top_swap;break;
   case 11:pref.bottom_swap=!pref.bottom_swap;break;
-   case 12:pref.learn_history=!pref.learn_history;if(!pref.learn_history){mob_stop_recording();traffic_invalidate();traffic_learning_reset();ml_park_valid=ml_stop_valid=0;ml_route_var_ds=0;ml_offer_kind=0;}break;
+   case 12:pref.learn_history=!pref.learn_history;if(!pref.learn_history){mob_stop_recording();traffic_invalidate();traffic_learning_reset();ml_zoom_cancel_override();ml_park_valid=ml_stop_valid=0;ml_route_var_ds=0;ml_offer_kind=0;}break;
    case 13:pref.destination_predictions=!pref.destination_predictions;if(!pref.destination_predictions){mob_suggest_valid=0;ml_park_valid=ml_stop_valid=0;}mob_predict_ms=0;break;
    case 14:pref.diversions=!pref.diversions;traffic_invalidate();break;
    case 15:return;
@@ -3380,7 +3489,7 @@ if(screen==SCR_MAP){
       else notice_fail(ui_tr(kind==1?"Route unavailable":"Diversion unavailable"));
       return;
     }
-    if(!freecam&&pref.autozoom&&zoom_override>=0){zoom_override=-1;auto_zoom_level=-1;hud_pulse(&hud_navigation,HUD_AUTO_ZOOM,1800);return;}
+    if(!freecam&&pref.autozoom&&zoom_override>=0){zoom_override=-1;auto_zoom_level=-1;ml_zoom_cancel_override();hud_pulse(&hud_navigation,HUD_AUTO_ZOOM,1800);return;}
     int was=freecam;toggle_freecam();if(was!=freecam)hud_pulse(&hud_navigation,freecam?HUD_EXPLORE:(pref.autozoom?HUD_AUTO_ZOOM:HUD_MANUAL_ZOOM),1800);return;}
   if(code==K_ENTER){
     if(freecam){driving_info_ok_armed=0;pending_lat=cam_lat;pending_lon=cam_lon;pending_point_stop=trip.active?1:0;modal=MOD_ROUTE_POINT;modal_choice=0;}
@@ -3401,7 +3510,12 @@ if(screen==SCR_MAP){
     int next=z+(up?1:-1);
     if(next>=lo&&next<=hi){
       if(freecam)freecam_zoom=next;
-      else if(pref.autozoom){zoom_override=next;ml_note_zoom_override(gps.mph10,up?1:-1);}
+      else if(pref.autozoom){
+        int was_auto=zoom_override<0;
+        zoom_override=next;
+        if(was_auto)ml_zoom_stage_override(ml_zoom_band_for_level(auto_zoom_level),z,next,hud_now_ms());
+        else ml_zoom_adjust_override(next,hud_now_ms());
+      }
       else{manual_zoom=next;prefs_mark_dirty();}
     }
     if(!freecam&&next>=lo&&next<=hi)hud_pulse(&hud_navigation,HUD_MANUAL_ZOOM,1800);return;
@@ -3698,7 +3812,7 @@ static void run(void){
   int wdfd=(int)s_open(WD_PATH,O_WRONLY_,0);debug_log(STATE_LOG,"CLIOPLAY GLOBAL " CLIOPLAY_VERSION " START");debug_log(STATE_LOG,qadjmode==7?(qadj_map_ok?"QAD7 PACKET+MMAP QUERY ENABLED":"QAD7 PAGED QUERY ENABLED"):"QADJ FAST QUERY FALLBACK CPR2");{char mb[96];mb[0]=0;appendstr(mb,sizeof(mb),"MMAP QAD=");append_int(mb,sizeof(mb),qadj_map_ok);appendstr(mb,sizeof(mb)," GEOM=");append_int(mb,sizeof(mb),route_geom_map_ok);debug_log(STATE_LOG,mb);}u32 tick=0,next_model=s_now_ms(),next_input=next_model;render_runtime_reset(next_model);
   for(;;){
     u32 now=s_now_ms();int model_due=frame_due(now,next_model);
-    if(power_requested()){boot_fade_cancel();debug_log(STATE_LOG,"POWER REQUEST");bt_write_small(BT_ACTIVE_PATH,"0\n");if(pref.learn_history){(void)mob_finish(s_now_ms());if(ml_dirty)(void)ml_save();}if(prefs_dirty)save_prefs();save_last_audio();if(gps.fix)remember_live_fix();save_last_fix();save_trip();render_background_dirty=1;render_runtime_step(hud_now_ms(),1);s_sync();s_nanosleep(0,400000000);vehicle_close();if(wdfd>=0)s_close(wdfd);for(int i=0;i<INPUT_MAX;i++)if(infd[i]>=0)s_close(infd[i]);if(gpsfd>=0)s_close(gpsfd);if(audiofd>=0)s_close(audiofd);if(mapfd>=0)s_close(mapfd);if(qadjfd>=0)s_close(qadjfd);if(routefd>=0)s_close(routefd);return;}
+    if(power_requested()){boot_fade_cancel();debug_log(STATE_LOG,"POWER REQUEST");bt_write_small(BT_ACTIVE_PATH,"0\n");if(pref.learn_history){ml_poll_zoom_override(s_now_ms());(void)mob_finish(s_now_ms());if(ml_dirty)(void)ml_save();}if(prefs_dirty)save_prefs();save_last_audio();if(gps.fix)remember_live_fix();save_last_fix();save_trip();render_background_dirty=1;render_runtime_step(hud_now_ms(),1);s_sync();s_nanosleep(0,400000000);vehicle_close();if(wdfd>=0)s_close(wdfd);for(int i=0;i<INPUT_MAX;i++)if(infd[i]>=0)s_close(infd[i]);if(gpsfd>=0)s_close(gpsfd);if(audiofd>=0)s_close(audiofd);if(mapfd>=0)s_close(mapfd);if(qadjfd>=0)s_close(qadjfd);if(routefd>=0)s_close(routefd);return;}
     if(frame_due(now,next_input)){poll_csw();poll_keys();next_input=frame_after(next_input,now,33u);}
     if(model_due){
       next_model=frame_after(next_model,now,FRAME_MODEL_MS);

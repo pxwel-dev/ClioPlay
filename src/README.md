@@ -1,18 +1,6 @@
-# ClioPlay version 2.2.5
+# ClioPlay version 2.2.6
 
-Version 2.2.5 adds an expandable live **GPS** HUD built directly into the top
-clock/temperature pill (live seconds, recessed compass dial, heading,
-`$GPGST`/HDOP accuracy, signal bars/satellites, altitude and marine coordinates,
-persisted across restarts, adapting cleanly to popups and folding to a
-seconds-only clock in menus and Explore — toggled via double-pressing
-**Centre / OK** or pressing console **REPEAT**), expands **Auto zoom** and
-manual driving zoom across **Z9–Z4** with hysteresis and full close-up vector
-precision and street names at **Z7–Z9**, and tightens **View diversion** /
-**View route** framing to fill the `480 × 272` screen — building on ClioPlay’s
-offline local learning, Nearby POIs, expandable roundabout secondary manoeuvre
-pill, AVRCP 1.3 instant Bluetooth notifications and desktop
-migration/favourites tools. See [intelligent navigation](docs/intelligent-navigation.md)
-and the [changelog](docs/changelog.md).
+Version 2.2.6 extends ClioPlay’s offline on-device learning to work across everyday unguided drives — automatically learning **Preferred Nearby POIs** (`Fuel`, `Parking`, `Hospital`), **Usual Parking** spots (from mapped car parks near a unique saved Favourite/Recent), **auto-named Recurring Intermediate Stops**, and **Usual Route** shortcuts without needing an active route, surfacing **Frequent** and **Cold-weather slowdown ahead** alerts during unguided commutes too, and aligning **Adaptive Auto-zoom**’s three speed regimes (`< 25 mph`, `25–45 mph`, `≥ 45 mph`) with `Z9–Z4`’s hysteresis tiers plus a 20-second sustained-override guard (filtering out misclicks and quick peeks) — building on version 2.2.5’s expandable live **GPS** HUD inside the top clock/temperature pill, expanded **Z9–Z4** Auto zoom with close-up **Z7–Z9** street names and tighter **View diversion** / **View route** framing, offline Nearby POIs, expandable roundabout secondary manoeuvre pill, AVRCP 1.3 instant Bluetooth notifications and desktop migration/favourites tools. See [intelligent navigation](docs/intelligent-navigation.md) and the [changelog](docs/changelog.md).
 
 ## Set up a card
 
@@ -276,7 +264,7 @@ calculation uses the existing five-frame-per-second cap. Declining keeps Explore
 
 #### Auto zoom and close-up street names
 
-Auto zoom selects across **Z9–Z4**, giving closer views at low speeds while keeping roughly 33–51 seconds of forward sightline across driving speeds. Manual driving zoom (soft keys / knob rotation) also reaches **Z9** on standard Z6 map packs. Separate speed thresholds for speeding up (zooming out) and slowing down (zooming in) create a hysteresis band around each boundary so small speed fluctuations do not keep changing the zoom; large speed jumps step straight to the matching level. When **Learn driving history** is enabled, learned Adaptive Auto-zoom adjustments (`±1` level) are clamped across the full **Z4–Z9** range.
+Auto zoom selects across **Z9–Z4**, giving closer views at low speeds while keeping roughly 33–51 seconds of forward sightline across driving speeds. Manual driving zoom (soft keys / knob rotation) also reaches **Z9** on standard Z6 map packs. Separate speed thresholds for speeding up (zooming out) and slowing down (zooming in) create a hysteresis band around each boundary so small speed fluctuations do not keep changing the zoom; large speed jumps step straight to the matching level. When **Learn driving history** is enabled, Adaptive Auto-zoom tracks sustained manual overrides (held for at least 20 seconds, ignoring misclicks and brief peeks) across three speed regimes aligned with these hysteresis tiers (`< 25 mph` / `Z9–Z7`, `25–45 mph` / `Z6`, `≥ 45 mph` / `Z5–Z4`) and applies learned `±1` adjustments clamped across **Z4–Z9**.
 
 | Zoom | Default speed band | Zooms out (speeding up) | Zooms in (slowing down) | Forward view | Where it fits |
 | --- | --- | --- | --- | --- | --- |

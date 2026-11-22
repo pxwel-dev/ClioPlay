@@ -495,13 +495,52 @@ static void ml_features(void){
  assert(strstr(jbuf,"-")!=0&&strstr(jbuf,"min")!=0);
  pref.learn_history=0;hud_journey_text(jbuf,sizeof(jbuf));assert(strstr(jbuf,"-")==0);pref.learn_history=1;
  ml_route_var_ds=0;
- /* 5: Adaptive auto-zoom & Day/Night brightness */
- pref.autozoom=1;
+ /* 5: Adaptive auto-zoom (aligned bands + hysteresis + sustained override) & Day/Night brightness */
+ menu_reset(hud_now_ms());bt_control_mode=0;mh.minlvl=0;mh.maxlvl=6;
+ pref.autozoom=1;screen=SCR_MAP;freecam=0;modal=MOD_NONE;zoom_override=-1;
+ assert(ml_zoom_band(240)==0&&ml_zoom_band(250)==1&&ml_zoom_band(440)==1&&ml_zoom_band(450)==2);
+ assert(ml_zoom_band_for_level(9)==0&&ml_zoom_band_for_level(7)==0&&ml_zoom_band_for_level(6)==1&&ml_zoom_band_for_level(5)==2&&ml_zoom_band_for_level(4)==2);
  for(int i=0;i<4;i++){memzero(ml_zoom_nudged,sizeof(ml_zoom_nudged));ml_note_zoom_override(120,1);ml_note_zoom_override(500,-1);}
- assert(ml_autozoom_offset(120)==1&&ml_autozoom_offset(500)==-1);
+ assert(ml_autozoom_offset(120)==1&&ml_autozoom_offset(240)==1&&ml_autozoom_offset(250)==0&&ml_autozoom_offset(440)==0&&ml_autozoom_offset(450)==-1);
  gps.mph10=700;auto_zoom_level=4;assert(speed_auto_zoom()==4); /* clamped at 4 */
  gps.mph10=0;auto_zoom_level=9;assert(speed_auto_zoom()==9); /* clamped at 9 */
  gps.mph10=120;auto_zoom_level=7;assert(speed_auto_zoom()==8); /* learned +1 shifts Z7->Z8 */
+ /* Hysteresis inheritance: at 26 mph while base Z7 holds (below 27 mph out-threshold), band 0 stays active */
+ gps.mph10=260;assert(speed_auto_zoom()==8&&auto_zoom_level==7);
+ gps.mph10=270;assert(speed_auto_zoom()==6&&auto_zoom_level==6); /* cleanly enters band 1 (Z6) */
+ gps.mph10=470;assert(speed_auto_zoom()==6&&auto_zoom_level==6); /* below 48 mph out-threshold, stays in band 1 */
+ gps.mph10=480;assert(speed_auto_zoom()==4&&auto_zoom_level==5); /* cleanly enters band 2 (Z5-1=Z4) */
+ /* Sustained override guard in band 1 (30 mph, base Z6): misclick undo & quick peek must not bias ML */
+ gps.mph10=300;auto_zoom_level=6;zoom_override=-1;memzero(ml_zoom_nudged,sizeof(ml_zoom_nudged));ml_zoom_cancel_override();
+ /* Misclick undo: zoom out 6->5 then back 5->6; even after settle time, zero vote */
+ key_handle(K_ESC);assert(zoom_override==5);
+ hud_capture_ms+=1000u;key_handle(K_SR);assert(zoom_override==6);
+ hud_capture_ms+=ML_ZOOM_SETTLE_MS;ml_poll_zoom_override(hud_now_ms());
+ assert(mob_ml.zoom_samples[1]==0&&mob_ml.zoom_bias_q4[1]==0);
+ /* Quick peek: zoom out 6->5 for 10 s then MAP returns to Auto zoom -> zero vote */
+ key_handle(K_MAP);assert(zoom_override<0);
+ key_handle(K_ESC);assert(zoom_override==5);
+ hud_capture_ms+=10000u;ml_poll_zoom_override(hud_now_ms());
+ key_handle(K_MAP);assert(zoom_override<0);
+ hud_capture_ms+=ML_ZOOM_SETTLE_MS;ml_poll_zoom_override(hud_now_ms());
+ assert(mob_ml.zoom_samples[1]==0&&mob_ml.zoom_bias_q4[1]==0);
+ /* Direction change 6->5->6->7 then held >= 20 s -> commits +1 (not -1), timer restarts on last tap */
+ key_handle(K_ESC);assert(zoom_override==5);
+ hud_capture_ms+=15000u;key_handle(K_SR);key_handle(K_SR);assert(zoom_override==7);
+ hud_capture_ms+=10000u;ml_poll_zoom_override(hud_now_ms());
+ assert(mob_ml.zoom_samples[1]==0&&mob_ml.zoom_bias_q4[1]==0); /* timer reset on last tap */
+ hud_capture_ms+=10000u;ml_poll_zoom_override(hud_now_ms());
+ assert(mob_ml.zoom_samples[1]==1&&mob_ml.zoom_bias_q4[1]==4);
+ /* Three more sustained sessions reach +10 and activate +1; one sustained opposite session cancels it */
+ for(int i=0;i<3;i++){memzero(ml_zoom_nudged,sizeof(ml_zoom_nudged));ml_note_zoom_override(300,1);}
+ key_handle(K_MAP);assert(zoom_override<0&&speed_auto_zoom()==7);
+ memzero(ml_zoom_nudged,sizeof(ml_zoom_nudged));
+ key_handle(K_ESC);assert(zoom_override==6); /* effective base was 7, target 6 -> delta -1 */
+ hud_capture_ms+=ML_ZOOM_SETTLE_MS;ml_poll_zoom_override(hud_now_ms());
+ key_handle(K_MAP);assert(zoom_override<0&&mob_ml.zoom_bias_q4[1]==4&&speed_auto_zoom()==6);
+ /* Reset band 1 back to neutral for downstream checks */
+ mob_ml.zoom_bias_q4[1]=0;mob_ml.zoom_samples[1]=0;
+ hud_navigation.kind=HUD_NONE;hud_capture_ms+=2000u;
  gps.mph10=300;auto_zoom_level=6;assert(speed_auto_zoom()==6);
  ml_note_brightness(0,90);ml_note_brightness(0,90);
  ml_note_brightness(1,30);ml_note_brightness(1,30);
@@ -606,7 +645,108 @@ static void ml_features(void){
   hud_reset_animations();hud_prepare(5,hud_now_ms(),1);hud_settle_for_capture(hud_now_ms());hud_draw_card(HC_STATUS,hud_now_ms());
   key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&confirm_kind==3&&confirm_diversion_kind==1);
   key_handle(K_ENTER);assert(screen==SCR_MAP&&streq(notice_text,"Usual route selected"));
+  /* 3b: Unguided-learned Usual Route proposal (pure positive familiarity >= +40 on incoming shortcut, zero guided avoidance). */
+  memzero(mob_ml.pref_arcs,sizeof(mob_ml.pref_arcs));
+  traffic_invalidate();route_status=R_READY;route_head=0;route_n=4;route_dest_comp=1;route_result_cost=1800;route_result_m=990;
+  for(int i=0;i<4;i++){
+   route_lat[i]=pts[i].lat;route_lon[i]=pts[i].lon;route_node[i]=(u32)i;
+   route_seg_arc[i]=i?(u32)(i-1):ROUTE_NOARC;route_seg_cost[i]=i?cost[i-1]:0;
+   route_seg_m[i]=i?geo_seg_m(pts[i-1].lat,pts[i-1].lon,pts[i].lat,pts[i].lon):0;
+   route_seg_phys[i]=i?2u*(u32)(i-1):ROUTE_NOARC;
+  }
+  for(int i=0;i<4;i++){
+   mob_recording=mob_started=1;
+   ml_stage_pref_arc(k_pref1,10);ml_stage_pref_arc(k_pref2,10);
+   ml_commit_pref_arcs();ml_session_reset();
+  }
+  assert(ml_pref_score(k_avoid)==0&&ml_pref_score(k_pref1)>=40&&ml_pref_score(k_pref2)>=40);
+  traffic_scan(200);assert(traffic_searching&&traffic_search_kind==1&&traffic_search_min_pref==40);
+  for(int i=0;i<50&&traffic_searching;i++)traffic_search_step(200u+(u32)i*10u);
+  assert(traffic_offer_valid()&&ml_offer_kind==1);
+  /* When main route arc is also familiar (+40), do NOT offer a redundant unguided usual route. */
+  traffic_invalidate();
+  for(int i=0;i<4;i++){mob_recording=mob_started=1;ml_stage_pref_arc(k_avoid,10);ml_commit_pref_arcs();ml_session_reset();}
+  traffic_scan(300);assert(!traffic_searching&&!traffic_offer_valid());
   fclose(f);routefd=-1;routeok=0;traffic_invalidate();
+ }
+ /* 9: Unguided slowdown alerts (warm & cold), forward-cone filtering & once-per-trip dedup */
+ {
+  route_status=R_IDLE;routeok=0;gps.fix=1;track_valid=0;gps.mph10=200;freecam=0;screen=SCR_MAP;
+  ml_slowdown_seen_n=0;hud_navigation.kind=HUD_NONE;
+  /* Driving South away from hazard 991 at (5497550,-161000) -> silent */
+  gps.lat=5497400;gps.lon=-161000;gps.course=180;car.tempok=1;car.temp=15;
+  traffic_service(hud_now_ms());assert(hud_navigation.kind==HUD_NONE);
+  /* Driving North toward hazard 991 (~167 m ahead, bearing 0) -> warm Frequent slowdown ahead */
+  gps.course=0;traffic_service(hud_now_ms());
+  assert(hud_navigation.kind==HUD_SLOWDOWN&&!ml_slowdown_cold&&ml_slowdown_arc==991u);
+  /* Deduplicated on same trip */
+  hud_navigation.kind=HUD_NONE;traffic_service(hud_now_ms());assert(hud_navigation.kind==HUD_NONE);
+  /* Cold-only hazard 992 at (5497650,-161000): silent at 15 C, alerts at 1 C */
+  gps.lat=5497500;gps.lon=-161000;gps.course=0;car.temp=15;
+  traffic_service(hud_now_ms());assert(hud_navigation.kind==HUD_NONE);
+  car.temp=1;traffic_service(hud_now_ms());
+  assert(hud_navigation.kind==HUD_SLOWDOWN&&ml_slowdown_cold&&ml_slowdown_arc==992u);
+  hud_navigation.kind=HUD_NONE;
+ }
+ /* 10: Unguided Nearby-POI affinity, Usual Parking & auto-named Recurring Stops from map tiles */
+ {
+  struct MobPoint p_fuel={5495900,-162000},p_park={5496100,-162000},p_work={5496350,-162000},p_home={5495200,-162000};
+  int tx=tile_div(p_fuel.lon,5),ty=tile_div(p_fuel.lat,5),span=span_for_level(5);
+  assert(tile_div(p_park.lon,5)==tx&&tile_div(p_park.lat,5)==ty);
+  /* Build a tiny valid CPM5 Z5 tile in tc[0] with one Fuel POI ("ESSO") and one Parking POI ("TOWN PARK"). */
+  memzero(tc,sizeof(tc));
+  u8*d=tc[0].data;u32 pos=8;
+  d[0]=0;d[1]=0;d[2]=2;d[3]=0;d[4]=d[5]=d[6]=d[7]=0;
+  struct {u8 k;s32 lat,lon;const char*name;} pois[2]={{6,p_fuel.lat,p_fuel.lon,"ESSO"},{7,p_park.lat,p_park.lon,"TOWN PARK"}};
+  for(int i=0;i<2;i++){
+   u16 lx=(u16)(((u32)(pois[i].lon-tx*span)*4095u)/(u32)span);
+   u16 ly=(u16)(((u32)(pois[i].lat-ty*span)*4095u)/(u32)span);
+   u8 tl=(u8)slen(pois[i].name);
+   d[pos++]=pois[i].k;d[pos++]=0;d[pos++]=(u8)(lx&255u);d[pos++]=(u8)(lx>>8);
+   d[pos++]=(u8)(ly&255u);d[pos++]=(u8)(ly>>8);d[pos++]=tl;d[pos++]=0;
+   for(u8 j=0;j<tl;j++)d[pos++]=(u8)pois[i].name[j];
+  }
+  tc[0].valid=1;tc[0].lvl=5;tc[0].page=0;tc[0].tx=tx;tc[0].ty=ty;tc[0].len=pos;tc[0].age=++agec;
+  mapok=1;mh.minlvl=0;mh.maxlvl=6;mh.count=0;
+  /* Two unguided arrivals at ESSO -> automatically learns Preferred Fuel POI without Trip -> Nearby */
+  ml_guided_target_valid=0;
+  for(int i=0;i<2;i++){
+   mob_live.origin=p_home;mob_live.dest=p_fuel;mob_live.depart=ep+(u32)i*86400u;mob_live.duration=300u;
+   ml_commit_session();
+  }
+  assert(ml_poi_affinity(6,p_fuel.lat,p_fuel.lon,"ESSO")>=2u);
+  /* Explicit Trip -> Nearby pick + arrival in same session must NOT double-count */
+  u8 before_cnt=0;
+  for(int i=0;i<MOB_ML_POI_AFF;i++)if(mob_ml.poi_aff[i].kind==6&&mob_ml.poi_aff[i].name_hash==ml_name_hash("ESSO"))before_cnt=mob_ml.poi_aff[i].count;
+  ml_record_poi_use(6,p_fuel.lat,p_fuel.lon,"ESSO");
+  mob_live.origin=p_home;mob_live.dest=p_fuel;mob_live.depart=ep+3u*86400u;mob_live.duration=300u;
+  ml_commit_session();
+  u8 after_cnt=0;
+  for(int i=0;i<MOB_ML_POI_AFF;i++)if(mob_ml.poi_aff[i].kind==6&&mob_ml.poi_aff[i].name_hash==ml_name_hash("ESSO"))after_cnt=mob_ml.poi_aff[i].count;
+  assert(after_cnt==before_cnt+1u);
+  /* Unguided Usual Parking: save unique Favourite "OFFICE" ~275 m from TOWN PARK and arrive 3x unguided */
+  int saved_nfaves=nfaves,saved_nrecents=nrecents;
+  nfaves=1;nrecents=0;faves[0]=(struct SavedPlace){p_work.lat,p_work.lon,"OFFICE"};
+  for(int i=0;i<3;i++){
+   ml_guided_target_valid=0;
+   mob_live.origin=p_home;mob_live.dest=p_park;mob_live.depart=ep+(u32)(10+i)*86400u;mob_live.duration=600u;
+   ml_commit_session();
+  }
+  struct MobPoint learned_park;
+  assert(ml_find_usual_parking(p_work,&learned_park)&&mob_dist(learned_park,p_park)<=50u);
+  /* Ambiguity guard: two Favourites within 100-600 m must NOT falsely record unguided parking */
+  struct MobPoint p_other={5495950,-161800};
+  nfaves=2;faves[1]=(struct SavedPlace){p_other.lat,p_other.lon,"GYM"};
+  assert(!ml_unguided_parking_target(p_park,&learned_park));
+  /* Auto-naming unguided recurring stop: Home -> ESSO (10 min dwell) -> OFFICE names the stop "ESSO" */
+  nfaves=1;
+  mob_ml.last_origin=p_home;mob_ml.last_dest=p_fuel;mob_ml.last_arrival=ep+20u*86400u;mob_ml.last_valid=1u;
+  mob_live.origin=p_fuel;mob_live.dest=p_work;mob_live.depart=ep+20u*86400u+600u;mob_live.duration=400u;
+  ml_commit_session();
+  int found_named_stop=0;
+  for(int i=0;i<MOB_ML_STOPS;i++)if(mob_ml.stops[i].count&&mob_dist(mob_ml.stops[i].stop,p_fuel)<=50u&&streq(mob_ml.stops[i].name,"ESSO"))found_named_stop=1;
+  assert(found_named_stop);
+  nfaves=saved_nfaves;nrecents=saved_nrecents;memzero(tc,sizeof(tc));mapok=0;
  }
  /* MML1 persistence round-trip, corrupt rejection, and full wipe on mob_clear() */
  assert(ml_save());

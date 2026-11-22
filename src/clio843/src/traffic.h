@@ -15,7 +15,7 @@ static int traffic_region=-2;
 static u32 traffic_offer_revision,traffic_saving,traffic_scan_ms,traffic_eta_ds,traffic_eta_revision;
 static s32 traffic_cal_delta_ds;
 static u32 traffic_block_arc,traffic_base_ds;
-static int traffic_eta_head,traffic_slow_end,traffic_search_kind;
+static int traffic_eta_head,traffic_slow_end,traffic_search_kind,traffic_search_min_pref=20;
 static u32 traffic_search_started,traffic_offer_serial;
 /* A route-local bit per incoming geometry segment. Declining one bypass
  * must not silence congestion elsewhere on this leg. Point indices stay
@@ -82,7 +82,7 @@ static int traffic_warn;
 static void traffic_reset_offer(void){
  traffic_offer_n=traffic_searching=traffic_warn=0;traffic_begin_idx=traffic_join_idx=-1;
  traffic_scan_ms=0;traffic_eta_revision=0xffffffffu;traffic_saving=0;traffic_cal_delta_ds=0;
- traffic_search_kind=0;ml_offer_kind=0;ml_route_var_ds=0;traffic_route_revision++;
+ traffic_search_kind=0;traffic_search_min_pref=20;ml_offer_kind=0;ml_route_var_ds=0;traffic_route_revision++;
  memzero(traffic_shared_main,sizeof(traffic_shared_main));memzero(traffic_shared_alt,sizeof(traffic_shared_alt));render_background_dirty=1;
 }
 static void traffic_invalidate(void){
@@ -230,7 +230,7 @@ static u32 traffic_remaining_cost(void){
  }
  return c;
 }
-static void traffic_search_cancel(void){traffic_searching=0;traffic_expand=-1;traffic_state_n=0;traffic_search_kind=0;}
+static void traffic_search_cancel(void){traffic_searching=0;traffic_expand=-1;traffic_state_n=0;traffic_search_kind=0;traffic_search_min_pref=20;}
 static int traffic_state_find(u32 node){for(unsigned i=0;i<traffic_state_n;i++)if(traffic_states[i].node==node)return (int)i;return -1;}
 static int traffic_search_start(int from,int join,u32 block,u32 raw,u32 before,u32 now){
  if(from<=route_head||join<=from||join>=route_n||route_node[from]==ROUTE_NOARC||route_node[join]==ROUTE_NOARC||traffic_range_declined(from,join))return 0;
@@ -248,7 +248,7 @@ static int traffic_search_valid(void){
  * route data changes until the driver accepts the candidate. */
 static int traffic_build_candidate(int idx,u32 now){
  int n=1,guard=0,cold=ml_is_cold();u32 elapsed=0,old=0,old_var=0,alt_var=0,old_haz=0,alt_haz=0,epoch=mob_time(now);
- int alt_pref=0;
+ int old_pref=0,alt_pref=0;
  if(epoch==MOB_UNKNOWN)return 0;
  /* Recompute arrival time at the divergence point after progress. */
  for(int i=route_head+1;i<=traffic_begin_idx;i++)elapsed=sat_add32(elapsed,route_seg_cost[i]);
@@ -262,6 +262,8 @@ static int traffic_build_candidate(int idx,u32 now){
   if(key){
    old_var=sat_add32(old_var,ml_road_mad(key,t_at));
    if(ml_hazard_level(key,cold)>0)old_haz++;
+   int ps=ml_pref_score(key);
+   if(ps>0)old_pref+=ps;
   }
  }
  elapsed=start_elapsed;
@@ -305,7 +307,8 @@ static int traffic_build_candidate(int idx,u32 now){
  u32 alt=elapsed-start_elapsed,saving=old>alt?old-alt:0;
  u32 remaining=traffic_remaining_cost();
  if(traffic_search_kind==1){
-  if(alt_pref<20||alt_haz>old_haz||alt>sat_add32(old,1200u))return 0;
+  int need=traffic_search_min_pref>=40?40:20;
+  if(alt_pref<need||(need>=40&&alt_pref<old_pref+40)||alt_haz>old_haz||alt>sat_add32(old,1200u))return 0;
  }else{
   u32 old_eff=sat_add32(old,sat_add32(old_var/2u,old_haz*300u));
   u32 alt_eff=sat_add32(alt,sat_add32(alt_var/2u,alt_haz*300u));
@@ -336,8 +339,14 @@ static void traffic_search_step(u32 now){
   if(mob_dist((struct MobPoint){from.lat,from.lon},(struct MobPoint){route_lat[traffic_begin_idx],route_lon[traffic_begin_idx]})>6000u&&
      mob_dist((struct MobPoint){from.lat,from.lon},(struct MobPoint){route_lat[traffic_join_idx],route_lon[traffic_join_idx]})>6000u)continue;
   /* Search a static legal candidate; historical costs are applied only after
-   * reconstruction, in forward time order. Never modify CH shortcuts. */
-  u32 dist=sat_add32(traffic_states[traffic_expand].cost,a.cost);int at=traffic_state_find(a.from);
+   * reconstruction, in forward time order. Never modify CH shortcuts.
+   * For usual-route search, gently favour strongly familiar unguided arcs. */
+  u32 step_cost=a.cost;
+  if(traffic_search_kind==1){
+   u32 akey=traffic_key_for_arc(a.left,0);
+   if(akey&&ml_pref_score(akey)>=30){step_cost=(step_cost*3u+2u)/4u;if(!step_cost)step_cost=1u;}
+  }
+  u32 dist=sat_add32(traffic_states[traffic_expand].cost,step_cost);int at=traffic_state_find(a.from);
   if(at<0){if(traffic_state_n>=TRAFFIC_SEARCH_MAX){traffic_search_cancel();return;}at=(int)traffic_state_n++;traffic_states[at]=(struct TrafficState){a.from,dist,id,traffic_expand,0};}
   else if(!traffic_states[at].done&&dist<traffic_states[at].cost){traffic_states[at].cost=dist;traffic_states[at].arc=id;traffic_states[at].next=traffic_expand;}
  }
@@ -355,6 +364,107 @@ static int traffic_find_join(int from,int bad,u32 arc,int end,u32*raw){
   if(i>bad&&m>=200u&&route_node[i]!=ROUTE_NOARC&&cost){*raw=cost;return i;}
  }
  return -1;
+}
+/* Detect an unguided-learned usual shortcut rejoining an unfamiliar stretch of
+ * the active route: checks incoming base arcs at rejoin junctions ahead for
+ * roads driven >= 4 times unguided (score >= 40) while the routed arrival arc
+ * is unfamiliar (score <= 0). */
+static int traffic_find_unguided_usual(int end,int*out_begin,int*out_join,u32*out_block,u32*out_raw){
+ if(!ml_has_strong_pref(40))return 0;
+ u32 stat=0;int checked=0,best_ps=39,best_begin=-1,best_join=-1;u32 best_block=ROUTE_NOARC,best_raw=0;
+ for(int j=route_head+1;j<=end&&stat<TRAFFIC_LOOKAHEAD_DS&&checked<24;j++){
+  stat=sat_add32(stat,route_seg_cost[j]);
+  if(route_node[j]==ROUTE_NOARC||route_seg_arc[j]==ROUTE_NOARC)continue;
+  if(traffic_segment_declined(j))continue;
+  u32 rkey=traffic_key_for_arc(route_seg_arc[j],0);
+  if(rkey&&ml_pref_score(rkey)>0)continue;
+  struct CprNode rn;if(!route_read_node(route_node[j],&rn))continue;
+  checked++;
+  int edge_best=0;
+  u32 lim=rn.edge_count>16u?16u:(u32)rn.edge_count;
+  for(u32 e=0;e<lim;e++){
+   u32 aid;struct CprArc a;
+   if(!traffic_read_incoming(rn.first_edge+e,&aid)||!route_read_arc(aid,&a))break;
+   if(a.to!=route_node[j]||(a.flags&CPR_ARC_SHORTCUT)||a.left==route_seg_arc[j]||a.left>=rh.base_edges||!a.cost)continue;
+   u32 ikey=traffic_key_for_arc(a.left,0);
+   if(!ikey)continue;
+   int ips=ml_pref_score(ikey);
+   if(ips>edge_best)edge_best=ips;
+  }
+  if(edge_best<=best_ps)continue;
+  /* Walk backward from j to locate a legal turn-state >= 200 m earlier (stopping
+   * right at a familiar->unfamiliar fork when present). */
+  u32 m=0,cost=0;int cand_begin=-1;u32 cand_raw=0;
+  for(int k=j;k>route_head;k--){
+   if(traffic_segment_declined(k))break;
+   m=sat_add32(m,route_seg_m[k]);
+   cost=sat_add32(cost,route_seg_cost[k]);
+   if(cost>6000u||cost>TRAFFIC_LOOKAHEAD_DS)break;
+   int prev=k-1;
+   if(prev>route_head&&m>=200u&&route_node[prev]!=ROUTE_NOARC&&cost){
+    cand_begin=prev;cand_raw=cost;
+    u32 pkey=route_seg_arc[prev]!=ROUTE_NOARC?traffic_key_for_arc(route_seg_arc[prev],0):0u;
+    if(pkey&&ml_pref_score(pkey)>0)break;
+   }
+  }
+  if(cand_begin>route_head&&cand_raw){
+   best_ps=edge_best;best_begin=cand_begin;best_join=j;best_block=route_seg_arc[j];best_raw=cand_raw;
+  }
+ }
+ if(best_join<0)return 0;
+ *out_begin=best_begin;*out_join=best_join;*out_block=best_block;*out_raw=best_raw;
+ return 1;
+}
+/* Unguided slowdown lookahead: alerts on learned repeat hard-braking / icy-road
+ * hotspots 40-350 m ahead even when driving without an active route, filtering
+ * out opposite carriageways and cross streets via directed arc heading. */
+static void traffic_unguided_slowdown_service(u32 now){
+ if(!pref.learn_history||!gps.fix||gps.mph10<80||freecam||screen!=SCR_MAP)return;
+ if(hud_navigation.kind==HUD_FAILURE||hud_navigation.kind==HUD_CALC)return;
+ int cold=ml_is_cold();
+ s32 clat=car_lat(),clon=car_lon();
+ int have_tl=routeok&&tl_arc!=ROUTE_NOARC&&tl_key&&(!atlas_ready||tl_region==atlas_route_region)&&(u32)(now-tl_last_ms)<=3000u;
+ int best=-1,best_lvl=0;u32 best_d=0xffffffffu;
+ for(int i=0;i<MOB_ML_HAZARDS;i++){
+  const struct MobHazard*h=&mob_ml.hazards[i];
+  if(!h->key)continue;
+  int lvl=ml_hazard_level(h->key,cold);
+  if(lvl<=0||ml_slowdown_already_seen(h->key))continue;
+  u32 dist=geo_seg_m(clat,clon,h->lat,h->lon);
+  if(dist<40u||dist>350u)continue;
+  int brg=nav_heading10(clat,clon,h->lat,h->lon);
+  if(brg<0)continue;
+  int bdelta=traffic_heading_delta(brg,gps.course);
+  if(bdelta>35)continue;
+  int aligned=0;
+  if(have_tl&&h->key==tl_key){
+   aligned=1;
+  }else if(routeok&&(!atlas_ready||atlas_owner(h->lat,h->lon)==atlas_route_region)){
+   struct RouteSnapCandidate c[8];
+   int n=route_snap_candidates(h->lat,h->lon,625u,0,0,c,8);
+   int matched_arc=0;
+   for(int k=0;k<n;k++){
+    if(traffic_key_for_arc(c[k].arc,0)!=h->key)continue;
+    matched_arc=1;
+    struct CprBase b;struct CprPoint a,z;
+    if(route_read_base(c[k].arc,&b)&&c[k].geom_seg+1u<b.geom_count&&
+       route_base_point(&b,c[k].geom_seg,&a)&&route_base_point(&b,c[k].geom_seg+1u,&z)){
+     int ah=nav_heading10(a.lat,a.lon,z.lat,z.lon);
+     if(ah>=0&&traffic_heading_delta(ah,gps.course)<=45)aligned=1;
+    }
+    break;
+   }
+   if(!matched_arc&&n==0&&dist<=250u&&bdelta<=25)aligned=1;
+  }else if(dist<=250u&&bdelta<=25){
+   aligned=1;
+  }
+  if(aligned&&dist<best_d){best=i;best_lvl=lvl;best_d=dist;}
+ }
+ if(best>=0){
+  u32 key=mob_ml.hazards[best].key;
+  ml_slowdown_mark_seen(key);ml_slowdown_arc=key;ml_slowdown_cold=(best_lvl==2);
+  hud_pulse_at(&hud_navigation,HUD_SLOWDOWN,now,4000u);
+ }
 }
 static void traffic_scan_ex(u32 now,int allow_divert){
  u32 epoch=mob_time(now);
@@ -420,9 +530,11 @@ static void traffic_scan_ex(u32 now,int allow_divert){
  if(route_var>18000u)route_var=18000u;
  ml_route_var_ds=route_var;
  if(can_divert&&!offered&&join>begin&&begin>route_head){
-  traffic_search_kind=0;(void)traffic_search_start(begin,join,bad_arc,raw,0,now);
+  traffic_search_kind=0;traffic_search_min_pref=20;(void)traffic_search_start(begin,join,bad_arc,raw,0,now);
  }else if(can_divert&&!offered&&pref_join>pref_begin&&pref_begin>route_head){
-  traffic_search_kind=1;(void)traffic_search_start(pref_begin,pref_join,pref_arc,pref_raw,0,now);
+  traffic_search_kind=1;traffic_search_min_pref=20;(void)traffic_search_start(pref_begin,pref_join,pref_arc,pref_raw,0,now);
+ }else if(can_divert&&!offered&&traffic_find_unguided_usual(end,&pref_begin,&pref_join,&pref_arc,&pref_raw)){
+  traffic_search_kind=1;traffic_search_min_pref=40;(void)traffic_search_start(pref_begin,pref_join,pref_arc,pref_raw,0,now);
  }
 }
 static void traffic_scan(u32 now){traffic_scan_ex(now,pref.diversions);}
@@ -431,7 +543,9 @@ static void traffic_service(u32 now){
   (atlas_ready&&atlas_owner(car_lat(),car_lon())!=atlas_route_region)){
   if(traffic_offer_n)render_background_dirty=1;
   traffic_offer_n=traffic_warn=0;traffic_cal_delta_ds=0;ml_route_var_ds=0;ml_offer_kind=0;
-  traffic_search_cancel();return;
+  traffic_search_cancel();
+  if(route_status!=R_READY&&!atlas_probe)traffic_unguided_slowdown_service(now);
+  return;
  }
  int allow_divert=pref.diversions&&mob.n>=5&&mob_time(now)!=MOB_UNKNOWN;
  if(!allow_divert){

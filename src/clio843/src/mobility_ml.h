@@ -96,7 +96,12 @@ static unsigned ml_stage_pref_n;
 struct MobMlStageBrake {u32 key; s32 lat, lon; u8 cold;};
 static struct MobMlStageBrake ml_stage_brake[MOB_ML_STAGE_BRAKES];
 static unsigned ml_stage_brake_n;
+#define ML_ZOOM_SETTLE_MS 20000u /* Sustained manual zoom before learning (avoids misclicks/peeks) */
 static u8 ml_zoom_nudged[3];
+static int ml_zoom_pend_band = -1;
+static int ml_zoom_pend_base = -1;
+static int ml_zoom_pend_target = -1;
+static u32 ml_zoom_pend_since = 0;
 static int ml_prev_speed = -1;
 static u32 ml_prev_speed_ms = 0;
 
@@ -128,11 +133,21 @@ static int ml_slowdown_cold = 0;
 static u32 ml_route_var_ds = 0;
 static int ml_offer_kind = 0;
 
+static u8 ml_poi_recorded_session = 0;
+
+static void ml_zoom_cancel_override(void){
+ ml_zoom_pend_band = -1;
+ ml_zoom_pend_base = -1;
+ ml_zoom_pend_target = -1;
+ ml_zoom_pend_since = 0;
+}
 static void ml_session_reset(void){
  memzero(ml_stage_cls, sizeof(ml_stage_cls));
  ml_stage_pref_n = 0;
  ml_stage_brake_n = 0;
  memzero(ml_zoom_nudged, sizeof(ml_zoom_nudged));
+ ml_zoom_cancel_override();
+ ml_poi_recorded_session = 0;
  ml_prev_speed = -1;
  ml_prev_speed_ms = 0;
  ml_park_valid = 0;
@@ -229,7 +244,9 @@ static void ml_mark_dirty(u32 now){
  ml_dirty = 1;
  ml_dirty_at = now;
 }
+static void ml_poll_zoom_override(u32 now);
 static void ml_dirty_service(u32 now){
+ ml_poll_zoom_override(now);
  if(ml_dirty && pref.learn_history && now - ml_dirty_at >= 3000u){
   (void)ml_save();
  }
@@ -482,6 +499,13 @@ static int ml_pref_score(u32 key){
  const struct MobPrefArc *e = ml_pref_find(key, 0);
  return e ? (int)e->score : 0;
 }
+static int ml_has_strong_pref(int min_score){
+ if(!pref.learn_history) return 0;
+ for(int i = 0; i < MOB_ML_PREF_ARCS; i++){
+  if(mob_ml.pref_arcs[i].key && mob_ml.pref_arcs[i].score >= min_score) return 1;
+ }
+ return 0;
+}
 
 /* ---------- 4. ETA Reliability / Online MAD Variance ---------- */
 static struct MobVar *ml_var_find(u32 key, unsigned bucket, int create){
@@ -529,17 +553,21 @@ static u32 ml_road_mad(u32 key, u32 epoch){
 }
 
 /* ---------- 5. Adaptive Auto-Zoom & Day/Night Brightness ---------- */
+/* Three speed regimes aligned with Auto zoom's hysteresis tiers:
+ *   0: < 25 mph (Z9-Z7)   1: 25-45 mph (Z6)   2: >= 45 mph (Z5-Z4). */
 static int ml_zoom_band(int mph10){
- return mph10 >= 400 ? 2 : (mph10 >= 200 ? 1 : 0);
+ return mph10 >= 450 ? 2 : (mph10 >= 250 ? 1 : 0);
 }
-static void ml_note_zoom_override(int mph10, int delta){
- if(!pref.learn_history || !pref.autozoom || !delta) return;
- int band = ml_zoom_band(mph10);
+static int ml_zoom_band_for_level(int base_z){
+ return base_z <= 5 ? 2 : (base_z == 6 ? 1 : 0);
+}
+static void ml_note_zoom_override_band(int band, int delta){
+ if(!pref.learn_history || !pref.autozoom || !delta || band < 0 || band > 2) return;
  if(ml_zoom_nudged[band]) return;
  ml_zoom_nudged[band] = 1u;
  int cur = mob_ml.zoom_bias_q4[band];
  int target = delta > 0 ? 16 : -16;
- /* Slow integer EWMA (~1/4 step); takes ~3 consistent sessions to shift +-1 zoom. */
+ /* Slow integer EWMA (~1/4 step); takes 4 consistent sessions from 0 to cross +-10. */
  cur = cur + (target - cur) / 4;
  if(cur > 16) cur = 16;
  if(cur < -16) cur = -16;
@@ -547,14 +575,44 @@ static void ml_note_zoom_override(int mph10, int delta){
  if(mob_ml.zoom_samples[band] < 250u) mob_ml.zoom_samples[band]++;
  ml_mark_dirty(hud_now_ms());
 }
-static int ml_autozoom_offset(int mph10){
- if(!pref.learn_history) return 0;
- int band = ml_zoom_band(mph10);
+static void ml_note_zoom_override(int mph10, int delta){
+ ml_note_zoom_override_band(ml_zoom_band(mph10), delta);
+}
+static void ml_zoom_stage_override(int band, int base_zoom, int target_zoom, u32 now){
+ if(!pref.learn_history || !pref.autozoom || band < 0 || band > 2 || ml_zoom_nudged[band]) return;
+ if(target_zoom == base_zoom){ ml_zoom_cancel_override(); return; }
+ ml_zoom_pend_band = band;
+ ml_zoom_pend_base = base_zoom;
+ ml_zoom_pend_target = target_zoom;
+ ml_zoom_pend_since = now;
+}
+static void ml_zoom_adjust_override(int target_zoom, u32 now){
+ if(ml_zoom_pend_band < 0) return;
+ ml_zoom_pend_target = target_zoom;
+ ml_zoom_pend_since = now;
+}
+static void ml_poll_zoom_override(u32 now){
+ if(ml_zoom_pend_band < 0) return;
+ if(!pref.learn_history || !pref.autozoom || freecam || zoom_override < 0){
+  ml_zoom_cancel_override();
+  return;
+ }
+ if(ml_zoom_pend_target == ml_zoom_pend_base) return;
+ if((u32)(now - ml_zoom_pend_since) < ML_ZOOM_SETTLE_MS) return;
+ int band = ml_zoom_pend_band, delta = ml_zoom_pend_target - ml_zoom_pend_base;
+ ml_zoom_cancel_override();
+ if(delta) ml_note_zoom_override_band(band, delta > 0 ? 1 : -1);
+}
+static int ml_autozoom_offset_band(int band){
+ if(!pref.learn_history || band < 0 || band > 2) return 0;
  if(mob_ml.zoom_samples[band] < 3u) return 0;
  int bias = mob_ml.zoom_bias_q4[band];
  if(bias >= 10) return 1;
  if(bias <= -10) return -1;
  return 0;
+}
+static int ml_autozoom_offset(int mph10){
+ return ml_autozoom_offset_band(ml_zoom_band(mph10));
 }
 static void ml_note_brightness(int night, int bright){
  if(!pref.learn_history || bright < 10 || bright > 100) return;
@@ -593,8 +651,8 @@ static u32 ml_name_hash(const char *s){
  }
  return h ? h : 1u;
 }
-static void ml_record_poi_use(u8 kind, s32 lat, s32 lon, const char *name){
- if(!pref.learn_history || kind < 6u || kind > 8u) return;
+static int ml_record_poi_use_nosave(u8 kind, s32 lat, s32 lon, const char *name){
+ if(!pref.learn_history || kind < 6u || kind > 8u) return 0;
  u32 nh = (name && name[0] && !streq(name, "FUEL") && !streq(name, "PARKING") && !streq(name, "HOSPITAL")) ? ml_name_hash(name) : 0u;
  int empty = -1, oldest = 0;
  u16 st = (u16)((mob.serial + 1u) & 0xffffu); if(!st) st = 1u;
@@ -606,14 +664,19 @@ static void ml_record_poi_use(u8 kind, s32 lat, s32 lon, const char *name){
    a->lat = lat; a->lon = lon;
    if(nh) a->name_hash = nh;
    a->stamp = st;
-   (void)ml_save();
-   return;
+   return 1;
   }
   if(a->stamp < mob_ml.poi_aff[oldest].stamp) oldest = i;
  }
  int slot = empty >= 0 ? empty : oldest;
  mob_ml.poi_aff[slot] = (struct MobPoiAff){nh, lat, lon, kind, 1u, st};
- (void)ml_save();
+ return 1;
+}
+static void ml_record_poi_use(u8 kind, s32 lat, s32 lon, const char *name){
+ if(ml_record_poi_use_nosave(kind, lat, lon, name)){
+  ml_poi_recorded_session = 1u;
+  (void)ml_save();
+ }
 }
 static unsigned ml_poi_affinity(u8 kind, s32 lat, s32 lon, const char *name){
  if(!pref.learn_history) return 0u;
@@ -764,21 +827,39 @@ static void ml_commit_session(void){
  ml_commit_classes();
  ml_commit_pref_arcs();
  ml_commit_hazards();
- /* Record dwell-time & trip-chain transition and recurring intermediate stop. */
+ /* Record dwell-time & trip-chain transition and recurring intermediate stop
+  * (resolving a Favourite, mapped POI or Recent name when learned unguided). */
  if(mob_ml.last_valid && mob_live.depart != MOB_UNKNOWN && mob_ml.last_arrival != MOB_UNKNOWN &&
     mob_live.depart >= mob_ml.last_arrival && mob_dist(mob_live.origin, mob_ml.last_dest) <= 300u){
   u32 dwell = mob_live.depart - mob_ml.last_arrival;
   if(dwell <= 7u * 86400u){
    ml_record_chain(mob_ml.last_origin, mob_live.origin, mob_live.dest, ml_dwell_bucket(dwell));
    if(dwell <= 2700u && mob_dist(mob_ml.last_origin, mob_live.dest) >= 250u){
-    ml_record_stop_habit(mob_ml.last_origin, mob_live.origin, mob_live.dest, mob_live.depart, 0);
+    char stop_name[32];stop_name[0]=0;
+    (void)ml_resolve_stop_name(mob_live.origin, stop_name, sizeof(stop_name));
+    ml_record_stop_habit(mob_ml.last_origin, mob_live.origin, mob_live.dest, mob_live.depart, stop_name[0] ? stop_name : 0);
    }
   }
  }
- /* Record usual parking spot when a guided trip finishes near its target. */
+ /* Unguided Nearby-POI affinity: record arrivals at a mapped Fuel/Parking/Hospital
+  * POI automatically, deduplicated against explicit Trip -> Nearby picks. */
+ if(!ml_poi_recorded_session){
+  u8 pk = 0; s32 plat = 0, plon = 0; char pname[113];
+  if(ml_find_poi_at(mob_live.dest.lat, mob_live.dest.lon, 0, &pk, &plat, &plon, pname, sizeof(pname))){
+   (void)ml_record_poi_use_nosave(pk, plat, plon, pname);
+  }
+ }
+ /* Record usual parking spot: guided target directly, or unguided arrival at a
+  * mapped Parking POI 100-600 m from a unique saved Favourite/Recent. */
  if(ml_guided_target_valid){
   ml_record_parking(ml_guided_target, mob_live.dest);
   ml_guided_target_valid = 0;
+ }else{
+  u8 pk = 0; s32 plat = 0, plon = 0; struct MobPoint target;
+  if(ml_find_poi_at(mob_live.dest.lat, mob_live.dest.lon, 7, &pk, &plat, &plon, 0, 0) &&
+     ml_unguided_parking_target(mob_live.dest, &target)){
+   ml_record_parking(target, mob_live.dest);
+  }
  }
  mob_ml.last_origin = mob_live.origin;
  mob_ml.last_dest = mob_live.dest;

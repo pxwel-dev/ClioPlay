@@ -36,7 +36,10 @@ class ReleaseVersionTests(unittest.TestCase):
     def test_version_cannot_inject_native_or_shell_code(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder)
-            for bad in ('2.0', '2.0.0"\n#error', '2.0.0;echo bad'):
+            for good in ('2.2.5', '2.2.5.1'):
+                (root/'VERSION').write_text(good + '\n')
+                self.assertEqual(release_version.read_version(root), good)
+            for bad in ('2.0', '2.2.5.1.0', '2.0.0"\n#error', '2.0.0;echo bad'):
                 (root/'VERSION').write_text(bad)
                 with self.assertRaises(ValueError):
                     release_version.read_version(root)

@@ -3,6 +3,18 @@
 This history records implemented changes for each release.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
 
+## Version 2.2.6 — Release
+
+- **Unguided local ML learning & alerts** (full backwards compatibility with existing `mobility-ml.dat` `MML1` files — no active route required to learn everyday habits or receive repeat-slowdown warnings):
+  - **Unguided Nearby-POI affinity:** finishing any unguided drive (or short chained stop) right at a mapped **Fuel** (`≤ 55 m`), **Parking** (`≤ 75 m`) or **Hospital** (`≤ 100 m`) POI now automatically learns preferred-POI affinity (deduplicated per session so explicit **Trip → Nearby** selections never double-count).
+  - **Unguided Usual Parking learning:** arriving unguided at a mapped **Parking** POI (`≤ 75 m`) located `100–600 m` from a unique saved **Favourite** or **Recent** (skipping spots `< 100 m` from any saved place or ambiguous between multiple Favourites) now automatically teaches that destination’s Usual Parking spot.
+  - **Unguided Frequent & Cold-weather Slowdown alerts:** `traffic_service()` now runs a lightweight forward lookahead across learned hard-braking hotspots (`40–350 m` ahead, filtered by directed road-arc heading and forward bearing cone to ignore opposite carriageways and cross streets) so **Frequent slowdown ahead** and **Cold-weather slowdown ahead** warn you during unguided commutes as well as active guidance.
+  - **Unguided-learned Usual Route proposals:** in addition to avoided arcs (`score ≤ -30`), **Usual route available** now also detects rejoin junctions where an alternate incoming road has strong unguided familiarity (`score ≥ +40`, driven 4+ times unguided) while the routed arrival road is unfamiliar (`score ≤ 0`), favouring familiar roads in the usual-route search and verifying `alt_pref ≥ old_pref + 40`.
+  - **Auto-named unguided Recurring Intermediate Stops:** short `≤ 45 min` unguided chained stops now automatically resolve a label from matching saved **Favourites**, mapped Fuel/Parking/Hospital POIs, or **Recents** so **Add usual stop?** displays a real place name.
+- **Aligned Adaptive Auto-zoom & sustained-override guard:**
+  - Aligned Adaptive Auto-zoom’s three learned speed regimes with `Z9–Z4`’s hysteresis tiers (`< 25 mph` / `Z9–Z7`, `25–45 mph` / `Z6`, `≥ 45 mph` / `Z5–Z4`) and keyed the applied `±1` offset from the hysteresis-smoothed base `auto_zoom_level`, eliminating boundary oscillation at `20` and `40 mph`.
+  - Required manual zoom overrides in Auto zoom to remain active for at least **20 seconds** before recording a session vote (resetting the timer on follow-up zoom taps and cancelling if restored via **MAP**, **Explore**, or undone back to the starting Auto-zoom level), preventing accidental misclicks or brief look-ahead peeks from biasing learned Auto-zoom preferences.
+
 ## Version 2.2.5 — Release
 
 - Added an **expandable live GPS HUD inside the top clock/temperature pill** (building on `qspi`'s NMEA `$GPGST`/HDOP/altitude and compass dial contribution in PR #8), designed to stay genuinely usable while driving without blocking the map, car arrow, status notices or controls:
