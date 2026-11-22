@@ -1124,6 +1124,29 @@ static int active_zoom(void){int z;if(freecam){int lo=mapok?(int)mh.minlvl:0;z=f
 static int span_for_view_zoom(int z){if(z<=6)return span_for_level(z);if(z>MAX_EXPLORE_ZOOM)z=MAX_EXPLORE_ZOOM;return 256>>(z-6);}
 static s32 car_lat(void){return track_valid?track_lat:gps.lat;}static s32 car_lon(void){return track_valid?track_lon:gps.lon;}
 static s32 view_lat(void){return freecam?cam_lat:car_lat();}static s32 view_lon(void){return freecam?cam_lon:car_lon();}
+/* Display-only visual road alignment in 1/16 world units (Q4, matching Z6
+ * sub-unit road vertices). Keeps raw GPS, routing, roadctx and ML untouched
+ * while moving camera, vehicle marker and route origin together on Z6-Z9. */
+struct VisualRoadSnap {
+ int init,active_z6,matched,on_route;
+ s32 dlat4,dlon4,target_dlat4,target_dlon4;
+ s32 raw_lat,raw_lon;
+ int synced_valid,synced_z6,synced_course,synced_route_status,synced_route_head;
+ s32 synced_lat,synced_lon;
+ int lock_valid;
+ s32 lock_tx,lock_ty;
+ u16 lock_gi;
+ u8 lock_cls,off_ticks;
+};
+static struct VisualRoadSnap visual_snap;
+static int visual_snap_frozen=0;
+static s32 lon_delta4(s32 d){if(d>288000000)d-=576000000;if(d< -288000000)d+=576000000;return d;}
+static void visual_snap_reset(void){memzero(&visual_snap,sizeof(visual_snap));}
+static s32 display_car_lat4(void){return car_lat()*16+visual_snap.dlat4;}
+static s32 display_car_lon4(void){return lon_delta4(car_lon()*16+visual_snap.dlon4);}
+static s32 display_view_lat4(void){return freecam?cam_lat*16:display_car_lat4();}
+static s32 display_view_lon4(void){return freecam?cam_lon*16:display_car_lon4();}
+static s32 q4_to_unit_round(s32 v){return v>=0?(v+8)/16:(v-8)/16;}
 static int view_course_valid(void){if(freecam_anim_mode==FC_ANIM_TO_CAR)return freecam_course_valid;return freecam?freecam_course_valid:display_course_valid;}
 static int view_course(void){if(freecam_anim_mode==FC_ANIM_TO_CAR&&freecam_course_valid)return freecam_course;return freecam&&freecam_course_valid?freecam_course:map_course();}
 static int view_rotates(void){return view_course_valid();}
@@ -1203,10 +1226,11 @@ static int map_tile_offset(u32 local,u32 span){
  u32 value=local*span,q=(value+(value>>12))>>12;
  return (int)(q+(value-((q<<12)-q)>=4095u));
 }
-static void world_to_screen(s32 lat,s32 lon,int z,int*ox,int*oy){s32 vl=view_lat(),vo=view_lon();s32 dx=lon_delta(lon-vo),dy=lat-vl;int cq=coslat_q15(vl);s32 wx=lon_scale(dx,cq);int sh=14-z;long long xx=((long long)wx*256)>>sh,yy=-(((long long)dy*256)>>sh);s32 x=xx>16384?16384:xx< -16384?-16384:(s32)xx,y=yy>16384?16384:yy< -16384?-16384:(s32)yy;if(view_rotates()){int c,ss;view_trig(&ss,&c);int rx=(x*c+y*ss)>>15;int ry=(-x*ss+y*c)>>15;x=rx;y=ry;}
+static void world_to_screen_q4(s32 lat4,s32 lon4,int z,int*ox,int*oy){s32 vl4=display_view_lat4(),vo4=display_view_lon4();s32 dx4=lon_delta4(lon4-vo4),dy4=lat4-vl4;int cq=coslat_q15(view_lat());s32 wx4=(s32)(((long long)dx4*cq)>>15);int sh=18-z;long long xx=((long long)wx4*256)>>sh,yy=-(((long long)dy4*256)>>sh);s32 x=xx>16384?16384:xx< -16384?-16384:(s32)xx,y=yy>16384?16384:yy< -16384?-16384:(s32)yy;if(view_rotates()){int c,ss;view_trig(&ss,&c);int rx=(x*c+y*ss)>>15;int ry=(-x*ss+y*c)>>15;x=rx;y=ry;}
   if(y<0&&map_tilt_q8>0){int q=perspective_scale_for_forward(-y);x=(x*q)>>12;y=(y*q)>>12;}
   *ox=MAP_ANCHOR_X+x;*oy=view_anchor_y()+y;
 }
+static void world_to_screen(s32 lat,s32 lon,int z,int*ox,int*oy){world_to_screen_q4(lat*16,lon*16,z,ox,oy);}
 /* PERSPECTIVE2: derive the exact visible world-space bounds from the inverse
  * camera rather than the old fixed +/-2-tile neighbourhood.  A projected map
  * viewport is a trapezoid; sample the two sides at its top, camera-height
@@ -1231,11 +1255,12 @@ static void screen_to_world_coverage(int sx,int sy,int z,s32*lat,s32*lon){
   }
   int sh=14-z,unit=1<<sh;
   s32 east=(s32)((x*unit)/256),north=-(s32)((y*unit)/256);
-  int cq=coslat_q15(view_lat());
+  s32 vlat=q4_to_unit_round(display_view_lat4()),vlon=q4_to_unit_round(display_view_lon4());
+  int cq=coslat_q15(vlat);
   u32 a=(u32)(east<0?-east:east);
   s32 dlon=(s32)udiv32((a<<15)+(u32)(cq/2),(u32)cq);
   if(east<0)dlon=-dlon;
-  *lat=view_lat()+north;*lon=view_lon()+dlon;
+  *lat=vlat+north;*lon=vlon+dlon;
 }
 static void map_visible_tile_bounds(int z,int sourcez,int*tx0,int*tx1,int*ty0,int*ty1){
   s32 minlat=0x7fffffff,maxlat=(-2147483647-1),minlon=0x7fffffff,maxlon=(-2147483647-1);
@@ -1291,9 +1316,12 @@ static void map_project_delta_q8(s32 dy,s32 dx,int z,int frac,int*ox,int*oy){
  }
  if(x>4194304)x=4194304;if(x< -4194304)x=-4194304;if(y>4194304)y=4194304;if(y< -4194304)y=-4194304;*ox=MAP_ANCHOR_X*256+(int)x;*oy=view_anchor_y()*256+(int)y;
 }
+static void map_project_q8_4(s32 lat4,s32 lon4,int z,int*ox,int*oy){
+ if(!MAP_ANTIALIAS){world_to_screen_q4(lat4,lon4,z,ox,oy);*ox*=256;*oy*=256;return;}
+ map_project_delta_q8(lat4-display_view_lat4(),lon_delta4(lon4-display_view_lon4()),z,4,ox,oy);
+}
 static void map_project_q8(s32 lat,s32 lon,int z,int*ox,int*oy){
- if(!MAP_ANTIALIAS){world_to_screen(lat,lon,z,ox,oy);*ox*=256;*oy*=256;return;}
- map_project_delta_q8(lat-view_lat(),lon_delta(lon-view_lon()),z,0,ox,oy);
+ map_project_q8_4(lat*16,lon*16,z,ox,oy);
 }
 
 /* The top-centred journey/zoom card reserves only its actual footprint. */
@@ -1375,10 +1403,10 @@ static void draw_path(struct Tile*t,int span,int layer,int style,int np,const u8
  map_mask_select(layer==0?((style>=1&&style<=5)?6-style:0):(layer==1?0:(layer==2?1:2)));
  int x[255],y[255];
  s32 lon=(s32)t->tx*span,lat=(s32)t->ty*span;
- if(layer==0&&viewz>6&&span==256){
+ if(layer==0&&viewz>=6&&span==256){
   /* Z6 stores 12-bit vertices over 256 world units. At close zooms keep
    * all four fractional bits, including the shared tile-edge coordinate. */
-  s32 dx=lon_delta(lon-view_lon())*16,dy=(lat-view_lat())*16;
+  s32 dx=lon_delta4(lon*16-display_view_lon4()),dy=lat*16-display_view_lat4();
   for(int i=0;i<np;i++,p+=4){
    u32 lx=rd16(p),ly=rd16(p+2);
    map_project_delta_q8(dy+(s32)(ly+(ly>=2048)),dx+(s32)(lx+(lx>=2048)),viewz,4,&x[i],&y[i]);
@@ -2350,7 +2378,7 @@ static void draw_route_overlay(int z){
  int s,e;route_draw_window(&s,&e);if(s>e)return;
  int offered=traffic_offer_valid(),slot=route_overlay_slot(s,offered);
  int x[255],y[255],n=1;
- if(s==route_head+1)map_project_q8(car_lat(),car_lon(),z,&x[0],&y[0]);
+ if(s==route_head+1)map_project_q8_4(display_car_lat4(),display_car_lon4(),z,&x[0],&y[0]);
  else map_project_q8(route_lat[s-1],route_lon[s-1],z,&x[0],&y[0]);
  map_mask_begin(2);map_mask_select(slot);
  for(int i=s;i<=e;i++){
@@ -2387,10 +2415,11 @@ static void draw_route_overlay(int z){
  * unlike map geometry the bitmap font is never stretched or rotated. */
 static int drive_iabs(int x){return x<0?-x:x;}
 static int drive_label_eq(const char*a,const char*b){while(*a&&*b&&upc(*a)==upc(*b)){a++;b++;}return *a==*b;}
+static void display_car_screen_xy(int z,int*x,int*y);
 static void drive_label_prepare(int z){
   ndrive_labels=ndrive_route_segs=0;drive_turn_valid=0;
   crop_car_valid=z>6&&gps.fix;
-  if(crop_car_valid)world_to_screen(car_lat(),car_lon(),z,&crop_car_x,&crop_car_y);
+  if(crop_car_valid)display_car_screen_xy(z,&crop_car_x,&crop_car_y);
   if(!freecam&&route_status==R_READY&&nav_man_type!=MAN_NONE&&
      nav_man_idx>=route_head&&nav_man_idx<route_n){
     world_to_screen(route_lat[nav_man_idx],route_lon[nav_man_idx],z,&drive_turn_x,&drive_turn_y);
@@ -2561,7 +2590,7 @@ static void freecam_orientation_anim_update(u32 now);
 static void recenter_map(void){freecam=0;map_tilt_q8=256;freecam_course_valid=0;freecam_anim_mode=FC_ANIM_NONE;freecam_anim_at=0;freecam_anim_serial++;freecam_buffered=0;freecam_anim_tilt_from=256;zoom_override=-1;ml_zoom_cancel_override();if(pref.autozoom)auto_zoom_level=-1;}
 static int driving_info_ok_armed;
 static u32 driving_info_ok_at;
-static void enter_freecam(void){if(freecam||freecam_transition_active()||(!gps.fix&&!track_valid))return;driving_info_ok_armed=0;int z=active_zoom();int c=map_course();if(c<0||c>=360)c=0;freecam_course=c;freecam_course_valid=1;/* Tilt still animates even when already facing north. */freecam_anim_mode=FC_ANIM_TO_NORTH;freecam_anim_serial++;freecam_buffered=0;freecam_anim_from=c;freecam_anim_at=hud_now_ms();freecam_anim_tilt_from=256;map_tilt_q8=256;freecam=1;freecam_zoom=z;zoom_override=-1;ml_zoom_cancel_override();/* MAP entry begins exactly at the car's current/last tracked position. */cam_lat=car_lat();cam_lon=car_lon();}
+static void enter_freecam(void){if(freecam||freecam_transition_active()||(!gps.fix&&!track_valid))return;driving_info_ok_armed=0;int z=active_zoom();int c=map_course();if(c<0||c>=360)c=0;freecam_course=c;freecam_course_valid=1;/* Tilt still animates even when already facing north. */freecam_anim_mode=FC_ANIM_TO_NORTH;freecam_anim_serial++;freecam_buffered=0;freecam_anim_from=c;freecam_anim_at=hud_now_ms();freecam_anim_tilt_from=256;map_tilt_q8=256;freecam=1;freecam_zoom=z;zoom_override=-1;ml_zoom_cancel_override();/* MAP entry begins at the car's visually displayed position so crosshair and arrow stay aligned. */cam_lat=q4_to_unit_round(display_car_lat4());cam_lon=lon_delta(q4_to_unit_round(display_car_lon4()));}
 static void enter_freecam_at(s32 lat,s32 lon,int z){
  driving_info_ok_armed=0;
  int lo=mapok?(int)mh.minlvl:0;
@@ -2675,9 +2704,249 @@ static void vehicle_icon(int x,int y,int heading){
   }
  }
 }
+/* Visual Z6-reference road matching for close views (Z6-Z9). Matches against
+ * the exact 1/16-unit Z6 road centrelines using heading alignment, active-route
+ * corridor preference, service-road penalty, interior feature hysteresis and
+ * smooth per-frame easing. Only the visual camera/marker/route origin shift;
+ * raw GPS, routing, roadctx, cameras and ML learning stay completely untouched. */
+#define MAP_SNAP_ACQUIRE_Q4 (14*16)
+#define MAP_SNAP_RETAIN_Q4 (18*16)
+#define MAP_SNAP_ACQUIRE_D2 ((u32)MAP_SNAP_ACQUIRE_Q4*MAP_SNAP_ACQUIRE_Q4)
+#define MAP_SNAP_RETAIN_D2 ((u32)MAP_SNAP_RETAIN_Q4*MAP_SNAP_RETAIN_Q4)
+#define MAP_SNAP_SERVICE_PEN 6400u
+#define MAP_SNAP_OFF_ROUTE_PEN 16000u
+#define MAP_SNAP_SWITCH_PEN 9000u
+#define MAP_SNAP_ROUTE_DIST_Q4 64
+#define MAP_SNAP_ROUTE_DIST_D2 ((u32)MAP_SNAP_ROUTE_DIST_Q4*MAP_SNAP_ROUTE_DIST_Q4)
+static u32 visual_snap_project_q16(s32 ax,s32 ay,s32 bx,s32 by,u32*outd2){
+ long long vx=(long long)bx-ax,vy=(long long)by-ay;
+ long long len2=vx*vx+vy*vy;
+ if(len2<=0){
+  long long d2=(long long)ax*ax+(long long)ay*ay;
+  if(outd2)*outd2=d2>0xffffffffLL?0xffffffffu:(u32)d2;
+  return 0u;
+ }
+ long long dot=-((long long)ax*vx+(long long)ay*vy);
+ u32 q=0u;
+ if(dot<=0)q=0u;
+ else if(dot>=len2)q=65536u;
+ else{
+  unsigned long long num=(unsigned long long)dot,den=(unsigned long long)len2;
+  while(den>65535ULL){den=(den+1ULL)>>1;num=(num+1ULL)>>1;}
+  q=num>=den?65536u:udiv32((u32)(num<<16),(u32)den);
+ }
+ s32 qx=route_lerp_q16(ax,bx,q),qy=route_lerp_q16(ay,by,q);
+ long long d2=(long long)qx*qx+(long long)qy*qy;
+ if(outd2)*outd2=d2>0xffffffffLL?0xffffffffu:(u32)d2;
+ return q;
+}
+static u32 visual_snap_sin2_q8(s32 vx,s32 vy,int hx,int hy){
+ long long len2=(long long)vx*vx+(long long)vy*vy;
+ if(len2<16LL)return 0u;
+ long long raw_dp=(long long)vx*hx+(long long)vy*hy;
+ unsigned long long adp=(unsigned long long)(raw_dp<0?-raw_dp:raw_dp);
+ unsigned long long dot=adp>>15;
+ unsigned long long dot2=dot*dot,den=(unsigned long long)len2;
+ while(den>65535ULL){den=(den+1ULL)>>1;dot2=(dot2+1ULL)>>1;}
+ u32 cos2_q16=dot2>=den?65536u:udiv32((u32)(dot2<<16),(u32)den);
+ return (65536u-cos2_q16)>>8;
+}
+static int visual_snap_seg_on_route(s32 lat4,s32 lon4,s32 vx,s32 vy,int cq,int i0,int i1){
+ int lr=(int)udiv32((u32)MAP_SNAP_ROUTE_DIST_Q4*32768u,(u32)cq)+2;
+ long long vlen2=(long long)vx*vx+(long long)vy*vy;
+ for(int i=i0;i<=i1;i++){
+  s32 ralat4=route_lat[i]*16,ralon4=route_lon[i]*16;
+  s32 rblat4=route_lat[i+1]*16,rblon4=route_lon[i+1]*16;
+  s32 ray=ralat4-lat4,rby=rblat4-lat4;
+  if((ray< -MAP_SNAP_ROUTE_DIST_Q4&&rby< -MAP_SNAP_ROUTE_DIST_Q4)||
+     (ray>MAP_SNAP_ROUTE_DIST_Q4&&rby>MAP_SNAP_ROUTE_DIST_Q4))continue;
+  s32 rda=lon_delta4(ralon4-lon4),rdb=lon_delta4(rblon4-lon4);
+  if((rda< -lr&&rdb< -lr)||(rda>lr&&rdb>lr))continue;
+  s32 rax=(s32)(((long long)rda*cq)>>15),rbx=(s32)(((long long)rdb*cq)>>15);
+  u32 rd2=0u;(void)visual_snap_project_q16(rax,ray,rbx,rby,&rd2);
+  if(rd2>MAP_SNAP_ROUTE_DIST_D2)continue;
+  s32 ux=rbx-rax,uy=rby-ray;
+  while(ux>4096||ux< -4096||uy>4096||uy< -4096){ux/=2;uy/=2;}
+  long long ulen2=(long long)ux*ux+(long long)uy*uy;
+  if(vlen2<16LL||ulen2<16LL)return 1;
+  long long raw_dp=(long long)vx*ux+(long long)vy*uy;
+  unsigned long long dp=(unsigned long long)(raw_dp<0?-raw_dp:raw_dp);
+  if(2ULL*dp*dp>=(unsigned long long)vlen2*(unsigned long long)ulen2)return 1;
+ }
+ return 0;
+}
+struct VisualSnapBest {
+ int valid,on_route,cls;
+ s32 lat4,lon4,tx,ty;
+ u16 gi;
+ u32 score;
+};
+static void visual_snap_scan_tile(struct Tile*t,s32 rawlat4,s32 rawlon4,int cq,int lon_r,
+                                  int have_heading,int hx,int hy,u32 hweight,
+                                  int route_near,int ri0,int ri1,struct VisualSnapBest*best){
+ if(!t||t->lvl!=6||t->len<8)return;
+ const u8*p=t->data,*end=t->data+t->len;
+ u16 ng=rd16(p);p+=8;
+ s32 base_lon4=(s32)t->tx*4096,base_lat4=(s32)t->ty*4096;
+ for(u16 g=0;g<ng&&p+4<=end;g++){
+  int layer=p[0],style=p[1],np=p[2];p+=4;
+  if(p+(unsigned)np*4>end)return;
+  if(layer==0&&!(style&128)&&np>=2){
+   int same_lock=visual_snap.lock_valid&&t->tx==visual_snap.lock_tx&&t->ty==visual_snap.lock_ty&&g==visual_snap.lock_gi;
+   u32 lx=rd16(p),ly=rd16(p+2);
+   s32 alon4=base_lon4+(s32)(lx+(lx>=2048));
+   s32 alat4=base_lat4+(s32)(ly+(ly>=2048));
+   const u8*q=p+4;
+   for(int i=1;i<np;i++,q+=4){
+    lx=rd16(q);ly=rd16(q+2);
+    s32 blon4=base_lon4+(s32)(lx+(lx>=2048));
+    s32 blat4=base_lat4+(s32)(ly+(ly>=2048));
+    s32 ay=alat4-rawlat4,by=blat4-rawlat4;
+    if(!((ay< -MAP_SNAP_RETAIN_Q4&&by< -MAP_SNAP_RETAIN_Q4)||(ay>MAP_SNAP_RETAIN_Q4&&by>MAP_SNAP_RETAIN_Q4))){
+     s32 da=lon_delta4(alon4-rawlon4),db=lon_delta4(blon4-rawlon4);
+     if(!((da< -lon_r&&db< -lon_r)||(da>lon_r&&db>lon_r))){
+      s32 ax=(s32)(((long long)da*cq)>>15),bx=(s32)(((long long)db*cq)>>15);
+      u32 d2=0u,frac=visual_snap_project_q16(ax,ay,bx,by,&d2);
+      int clamped_end=(i==1&&frac==0u)||(i==np-1&&frac==65536u);
+      int lock_active=same_lock&&!clamped_end;
+      u32 max_d2=lock_active?MAP_SNAP_RETAIN_D2:MAP_SNAP_ACQUIRE_D2;
+      if(d2<=max_d2){
+       s32 cand_lat4=route_lerp_q16(alat4,blat4,frac);
+       s32 cand_lon4=lon_delta4(alon4+route_lerp_q16(0,lon_delta4(blon4-alon4),frac));
+       s32 vx=bx-ax,vy=by-ay;
+       u32 score=d2;
+       if(have_heading)score+=visual_snap_sin2_q8(vx,vy,hx,hy)*hweight;
+       if(style>=7)score+=MAP_SNAP_SERVICE_PEN;
+       int on_route=0;
+       if(route_near){
+        on_route=visual_snap_seg_on_route(cand_lat4,cand_lon4,vx,vy,cq,ri0,ri1);
+        if(!on_route)score+=MAP_SNAP_OFF_ROUTE_PEN;
+       }
+       if(visual_snap.lock_valid&&!lock_active)score+=MAP_SNAP_SWITCH_PEN;
+       if(!best->valid||score<best->score){
+        best->valid=1;best->score=score;best->on_route=on_route;best->cls=style;
+        best->lat4=cand_lat4;best->lon4=cand_lon4;best->tx=t->tx;best->ty=t->ty;best->gi=g;
+       }
+      }
+     }
+    }
+    alat4=blat4;alon4=blon4;
+   }
+  }
+  p+=(unsigned)np*4;
+ }
+}
+static void visual_snap_ease(int immediate){
+ if(immediate){
+  visual_snap.dlat4=visual_snap.target_dlat4;
+  visual_snap.dlon4=visual_snap.target_dlon4;
+  return;
+ }
+ s32 elat=visual_snap.target_dlat4-visual_snap.dlat4;
+ s32 elon=lon_delta4(visual_snap.target_dlon4-visual_snap.dlon4);
+ if(elat){s32 q=elat/3;if(!q)q=elat>0?1:-1;visual_snap.dlat4+=q;}
+ if(elon){s32 q=elon/3;if(!q)q=elon>0?1:-1;visual_snap.dlon4=lon_delta4(visual_snap.dlon4+q);}
+}
+static void update_visual_snap(int z,int immediate){
+ if(visual_snap_frozen)return;
+ if(!gps.fix||!mapok||mh.maxlvl<6||!map_view_covered(car_lat(),car_lon())){
+  if(visual_snap.init)visual_snap_reset();
+  return;
+ }
+ s32 rlat=car_lat(),rlon=car_lon();
+ int course=map_course();
+ int want_z6=z>=6;
+ int jumped=!visual_snap.init||iabs32(rlat-visual_snap.raw_lat)>100||iabs32(lon_delta(rlon-visual_snap.raw_lon))>100;
+ if(jumped){visual_snap.lock_valid=0;visual_snap.off_ticks=0;immediate=1;}
+ if(!want_z6){
+  visual_snap.lock_valid=0;visual_snap.matched=0;visual_snap.on_route=0;visual_snap.off_ticks=0;
+  visual_snap.active_z6=0;visual_snap.target_dlat4=0;visual_snap.target_dlon4=0;
+  visual_snap_ease(immediate||gps.mph10<5);
+  visual_snap.init=1;visual_snap.raw_lat=rlat;visual_snap.raw_lon=rlon;
+  visual_snap.synced_valid=1;visual_snap.synced_z6=0;visual_snap.synced_lat=rlat;visual_snap.synced_lon=rlon;
+  visual_snap.synced_course=course;visual_snap.synced_route_status=route_status;visual_snap.synced_route_head=route_head;
+  return;
+ }
+ if(!visual_snap.active_z6&&gps.mph10<5)immediate=1;
+ if(!jumped&&visual_snap.synced_valid&&visual_snap.synced_z6&&
+    visual_snap.synced_lat==rlat&&visual_snap.synced_lon==rlon&&
+    visual_snap.synced_course==course&&
+    visual_snap.synced_route_status==route_status&&
+    visual_snap.synced_route_head==route_head){
+  visual_snap_ease(immediate);
+  return;
+ }
+ s32 rawlat4=rlat*16,rawlon4=rlon*16;
+ int cq=coslat_q15(rlat);if(cq<1)cq=1;
+ int lon_r=(int)udiv32((u32)MAP_SNAP_RETAIN_Q4*32768u,(u32)cq)+2;
+ int lat_pad=19,lon_pad=(int)udiv32(19u*32768u,(u32)cq)+2;
+ int have_heading=(course>=0&&course<360)&&(gps.mph10>=15||display_course_valid);
+ int hx=0,hy=0;u32 hweight=0u;
+ if(have_heading){
+  int k=((course+5)/10)%36;hx=SIN36[k];hy=COS36[k];
+  hweight=gps.mph10>=15?180u:120u;
+ }
+ int route_near=0,ri0=0,ri1=-1;
+ if(route_status==R_READY&&route_n>=2){
+  ri0=route_head>2?route_head-2:0;
+  ri1=route_head+24;if(ri1>route_n-2)ri1=route_n-2;
+  int rlr=(int)udiv32((u32)MAP_SNAP_ACQUIRE_Q4*32768u,(u32)cq)+2;
+  for(int i=ri0;i<=ri1;i++){
+   s32 ralat4=route_lat[i]*16,ralon4=route_lon[i]*16;
+   s32 rblat4=route_lat[i+1]*16,rblon4=route_lon[i+1]*16;
+   s32 ray=ralat4-rawlat4,rby=rblat4-rawlat4;
+   if((ray< -MAP_SNAP_ACQUIRE_Q4&&rby< -MAP_SNAP_ACQUIRE_Q4)||
+      (ray>MAP_SNAP_ACQUIRE_Q4&&rby>MAP_SNAP_ACQUIRE_Q4))continue;
+   s32 rda=lon_delta4(ralon4-rawlon4),rdb=lon_delta4(rblon4-rawlon4);
+   if((rda< -rlr&&rdb< -rlr)||(rda>rlr&&rdb>rlr))continue;
+   s32 rax=(s32)(((long long)rda*cq)>>15),rbx=(s32)(((long long)rdb*cq)>>15);
+   u32 rd2=0u;(void)visual_snap_project_q16(rax,ray,rbx,rby,&rd2);
+   if(rd2<=MAP_SNAP_ACQUIRE_D2){route_near=1;break;}
+  }
+ }
+ struct VisualSnapBest best;memzero(&best,sizeof(best));
+ int tx0=tile_div(rlon-lon_pad,6),tx1=tile_div(rlon+lon_pad,6);
+ int ty0=tile_div(rlat-lat_pad,6),ty1=tile_div(rlat+lat_pad,6);
+ for(int ty=ty0;ty<=ty1;ty++)for(int tx=tx0;tx<=tx1;tx++)
+  if(map_tile_in_pack(6,tx,ty))
+   visual_snap_scan_tile(get_tile(6,tx,ty),rawlat4,rawlon4,cq,lon_r,
+                         have_heading,hx,hy,hweight,route_near,ri0,ri1,&best);
+ if(best.valid){
+  visual_snap.matched=1;visual_snap.on_route=best.on_route;visual_snap.off_ticks=0;
+  visual_snap.lock_valid=1;visual_snap.lock_tx=best.tx;visual_snap.lock_ty=best.ty;
+  visual_snap.lock_gi=best.gi;visual_snap.lock_cls=(u8)best.cls;
+  visual_snap.target_dlat4=best.lat4-rawlat4;
+  visual_snap.target_dlon4=lon_delta4(best.lon4-rawlon4);
+ }else{
+  visual_snap.matched=0;visual_snap.on_route=0;
+  if(immediate||++visual_snap.off_ticks>=3){
+   visual_snap.lock_valid=0;visual_snap.target_dlat4=0;visual_snap.target_dlon4=0;
+  }
+ }
+ visual_snap_ease(immediate);
+ visual_snap.init=1;visual_snap.active_z6=1;visual_snap.raw_lat=rlat;visual_snap.raw_lon=rlon;
+ visual_snap.synced_valid=1;visual_snap.synced_z6=1;visual_snap.synced_lat=rlat;visual_snap.synced_lon=rlon;
+ visual_snap.synced_course=course;visual_snap.synced_route_status=route_status;visual_snap.synced_route_head=route_head;
+}
+static void visual_snap_for_draw(int z){
+ if(visual_snap_frozen)return;
+ if(!gps.fix||!mapok||mh.maxlvl<6){if(visual_snap.init)visual_snap_reset();return;}
+ int want_z6=z>=6;
+ if(visual_snap.synced_valid&&visual_snap.synced_z6==want_z6&&
+    visual_snap.synced_lat==car_lat()&&visual_snap.synced_lon==car_lon()&&
+    visual_snap.synced_course==map_course()&&
+    visual_snap.synced_route_status==route_status&&
+    visual_snap.synced_route_head==route_head)return;
+ update_visual_snap(z,1);
+}
+static void display_car_screen_xy(int z,int*x,int*y){
+ if(!freecam){*x=MAP_ANCHOR_X;*y=view_anchor_y();return;}
+ int qx,qy;map_project_q8_4(display_car_lat4(),display_car_lon4(),z,&qx,&qy);
+ *x=(qx+128)>>8;*y=(qy+128)>>8;
+}
 static void draw_car_marker(int z){
  if(!gps.fix)return;
- int cx,cy;world_to_screen(car_lat(),car_lon(),z,&cx,&cy);
+ int cx,cy;display_car_screen_xy(z,&cx,&cy);
  if(cx< -VEHICLE_ICON_SIZE/2||cx>W+VEHICLE_ICON_SIZE/2||cy<MAP_TOP-VEHICLE_ICON_SIZE/2||cy>MAP_BOTTOM+VEHICLE_ICON_SIZE/2)return;
  int rel=map_course();if(view_rotates())rel-=view_course();
  vehicle_icon(cx,cy,rel);
@@ -2816,7 +3085,7 @@ static int diversion_saving_box(int z,int w,struct HudBox*b){
  int x=qx>>8,y=qy>>8;
  if(x<6||x>W-6||y<6||y>H-6)return 0;
  int carx,cary,joinx,joiny;
- world_to_screen(car_lat(),car_lon(),z,&carx,&cary);
+ display_car_screen_xy(z,&carx,&cary);
  world_to_screen(traffic_path[traffic_offer_n-1].lat,traffic_path[traffic_offer_n-1].lon,z,&joinx,&joiny);
  const int h=20,gap=9;
  /* Try the sides first; keep all alternatives immediately adjacent. */
@@ -2910,6 +3179,7 @@ static void draw_trip_markers(int z){
 }
 static void draw_map_at_zoom(int z){
  perspective_scale_update();
+ visual_snap_for_draw(z);
  if(!freecam||z>6)drive_label_prepare(z);
  draw_map_geometry(z);draw_route_overlay(z);if(!freecam||z>6)drive_label_render(z);poi_trip_prepare(z);poi_render();draw_diversion_markers(z);draw_trip_markers(z);
  draw_car_marker(z);draw_explore_crosshair();
@@ -3824,8 +4094,8 @@ static void run(void){
     if(frame_due(now,next_input)){poll_csw();poll_keys();next_input=frame_after(next_input,now,33u);}
     if(model_due){
       next_model=frame_after(next_model,now,FRAME_MODEL_MS);
-      if((tick%5)==0)scan_inputs();int had_fix=gps.fix;poll_gps();if(gps.fix){if(!had_fix){track_valid=0;track_course=-1;}remember_live_fix();}
-      update_smooth_track();update_display_course();
+      if((tick%5)==0)scan_inputs();int had_fix=gps.fix;poll_gps();if(gps.fix){if(!had_fix){track_valid=0;track_course=-1;visual_snap_reset();}remember_live_fix();}
+      update_smooth_track();update_display_course();update_visual_snap(active_zoom(),0);
       if((tick%2)==0){poll_audio();poll_car();poll_vehicle();bt_source_service();}
       if((tick%5)==0){bt_poll_status();poll_phone_destination();}
       if((tick%10)==0)update_road_context();
@@ -3860,7 +4130,7 @@ int main(void){memzero(&gps,sizeof(gps));gps.fix=1;gps.sats=8;gps.lat=5498200;gp
 #else
  seed_boot_theme();
 #endif
- load_map();nrecents=read_places(RECENT_PATH,recents,RECENT_MAX);nfaves=read_places(FAVES_PATH,faves,FAVE_MAX);load_trip();load_route_data();update_smooth_track();update_road_context();if(trip.active){modal=MOD_RESUME_TRIP;modal_choice=0;}copystr(af.band,sizeof(af.band),"FM");copystr(af.station,sizeof(af.station),"BBC R1");copystr(af.freq,sizeof(af.freq),"98.8");
+ load_map();nrecents=read_places(RECENT_PATH,recents,RECENT_MAX);nfaves=read_places(FAVES_PATH,faves,FAVE_MAX);load_trip();load_route_data();update_smooth_track();update_visual_snap(active_zoom(),1);update_road_context();if(trip.active){modal=MOD_RESUME_TRIP;modal_choice=0;}copystr(af.band,sizeof(af.band),"FM");copystr(af.station,sizeof(af.station),"BBC R1");copystr(af.freq,sizeof(af.freq),"98.8");
 #ifdef PREVIEW_DEMO
  nrecents=10;recents[0].lat=5496810;recents[0].lon=-161770;copystr(recents[0].name,sizeof(recents[0].name),"NEWCASTLE CENTRAL");recents[1].lat=5501450;recents[1].lon=-169420;copystr(recents[1].name,sizeof(recents[1].name),"KINGSTON PARK");recents[2].lat=5499000;recents[2].lon=-160000;copystr(recents[2].name,sizeof(recents[2].name),"HOME");recents[3].lat=5497700;recents[3].lon=-161100;copystr(recents[3].name,sizeof(recents[3].name),"QUAYSIDE");recents[4].lat=5497400;recents[4].lon=-162900;copystr(recents[4].name,sizeof(recents[4].name),"ELDON SQUARE");recents[5].lat=5499500;recents[5].lon=-159500;copystr(recents[5].name,sizeof(recents[5].name),"JESMOND");recents[6].lat=5500200;recents[6].lon=-165000;copystr(recents[6].name,sizeof(recents[6].name),"GOSFORTH");recents[7].lat=5496400;recents[7].lon=-158400;copystr(recents[7].name,sizeof(recents[7].name),"GATESHEAD");recents[8].lat=5497200;recents[8].lon=-157900;copystr(recents[8].name,sizeof(recents[8].name),"BALTIC CENTRE");recents[9].lat=5498300;recents[9].lon=-163500;copystr(recents[9].name,sizeof(recents[9].name),"LEAZES PARK");
  nfaves=8;faves[0]=recents[2];faves[1]=recents[0];faves[2]=recents[1];faves[3]=recents[5];faves[4]=recents[3];faves[5]=recents[6];faves[6]=recents[4];faves[7]=recents[9];

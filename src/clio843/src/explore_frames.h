@@ -3,7 +3,7 @@
 
 struct ExploreView {
  struct FreecamPose pose;
- s32 track_lat,track_lon;
+ s32 track_lat,track_lon,snap_dlat4,snap_dlon4;
  int track_valid,track_course,display_course,display_course_valid;
  int card_x,card_y,card_w,card_h;
 };
@@ -22,13 +22,15 @@ static const struct ExploreView *explore_live;
 
 static struct ExploreView explore_view(void){
  return (struct ExploreView){
-  freecam_current_pose(),track_lat,track_lon,track_valid,track_course,display_course,display_course_valid,
+  freecam_current_pose(),track_lat,track_lon,visual_snap.dlat4,visual_snap.dlon4,
+  track_valid,track_course,display_course,display_course_valid,
   nav_card_x,nav_card_y,nav_card_w,nav_card_h
  };
 }
 static void explore_set_view(struct ExploreView v){
  freecam_set_pose(v.pose);
- track_lat=v.track_lat;track_lon=v.track_lon;track_valid=v.track_valid;track_course=v.track_course;
+ track_lat=v.track_lat;track_lon=v.track_lon;visual_snap.dlat4=v.snap_dlat4;visual_snap.dlon4=v.snap_dlon4;
+ track_valid=v.track_valid;track_course=v.track_course;
  display_course=v.display_course;display_course_valid=v.display_course_valid;
  nav_card_x=v.card_x;nav_card_y=v.card_y;nav_card_w=v.card_w;nav_card_h=v.card_h;
 }
@@ -73,9 +75,9 @@ static void explore_build_frame(void){
  explore_set_view(explore.view);
  explore.pose[i]=freecam_sample_pose((i+1u)*FRAME_UI_MS,explore.heading);
  freecam_set_pose(explore.pose[i]);
- renderer.building=1;render_fb=&explore.frames[i];
+ renderer.building=1;visual_snap_frozen=1;render_fb=&explore.frames[i];
  draw_map_at_zoom(explore.scene.zoom);
- renderer.building=0;render_fb=&display_fb;
+ visual_snap_frozen=0;renderer.building=0;render_fb=&display_fb;
  explore_set_view(live);explore_live=0;
  if(++explore.built==EXPLORE_FRAME_COUNT){
   u32 elapsed=hud_now_ms()-explore.at;

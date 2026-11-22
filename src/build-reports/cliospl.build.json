@@ -1,30 +1,30 @@
 {
   "machine": "ARM7TDMI / ARMv4T",
   "abi": "ELF32 EABI5 soft-float; Linux OABI syscalls",
-  "entry": "0x331a4",
-  "bytes": 84220,
-  "sha256": "36f99bd4d3bb195469743d59eedae3a8d6370d8310e1fe890cadd58d776796f5",
+  "entry": "0x331a8",
+  "bytes": 84224,
+  "sha256": "c3b6109e4d87fd0a6c822f6c4f7e940a46245ed1e13b53768932b1be5aacf345",
   "sections": {
     ".text": {
-      "address": "0x331a4",
+      "address": "0x331a8",
       "bytes": 4732
     },
     ".rodata": {
       "address": "0x10104",
-      "bytes": 77984
+      "bytes": 77988
     },
     ".data": {
-      "address": "0x44420",
+      "address": "0x44424",
       "bytes": 16
     },
     ".bss": {
-      "address": "0x44430",
+      "address": "0x44434",
       "bytes": 261124
     }
   },
-  "version": "2.2.6",
+  "version": "2.2.6.1",
   "source": "clio843/src/cliospl.c",
-  "source_tree_sha256": "5a63e3c847258b3f46d1a51f10e5b979d4d54fa6ccc4258f23f8936fde83cb5b",
+  "source_tree_sha256": "fa9561d7c81a20c0fc8836301aa869f4d690ee3bf861d5bac6b4e7143635978a",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "7c1c5599a121e702a0fe7ac89fc957e07086e27f20aaf1511971d197de3a39a0",
@@ -36,12 +36,12 @@
     "clio843/src/boot_handoff.h": "085fda60af400019c684dd5ea9d12e799442cfc9b5e54456caf8d2415f66e23b",
     "clio843/src/boot_theme.h": "fa46f1bda9c0f37306c90f34d497192953aa718b30fa688291bbc7a66ddab746",
     "clio843/src/boot_transition.h": "8ea391927a52cf8eaa9f010a70b8f8e012b768346ca9cd297110e40e6a850007",
-    "clio843/src/clio040.c": "6e3627dd0a300e3d3d6cffc3e1fd36ac6aacbf45b3b59d0cd5e5d2ba07dcd617",
+    "clio843/src/clio040.c": "c6d7a1585924a467f6f2aa4f20b12ea2598097044ced41eacc08d04f51d0890c",
     "clio843/src/clioa2dp.c": "eee113f0a920ca591c740ab0bb429f2765d0e66c3e8829b625a473ce14e037da",
     "clio843/src/cliospl.c": "523530da194e4a859de29b448926f347d70c6c6c243d08d9b048fb68e08e3d33",
     "clio843/src/coordinates.h": "303c229e4c186fab01b092a770a434fca622047b792515df940ddec1983109ef",
     "clio843/src/cswd.c": "707aa0a1fdcd8048d2fa252a14ce32176fae347d512e11869f2905a69380530c",
-    "clio843/src/explore_frames.h": "61d49408c2afb79c181ef8e93297cbfa17ab26f41842d54208d5bc6f0fbcf9be",
+    "clio843/src/explore_frames.h": "7594c17aa28fff3cd2268975616a03fcdb56b0671f0aaddaf711e5a84dd5c480",
     "clio843/src/font_atlas.h": "0989a1e455dd2a047dfea49d3e4d2a66a30b178960b80a2c31603ee80ffc4ffc",
     "clio843/src/frame_renderer.h": "a5b67ef5d1c523d3e424741fb3337890d54e91ff563029060aafa780cad31f57",
     "clio843/src/frame_schedule.h": "1a564fd03b4d72aa20eab4fbaff200ea40458efc0d6d38bd83b73546c7588bbb",
@@ -74,7 +74,7 @@
     "clio843/src/overlay_frames.h": "b1b6e79491dad7a2a62004f999793bccfef7bb6580b3a877777c284f4537557c",
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
     "clio843/src/popups.h": "b16c75163580e2fbbe17a9359bc473d368a57c3c8c2347b5d5f56ce73295f61d",
-    "clio843/src/release_version.h": "4f3b899ea5254234f16b5f0157d66acbabcbb73504eed7317fb4b9df6745ff5c",
+    "clio843/src/release_version.h": "301787baaa10aaf128a9c4a84f27e088160d39d334f0aa1137756d48a57475a8",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
     "clio843/src/splash_icon.h": "1c0cb3bf3be97ce49cdf626bc0184b0736b49fee877a92f5bf2e5cb2d0ec17eb",
     "clio843/src/traffic.h": "49c020633b82e3224512520466fc445f8f033dccfd9c4197a18b637e11d9db20",
@@ -1044,7 +1044,7 @@
     "clio843/src/vendor/sheenbidi/Source/UBA/StatusStack.h": "348774283d029f4afa64b95ba9fe04240d754587b483a8bcc345e1d6e78c6261",
     "clio843/src/vstatd.c": "a359d214853cdd511fb79e905fafc52f5413b635bb3288b268d04c15724a666f",
     "tools/build_ui.py": "b5874193f7b1903d2da65043e329011c3df07a4b5fcfedd9e424814a905c5c05",
-    "VERSION": "f74029b9ad220f7a272f438a0cb6a2bb7399011db7dcfb5d4d2f4e8b0991c600",
+    "VERSION": "156da1c7d4938bff80ca9c98ae6b5716a307948085ac09c63533ae70e1bc8df9",
     "tools/release_version.py": "60af5fa9cfbd5fac724ae4f97d2b360517e37c365a966e5cbe789eb437e5871f",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
     "tools/build_translations.py": "f0970483186937bbbc3b86f4bab877a2a6fe244830e99ee9ac82c2f58858e6f0",

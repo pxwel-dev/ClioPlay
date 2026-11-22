@@ -23,7 +23,7 @@ def main():
   shutil.copyfile(ROOT/'clio843/font.bin',tmp/'clio843/font.bin')
   base=['cc','-O1','-g','-fsanitize=undefined','-fno-sanitize-recover=all','-Wno-unused-function','-DCLIO_HOST_ROOT="'+str(tmp)+'/"']
   # The layer regression uses synthetic current-format fixtures; it is independent of map coverage.
-  jobs=[('native',ROOT/'tests/native.c',[],[str(maps/'map.cpm'),str(out)]),('splash',ROOT/'tests/splash.c',[],[str(out)]),('layers',ROOT/'tests/map-layers.c',[],[]),('coverage',ROOT/'tests/map-antialias.c',[],[]),('areas',ROOT/'tests/map-areas.c',[],[])]
+  jobs=[('native',ROOT/'tests/native.c',[],[str(maps/'map.cpm'),str(out)]),('splash',ROOT/'tests/splash.c',[],[str(out)]),('layers',ROOT/'tests/map-layers.c',[],[]),('coverage',ROOT/'tests/map-antialias.c',[],[]),('areas',ROOT/'tests/map-areas.c',[],[]),('car-snap',ROOT/'tests/map-car-snap.c',[],[])]
   for name,source,flags,args in jobs:
    exe=tmp/name
    if name=='native':

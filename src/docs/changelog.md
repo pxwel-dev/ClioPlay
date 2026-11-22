@@ -3,6 +3,14 @@
 This history records implemented changes for each release.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
 
+## Version 2.2.6.1 — Bug-fix release
+
+- **Fixed close-up road alignment at cropped zooms (Z6–Z9):** normal consumer GPS scatter (3–10 m) magnified at `Z7–Z9` (`2×`–`8×` digital crop of Z6 tiles) could previously make the vehicle icon appear off the road beside thin road strokes and bend the start of the active magenta route sideways. ClioPlay now performs lightweight, display-only **Z6-reference visual road matching** across `Z6–Z9` (`Z4–Z5` remain untouched):
+  - **Camera, marker and route origin move together in `1/16`-world-unit (Q4) space:** matches directly against the exact sub-unit Z6 road vertices already in the tile cache (zero extra SD reads, no map rebuild, no floats/heap) and shifts the visual driving camera, vehicle marker and active route origin together so the car arrow stays nailed to `(240, 211)` (never slipping underneath bottom HUD cards or hitting viewport-edge jumps) and the magenta route line starts cleanly underneath the arrow.
+  - **Heading, active-route, road-class and hysteresis filtering:** penalises perpendicular cross streets using continuous `sin²θ` heading alignment (both while moving and while stopped at traffic lights via the latched driving heading), prefers Z6 roads aligned with the active route corridor (`≤ 45°`), applies a service-road (`cls 7`) penalty so nearby driveways/aisles do not pull highway or residential driving off-road, retains interior carriageway lock hysteresis on dual carriageways while releasing immediately at polyline endpoints for hitch-free Z6 tile-seam handoffs, and eases smoothly per frame with off-road debounce.
+  - **Explore parity & untouched core navigation:** raw GPS, `car_lat()/car_lon()`, routing, off-route detection, road context, speed limits, speed cameras and ML history remain completely untouched; entering **Explore** starts on the visually snapped road position and preserves the snap offset across buffered orientation transitions.
+  - Added host UBSan regression coverage in `src/tests/map-car-snap.c`, wired into both `src/tools/verify_ci.py` and `src/tools/verify.py`.
+
 ## Version 2.2.6 — Release
 
 - **Unguided local ML learning & alerts** (full backwards compatibility with existing `mobility-ml.dat` `MML1` files — no active route required to learn everyday habits or receive repeat-slowdown warnings):
