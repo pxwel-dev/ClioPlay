@@ -2,29 +2,29 @@
   "machine": "ARM7TDMI / ARMv4T",
   "abi": "ELF32 EABI5 soft-float; Linux OABI syscalls",
   "entry": "0x8e204",
-  "bytes": 1189584,
-  "sha256": "43c314d5ac6b9788076ad234d6c72d434c4bc785847592f44e1e6e55171a2f79",
+  "bytes": 1190072,
+  "sha256": "a817d288527dbbd43cdfff33f2094ad65fe2959e9bf6b4e877dab40e6a885263",
   "sections": {
     ".text": {
       "address": "0x8e010",
-      "bytes": 555156
+      "bytes": 555648
     },
     ".rodata": {
       "address": "0x10108",
       "bytes": 450310
     },
     ".data": {
-      "address": "0x1258a8",
+      "address": "0x125a90",
       "bytes": 1544
     },
     ".bss": {
-      "address": "0x125eb0",
+      "address": "0x1260a0",
       "bytes": 11310160
     }
   },
   "version": "2.2.6",
   "source": "clio843/src/clio040.c",
-  "source_tree_sha256": "d816e9c9cbc79f285b32792dcd5c758d9a6e5a703b997706e1b3b8704cc702fa",
+  "source_tree_sha256": "120016803bf181f50074800a278660e92474021113981665bec12d5b9b0e071a",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "7c1c5599a121e702a0fe7ac89fc957e07086e27f20aaf1511971d197de3a39a0",
@@ -68,7 +68,7 @@
     "clio843/src/menu_layout.h": "c413f261277151f8bd9be15f08cc896a41fc186619ec607501c1a18a463bd23e",
     "clio843/src/menu_sheet.h": "e2068ba47e7e7dd4ad49d6c2b40eae7dcfe7fd5477b8338d9217709bde5428eb",
     "clio843/src/mobility.h": "211cdf5c443e18d287cd455c9b6e6bfbabc0ae260fc1c319b326cbc5cdfa5fc5",
-    "clio843/src/mobility_ml.h": "e49c17c7b025048e08d8f3bf4e94ba6545435b2ab3849af3cf383ccc04e72431",
+    "clio843/src/mobility_ml.h": "5db34b782eb8e0526334d4b60e35b1d6906853471025164f1e327589d9c26184",
     "clio843/src/nav_roundabout.h": "470390303a8f18184a020710012ea0353d0425c26a1381bbaa4064ca2d7f39be",
     "clio843/src/nearby_pois.h": "10ef610b741b7f7a49810350875f827068c8115330549ff5da5e74690a0e8038",
     "clio843/src/overlay_frames.h": "b1b6e79491dad7a2a62004f999793bccfef7bb6580b3a877777c284f4537557c",

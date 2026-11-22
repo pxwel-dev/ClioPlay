@@ -738,6 +738,26 @@ static void ml_features(void){
   struct MobPoint p_other={5495950,-161800};
   nfaves=2;faves[1]=(struct SavedPlace){p_other.lat,p_other.lon,"GYM"};
   assert(!ml_unguided_parking_target(p_park,&learned_park));
+  /* Habitual car-park fallback (no Favourite/Recent needed!): 3 unguided visits to TOWN PARK
+   * already populated mob_ml.poi_aff (kind=7, count>=3), so routing to a brand-new address
+   * ~280 m away offers TOWN PARK even with zero Favourites/Recents and no mob_ml.parking match. */
+  nfaves=0;nrecents=0;
+  struct MobPoint p_new_venue={5496100,-162400}; /* ~255 m west of TOWN PARK, far from OFFICE */
+  gps.fix=1;track_valid=0;gps.lat=p_home.lat;gps.lon=p_home.lon;
+  assert(ml_find_usual_parking(p_new_venue,&learned_park)&&mob_dist(learned_park,p_park)<=50u);
+  /* Guard: departing from inside TOWN PARK itself must NOT offer TOWN PARK */
+  gps.lat=p_park.lat;gps.lon=p_park.lon;
+  assert(!ml_find_usual_parking(p_new_venue,&learned_park));
+  /* Guard: routing directly to a Parking POI itself must NOT trigger Priority 2 */
+  gps.lat=p_home.lat;gps.lon=p_home.lon;
+  assert(!ml_find_usual_parking(p_park,&learned_park));
+  /* Guard: a place with >= 2 direct arrivals in mob.journey (e.g. Home) must NOT fall back to a nearby car park */
+  u32 saved_mob_n=mob.n;
+  assert(mob.n+2u<=MOB_JOURNEYS);
+  memzero(&mob.journey[mob.n],sizeof(struct MobJourney));mob.journey[mob.n].origin=p_home;mob.journey[mob.n].dest=p_new_venue;mob.n++;
+  memzero(&mob.journey[mob.n],sizeof(struct MobJourney));mob.journey[mob.n].origin=p_home;mob.journey[mob.n].dest=p_new_venue;mob.n++;
+  assert(!ml_find_usual_parking(p_new_venue,&learned_park));
+  mob.n=saved_mob_n;
   /* Auto-naming unguided recurring stop: Home -> ESSO (10 min dwell) -> OFFICE names the stop "ESSO" */
   nfaves=1;
   mob_ml.last_origin=p_home;mob_ml.last_dest=p_fuel;mob_ml.last_arrival=ep+20u*86400u;mob_ml.last_valid=1u;

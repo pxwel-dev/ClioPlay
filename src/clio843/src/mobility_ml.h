@@ -728,8 +728,36 @@ static int ml_find_usual_parking(struct MobPoint target, struct MobPoint *out){
    if(p->count > best_c){ best_c = p->count; best = i; }
   }
  }
- if(best < 0) return 0;
- if(out) *out = mob_ml.parking[best].park;
+ if(best >= 0){
+  if(out) *out = mob_ml.parking[best].park;
+  return 1;
+ }
+ /* Priority 2: fall back to a habitual Parking POI (visited >= 3 times,
+  * guided or unguided, even with no saved Favourite/Recent nearby) sitting
+  * 100-600 m from target — unless target is itself a car park or a place the
+  * driver already regularly parks directly at (< 100 m), or the car is
+  * currently departing from that car park. */
+ if(ml_find_poi_at(target.lat, target.lon, 7, 0, 0, 0, 0, 0)) return 0;
+ unsigned direct_arrivals = 0;
+ for(unsigned i = 0; i < mob.n && i < MOB_JOURNEYS; i++){
+  if(mob_dist(mob.journey[i].dest, target) < 100u && ++direct_arrivals >= 2u) return 0;
+ }
+ int best_poi = -1; u8 best_pc = 0; u32 best_pd = 0xffffffffu;
+ int have_car = gps.fix || track_valid;
+ struct MobPoint here = have_car ? (struct MobPoint){car_lat(), car_lon()} : (struct MobPoint){0, 0};
+ for(int i = 0; i < MOB_ML_POI_AFF; i++){
+  const struct MobPoiAff *a = &mob_ml.poi_aff[i];
+  if(a->kind != 7u || a->count < 3u) continue;
+  struct MobPoint pt = {a->lat, a->lon};
+  u32 d = mob_dist(pt, target);
+  if(d < 100u || d > 600u) continue;
+  if(have_car && mob_dist(pt, here) < 100u) continue;
+  if(a->count > best_pc || (a->count == best_pc && d < best_pd)){
+   best_pc = a->count; best_pd = d; best_poi = i;
+  }
+ }
+ if(best_poi < 0) return 0;
+ if(out) *out = (struct MobPoint){mob_ml.poi_aff[best_poi].lat, mob_ml.poi_aff[best_poi].lon};
  return 1;
 }
 static void ml_check_parking_offer(s32 target_lat, s32 target_lon){

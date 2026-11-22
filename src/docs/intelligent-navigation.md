@@ -229,15 +229,23 @@ alternatives.
   chosen at least twice, that station or car park receives a gentle 600 m
   effective ranking boost in **Trip → Nearby** and displays a crisp cyan star
   indicator beside its highlighted distance.
-- **Usual parking:** learns both when guided trips to a destination repeatedly
-  finish 100–600 m away *and* automatically when unguided drives finish at a
-  mapped **Parking** POI (`≤ 75 m`) located 100–600 m from a unique saved
-  **Favourite** or **Recent** (skipping any location within 100 m of another
-  saved place or ambiguous between multiple Favourites). After at least three
-  consistent sessions, routing to that destination (or accepting a destination
-  prediction to it) displays **Usual parking available · OK to review**.
-  Pressing **OK** opens **Route to usual parking?** (`Yes` updates the
-  destination to the learned parking spot; `No` declines it for the session).
+- **Usual parking:** learns in three ways:
+  1. when guided trips to a destination repeatedly finish `100–600 m` away across
+     at least three sessions (including unmapped on-street parking),
+  2. automatically when unguided drives finish at a mapped **Parking** POI
+     (`≤ 75 m`) located `100–600 m` from a unique saved **Favourite** or
+     **Recent** (skipping any location `< 100 m` from another saved place or
+     ambiguous between multiple Favourites), and
+  3. automatically for *any* mapped **Parking** POI you park at across at least
+     three unguided drives — even with no Favourite or Recent nearby — so
+     routing later to any new destination `100–600 m` from that habitual car
+     park offers it as a fallback (skipped if the destination is itself a car
+     park, a place you already regularly park directly at `< 100 m`, or if you
+     are currently departing from that car park).
+  When matched, starting a route (or accepting a destination prediction)
+  displays **Usual parking available · OK to review**. Pressing **OK** opens
+  **Route to usual parking?** (`Yes` updates the destination to the learned
+  parking spot; `No` declines it for the session).
 
 ### Repeat hard-braking and unmapped slowdown alerts
 
