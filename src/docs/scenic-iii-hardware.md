@@ -52,8 +52,11 @@ Records are 28 bytes, little-endian, without a magic header or length prefix:
 For hard buttons, only `source` is trusted: the remaining fields can contain
 uninitialized data. Each button has a sliding 250 ms burst guard. Joystick
 direction changes act immediately, with held-direction repeats at 150 ms.
-Rotation preserves valid detent counts. OK uses the real `pressed` 0→1 edge;
-neutral direction is not a click, and a rendering stall cannot create another OK.
+Rotation preserves valid detent counts. The vehicle daemon sends one
+`pressed=1` record per knob push and no release record (confirmed from a
+Scénic III `csw.log`), so each push record is an OK; repeats within a sliding
+250 ms guard are suppressed and a `pressed=0` record re-arms immediately.
+Neutral direction is not a click, and a rendering stall cannot create another OK.
 Unknown sources and invalid joystick layouts are ignored. Fixed queues and
 bounded reads keep input work within the existing approximately 33 ms slice.
 

@@ -3871,6 +3871,7 @@ static void poll_keys(void){for(int i=0;i<INPUT_MAX;i++){if(infd[i]<0)continue;f
  * CswParser. No helper process or injected evdev events are involved. */
 #define CSW_RECORD 28
 #define CSW_QUEUE 32
+#define CSW_PUSH_GUARD_MS 250u
 static struct {
  int fd,verbose,active;u8 partial[CSW_RECORD],used,head,queued,seen[9],pressed,dir;
  u16 map[17];struct {u16 key;u8 count;}queue[CSW_QUEUE];
@@ -3965,15 +3966,21 @@ static void csw_record(const u8*b,u32 now){
   csw.dir=(u8)direction;
  }else if(direction==5)csw.dir=0;
  if(rotation==1||rotation==2){unsigned count=b[24];if(count>=1&&count<=14)csw_enqueue(csw.map[rotation==1?13:14],count);else csw.invalid++;}
- /* Neutral direction/rotation is NOT an OK press. Use the real pressed
-  * edge; elapsed UI/rendering time must never manufacture a second OK. */
+ /* Neutral direction/rotation is NOT an OK press; only pressed==1 is.
+  * The Scenic III vehicledaemon sends ONE pressed==1 record per push and no
+  * release record (verified from csw.log on the car), so waiting for a
+  * pressed 0->1 edge swallowed every push until a rotation/direction record
+  * happened to carry pressed==0. Each push record is therefore a click; a
+  * sliding guard like the hard buttons' suppresses duplicate/held records,
+  * and a real release (if a producer sends one) re-arms immediately. */
  if(pressed==1){
-  if(!csw.pressed){
+  int repeat=csw.pressed&&now-csw.press_at<CSW_PUSH_GUARD_MS;
+  if(!repeat){
    int key=csw.map[15];if(control_u32(b+20)==2&&csw.map[16])key=csw.map[16];
    csw_enqueue(key,1);
   }
   csw.pressed=1;csw.press_at=now;
- }else if(pressed==0)csw.pressed=0;
+ }else csw.pressed=0;
 }
 static void csw_feed(const u8*b,unsigned n,u32 now){
  for(unsigned i=0;i<n;i++){csw.partial[csw.used++]=b[i];if(csw.used==CSW_RECORD){csw_record(csw.partial,now);csw.used=0;}}
