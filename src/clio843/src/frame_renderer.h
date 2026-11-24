@@ -5,7 +5,7 @@ static u16 render_maps[2][FB_PIX] __attribute__((aligned(4)));
 static u16 (*render_front)[FB_PIX]=&render_maps[0],(*render_work)[FB_PIX]=&render_maps[1];
 struct RenderMapScene {
  int zoom,close_road_hud;
- u32 state[18];
+ u32 state[20];
 };
 static struct {
  struct FrameClock ui;
@@ -115,7 +115,8 @@ static struct RenderMapScene render_map_scene(void){
   (u32)gps.fix,(u32)track_valid,(u32)display_course_valid,(u32)mapok,(u32)mapfmt,
   (u32)route,route?(u32)route_n:0,route?(u32)route_head:0,
   route?traffic_route_revision:0,route?(u32)nav_man_idx:0,route?(u32)nav_man_type:0,
-  (u32)offer,offer?traffic_offer_serial:0,offer?traffic_saving:0,offer?(u32)pref.language:0
+  (u32)offer,offer?traffic_offer_serial:0,offer?traffic_saving:0,offer?(u32)pref.language:0,
+  (u32)visual_snap.dlat4,(u32)visual_snap.dlon4
  }};
 }
 static int render_same_scene(const struct RenderMapScene*a,const struct RenderMapScene*b){
@@ -286,10 +287,11 @@ static void render_runtime_step(u32 now,int model_changed){
  }
  int ui_due=frame_due(now,renderer.ui.next);
  int moving=gps.fix&&gps.mph10>=5; /* Under half a mile per hour, hold the parked view. */
+ int snap_settling=!freecam&&active_zoom()>=6&&visual_snap_settling();
  int invalid=!renderer.valid||renderer.theme!=theme_resolved;
  int camera_due=renderer.camera_pending&&ui_due;
  int scene_changed=!render_same_scene(&renderer.scene,&scene)||renderer.moving!=moving;
- int live_map_due=moving&&(map_due||render_background_dirty);
+ int live_map_due=(moving||snap_settling)&&(map_due||render_background_dirty);
  int showing_queued=queued&&!explore_preparing()&&ui_due;
  if(showing_queued){
   explore_show_frame();
@@ -297,9 +299,9 @@ static void render_runtime_step(u32 now,int model_changed){
  }else if(!queued&&(invalid||((!renderer.camera_pending||ui_due)&&
    (scene_changed||live_map_due||camera_due)))){
   render_background();
-  renderer.scene=scene;renderer.moving=moving;
+  renderer.scene=render_map_scene();renderer.moving=moving;
   if(camera_due)render_stats.rotations++;else render_stats.maps++;
- }else if(!queued&&!renderer.camera_pending&&!moving)render_background_dirty=0;
+ }else if(!queued&&!renderer.camera_pending&&!moving&&!snap_settling)render_background_dirty=0;
  if(map_due)renderer.map_at=frame_after(renderer.map_at,now,period);
  now=hud_now_ms();
  if(overlay_batch_step(now,route_changed||batch_interrupted))return;

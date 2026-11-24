@@ -91,10 +91,15 @@ static int atlas_seed_target(void){
   if(!route_exact_snap(atlas_targets[i].local,&c))return 0;
   if(route_same_endpoint(&c,dest)){struct ChState*s=ch_state(c.node,1);if(!s)return 0;s->db=0;if(!ch_heap_insert(1,s))return 0;}
  }
- struct CprBase b;if(!route_read_base(dest->arc,&b))return 0;
- for(u32 k=0;k<b.src_count;k++){
-  u32 node;if(!route_read_srcref(b.src_first+k,&node))return 0;struct ChState*s=ch_state(node,1);if(!s)return 0;
-  if(dest->extra<s->db){s->db=dest->extra;if(!ch_heap_insert(1,s))return 0;}
+ struct RouteSnapCandidate twin;
+ int has_twin=route_find_twin_arc(dest,route_dest_cand,(int)atlas_target_count,&twin);
+ for(int side=0;side<=(has_twin?1:0);side++){
+  const struct RouteSnapCandidate*cand=side?&twin:dest;
+  struct CprBase b;if(!route_read_base(cand->arc,&b))return 0;
+  for(u32 k=0;k<b.src_count;k++){
+   u32 node;if(!route_read_srcref(b.src_first+k,&node))return 0;struct ChState*s=ch_state(node,1);if(!s)return 0;
+   if(cand->extra<s->db){s->db=cand->extra;if(!ch_heap_insert(1,s))return 0;}
+  }
  }
  return 1;
 }
@@ -113,9 +118,8 @@ static int atlas_sweep_begin(int dir){
  }else for(u32 i=0;i<n;i++){a[i].cost=ROUTE_INF;a[i].known=1;a[i].metres=0;}
  if(!route_arena_prepare()){atlas_fail(R_MEMORY);return 0;}ch_reset();atlas_sweep_runs++;
  if(dir){if(!atlas_seed_target()){atlas_fail(R_MEMORY);return 0;}}
- else if(route_query_start_snap(&route_start_snap)){
-  struct ChState*s=ch_state(route_start_snap.node,1);if(!s){atlas_fail(R_MEMORY);return 0;}
-  s->df=route_start_snap.extra;if(!ch_heap_insert(0,s)){atlas_fail(R_MEMORY);return 0;}
+ else if(route_query_start_snap(&route_start_snap,&route_start_twin,&route_start_twin_ok)){
+  if(!ch_seed_start(&route_start_snap,0,0)){atlas_fail(R_MEMORY);return 0;}
  }
  route_status=R_CALC;return 1;
 }

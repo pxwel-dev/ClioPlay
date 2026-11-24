@@ -185,8 +185,8 @@ uses existing map data read-only and keeps captures temporary.
 mapped and forced-paged QAD7 with a minimum 1 MiB query arena, every regional
 index namespace, exact regional route cost, endpoint-cache reset and local suffix
 repair. It executes Newcastle–London against the existing UK fixture and checks
-route cost/distance, shared work counts and production scheduling, rather than
-using a desktop timer as evidence of acceptable 400 MHz performance.
+the atlas plan, the driven route's cost, distance and turn count, shared work
+counts and production scheduling. Head-unit performance needs vehicle testing.
 `verify_atlas_destination.py` builds directed synthetic graphs to check unreachable
 nearest-road fallback and first-candidate preference through another portal.
 Host timings are comparative;

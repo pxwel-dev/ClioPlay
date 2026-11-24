@@ -376,10 +376,13 @@ and adds supported delays to its ETA. For a sufficiently slow arc with
 a divergence and rejoin ahead, it uses a cooperative, bounded reverse search
 of the **legal CPR2 base-graph turn states**, following the same exact-state
 splice invariant as ordinary rerouting. It excludes the selected slow
-directed arc, reconstructs a candidate path, scores it forward using historical
-time estimates, and retains the original route prefix and suffix. A candidate
-must save at least two minutes and 10% of the estimated remaining regional
-leg; the search is bounded to 768 states, 1024 candidate points, five seconds
+directed arc, reconstructs a candidate path, rejects turnarounds (including
+divided-carriageway V-pinch reversals) and self/prefix/suffix revisits, scores
+it forward using historical time estimates, and retains the original route
+prefix and suffix. A candidate must save at least two minutes and 10% of the
+estimated remaining regional leg; the shared bounded search uses an O(1) hash
+table and binary min-heap capped at 2048 states, 1024 candidate points, five
+seconds (800 ms for post-build spur cleanup / 600 ms for fewer-turns clusters)
 and a local search area. Only one alternative is offered. This is a local
 diversion search, not a globally optimal time-dependent route planner.
 It does not change CPM5, CPR2 v5, QAD7, or atlas manifests; cross-region

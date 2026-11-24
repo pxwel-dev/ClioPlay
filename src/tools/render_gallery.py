@@ -111,7 +111,7 @@ POPUPS_LAYOUT_EVENTS = (
     (2350, 'menu_close(hud_now_ms());modal=MOD_CANCEL_ROUTE;'),
     (4000, 'modal=MOD_SOURCE_PICK;dest_pick_action=DEST_PICK_ADD_STOP;'),
     (5400, 'modal=MOD_ROUTE_POINT;pending_point_stop=0;'),
-    (6650, 'modal=MOD_NONE;keyboard_open_fave_name(5497370,-161331);menu_open(P_NAME,0,hud_now_ms());'),
+    (6650, 'modal=MOD_NONE;keyboard_open_fave_name(5347740,-223090);menu_open(P_NAME,0,hud_now_ms());'),
     (7800, 'pk_focus=PK_LANGUAGE;key_handle(K_ENTER);assert(sheet_page==P_LANG&&kbd_picker);'),
     (9300, 'key_handle(K_BACK);assert(sheet_page==P_NAME);'),
 )
@@ -119,14 +119,14 @@ POPUPS_LAYOUT_SAMPLES = sorted({at+step for at,_ in POPUPS_LAYOUT_EVENTS for ste
 
 
 # ClioPlay 2.1.6 compact-screen and HUD customization animations.
-V216_COORDINATES_EVENTS = ((0, 'clear_trip();menu_open(P_TRIP,0,hud_now_ms());'), (800, 'key_handle(K_ENTER);assert(sheet_page==P_COORD);'), (1400, 'coordinates.focus=4;key_handle(K_ENTER);'), (1650, 'coordinates.focus=3;key_handle(K_ENTER);'), (1900, 'coordinates.focus=COORD_DOT;key_handle(K_ENTER);'), (2150, 'coordinates.focus=8;key_handle(K_ENTER);'), (2400, 'coordinates.focus=6;key_handle(K_ENTER);'), (3000, 'key_handle(K_SR);assert(coordinates.step==COORD_LON);'), (3600, 'coordinates.focus=COORD_SIGN;key_handle(K_ENTER);'), (3800, 'coordinates.focus=0;key_handle(K_ENTER);'), (4000, 'coordinates.focus=COORD_DOT;key_handle(K_ENTER);'), (4200, 'coordinates.focus=5;key_handle(K_ENTER);'), (4600, 'key_handle(K_ESC);assert(streq(coordinates.value[1],"-1."));'), (5100, 'coordinates.focus=COORD_NEXT;key_handle(K_ENTER);assert(coordinates.error&&coordinates.step==COORD_LON);'), (6500, 'coordinates.focus=5;key_handle(K_ENTER);'), (7100, 'key_handle(K_SR);assert(coordinates.step==COORD_LAT);'), (7900, 'coordinates.focus=COORD_NEXT;key_handle(K_ENTER);assert(sheet_page==P_NAME);'), (9600, 'pk_focus=PK_SAVE;key_handle(K_ENTER);assert(sheet_page==P_REVIEW);'))
+V216_COORDINATES_EVENTS = ((0, 'clear_trip();menu_open(P_TRIP,0,hud_now_ms());'), (800, 'key_handle(K_ENTER);assert(sheet_page==P_COORD);'), (1400, 'coordinates.focus=4;key_handle(K_ENTER);'), (1650, 'coordinates.focus=2;key_handle(K_ENTER);'), (1900, 'coordinates.focus=COORD_DOT;key_handle(K_ENTER);'), (2150, 'coordinates.focus=3;key_handle(K_ENTER);'), (2400, 'coordinates.focus=6;key_handle(K_ENTER);'), (3000, 'key_handle(K_SR);assert(coordinates.step==COORD_LON);'), (3600, 'coordinates.focus=COORD_SIGN;key_handle(K_ENTER);'), (3800, 'coordinates.focus=1;key_handle(K_ENTER);'), (4000, 'coordinates.focus=COORD_DOT;key_handle(K_ENTER);'), (4200, 'coordinates.focus=1;key_handle(K_ENTER);'), (4600, 'key_handle(K_ESC);assert(streq(coordinates.value[1],"-2."));'), (5100, 'coordinates.focus=COORD_NEXT;key_handle(K_ENTER);assert(coordinates.error&&coordinates.step==COORD_LON);'), (6500, 'coordinates.focus=1;key_handle(K_ENTER);'), (7100, 'key_handle(K_SR);assert(coordinates.step==COORD_LAT);'), (7900, 'coordinates.focus=COORD_NEXT;key_handle(K_ENTER);assert(sheet_page==P_NAME);'), (9600, 'pk_focus=PK_SAVE;key_handle(K_ENTER);assert(sheet_page==P_REVIEW);'))
 V216_COORDINATES_SAMPLES = sorted({at+step for at,_ in V216_COORDINATES_EVENTS for step in TWEEN_STEPS} | {11100})
 V216_HUD_SETTINGS_EVENTS = ((0, 'menu_open(P_SETTINGS,1,hud_now_ms());'), (700, 'key_handle(K_ENTER);assert(sheet_page==P_SET_HUD);'), (1700, 'key_handle(K_RIGHT);assert(pref.top_swap);'), (3600, 'key_handle(K_DOWN);assert(settings_row(sheet_page,sheet_focus)==11);'), (4200, 'key_handle(K_RIGHT);assert(pref.bottom_swap);'), (6100, 'key_handle(K_MAP);assert(sheet_page==P_CLOSED);'), (8200, 'menu_open_setting(11,hud_now_ms());'))
 V216_HUD_SETTINGS_SAMPLES = sorted({at+step for at,_ in V216_HUD_SETTINGS_EVENTS for step in TWEEN_STEPS} | {9900})
 V216_BLUETOOTH_HIDDEN_EVENTS = ((0, 'menu_open(P_HOME,0,hud_now_ms());'), (2200, 'hw_bluetooth_enabled=0;menu_change(P_HOME,0,hud_now_ms());assert(menu_count(P_HOME)==2);'), (4400, 'key_handle(K_DOWN);key_handle(K_ENTER);assert(sheet_page==P_SETTINGS);'), (6600, 'key_handle(K_MENU);assert(sheet_page==P_HOME);'), (7500, 'hw_bluetooth_enabled=1;menu_change(P_HOME,1,hud_now_ms());'), (8500, 'key_handle(K_ENTER);assert(sheet_page==P_PHONE);'))
 V216_BLUETOOTH_HIDDEN_SAMPLES = sorted({at+step for at,_ in V216_BLUETOOTH_HIDDEN_EVENTS for step in TWEEN_STEPS} | {9500})
 # Keep Add stop enabled so the footer can show both wrap directions.
-ITINERARY_SETUP = 'for(int i=trip.count;i<TRIP_MAX_TARGETS-1;i++){char name[32];snprintf(name,sizeof(name),"Stop %d",i);assert(trip_add_stop(name,5498000+i*100,-164000-i*100));}menu_open(P_TRIP,0,hud_now_ms());'
+ITINERARY_SETUP = 'for(int i=trip.count;i<TRIP_MAX_TARGETS-1;i++){char name[32];snprintf(name,sizeof(name),"Stop %d",i);assert(trip_add_stop(name,5348000+i*100,-224200-i*100));}menu_open(P_TRIP,0,hud_now_ms());'
 V216_ITINERARY_EVENTS = ((0, ITINERARY_SETUP),) + tuple(
     (1000+i*500, 'key_handle(K_DOWN);assert(sheet_focus==%d);' % (i+1)) for i in range(9)) + (
     (5750, 'key_handle(K_RIGHT);assert(sheet_focus==trip.count+1);'),
@@ -136,7 +136,7 @@ V216_ITINERARY_EVENTS = ((0, ITINERARY_SETUP),) + tuple(
     (8800, 'key_handle(K_BACK);assert(sheet_page==P_TRIP&&trip.active);'))
 V216_ITINERARY_SAMPLES = sorted({at+step for at,_ in V216_ITINERARY_EVENTS for step in TWEEN_STEPS} | {9800})
 
-# ClioPlay 2.2.3 real-map feature previews (Newcastle upon Tyne).
+# ClioPlay 2.2.3+ real-map feature previews across UK cities (Bristol, Milton Keynes, London).
 V223_NEARBY_EVENTS = (
     (700, 'key_handle(K_MENU);assert(sheet_page==P_HOME);'),
     (1300, 'key_handle(K_ENTER);assert(sheet_page==P_TRIP);'),
@@ -146,27 +146,28 @@ V223_NEARBY_EVENTS = (
     (4200, 'key_handle(K_ENTER);assert(sheet_page==P_NEARBY_LIST&&nearby_category==NEARBY_CAT_HOSPITAL&&nearby_count>0);'),
     (5600, 'key_handle(K_BACK);assert(sheet_page==P_NEARBY&&sheet_focus==2);'),
     (6200, 'key_handle(K_UP);key_handle(K_UP);assert(sheet_focus==0);'),
-    (6800, 'key_handle(K_ENTER);assert(sheet_page==P_NEARBY_LIST&&nearby_category==NEARBY_CAT_FUEL&&nearby_count>0);'),
+    (6800, 'key_handle(K_ENTER);assert(sheet_page==P_NEARBY_LIST&&nearby_category==NEARBY_CAT_FUEL&&nearby_count>1);'),
+    (7600, 'key_handle(K_DOWN);assert(sheet_focus==1);'),
     (8100, 'key_handle(K_ENTER);assert(sheet_page==P_PLACE&&place_from_nearby);'),
     (8900, 'key_handle(K_DOWN);assert(sheet_focus==1);'),
-    (9500, 'key_handle(K_ENTER);assert(sheet_page==P_TRIP&&trip.count==3&&streq(trip.target[1].name,nearby_pois[0].name));'),
+    (9500, 'key_handle(K_ENTER);assert(sheet_page==P_TRIP&&trip.count==3&&streq(trip.target[1].name,nearby_pois[1].name));'),
 )
 V223_NEARBY_SAMPLES = sorted({0} | {at+step for at,_ in V223_NEARBY_EVENTS for step in TWEEN_STEPS} | {10900})
 
 V223_SECONDARY_MANOEUVRE_EVENTS = (
-    (1100, 'preview_chained_step(10);assert(nav_man_type==MAN_SLIGHT_RIGHT&&nav_next_type==MAN_ROUNDABOUT&&nav_next_exit==3);'),
-    (2100, 'preview_chained_step(14);'),
-    (2900, 'preview_chained_step(18);'),
-    (3700, 'preview_chained_step(22);'),
-    (4500, 'preview_chained_step(25);assert(nav_man_type==MAN_ROUNDABOUT&&nav_man_exit==3&&nav_next_type==MAN_NONE);'),
-    (5300, 'preview_chained_step(33);'),
-    (6100, 'preview_chained_step(45);assert(nav_man_type==MAN_ROUNDABOUT&&nav_next_type==MAN_RIGHT);'),
-    (6900, 'preview_chained_step(48);assert(nav_man_type==MAN_ROUNDABOUT&&nav_next_type==MAN_RIGHT);'),
+    (1100, 'preview_chained_step(7);assert(nav_man_type==MAN_SLIGHT_LEFT&&nav_next_type==MAN_ROUNDABOUT&&nav_next_exit==2);'),
+    (2100, 'preview_chained_step(8);assert(nav_man_type==MAN_ROUNDABOUT&&nav_man_exit==2&&nav_next_type==MAN_RIGHT);'),
+    (2900, 'preview_chained_step(9);'),
+    (3700, 'preview_chained_step(16);assert(nav_man_type==MAN_RIGHT&&nav_next_type==MAN_SLIGHT_RIGHT);'),
+    (4500, 'preview_chained_step(24);assert(nav_man_type==MAN_RIGHT&&nav_next_type==MAN_ROUNDABOUT&&nav_next_exit==2);'),
+    (5300, 'preview_chained_step(25);assert(nav_man_type==MAN_ROUNDABOUT&&nav_man_exit==2&&nav_next_type==MAN_NONE);'),
+    (6100, 'preview_chained_step(28);assert(nav_man_type==MAN_ROUNDABOUT&&nav_man_exit==2);'),
+    (6900, 'preview_chained_step(30);'),
 )
 V223_SECONDARY_MANOEUVRE_SAMPLES = sorted({0} | {at+step for at,_ in V223_SECONDARY_MANOEUVRE_EVENTS for step in TWEEN_STEPS} | {7700})
 
 V223_VIEW_DIVERSION_EVENTS = (
-    (1200, 'hud_show_driving_info();assert(hud_navigation.kind==HUD_JOURNEY&&traffic_warn&&!traffic_offer_valid());'),
+    (1200, 'preview_map_traffic_profile(demo_profile_a,demo_profile_b,hud_now_ms());hud_show_driving_info();assert(hud_navigation.kind==HUD_JOURNEY&&traffic_warn&&traffic_remaining_cost()>route_result_cost&&!traffic_offer_valid());'),
     (2600, 'preview_map_diversion_reveal();assert(traffic_offer_valid()&&ml_offer_kind==0);'),
     (4400, 'draw();assert(hud_diversion_shortcut_ready());key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&confirm_kind==3&&confirm_diversion_kind==0&&sheet_focus==0);'),
     (5600, 'key_handle(K_DOWN);assert(sheet_page==P_CONFIRM&&sheet_focus==2);'),
@@ -198,10 +199,10 @@ V224_ML_ETA_HABITS_SAMPLES = sorted({0} | {at+step for at,_ in V224_ML_ETA_HABIT
 V224_ML_SLOWDOWNS_EVENTS = (
     (900,  'preview_ml_slowdowns_step(5);assert(hud_navigation.kind==HUD_SLOWDOWN&&!ml_slowdown_cold);'),
     (2400, 'preview_ml_slowdowns_step(11);assert(hud_navigation.kind==HUD_SLOWDOWN&&!ml_slowdown_cold);'),
-    (5000, 'preview_ml_slowdowns_step(30);'),
-    (5800, 'preview_ml_slowdowns_step(57);assert(hud_navigation.kind==HUD_NONE);'),
-    (6600, 'car.temp=1;preview_ml_slowdowns_step(60);assert(hud_navigation.kind==HUD_SLOWDOWN&&ml_slowdown_cold);'),
-    (8200, 'preview_ml_slowdowns_step(65);assert(hud_navigation.kind==HUD_SLOWDOWN&&ml_slowdown_cold);'),
+    (5000, 'preview_ml_slowdowns_step(25);'),
+    (5800, 'preview_ml_slowdowns_step(43);assert(hud_navigation.kind==HUD_NONE);'),
+    (6600, 'car.temp=1;preview_ml_slowdowns_step(45);assert(hud_navigation.kind==HUD_SLOWDOWN&&ml_slowdown_cold);'),
+    (8200, 'preview_ml_slowdowns_step(50);assert(hud_navigation.kind==HUD_SLOWDOWN&&ml_slowdown_cold);'),
     (9300, 'hud_show_driving_info();assert(hud_navigation.kind==HUD_JOURNEY);'),
 )
 V224_ML_SLOWDOWNS_SAMPLES = sorted({0} | {at+step for at,_ in V224_ML_SLOWDOWNS_EVENTS for step in TWEEN_STEPS} | {10700})
@@ -360,7 +361,7 @@ def catalog(sender_receipts=None):
         add('Prototype motion',f'hud-speed-{elapsed:04d}',f'Confirmed limit · {elapsed} ms',
             f'settle();gps.mph10=390;draw();hud_capture_ms+={elapsed}u;gallery_motion=1;')
     road_cleared = 'settle();hud_capture_ms+=4000u;draw();hud_capture_ms+=320u;draw();'
-    new_road = 'copystr(roadctx.street,sizeof(roadctx.street),"Sandgate");'
+    new_road = 'copystr(roadctx.street,sizeof(roadctx.street),"Deansgate");'
     camera_on = 'show_camera(1,0);'
     road_sequences = (
         ('road-only', 'New road only', ((100, new_road), (4100, ''))),
@@ -454,7 +455,7 @@ def catalog(sender_receipts=None):
            coordinate_start+'preview_finish_route();',((0,''),),ROUTE_READY_SAMPLES)
     add('Offline routing','coordinate-route-recents','Coordinate route remains named in Recents',
         coordinate_start+'preview_finish_route();key_handle(K_MENU);key_handle(K_ENTER);trip_pane=0;trip_tab=trip_focus=0;',
-        check='assert(route_status==R_READY&&streq(recents[0].name,"QUAYSIDE"));')
+        check='assert(route_status==R_READY&&streq(recents[0].name,"PICCADILLY"));')
     map_start='map_point_preview("calculating");'
     add('Offline routing','map-point-driving','Start with no route', 'map_point_preview("driving");')
     for elapsed in EXPLORE_SAMPLES:
@@ -538,7 +539,9 @@ def catalog(sender_receipts=None):
         key('Arrivals',f'arrived-{name}-continue',f'Confirm arrival at {name}',state,'key_handle(K_ENTER);','assert(modal==MOD_NONE);')
         add('Arrivals',f'arrived-{name}-timeout',f'Automatic arrival completion · {name}',state+'arrival_modal_deadline=s_now_ms()-1;arrival_modal_service();')
     add('Phone destinations','incoming-native-name','Received native destination name','screen=SCR_TRIP;incoming("東京駅 · محطة",\'N\');')
-    phone_received = ('gps.mph10=0;auto_zoom_level=-1;screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;modal=MOD_NONE;settle();'
+    phone_received = ('gps.lat=track_lat=5498800;gps.lon=track_lon=-160400;display_course=track_course=gps.course=210;'
+                      'copystr(roadctx.street,sizeof(roadctx.street),"Osborne Road");'
+                      'gps.mph10=0;auto_zoom_level=-1;screen=SCR_TRIP;trip_pane=1;trip.active=0;trip.count=0;modal=MOD_NONE;settle();'
                       'incoming_sender("Central Station",1,\'N\',5497370,-161331);'
                       'assert(modal==MOD_NONE&&trip.active&&streq(trip.target[0].name,"Central Station"));'
                       'trip_service();trip_service();')
@@ -775,7 +778,7 @@ def modern_menus():
         'Intelligent navigation',
         'preview-v220-intelligent-diversions',
         'Historical traffic warning and real map-backed diversion',
-        'settle();',
+        'preview_map_diversion_seed();settle();',
         MAP_DIVERSION_EVENTS,
         V220_DIVERSION_SAMPLES
     )
@@ -806,7 +809,7 @@ def modern_menus():
     motion(
         'Version 2.2.4',
         'preview-v224-ml-eta-and-habits',
-        'Clear-road usual-route proposal and calibrated ETA reliability range on Durham map',
+        'Clear-road usual-route proposal and calibrated ETA reliability range in Central London',
         'preview_ml_eta_habits_seed();settle();',
         V224_ML_ETA_HABITS_EVENTS,
         V224_ML_ETA_HABITS_SAMPLES
@@ -814,7 +817,7 @@ def modern_menus():
     motion(
         'Version 2.2.4',
         'preview-v224-ml-slowdowns',
-        'Warm repeat hard-braking alert, deduplication, cold-only silence and frosty cold-weather slowdown cue in York',
+        'Warm repeat hard-braking alert, deduplication, cold-only silence and frosty cold-weather slowdown cue in Liverpool',
         'preview_ml_slowdowns_seed();settle();',
         V224_ML_SLOWDOWNS_EVENTS,
         V224_ML_SLOWDOWNS_SAMPLES
@@ -822,7 +825,7 @@ def modern_menus():
     motion(
         'Version 2.2.4',
         'preview-v224-ml-parking-and-pois',
-        'Usual parking confirmation, recurring intermediate stop and preferred Nearby POI ranking',
+        'Usual parking confirmation, recurring intermediate stop and preferred Nearby POI ranking in Leeds',
         'preview_ml_parking_pois_seed();settle();',
         V224_ML_PARKING_POIS_EVENTS,
         V224_ML_PARKING_POIS_SAMPLES
@@ -830,7 +833,7 @@ def modern_menus():
     motion(
         'Version 2.2.4',
         'preview-v224-ml-adaptive-hud',
-        'Adaptive Auto-zoom per speed band and automatic Day/Night learned brightness switch',
+        'Adaptive Auto-zoom per speed band and automatic Day/Night learned brightness switch in Edinburgh',
         'preview_ml_adaptive_hud_seed();settle();',
         V224_ML_ADAPTIVE_HUD_EVENTS,
         V224_ML_ADAPTIVE_HUD_SAMPLES
@@ -838,12 +841,12 @@ def modern_menus():
     motion(
         'Version 2.2.5',
         'preview-v225-gps-panel',
-        'Double-OK expands the clock pill into a live driving GPS HUD that stays active beside status pills, adapts cleanly to a compact live strip above centred popups, and folds to a seconds-only clock during menus/Explore',
-        'pref.gps_hud=0;copystr(hud_last_road,sizeof(hud_last_road),"Quayside");hud_road_live=0;gps.sec=4;gps.sats=9;gps.hdop10=8;gps.gst_dm=40;gps_gst_ms=s_now_ms();gps.alt_valid=1;gps.alt_dm=620;settle();',
+        'Double-OK expands the clock pill into a live driving GPS HUD on the Liverpool waterfront',
+        'preview_gps_panel_seed();settle();',
         V225_GPS_PANEL_EVENTS,
         V225_GPS_PANEL_SAMPLES
     )
-    add('Menu sheets','empty-receive','Empty itinerary receives phone destinations automatically','gps.mph10=0;auto_zoom_level=-1;trip.active=trip.count=0;menu_open(P_TRIP,0,hud_now_ms());')
+    add('Menu sheets','empty-receive','Empty itinerary receives phone destinations automatically','gps.lat=track_lat=5498800;gps.lon=track_lon=-160400;display_course=track_course=gps.course=210;copystr(roadctx.street,sizeof(roadctx.street),"Osborne Road");gps.mph10=0;auto_zoom_level=-1;trip.active=trip.count=0;menu_open(P_TRIP,0,hud_now_ms());')
     add_stop='gps.mph10=0;auto_zoom_level=-1;key_handle(K_MENU);key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_DOWN);'
     source=add_stop+'key_handle(K_ENTER);key_handle(K_DOWN);'
     favourite=source+'key_handle(K_ENTER);key_handle(K_DOWN);'
@@ -856,17 +859,18 @@ def modern_menus():
 
 HELPERS = r'''
 static int gallery_night,gallery_motion;
-static int saved_n;static u32 saved_m,saved_cost;
+static int saved_n,saved_region=-1;static u32 saved_m,saved_cost;
 static s32 saved_lat[ROUTE_PATH_MAX],saved_lon[ROUTE_PATH_MAX];
 static u32 saved_node[ROUTE_PATH_MAX],saved_arc[ROUTE_PATH_MAX],saved_phys[ROUTE_PATH_MAX],saved_seg_m[ROUTE_PATH_MAX],saved_seg_cost[ROUTE_PATH_MAX];
-static void save_route(void){saved_n=route_n;saved_m=route_result_m;saved_cost=route_result_cost;
+static void save_route(void){saved_n=route_n;saved_m=route_result_m;saved_cost=route_result_cost;saved_region=atlas_route_region;
  memcpy(saved_lat,route_lat,sizeof(saved_lat));memcpy(saved_lon,route_lon,sizeof(saved_lon));memcpy(saved_node,route_node,sizeof(saved_node));memcpy(saved_arc,route_seg_arc,sizeof(saved_arc));memcpy(saved_phys,route_seg_phys,sizeof(saved_phys));memcpy(saved_seg_m,route_seg_m,sizeof(saved_seg_m));memcpy(saved_seg_cost,route_seg_cost,sizeof(saved_seg_cost));}
-static void restore_route(void){route_n=saved_n;route_head=0;route_result_m=saved_m;route_result_cost=saved_cost;route_status=R_READY;
+static void restore_route(void){if(atlas_ready&&saved_region>=0)assert(atlas_open_route(saved_region));route_n=saved_n;route_head=0;route_result_m=saved_m;route_result_cost=saved_cost;route_status=R_READY;
  memcpy(route_lat,saved_lat,sizeof(saved_lat));memcpy(route_lon,saved_lon,sizeof(saved_lon));memcpy(route_node,saved_node,sizeof(saved_node));memcpy(route_seg_arc,saved_arc,sizeof(saved_arc));memcpy(route_seg_phys,saved_phys,sizeof(saved_phys));memcpy(route_seg_m,saved_seg_m,sizeof(saved_seg_m));memcpy(route_seg_cost,saved_seg_cost,sizeof(saved_seg_cost));}
 
-/* Real map-backed diversion preview.
+/* Real map-backed diversion preview (Central London: Paddington -> City).
  *
- * Keep the calculated Newcastle route and use controlled historical
+ * Keep the calculated London route (where v2.2.6.2's fewer-turns pass cuts
+ * 3 turns for +1.0 s with zero spurs) and use controlled historical
  * observations to create congestion on part of that route.
  * The production traffic search must discover a legal alternative.
  *
@@ -877,6 +881,11 @@ static void restore_route(void){route_n=saved_n;route_head=0;route_result_m=save
 static int demo_div_n, demo_div_a, demo_div_b,demo_profile_a,demo_profile_b;
 static u32 demo_div_saving;
 static struct TrafficPoint demo_div_path[TRAFFIC_PATH_MAX];
+static const s32 demo_origin_lat=5151540,demo_origin_lon=-17550;
+static const s32 demo_dest_lat=5152200,demo_dest_lon=-9500;
+static struct TrafficPoint demo_base_path[TRAFFIC_PATH_MAX];
+static int demo_base_n,demo_base_region;
+static u32 demo_base_m,demo_base_cost;
 
 static void preview_map_traffic_profile(int a, int b, u32 now)
 {
@@ -941,7 +950,7 @@ static void preview_map_traffic_profile(int a, int b, u32 now)
 
 static int preview_find_map_diversion(u32 now)
 {
-    const u32 distances[] = {150u, 250u, 350u, 400u, 700u, 1000u, 1300u};
+    const u32 distances[] = {150u, 200u, 250u, 350u, 400u, 500u, 700u, 850u, 1000u, 1300u, 1600u};
     u32 approach = 0;
     u32 last_attempt = 0;
 
@@ -951,13 +960,13 @@ static int preview_find_map_diversion(u32 now)
     for (int a = route_head + 1; a < route_n - 2; a++) {
         approach = sat_add32(approach, route_seg_m[a]);
 
-        if (approach > 1000u)
+        if (approach > 1600u)
             break;
 
         if (route_node[a] == ROUTE_NOARC)
             continue;
 
-        if (last_attempt && approach < last_attempt + 60u)
+        if (last_attempt && approach < last_attempt + 35u)
             continue;
 
         last_attempt = approach;
@@ -1027,6 +1036,21 @@ static int preview_find_map_diversion(u32 now)
                 if (!traffic_offer_valid())
                     continue;
 
+                /* Use a clear split and rejoin where the original wins in
+                 * both distance and travel time before the slowdown. */
+                u32 span = geo_seg_m(traffic_path[0].lat,traffic_path[0].lon,
+                                     traffic_path[traffic_offer_n-1].lat,traffic_path[traffic_offer_n-1].lon);
+                u32 main_cost=0,alt_cost=0,main_m=0,alt_m=0;
+                for(int i=traffic_begin_idx+1;i<=traffic_join_idx;i++){
+                    main_cost+=route_seg_cost[i];main_m+=route_seg_m[i];
+                }
+                for(int i=1;i<traffic_offer_n;i++){
+                    alt_cost+=traffic_path[i].cost;alt_m+=traffic_path[i].m;
+                }
+                if(span<150u||main_m*10u>span*18u||alt_m>span*3u||
+                   alt_cost<main_cost+100u||alt_m<main_m+20u)
+                    continue;
+
                 demo_profile_a=a;demo_profile_b=b;
                 demo_div_a = traffic_begin_idx;
                 demo_div_b = traffic_join_idx;
@@ -1059,12 +1083,40 @@ static void preview_map_diversion_seed(void)
     u32 now = hud_now_ms();
 
     if (!demo_div_n) {
+        /* Use a real route where accepting a small driving-time increase
+         * removes turns before the controlled traffic history is applied. */
+        gps.lat=track_lat=demo_origin_lat;gps.lon=track_lon=demo_origin_lon;track_valid=1;
+        gps.mph10=0;
+        assert(route_start(demo_dest_lat,demo_dest_lon));
+        u32 deadline=s_now_ms()+30000u;
+        while(route_status==R_CALC&&time_before_u32(s_now_ms(),deadline))route_service_until(s_now_ms()+12u);
+        assert(route_status==R_READY&&route_n>2&&route_n<=TRAFFIC_PATH_MAX);
+        assert(route_turn_extra_ds>0);
+        for (int i = 1; i < route_n - 2; i++) {
+            assert(!route_cleanup_uturn(i));
+            assert(route_seg_phys[i] == ROUTE_NOARC ||
+                   route_seg_phys[i] != route_seg_phys[i + 1] ||
+                   route_seg_arc[i] == route_seg_arc[i + 1]);
+        }
+        demo_base_n=route_n;demo_base_region=atlas_route_region;
+        demo_base_m=route_result_m;demo_base_cost=route_result_cost;
+        for(int i=0;i<route_n;i++)demo_base_path[i]=(struct TrafficPoint){route_lat[i],route_lon[i],route_node[i],route_seg_cost[i],route_seg_arc[i],route_seg_phys[i],route_seg_m[i]};
         if (!preview_find_map_diversion(now)) {
             fprintf(stderr,
                 "No legal map-backed preview diversion found "
-                "on the Newcastle baseline route.\n");
+                "on the London baseline route.\n");
             assert(demo_div_n > 1);
         }
+    }
+
+    if(atlas_ready)assert(atlas_open_route(demo_base_region));
+    atlas_active=0;atlas_future_m=atlas_future_cost=0;
+    route_status=R_READY;route_head=0;route_n=demo_base_n;
+    route_result_m=demo_base_m;route_result_cost=demo_base_cost;
+    for(int i=0;i<route_n;i++){
+        const struct TrafficPoint*p=&demo_base_path[i];
+        route_lat[i]=p->lat;route_lon[i]=p->lon;route_node[i]=p->node;
+        route_seg_cost[i]=p->cost;route_seg_arc[i]=p->arc;route_seg_phys[i]=p->phys;route_seg_m[i]=p->m;
     }
 
     traffic_invalidate();
@@ -1111,28 +1163,26 @@ static void preview_map_diversion_seed(void)
 
     display_course_valid = 1;
 
-    /* Drive at the 50 mph dual-carriageway limit so Auto zoom selects Z5. */
-    pref.autozoom = 1;
+    /* Use the wider driving view so the driver can see the split. */
+    pref.autozoom = 0;
+    manual_zoom = 5;
     auto_zoom_level = -1;
     zoom_override = -1;
-    roadctx.speed = 50;
-    roadctx.speed_flags = 2;
-    roadctx.reverse_speed = 50;
-    roadctx.reverse_flags = 2;
-    gps.mph10 = 500;
+    gps.mph10 = 200;
+    update_road_context();
 
     trip.active = 1;
     trip.paused = 0;
     trip.count = 1;
     trip.active_idx = 0;
 
-    trip.target[0].lat = route_target_lat = 5497370;
-    trip.target[0].lon = route_target_lon = -161331;
+    trip.target[0].lat = route_target_lat = demo_dest_lat;
+    trip.target[0].lon = route_target_lon = demo_dest_lon;
 
     copystr(
         trip.target[0].name,
         sizeof(trip.target[0].name),
-        "Work"
+        "City of London"
     );
 
     struct CprNode node;
@@ -1150,10 +1200,12 @@ static void preview_map_diversion_warn_seed(void)
     preview_map_diversion_seed();
     traffic_offer_n = 0;
     traffic_saving = 0;
+    traffic_warn = 0;
+    traffic_eta_ds = 0;
     ml_offer_kind = 0;
-    hud_navigation.kind = HUD_NONE;
+    hud_show_driving_info();
     render_background_dirty = 1;
-    assert(mapok && traffic_warn && !traffic_offer_valid());
+    assert(mapok && hud_navigation.kind==HUD_JOURNEY && traffic_remaining_cost()==route_result_cost && !traffic_offer_valid());
 }
 static void preview_map_diversion_reveal(void)
 {
@@ -1169,27 +1221,97 @@ static void preview_map_diversion_reveal(void)
     render_background_dirty = 1;
     assert(traffic_offer_valid() && ml_offer_kind == 0);
 }
-static int demo_chain_n;
+static int demo_chain_n, demo_chain_region = -1;
 static u32 demo_chain_m, demo_chain_cost;
 static s32 demo_chain_lat[ROUTE_PATH_MAX], demo_chain_lon[ROUTE_PATH_MAX];
 static u32 demo_chain_node[ROUTE_PATH_MAX], demo_chain_arc[ROUTE_PATH_MAX], demo_chain_phys[ROUTE_PATH_MAX];
 static u32 demo_chain_seg_m[ROUTE_PATH_MAX], demo_chain_seg_cost[ROUTE_PATH_MAX];
+static int demo_nearby_n, demo_nearby_region = -1;
+static u32 demo_nearby_m, demo_nearby_cost;
+static s32 demo_nearby_lat[ROUTE_PATH_MAX], demo_nearby_lon[ROUTE_PATH_MAX];
+static u32 demo_nearby_node[ROUTE_PATH_MAX], demo_nearby_arc[ROUTE_PATH_MAX], demo_nearby_phys[ROUTE_PATH_MAX];
+static u32 demo_nearby_seg_m[ROUTE_PATH_MAX], demo_nearby_seg_cost[ROUTE_PATH_MAX];
 static void preview_nearby_seed(void)
 {
     assert(mapok && routeok);
-    gps.lat = track_lat = 5497830;
-    gps.lon = track_lon = -161780;
+    /* Bristol city centre on A38 The Haymarket -> Clifton Village:
+     * road-snapped active Bristol route with mapped Hospitals, Fuel and Parking nearby. */
+    if (!demo_nearby_n) {
+        gps.lat = track_lat = 5145846;
+        gps.lon = track_lon = -259184;
+        track_valid = 1;
+        gps.fix = 1;
+        gps.mph10 = 0;
+        assert(route_start(5145600, -261500));
+        u32 deadline = s_now_ms() + 120000u;
+        while (route_status == R_CALC && time_before_u32(s_now_ms(), deadline))
+            route_service_until(s_now_ms() + 12u);
+        assert(route_status == R_READY && route_n > 10);
+        for (int i = 1; i < route_n - 2; i++) {
+            assert(!route_cleanup_uturn(i));
+            assert(route_seg_phys[i] == ROUTE_NOARC ||
+                   route_seg_phys[i] != route_seg_phys[i + 1] ||
+                   route_seg_arc[i] == route_seg_arc[i + 1]);
+        }
+        demo_nearby_n = route_n;
+        demo_nearby_region = atlas_route_region;
+        demo_nearby_m = route_result_m;
+        demo_nearby_cost = route_result_cost;
+        memcpy(demo_nearby_lat, route_lat, sizeof(demo_nearby_lat));
+        memcpy(demo_nearby_lon, route_lon, sizeof(demo_nearby_lon));
+        memcpy(demo_nearby_node, route_node, sizeof(demo_nearby_node));
+        memcpy(demo_nearby_arc, route_seg_arc, sizeof(demo_nearby_arc));
+        memcpy(demo_nearby_phys, route_seg_phys, sizeof(demo_nearby_phys));
+        memcpy(demo_nearby_seg_m, route_seg_m, sizeof(demo_nearby_seg_m));
+        memcpy(demo_nearby_seg_cost, route_seg_cost, sizeof(demo_nearby_seg_cost));
+    }
+    if (atlas_ready && demo_nearby_region >= 0)
+        assert(atlas_open_route(demo_nearby_region));
+    atlas_active = 0;
+    atlas_future_m = atlas_future_cost = 0;
+    route_n = demo_nearby_n;
+    route_head = 0;
+    route_result_m = demo_nearby_m;
+    route_result_cost = demo_nearby_cost;
+    route_status = R_READY;
+    memcpy(route_lat, demo_nearby_lat, sizeof(route_lat));
+    memcpy(route_lon, demo_nearby_lon, sizeof(route_lon));
+    memcpy(route_node, demo_nearby_node, sizeof(route_node));
+    memcpy(route_seg_arc, demo_nearby_arc, sizeof(route_seg_arc));
+    memcpy(route_seg_phys, demo_nearby_phys, sizeof(route_seg_phys));
+    memcpy(route_seg_m, demo_nearby_seg_m, sizeof(route_seg_m));
+    memcpy(route_seg_cost, demo_nearby_seg_cost, sizeof(route_seg_cost));
+    gps.lat = track_lat = route_lat[0];
+    gps.lon = track_lon = route_lon[0];
     track_valid = 1;
     gps.fix = 1;
-    gps.course = track_course = display_course = 35;
+    int ahead = route_n > 2 ? 2 : 1;
+    int heading = nav_heading10(route_lat[0], route_lon[0], route_lat[ahead], route_lon[ahead]);
+    gps.course = track_course = display_course = (heading >= 0 && heading < 360) ? heading : 35;
     display_course_valid = 1;
+    trip.active = 1;
+    trip.paused = 0;
+    trip.count = 2;
+    trip.active_idx = 0;
+    trip.target[0].lat = route_target_lat = 5145600;
+    trip.target[0].lon = route_target_lon = -261500;
+    copystr(trip.target[0].name, sizeof(trip.target[0].name), "Clifton Village");
+    trip.target[1].lat = 5146500;
+    trip.target[1].lon = -257500;
+    copystr(trip.target[1].name, sizeof(trip.target[1].name), "Home");
     pref.autozoom = 1;
     auto_zoom_level = -1;
     zoom_override = -1;
     gps.mph10 = 0;
+    roadctx.valid = 1;
+    roadctx.speed = 30;
+    roadctx.speed_flags = 2;
+    roadctx.reverse_speed = 30;
+    roadctx.reverse_flags = 2;
     hud_road_live = 0;
     hud_last_road[0] = 0;
-    roadctx.street[0] = 0;
+    copystr(roadctx.street, sizeof(roadctx.street), "A38 The Haymarket");
+    nav_maneuver_find();
     render_background_dirty = 1;
 }
 static void preview_chained_step(int idx)
@@ -1212,16 +1334,19 @@ static void preview_chained_seed(void)
 {
     assert(mapok && routeok);
     if (!demo_chain_n) {
-        gps.lat = track_lat = 5497500;
-        gps.lon = track_lon = -160000;
+        /* Milton Keynes (Central MK -> Bletchley): spur-free route with chained roundabouts. */
+        gps.lat = track_lat = 5203440;
+        gps.lon = track_lon = -77430;
         track_valid = 1;
         gps.fix = 1;
-        assert(route_start(5498400, -161900));
+        gps.mph10 = 0;
+        assert(route_start(5199600, -72400));
         u32 deadline = s_now_ms() + 120000u;
         while (route_status == R_CALC && time_before_u32(s_now_ms(), deadline))
             route_service_until(s_now_ms() + 12u);
         assert(route_status == R_READY && route_n > 50);
         demo_chain_n = route_n;
+        demo_chain_region = atlas_route_region;
         demo_chain_m = route_result_m;
         demo_chain_cost = route_result_cost;
         memcpy(demo_chain_lat, route_lat, sizeof(demo_chain_lat));
@@ -1232,6 +1357,10 @@ static void preview_chained_seed(void)
         memcpy(demo_chain_seg_m, route_seg_m, sizeof(demo_chain_seg_m));
         memcpy(demo_chain_seg_cost, route_seg_cost, sizeof(demo_chain_seg_cost));
     }
+    if (atlas_ready && demo_chain_region >= 0)
+        assert(atlas_open_route(demo_chain_region));
+    atlas_active = 0;
+    atlas_future_m = atlas_future_cost = 0;
     route_n = demo_chain_n;
     route_head = 0;
     route_result_m = demo_chain_m;
@@ -1248,24 +1377,24 @@ static void preview_chained_seed(void)
     trip.paused = 0;
     trip.count = 1;
     trip.active_idx = 0;
-    trip.target[0].lat = route_target_lat = 5498400;
-    trip.target[0].lon = route_target_lon = -161900;
-    copystr(trip.target[0].name, sizeof(trip.target[0].name), "Royal Victoria Infirmary");
+    trip.target[0].lat = route_target_lat = 5199600;
+    trip.target[0].lon = route_target_lon = -72400;
+    copystr(trip.target[0].name, sizeof(trip.target[0].name), "Bletchley");
     pref.autozoom = 1;
     auto_zoom_level = -1;
     zoom_override = -1;
     gps.fix = 1;
-    roadctx.speed = 20;
+    roadctx.speed = 30;
     roadctx.speed_flags = 2;
-    roadctx.reverse_speed = 20;
+    roadctx.reverse_speed = 30;
     roadctx.reverse_flags = 2;
     gps.mph10 = 200;
     region_flags |= 4;
     hud_road_live = 0;
     hud_last_road[0] = 0;
     roadctx.street[0] = 0;
-    preview_chained_step(4);
-    assert(nav_man_type == MAN_SLIGHT_RIGHT && nav_next_type == MAN_SHARP_RIGHT);
+    preview_chained_step(3);
+    assert(nav_man_type == MAN_RIGHT && nav_next_type == MAN_SLIGHT_LEFT);
 }
 static void preview_ml_finish_route(void)
 {
@@ -1279,100 +1408,114 @@ static void preview_ml_finish_route(void)
     nav_maneuver_find();
     render_background_dirty = 1;
 }
-static int demo_usual_n, demo_usual_head, demo_usual_a, demo_usual_b, demo_usual_offer_n;
+static int demo_usual_n, demo_usual_head, demo_usual_a, demo_usual_b, demo_usual_offer_n, demo_usual_region = -1;
 static u32 demo_usual_m, demo_usual_cost, demo_usual_comp;
 static s32 demo_usual_lat[ROUTE_PATH_MAX], demo_usual_lon[ROUTE_PATH_MAX];
 static u32 demo_usual_node[ROUTE_PATH_MAX], demo_usual_arc[ROUTE_PATH_MAX], demo_usual_phys[ROUTE_PATH_MAX];
 static u32 demo_usual_seg_m[ROUTE_PATH_MAX], demo_usual_seg_cost[ROUTE_PATH_MAX];
 static struct TrafficPoint demo_usual_path[TRAFFIC_PATH_MAX];
-static int preview_find_durham_usual_route(u32 now)
+static int preview_find_london_usual_route(u32 now)
 {
     const u32 epoch = mob_epoch(2026, 10, 21, 14, 15, 0);
     gps.fix = 1;
-    gps.lat = track_lat = 5477800;
-    gps.lon = track_lon = -155600;
+    gps.mph10 = 0;
+    /* Central London (Westminster -> Paddington via Mayfair):
+     * main route jogs right onto Oxford Street and left up Portman Street;
+     * the unguided-learned usual route continues straight up parallel Park Street
+     * and Bryanston Street (span ~567 m, sep ~161 m, 710 m vs 739 m). */
+    gps.lat = track_lat = 5150100;
+    gps.lon = track_lon = -12460;
     track_valid = 1;
-    assert(route_start(5477100, -159100));
+    assert(route_start(5151540, -17550));
     u32 deadline = s_now_ms() + 120000u;
     while (route_status == R_CALC && time_before_u32(s_now_ms(), deadline))
         route_service_until(s_now_ms() + 12u);
-    assert(route_status == R_READY && route_n > 180);
-    int cand_a = 141, cand_b = 180;
-    if (cand_b >= route_n - 1) cand_b = route_n - 2;
-    u32 raw = 0; u32 blocks[12]; int bn = 0;
-    for (int i = cand_a + 1; i <= cand_b; i++) {
-        raw = sat_add32(raw, route_seg_cost[i]);
-        u32 arc = route_seg_arc[i];
-        if (arc == ROUTE_NOARC) continue;
-        int dup = 0; for (int k = 0; k < bn; k++) if (blocks[k] == arc) dup = 1;
-        if (!dup && bn < 12) blocks[bn++] = arc;
+    assert(route_status == R_READY && route_n > 350);
+    for (int i = 1; i < route_n - 2; i++) {
+        assert(!route_cleanup_uturn(i));
+        assert(route_seg_phys[i] == ROUTE_NOARC ||
+               route_seg_phys[i] != route_seg_phys[i + 1] ||
+               route_seg_arc[i] == route_seg_arc[i + 1]);
     }
-    for (int k = 0; k < bn; k++) {
-        u32 avoided_key = traffic_key_for_arc(blocks[k], 0);
-        if (!avoided_key) continue;
-        /* Discover the legal alternative geometry first, then clear ALL traffic data
-         * and run production traffic_scan_ex() purely from learned ml_pref_arcs. */
-        mob_model_reset(); mob.n = 20; mob.serial = 20; mob_current_epoch = epoch; mob_clock_ms = now;
-        for (int i = cand_a + 1; i <= cand_b; ) {
-            u32 arc = route_seg_arc[i], full = 0; u32 key = traffic_key_for_arc(arc, &full);
-            if (key && full && full <= 36000u) {
-                struct MobRoad *r = mob_road_find(key, mob_bucket(epoch), 1);
-                if (r) { u32 slow = full * 5u; if (slow < full + 3600u) slow = full + 3600u; r->mean_ds = slow > 36000u ? 36000u : slow; r->count = 20; r->stamp = mob.serial; }
-            }
-            while (i <= cand_b && route_seg_arc[i] == arc) i++;
+    int cand_a = 293, cand_b = 350;
+    struct CprNode anode;
+    assert(route_read_node(route_node[cand_a], &anode));
+    route_dest_comp = anode.comp;
+    u32 raw = 0;
+    for (int i = cand_a + 1; i <= cand_b; i++)
+        raw = sat_add32(raw, route_seg_cost[i]);
+    /* Discover the legal parallel street geometry first, then clear ALL traffic data
+     * and run production traffic_scan_ex() purely from unguided learned ml_pref_arcs. */
+    mob_model_reset(); ml_reset();
+    mob.n = 20; mob.serial = 20; mob_current_epoch = epoch; mob_clock_ms = now;
+    for (int i = cand_a + 1; i <= cand_b; ) {
+        u32 arc = route_seg_arc[i], full = 0;
+        u32 key = traffic_key_for_arc(arc, &full);
+        if (key && full && full <= 36000u) {
+            struct MobRoad *r = mob_road_find(key, mob_bucket(epoch), 1);
+            if (r) { r->mean_ds = 36000u; r->count = 20; r->stamp = mob.serial; }
         }
-        traffic_invalidate(); traffic_search_kind = 0;
-        if (!traffic_search_start(cand_a, cand_b, blocks[k], raw, 0, now)) continue;
-        for (int s = 0; traffic_searching && s < 1024; s++) traffic_search_step(now);
-        traffic_search_cancel();
-        if (!traffic_offer_valid() || traffic_offer_n < 6) continue;
-        u32 alt_keys[64]; int alt_kn = 0;
-        for (int i = 1; i < traffic_offer_n; i++) {
-            u32 ak = traffic_key_for_arc(traffic_path[i].arc, 0);
-            if (!ak) continue;
-            int dup = 0; for (int j = 0; j < alt_kn; j++) if (alt_keys[j] == ak) dup = 1;
-            if (!dup && alt_kn < 64) alt_keys[alt_kn++] = ak;
-        }
-        /* Clear all historical traffic so this is a pure, clear-road usual-route suggestion. */
-        mob_model_reset(); ml_reset();
-        mob.n = 20; mob.serial = 20; mob_current_epoch = epoch; mob_clock_ms = now;
-        for (int rep = 0; rep < 4; rep++) {
-            mob_recording = mob_started = 1; ml_session_reset();
-            ml_stage_pref_arc(avoided_key, -10);
-            for (int j = 0; j < alt_kn; j++) ml_stage_pref_arc(alt_keys[j], 10);
-            ml_commit_pref_arcs();
-        }
-        mob_recording = mob_started = 0;
-        traffic_invalidate();
-        int prev_head = route_head;
-        route_head = cand_a - 3;
-        gps.lat = track_lat = route_lat[route_head];
-        gps.lon = track_lon = route_lon[route_head];
-        traffic_scan_ex(now, 1);
-        for (int s = 0; traffic_searching && s < 1024; s++) traffic_search_step(now);
-        traffic_search_cancel();
-        if (traffic_offer_valid() && ml_offer_kind == 1 && !traffic_warn && traffic_saving < 600u) {
-            demo_usual_n = route_n;
-            demo_usual_head = route_head;
-            demo_usual_m = route_result_m;
-            demo_usual_cost = route_result_cost;
-            demo_usual_a = traffic_begin_idx;
-            demo_usual_b = traffic_join_idx;
-            demo_usual_offer_n = traffic_offer_n;
-            memcpy(demo_usual_lat, route_lat, sizeof(demo_usual_lat));
-            memcpy(demo_usual_lon, route_lon, sizeof(demo_usual_lon));
-            memcpy(demo_usual_node, route_node, sizeof(demo_usual_node));
-            memcpy(demo_usual_arc, route_seg_arc, sizeof(demo_usual_arc));
-            memcpy(demo_usual_phys, route_seg_phys, sizeof(demo_usual_phys));
-            memcpy(demo_usual_seg_m, route_seg_m, sizeof(demo_usual_seg_m));
-            memcpy(demo_usual_seg_cost, route_seg_cost, sizeof(demo_usual_seg_cost));
-            memcpy(demo_usual_path, traffic_path, sizeof(struct TrafficPoint) * demo_usual_offer_n);
-            struct CprNode node;
-            assert(route_read_node(route_node[demo_usual_a], &node));
-            demo_usual_comp = node.comp;
-            return 1;
-        }
-        route_head = prev_head;
+        while (i <= cand_b && route_seg_arc[i] == arc) i++;
+    }
+    route_head = cand_a - 3;
+    traffic_invalidate(); traffic_search_kind = 0;
+    assert(traffic_search_start(cand_a, cand_b, route_seg_arc[cand_b], raw, 0, now));
+    for (int s = 0; traffic_searching && s < 1024; s++) traffic_search_step(now);
+    traffic_search_cancel();
+    assert(traffic_offer_valid() && traffic_offer_n >= 6 && traffic_prepare_offer());
+    int ta = traffic_begin_idx;
+    u32 alt_keys[64]; int alt_kn = 0;
+    for (int i = 1; i < traffic_offer_n; i++) {
+        u32 ak = traffic_key_for_arc(traffic_path[i].arc, 0);
+        if (!ak) continue;
+        int dup = 0; for (int j = 0; j < alt_kn; j++) if (alt_keys[j] == ak) dup = 1;
+        if (!dup && alt_kn < 64) alt_keys[alt_kn++] = ak;
+    }
+    u32 fork_key = traffic_key_for_arc(route_seg_arc[ta], 0);
+    assert(fork_key && alt_kn > 0);
+    int head = ta - 1;
+    u32 hm = 0;
+    while (head > 0 && hm < 90u) { hm += route_seg_m[head + 1]; head--; }
+    if (head < 0) head = 0;
+    /* Clear all historical traffic so this is a pure, clear-road usual-route suggestion
+     * discovered through production traffic_find_unguided_usual(). */
+    mob_model_reset(); ml_reset();
+    mob.n = 20; mob.serial = 20; mob_current_epoch = epoch; mob_clock_ms = now;
+    for (int rep = 0; rep < 4; rep++) {
+        mob_recording = mob_started = 1; ml_session_reset();
+        ml_stage_pref_arc(fork_key, 10);
+        for (int j = 0; j < alt_kn; j++) ml_stage_pref_arc(alt_keys[j], 10);
+        ml_commit_pref_arcs();
+    }
+    mob_recording = mob_started = 0;
+    traffic_invalidate();
+    route_head = head;
+    gps.lat = track_lat = route_lat[head];
+    gps.lon = track_lon = route_lon[head];
+    traffic_scan_ex(now, 1);
+    for (int s = 0; traffic_searching && s < 1024; s++) traffic_search_step(now);
+    traffic_search_cancel();
+    if (traffic_offer_valid() && ml_offer_kind == 1 && !traffic_warn && traffic_saving < 600u && traffic_prepare_offer()) {
+        demo_usual_n = route_n;
+        demo_usual_region = atlas_route_region;
+        demo_usual_head = route_head;
+        demo_usual_m = route_result_m;
+        demo_usual_cost = route_result_cost;
+        demo_usual_a = traffic_begin_idx;
+        demo_usual_b = traffic_join_idx;
+        demo_usual_offer_n = traffic_offer_n;
+        memcpy(demo_usual_lat, route_lat, sizeof(demo_usual_lat));
+        memcpy(demo_usual_lon, route_lon, sizeof(demo_usual_lon));
+        memcpy(demo_usual_node, route_node, sizeof(demo_usual_node));
+        memcpy(demo_usual_arc, route_seg_arc, sizeof(demo_usual_arc));
+        memcpy(demo_usual_phys, route_seg_phys, sizeof(demo_usual_phys));
+        memcpy(demo_usual_seg_m, route_seg_m, sizeof(demo_usual_seg_m));
+        memcpy(demo_usual_seg_cost, route_seg_cost, sizeof(demo_usual_seg_cost));
+        memcpy(demo_usual_path, traffic_path, sizeof(struct TrafficPoint) * demo_usual_offer_n);
+        struct CprNode node;
+        assert(route_read_node(route_node[demo_usual_a], &node));
+        demo_usual_comp = node.comp;
+        return 1;
     }
     return 0;
 }
@@ -1384,8 +1527,12 @@ static void preview_ml_eta_habits_seed(void)
     gps.fix = 1;
     u32 now = hud_now_ms();
     if (!demo_usual_offer_n) {
-        assert(preview_find_durham_usual_route(now));
+        assert(preview_find_london_usual_route(now));
     }
+    if (atlas_ready && demo_usual_region >= 0)
+        assert(atlas_open_route(demo_usual_region));
+    atlas_active = 0;
+    atlas_future_m = atlas_future_cost = 0;
     mob_model_reset();
     ml_reset();
     mob.n = 20;
@@ -1423,7 +1570,9 @@ static void preview_ml_eta_habits_seed(void)
     if (heading >= 0 && heading < 360)
         gps.course = track_course = display_course = heading;
     display_course_valid = 1;
-    pref.autozoom = 1;
+    /* Use Z5 so the full split, parallel Park Street usual corridor and rejoin are visible. */
+    pref.autozoom = 0;
+    manual_zoom = 5;
     auto_zoom_level = -1;
     zoom_override = -1;
     roadctx.speed = 30;
@@ -1435,9 +1584,9 @@ static void preview_ml_eta_habits_seed(void)
     trip.paused = 0;
     trip.count = 1;
     trip.active_idx = 0;
-    trip.target[0].lat = route_target_lat = 5477100;
-    trip.target[0].lon = route_target_lon = -159100;
-    copystr(trip.target[0].name, sizeof(trip.target[0].name), "Neville's Cross");
+    trip.target[0].lat = route_target_lat = 5151540;
+    trip.target[0].lon = route_target_lon = -17550;
+    copystr(trip.target[0].name, sizeof(trip.target[0].name), "Paddington");
     traffic_eta_ds = 0;
     traffic_warn = 0;
     traffic_cal_delta_ds = 1680;
@@ -1455,7 +1604,17 @@ static void preview_ml_eta_habits_seed(void)
 }
 static void preview_ml_parking_pois_seed(void)
 {
-    preview_nearby_seed();
+    /* Leeds city centre: real mapped Q-Park The Light and nearby Shell Fuel POIs. */
+    assert(mapok && routeok);
+    gps.lat = track_lat = 5379950;
+    gps.lon = track_lon = -154900;
+    track_valid = 1;
+    gps.fix = 1;
+    gps.course = track_course = display_course = 45;
+    display_course_valid = 1;
+    hud_road_live = 0;
+    hud_last_road[0] = 0;
+    roadctx.street[0] = 0;
     roadctx.speed = 30;
     roadctx.speed_flags = 2;
     roadctx.reverse_speed = 30;
@@ -1467,31 +1626,31 @@ static void preview_ml_parking_pois_seed(void)
     pref.learn_history = 1;
     pref.destination_predictions = 1;
     pref.diversions = 1;
-    /* Learn affinity for a real nearby Newcastle fuel station so it ranks #1 with a cyan star. */
+    /* Learn affinity for a real nearby Leeds fuel station so it ranks #1 with a cyan star. */
     nearby_scan(NEARBY_CAT_FUEL);
     assert(nearby_count >= 2);
     int pick = (nearby_pois[1].dist_m <= nearby_pois[0].dist_m + 600u) ? 1 : 0;
     ml_record_poi_use(6, nearby_pois[pick].lat, nearby_pois[pick].lon, nearby_pois[pick].name);
     ml_record_poi_use(6, nearby_pois[pick].lat, nearby_pois[pick].lon, nearby_pois[pick].name);
-    /* Active route in Newcastle with learned usual parking & recurring Coffee Stop. */
+    /* Active route in Leeds with learned usual parking (137 m away) & recurring Coffee Stop. */
     trip.active = 1;
     trip.paused = 0;
     trip.count = 1;
     trip.active_idx = 0;
-    trip.target[0].lat = route_target_lat = 5498300;
-    trip.target[0].lon = route_target_lon = -161700;
+    trip.target[0].lat = route_target_lat = 5380140;
+    trip.target[0].lon = route_target_lon = -154660;
     copystr(trip.target[0].name, sizeof(trip.target[0].name), "Work");
     trip_schedule_route();
     preview_ml_finish_route();
-    ml_park_for_target = (struct MobPoint){5498300, -161700};
-    ml_park_point = (struct MobPoint){5498249, -161837};
-    add_recent("Claremont Road Car Park", ml_park_point.lat, ml_park_point.lon);
+    ml_park_for_target = (struct MobPoint){5380140, -154660};
+    ml_park_point = (struct MobPoint){5380018, -154629};
+    add_recent("Q-Park The Light", ml_park_point.lat, ml_park_point.lon);
     ml_park_valid = 1;
     ml_park_serial = 1;
     memzero(&ml_stop_habit, sizeof(ml_stop_habit));
     ml_stop_habit.origin = (struct MobPoint){gps.lat, gps.lon};
-    ml_stop_habit.dest = (struct MobPoint){5498300, -161700};
-    ml_stop_habit.stop = (struct MobPoint){5498050, -161650};
+    ml_stop_habit.dest = (struct MobPoint){5380140, -154660};
+    ml_stop_habit.stop = (struct MobPoint){5379850, -154650};
     ml_stop_habit.count = 4;
     copystr(ml_stop_habit.name, sizeof(ml_stop_habit.name), "Coffee Stop");
     ml_stop_valid = 1;
@@ -1499,7 +1658,7 @@ static void preview_ml_parking_pois_seed(void)
     hud_navigation.kind = HUD_NONE;
     render_background_dirty = 1;
 }
-static int demo_slow_n;
+static int demo_slow_n, demo_slow_region = -1;
 static u32 demo_slow_m, demo_slow_cost, demo_slow_key_warm, demo_slow_key_cold;
 static s32 demo_slow_lat[ROUTE_PATH_MAX], demo_slow_lon[ROUTE_PATH_MAX];
 static u32 demo_slow_node[ROUTE_PATH_MAX], demo_slow_arc[ROUTE_PATH_MAX], demo_slow_phys[ROUTE_PATH_MAX];
@@ -1525,16 +1684,19 @@ static void preview_ml_slowdowns_seed(void)
 {
     assert(mapok && routeok);
     if (!demo_slow_n) {
-        gps.lat = track_lat = 5395780;
-        gps.lon = track_lon = -109310;
+        /* Liverpool (Lime Street -> Sefton Park): spur-free route with warm & cold hotspots. */
+        gps.lat = track_lat = 5340770;
+        gps.lon = track_lon = -297780;
         track_valid = 1;
         gps.fix = 1;
-        assert(route_start(5396900, -106400));
+        gps.mph10 = 0;
+        assert(route_start(5338200, -293800));
         u32 deadline = s_now_ms() + 120000u;
         while (route_status == R_CALC && time_before_u32(s_now_ms(), deadline))
             route_service_until(s_now_ms() + 12u);
         assert(route_status == R_READY && route_n > 90);
         demo_slow_n = route_n;
+        demo_slow_region = atlas_route_region;
         demo_slow_m = route_result_m;
         demo_slow_cost = route_result_cost;
         memcpy(demo_slow_lat, route_lat, sizeof(demo_slow_lat));
@@ -1544,10 +1706,14 @@ static void preview_ml_slowdowns_seed(void)
         memcpy(demo_slow_phys, route_seg_phys, sizeof(demo_slow_phys));
         memcpy(demo_slow_seg_m, route_seg_m, sizeof(demo_slow_seg_m));
         memcpy(demo_slow_seg_cost, route_seg_cost, sizeof(demo_slow_seg_cost));
-        demo_slow_key_warm = traffic_key_for_arc(route_seg_arc[16], 0);
-        demo_slow_key_cold = traffic_key_for_arc(route_seg_arc[71], 0);
+        demo_slow_key_warm = traffic_key_for_arc(route_seg_arc[20], 0);
+        demo_slow_key_cold = traffic_key_for_arc(route_seg_arc[58], 0);
         assert(demo_slow_key_warm && demo_slow_key_cold && demo_slow_key_warm != demo_slow_key_cold);
     }
+    if (atlas_ready && demo_slow_region >= 0)
+        assert(atlas_open_route(demo_slow_region));
+    atlas_active = 0;
+    atlas_future_m = atlas_future_cost = 0;
     mob_model_reset();
     ml_reset();
     mob.n = 20;
@@ -1565,8 +1731,8 @@ static void preview_ml_slowdowns_seed(void)
         ml_session_reset();
         ml_prev_speed = -1;
         ml_prev_speed_ms = 0;
-        ml_observe_decel(1000u, 280, demo_slow_key_warm, demo_slow_lat[16], demo_slow_lon[16]);
-        ml_observe_decel(2000u, 140, demo_slow_key_warm, demo_slow_lat[16], demo_slow_lon[16]);
+        ml_observe_decel(1000u, 280, demo_slow_key_warm, demo_slow_lat[20], demo_slow_lon[20]);
+        ml_observe_decel(2000u, 140, demo_slow_key_warm, demo_slow_lat[20], demo_slow_lon[20]);
         ml_commit_hazards();
     }
     car.temp = 1;
@@ -1575,8 +1741,8 @@ static void preview_ml_slowdowns_seed(void)
         ml_session_reset();
         ml_prev_speed = -1;
         ml_prev_speed_ms = 0;
-        ml_observe_decel(1000u, 260, demo_slow_key_cold, demo_slow_lat[71], demo_slow_lon[71]);
-        ml_observe_decel(2000u, 120, demo_slow_key_cold, demo_slow_lat[71], demo_slow_lon[71]);
+        ml_observe_decel(1000u, 260, demo_slow_key_cold, demo_slow_lat[58], demo_slow_lon[58]);
+        ml_observe_decel(2000u, 120, demo_slow_key_cold, demo_slow_lat[58], demo_slow_lon[58]);
         ml_commit_hazards();
     }
     /* Train modest cold-weather road-class ETA calibration (+25%) for winter ETA readout. */
@@ -1605,9 +1771,9 @@ static void preview_ml_slowdowns_seed(void)
     trip.paused = 0;
     trip.count = 1;
     trip.active_idx = 0;
-    trip.target[0].lat = route_target_lat = 5396900;
-    trip.target[0].lon = route_target_lon = -106400;
-    copystr(trip.target[0].name, sizeof(trip.target[0].name), "Heworth");
+    trip.target[0].lat = route_target_lat = 5338200;
+    trip.target[0].lon = route_target_lon = -293800;
+    copystr(trip.target[0].name, sizeof(trip.target[0].name), "Sefton Park");
     pref.autozoom = 1;
     auto_zoom_level = -1;
     zoom_override = -1;
@@ -1637,7 +1803,17 @@ static void preview_ml_slowdowns_seed(void)
 }
 static void preview_ml_adaptive_hud_seed(void)
 {
-    preview_nearby_seed();
+    /* Edinburgh (Princes Street): Day/Night adaptive Auto-zoom & brightness demo. */
+    assert(mapok && routeok);
+    gps.lat = track_lat = 5595210;
+    gps.lon = track_lon = -319650;
+    track_valid = 1;
+    gps.fix = 1;
+    gps.course = track_course = display_course = 70;
+    display_course_valid = 1;
+    hud_road_live = 0;
+    hud_last_road[0] = 0;
+    roadctx.street[0] = 0;
     ml_reset();
     pref.learn_history = 1;
     pref.autozoom = 1;
@@ -1669,29 +1845,105 @@ static void preview_ml_adaptive_hud_seed(void)
     render_background_dirty = 1;
     assert(theme_resolved == 0 && pref.bright == 90 && active_zoom() == 6);
 }
+static int demo_gps_n, demo_gps_region = -1;
+static u32 demo_gps_m, demo_gps_cost;
+static s32 demo_gps_lat[ROUTE_PATH_MAX], demo_gps_lon[ROUTE_PATH_MAX];
+static u32 demo_gps_node[ROUTE_PATH_MAX], demo_gps_arc[ROUTE_PATH_MAX], demo_gps_phys[ROUTE_PATH_MAX];
+static u32 demo_gps_seg_m[ROUTE_PATH_MAX], demo_gps_seg_cost[ROUTE_PATH_MAX];
+static void preview_gps_panel_seed(void)
+{
+    assert(mapok && routeok);
+    if (!demo_gps_n) {
+        /* Liverpool Waterfront (A5040 Liver Street -> Lime Street). */
+        gps.lat = track_lat = 5340050;
+        gps.lon = track_lon = -298800;
+        track_valid = 1;
+        gps.fix = 1;
+        gps.mph10 = 0;
+        assert(route_start(5340770, -297780));
+        u32 deadline = s_now_ms() + 120000u;
+        while (route_status == R_CALC && time_before_u32(s_now_ms(), deadline))
+            route_service_until(s_now_ms() + 12u);
+        assert(route_status == R_READY && route_n > 2);
+        demo_gps_n = route_n;
+        demo_gps_region = atlas_route_region;
+        demo_gps_m = route_result_m;
+        demo_gps_cost = route_result_cost;
+        memcpy(demo_gps_lat, route_lat, sizeof(demo_gps_lat));
+        memcpy(demo_gps_lon, route_lon, sizeof(demo_gps_lon));
+        memcpy(demo_gps_node, route_node, sizeof(demo_gps_node));
+        memcpy(demo_gps_arc, route_seg_arc, sizeof(demo_gps_arc));
+        memcpy(demo_gps_phys, route_seg_phys, sizeof(demo_gps_phys));
+        memcpy(demo_gps_seg_m, route_seg_m, sizeof(demo_gps_seg_m));
+        memcpy(demo_gps_seg_cost, route_seg_cost, sizeof(demo_gps_seg_cost));
+    }
+    if (atlas_ready && demo_gps_region >= 0)
+        assert(atlas_open_route(demo_gps_region));
+    atlas_active = 0;
+    atlas_future_m = atlas_future_cost = 0;
+    route_n = demo_gps_n;
+    route_head = 0;
+    route_result_m = demo_gps_m;
+    route_result_cost = demo_gps_cost;
+    route_status = R_READY;
+    memcpy(route_lat, demo_gps_lat, sizeof(route_lat));
+    memcpy(route_lon, demo_gps_lon, sizeof(route_lon));
+    memcpy(route_node, demo_gps_node, sizeof(route_node));
+    memcpy(route_seg_arc, demo_gps_arc, sizeof(route_seg_arc));
+    memcpy(route_seg_phys, demo_gps_phys, sizeof(route_seg_phys));
+    memcpy(route_seg_m, demo_gps_seg_m, sizeof(route_seg_m));
+    memcpy(route_seg_cost, demo_gps_seg_cost, sizeof(route_seg_cost));
+    trip.active = 1;
+    trip.paused = 0;
+    trip.count = 1;
+    trip.active_idx = 0;
+    trip.target[0].lat = route_target_lat = 5340770;
+    trip.target[0].lon = route_target_lon = -297780;
+    copystr(trip.target[0].name, sizeof(trip.target[0].name), "Lime Street");
+    gps.lat = track_lat = route_lat[0];
+    gps.lon = track_lon = route_lon[0];
+    track_valid = 1;
+    gps.fix = 1;
+    gps.mph10 = 300;
+    display_course = track_course = gps.course = 72;
+    display_course_valid = 1;
+    pref.gps_hud = 0;
+    copystr(roadctx.street, sizeof(roadctx.street), "Liver Street");
+    copystr(hud_last_road, sizeof(hud_last_road), "Liver Street");
+    hud_road_live = 0;
+    gps.sec = 4;
+    gps.sats = 9;
+    gps.hdop10 = 8;
+    gps.gst_dm = 40;
+    gps_gst_ms = s_now_ms();
+    gps.alt_valid = 1;
+    gps.alt_dm = 180;
+    nav_maneuver_find();
+    render_background_dirty = 1;
+}
 static void preview_enter_explore(void){enter_freecam();explore_sample(500);}
-static void name_keyboard(void){screen=SCR_KEY;keyboard_open_fave_name(5497370,-161331);}
+static void name_keyboard(void){screen=SCR_KEY;keyboard_open_fave_name(5347740,-223090);}
 static void coordinate_digits(const char*s){while(*s){char c=*s++;coordinates.focus=c=='-'?COORD_SIGN:c=='.'?COORD_DOT:c=='0'?COORD_ZERO:c-'1';key_handle(K_ENTER);}}
 static void coordinate_preview(const char*stage){
  gps.mph10=0;auto_zoom_level=-1;
  clear_trip();menu_open(P_TRIP,0,hud_now_ms());key_handle(K_ENTER);
  assert(screen==SCR_COORDINATES&&coordinates_active&&sheet_page==P_COORD);
  if(streq(stage,"entry"))return;
- coordinate_digits("54.97548");
+ coordinate_digits("53.47740");
  coordinates.focus=0;if(streq(stage,"latitude"))return;
  key_handle(K_SR);assert(coordinates.step==COORD_LON);
- coordinate_digits("-1.64050");
+ coordinate_digits("-2.23090");
  coordinates.focus=0;if(streq(stage,"longitude"))return;
  /* Soft-right switches axes; the keypad Next validates both coordinates. */
  coordinates.focus=COORD_NEXT;key_handle(K_ENTER);assert(screen==SCR_KEY&&sheet_page==P_NAME);
- const char*name="QUAYSIDE";
+ const char*name="PICCADILLY";
  while(*name)keyboard_type((unsigned char)*name++);
  pk_focus=PK_SAVE;if(streq(stage,"name"))return;
  key_handle(K_ENTER);
  assert(sheet_page==P_REVIEW&&coordinates.step==COORD_REVIEW&&!trip.active);
  if(streq(stage,"review"))return;
  key_handle(K_ENTER);menu_open(P_TRIP,0,hud_now_ms());key_handle(K_RIGHT);
- assert(trip.active&&streq(recents[0].name,"QUAYSIDE"));
+ assert(trip.active&&streq(recents[0].name,"PICCADILLY"));
 }
 static void preview_finish_route(void){
  /* Observe CALC before finishing, then let the shared HUD animate into ETA. */
@@ -1703,7 +1955,7 @@ static void preview_finish_route(void){
 }
 static void coordinate_route_start(void){
  coordinate_preview("review");gps.mph10=0;key_handle(K_ENTER);
- assert(screen==SCR_MAP&&trip.active&&!freecam&&streq(recents[0].name,"QUAYSIDE"));
+ assert(screen==SCR_MAP&&trip.active&&!freecam&&streq(recents[0].name,"PICCADILLY"));
  trip_service();trip_service();assert(route_status==R_CALC);
 }
 static void map_point_preview(const char*stage){
@@ -1722,9 +1974,9 @@ static void map_point_preview(const char*stage){
  assert(hud_tween[HC_CLOCK].position_at==clock_at&&hud_pose(&hud_tween[HC_CLOCK],hud_now_ms()).a==256);
  trip_service();trip_service();assert(screen==SCR_MAP&&!freecam&&route_status==R_CALC);
 }
-static void three_stops(void){trip.count=4;trip.active_idx=0;for(int i=0;i<3;i++){trip.target[i].lat=5497300+i*100;trip.target[i].lon=-161300-i*100;snprintf(trip.target[i].name,sizeof(trip.target[i].name),"Stop %d",i+1);}trip.target[3]=trip.target[0];copystr(trip.target[3].name,sizeof(trip.target[3].name),"Home");}
+static void three_stops(void){trip.count=4;trip.active_idx=0;for(int i=0;i<3;i++){trip.target[i].lat=5348000+i*100;trip.target[i].lon=-224200-i*100;snprintf(trip.target[i].name,sizeof(trip.target[i].name),"Stop %d",i+1);}trip.target[3]=trip.target[0];copystr(trip.target[3].name,sizeof(trip.target[3].name),"Home");}
 static void full_itinerary(void){three_stops();trip.target[TRIP_MAX_TARGETS-1]=trip.target[3];for(int i=3;i<TRIP_MAX_TARGETS-1;i++){trip.target[i]=trip.target[0];snprintf(trip.target[i].name,sizeof(trip.target[i].name),"Stop %d",i+1);}trip.count=TRIP_MAX_TARGETS;}
-static void incoming(const char*name,char action){phone_dest.valid=1;phone_dest.action=action;phone_dest.lat=5497370;phone_dest.lon=-161331;copystr(phone_dest.name,sizeof(phone_dest.name),name);phone_destination_apply();}
+static void incoming(const char*name,char action){phone_dest.valid=1;phone_dest.action=action;phone_dest.lat=5347740;phone_dest.lon=-223090;copystr(phone_dest.name,sizeof(phone_dest.name),name);phone_destination_apply();}
 static void incoming_sender(const char*name,int seq,char action,int lat,int lon){char packet[512];int n=snprintf(packet,sizeof(packet),"SEQ=%d\nACTION=%c\nLAT=%d\nLON=%d\nNAME=%s\n",seq,action,lat,lon,name);long fd=s_open(BT_NAV_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);assert(fd>=0);assert(s_write((int)fd,packet,n)==n);s_close((int)fd);poll_phone_destination();assert(phone_dest.valid);phone_destination_apply();}
 static void show_camera(int kind,int avg){camera_visible=1;camera_average=avg;camera_current.kind=kind;camera_current.speed=30;camera_current.flags=2;camera_distance=avg?850:180;camera_average_speed=42;}
 static void preview_track(const char*title,const char*artist){
@@ -1760,13 +2012,20 @@ static void gallery_reset(int night){
  bt_page_focus=bt_page_connected_choice=bt_page_dialog_choice=0;
  trip_pick_mode=dest_pick_action=DEST_PICK_NONE;modal_choice=0;modal_index=-1;pending_point_stop=0;
  memzero(&phone_dest,sizeof(phone_dest));phone_seq_seen_valid=0;arrival_modal_deadline=0;
- nrecents=8;nfaves=4;copystr(faves[0].name,sizeof(faves[0].name),"Home");copystr(faves[1].name,sizeof(faves[1].name),"Work");for(int i=0;i<4;i++){faves[i].lat=5500000+i*300;faves[i].lon=-165000-i*300;}
+ copystr(trip.target[0].name,sizeof(trip.target[0].name),"Salford Quays");trip.target[0].lat=route_target_lat=5347200;trip.target[0].lon=route_target_lon=-229600;
+ copystr(trip.target[1].name,sizeof(trip.target[1].name),"Home");trip.target[1].lat=5345200;trip.target[1].lon=-226800;
+ nrecents=8;nfaves=4;
+ for(int i=0;i<8;i++){recents[i].lat=5348000+i*80;recents[i].lon=-224200-i*80;}
+ copystr(recents[0].name,sizeof(recents[0].name),"Northern Quarter");copystr(recents[1].name,sizeof(recents[1].name),"Spinningfields");
+ copystr(faves[0].name,sizeof(faves[0].name),"Home");copystr(faves[1].name,sizeof(faves[1].name),"Work");for(int i=0;i<4;i++){faves[i].lat=5347740+i*300;faves[i].lon=-223090-i*300;}
  kbd_focus=0;kbd_action=KBD_NAME_FAVE;kbd_fave_idx=-1;kbd_text[0]=0;theme_time_part=0;
  btui.album[0]=af.station[0]=af.freq[0]=0;copystr(btui.status,sizeof(btui.status),"BT READY");
  manual_zoom=freecam_zoom=5;zoom_override=-1;auto_zoom_level=-1;route_rerouting=0;
  ui_anim_tick=0;lastfix_valid=1;gps.mph10=300;gps.hour=12;gps.min=35;gps.sec=0;gps.day=21;gps.mon=10;gps.year=2026;gps_fix_ms=s_now_ms();
- track_lat=gps.lat;track_lon=gps.lon;display_course=track_course=gps.course=70;
+ gps.lat=track_lat=saved_lat[0];gps.lon=track_lon=saved_lon[0];display_course=track_course=gps.course=120;
+ copystr(roadctx.street,sizeof(roadctx.street),"King Street");
  roadctx.speed=30;roadctx.speed_flags=2;roadctx.reverse_speed=30;roadctx.reverse_flags=2;
+ nav_maneuver_find();
  camera_clear();camera_next_ms=s_now_ms()+60000;clock_next_ms=0;region_next_ms=0;region_resolve(gps.lat,gps.lon);
 }
 '''
@@ -1793,7 +2052,7 @@ def overview(out, scenes, theme):
 
 def write_gallery(out, manifest):
     groups=list(dict.fromkeys(s['group'] for s in manifest['scenes']))
-    intro='Actual 480 × 272 RGB565 captures from the current C renderer and remote handler, with the native Unicode engine. UK map geometry and the baseline Newcastle route are real; GPS, saved places, vehicle, phone and camera states are controlled examples. These are host captures, not physical-head-unit photographs.'
+    intro='Actual 480 × 272 RGB565 captures from the current C renderer and remote handler, with the native Unicode engine. UK map geometry and routes across Manchester, London, Milton Keynes, Liverpool, Leeds, Bristol, Edinburgh and Newcastle are real; GPS, saved places, vehicle, phone and camera states are controlled examples. These are host captures, not physical-head-unit photographs.'
     rows=[];md=['# ClioPlay framebuffer action gallery','',intro,'','## Coverage','',f"{len(manifest['scenes'])} named states/actions, each captured from day and night starting themes. Every menu, dialog type and settings row is covered; action results use the production remote handler. All 18 interface language selections are included.",'','Continuous values use representative examples and boundaries: map positions/zoom, brightness, manual clock offsets and text input. External events are injected at the UI boundary. Wireless pairing, radio/audio output, ignition/power, physical remote timing, real GPS and on-device performance require hardware validation. Camera examples do not identify real camera locations.','', 'Theme-selection actions can produce the same ending palette in both columns. Transport actions show queued commands; the phone response is separate. Explore sequences capture the actual animation steps. Other app openings are captured at their resulting layout; no extra animation is invented.','', 'Open [the searchable local HTML gallery](index.html) in a browser, or use the sections below. Explore animation previews: [day enter](explore-enter-day.gif), [day leave](explore-leave-day.gif), [night enter](explore-enter-night.gif), [night leave](explore-leave-night.gif). PNG frames are the pixel-accurate originals; GIF previews use a reduced palette.','', '![Day overview](overview-day.png)','', '![Night overview](overview-night.png)','']
     for group in groups:
         md += ['## '+group,'','| Action / state | Day start | Night start |','|---|---|---|']
@@ -1850,7 +2109,7 @@ static void gallery_record_start(void){gallery_step=0;if(GALLERY_INPUTS){gallery
 static void key_handle(int code){gallery_production_key_handle(code);if(gallery_record){char suffix[24];snprintf(suffix,sizeof(suffix),"%03d",gallery_step);gallery_step_frame(suffix);printf("INPUT|%s|%s|%03d|%d\n",gallery_night?"night":"day",gallery_scene,gallery_step++,code);}}
 '''.replace('GALLERY_INPUTS',str(int(args.record_inputs)))
         program='#define CLIO_BOOT_ART '+json.dumps(str(ROOT/'clio843/src/boot_art.h'))+'\n#define key_handle gallery_production_key_handle\n'+harness+HELPERS+wrappers+'''
-int main(int argc,char**argv){assert(argc==2);outdir=argv[1];setbuf(stdout,0);fixture();assert(load_font());assert(cliou_load(CLIO_HOST_ROOT "clio843/maps/fonts.cpf"));assert(load_regions());assert(load_timezones());assert(load_map());assert(load_route_data());assert(route_start(5497370,-161331));u32 deadline=s_now_ms()+120000;while(route_status==R_CALC&&time_before_u32(s_now_ms(),deadline))route_service_until(s_now_ms()+12);assert(route_status==R_READY&&route_n>1);save_route();printf("Baseline real route: %d points, %u m, %u ds\\n",saved_n,saved_m,saved_cost);static const char*names[]={NAMES};
+int main(int argc,char**argv){assert(argc==2);outdir=argv[1];setbuf(stdout,0);fixture();assert(load_font());assert(cliou_load(CLIO_HOST_ROOT "clio843/maps/fonts.cpf"));assert(load_regions());assert(load_timezones());assert(load_map());assert(load_route_data());gps.lat=track_lat=5348080;gps.lon=track_lon=-224260;gps.mph10=0;assert(route_start(5347200,-229600));u32 deadline=s_now_ms()+120000;while(route_status==R_CALC&&time_before_u32(s_now_ms(),deadline))route_service_until(s_now_ms()+12);assert(route_status==R_READY&&route_n>1);save_route();printf("Baseline real route: %d points, %u m, %u ds\\n",saved_n,saved_m,saved_cost);static const char*names[]={NAMES};
 for(int night=0;night<2;night++){THEME_FILTER gallery_night=night;for(unsigned i=0;i<sizeof(names)/sizeof(names[0]);i++){gallery_reset(night);gallery_scene=names[i];switch(i){CASES}if(gallery_motion)draw();else settle();char name[180];snprintf(name,sizeof(name),"%s/%s",night?"night":"day",names[i]);snapshot(name);printf("%s %s\\n",night?"night":"day",names[i]);}}return 0;}
 '''.replace('NAMES',names).replace('CASES',cases).replace('THEME_FILTER',('if(night==0)continue;' if args.themes==['night'] else 'if(night==1)continue;' if args.themes==['day'] else ''))
         c=temp/'gallery.c';c.write_text(program)

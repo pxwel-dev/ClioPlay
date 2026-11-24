@@ -82,22 +82,22 @@ int main(int argc,char**argv){
   route_service_until(s_now_ms()+FRAME_ROUTE_CHUNK_MS);finish();
  }
  assert(!atlas_future_cost&&!atlas_future_m&&geo_seg_m(route_lat[route_n-1],route_lon[route_n-1],5520000,-170000)<1000);
- /* The reported slow Newcastle-London journey must not regress to a search
-  * per gateway. Verify every leg and the previous exact result as well as work
-  * counts; a fast Mac timer alone would miss the 400 MHz device regression. */
+ /* Verify the exact atlas plan, the preferred driven route and the search
+  * work counts. The local preference removes five turns for 14.3 seconds. */
  route_cancel();position(5497548,-164050);assert(route_start(5150740,-12780));start=s_now_ms();unsigned longcalls=finish();
- u32 first_ms=s_now_ms()-start,expanded=atlas_sweep_expanded,sweeps=atlas_sweep_runs,total=0,metres=0;int legs=0;
+ u32 first_ms=s_now_ms()-start,expanded=atlas_sweep_expanded,sweeps=atlas_sweep_runs,total=0,metres=0,turns=0;int legs=0;
  assert(atlas_cost_queries==1&&atlas_distance_queries==1&&atlas_sweep_runs<=ROUTE_DEST_CAND_MAX+1&&expanded<5000&&atlas_best==154867&&route_diag_qad7_expanded>0&&!route_diag_cpr_expanded);
  while(1){assert(++legs<20);total=sat_add32(total,route_result_cost);metres=sat_add32(metres,route_result_m);
+  turns+=route_window_turns(route_head,route_n-1);
   if(route_exact_to==ROUTE_NOARC)break;
   position(route_lat[route_n-1],route_lon[route_n-1]);route_head=route_n>1?route_n-2:0;
   route_service_until(s_now_ms()+FRAME_ROUTE_CHUNK_MS);finish();
  }
- assert(total==154867&&metres==457401&&!atlas_future_cost&&!atlas_future_m);
+ assert(total==155010&&metres==457457&&turns==39&&!atlas_future_cost&&!atlas_future_m);
  char report[1024];FILE*f=fopen(ROUTING_STATUS_PATH,"rb");assert(f);size_t bytes=fread(report,1,sizeof(report)-1,f);report[bytes]=0;fclose(f);
  assert(strstr(report,"ATLAS ENDPOINT SWEEPS 1")&&strstr(report,"QAD_MODE=7")&&strstr(report,"CPR_EXPANDED=0"));
  pref.debug=0;remove_stale_logs();atlas_report();assert(access(ROUTING_STATUS_PATH,F_OK)!=0);
  printf("%s QAD7: local %u point query and shared endpoint sweeps, %u calls (%u host ms), repair %u calls; regional cost %u ds, all %u pack caches passed.\n",argv[1],queries,calls,elapsed,repaircalls,cost,atlas_nr);
- printf("Newcastle-London: %u point query + %u sweeps (%u states), %u calls (%u host ms), %d legs, %u ds/%u m match prior result, 1 MiB query arena.\n",atlas_cost_queries,sweeps,expanded,longcalls,first_ms,legs,total,metres);
+ printf("Newcastle-London: %u point query + %u sweeps (%u states), %u calls (%u host ms), %d legs, %u ds/%u m/%u turns, 1 MiB query arena.\n",atlas_cost_queries,sweeps,expanded,longcalls,first_ms,legs,total,metres,turns);
  return 0;
 }

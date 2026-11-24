@@ -1,4 +1,27 @@
-# ClioPlay version 2.2.6.1
+# ClioPlay version 2.2.6.2
+
+Version 2.2.6.2 is a software-only routing and close-up map bug-fix release. It
+is **100% compatible with existing `2.1.8–2.2.6.1` maps (`CPM5`, `CPR2 v5`,
+`QAD7`)** — no map rebuild is needed:
+
+- **No more unnecessary U-turn spurs:** Two-way streets now evaluate both legal
+  directions at route start and destination directly inside the existing router
+  (with a gentle forward preference while moving that never inflates ETA),
+  eliminating wrong-way departures and overshoot-and-U-turn arrivals at the
+  source. For remaining turn-restricted spurs and sharp reversals (including
+  divided-carriageway V-pinches), a bounded local search finds clean, loop-free
+  bypasses within tight time and distance caps while keeping genuinely required
+  U-turns intact.
+- **Simpler routes with fewer turns:** Rather than zigzagging down side streets
+  to shave a few seconds, ClioPlay now simplifies closely spaced turn clusters
+  onto straighter legal roads when added travel time stays small (`≤ +20%`,
+  capped at `30 s` per regional leg) and distance stays within `+25%` (`≤ 300 m`
+  per cluster). Roundabouts count as one manoeuvre, and the ETA always reflects
+  true driving time.
+- **Parked off-road road-snap release (`Z6–Z9`):** After pulling off-road into a
+  car park or driveway and stopping, the close-up visual road match now releases
+  and smoothly eases the map and vehicle arrow back to GPS with zero extra tile
+  reads, then stops idle redraws once settled.
 
 Version 2.2.6.1 is a bug-fix release that resolves close-up vehicle road-alignment drift at cropped zooms **Z7–Z9** (using display-only, camera-coupled **Z6-reference visual road matching** across **Z6–Z9** with heading alignment, active-route corridor preference, service-road penalty, dual-carriageway hysteresis, smooth per-frame easing and Explore parity, while leaving raw GPS, routing, speed limits, cameras and ML history untouched) — building on version 2.2.6’s unguided offline on-device learning (**Preferred Nearby POIs**, **Usual Parking** with habitual car-park fallback, **POI-named Recurring Stops, Destination Predictions & Frequent-Place prompts**, **Usual Route** shortcuts, unguided **Likely traffic ahead** / **Frequent slowdown ahead** / **Cold-weather slowdown ahead** alerts with dynamic hazard decay/expiry, weekday/weekend destination weighting and aligned **Adaptive Auto-zoom** with a 20-second sustained-override guard), version 2.2.5’s expandable live **GPS** HUD inside the top clock/temperature pill and **Z9–Z4** Auto zoom, offline Nearby POIs, expandable roundabout secondary manoeuvre pill, AVRCP 1.3 instant Bluetooth notifications and desktop migration/favourites tools. See [intelligent navigation](docs/intelligent-navigation.md) and the [changelog](docs/changelog.md).
 
@@ -276,6 +299,9 @@ Auto zoom selects across **Z9–Z4**, giving closer views at low speeds while ke
 | **Z4** | `≥ 65 mph` (`≥ 105 km/h`) | — | `≤ 62 mph` (`≤ 100 km/h`) → Z5 | ~2.94 km | Motorway lookahead |
 
 At **Z6–Z9**, roads preserve all four fractional bits of Z6’s 12-bit tile coordinates for smooth close-up geometry, and display-only camera-coupled visual road matching aligns the driving camera, vehicle marker and active route origin cleanly to the cached Z6 road centreline (weighted by heading alignment, active-route corridor, road class and dual-carriageway hysteresis with smooth per-frame easing, while keeping raw GPS, routing, speed limits and ML history untouched). At **Z7–Z9**, road names from the installed map are placed beside visible clipped road segments where there is room on screen (keeping clear of the active route, car marker, Explore crosshair and HUD cards, and handing off cleanly with the temporary bottom street-name pill). Existing map packs support these improvements with no rebuild required.
+
+When the road match is lost, the display holds the previous offset for a short
+grace period and then eases back to the GPS-based position, even while parked.
 
 ### Menu, Trip and Bluetooth
 

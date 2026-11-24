@@ -1773,7 +1773,19 @@ static int route_snap_candidates(s32 lat,s32 lon,u32 maxd2,int tile_rad,int dest
     }
     if(!have)return 0;int at=-1;for(int i=0;i<count;i++)if(out[i].arc==nearest_arc&&out[i].d2==nearest_d){at=i;break;}if(at>0){struct RouteSnapCandidate c=out[at];for(int i=at;i>0;i--)out[i]=out[i-1];out[0]=c;}return count;
 }
-static int route_snap_node(s32 lat,s32 lon,struct RouteSnapCandidate*out){struct RouteSnapCandidate c[8];/* the live car should normally lie on a road indexed by its current 256-unit Z6 tile. Avoid a 3x3 scan unless that exact tile cannot produce a legal nearby road. */int n=route_snap_candidates(lat,lon,ROUTE_SNAP_D2,0,0,c,8);if(n<1)n=route_snap_candidates(lat,lon,ROUTE_SNAP_D2,1,0,c,8);if(n<1)return 0;if(out)*out=c[0];return 1;}
+static int route_find_twin_arc(const struct RouteSnapCandidate*primary,const struct RouteSnapCandidate*cands,int count,struct RouteSnapCandidate*out){
+    if(!primary||primary->arc==0xffffffffu||!cands||count<2||!out)return 0;
+    struct CprBase pb;if(!route_read_base(primary->arc,&pb))return 0;
+    for(int i=0;i<count;i++){
+        if(cands[i].arc==0xffffffffu||cands[i].arc==primary->arc)continue;
+        if(cands[i].d2>primary->d2+4u)continue;
+        struct CprBase b;if(!route_read_base(cands[i].arc,&b))continue;
+        if(b.geom_first==pb.geom_first&&((b.flags^pb.flags)&CPR_ARC_GEOM_REVERSED)){*out=cands[i];return 1;}
+    }
+    return 0;
+}
+static int route_snap_node_ex(s32 lat,s32 lon,struct RouteSnapCandidate*out,struct RouteSnapCandidate*twin,int*has_twin){struct RouteSnapCandidate c[8];/* the live car should normally lie on a road indexed by its current 256-unit Z6 tile. Avoid a 3x3 scan unless that exact tile cannot produce a legal nearby road. */int n=route_snap_candidates(lat,lon,ROUTE_SNAP_D2,0,0,c,8);if(n<1)n=route_snap_candidates(lat,lon,ROUTE_SNAP_D2,1,0,c,8);if(n<1)return 0;if(out)*out=c[0];if(has_twin)*has_twin=(twin&&route_find_twin_arc(&c[0],c,n,twin));return 1;}
+static int route_snap_node(s32 lat,s32 lon,struct RouteSnapCandidate*out){return route_snap_node_ex(lat,lon,out,0,0);}
 
 #define ROUTE_PATH_MAX 16384
 #define ROUTE_INF 0xffffffffu
@@ -1782,7 +1794,7 @@ static int route_snap_node(s32 lat,s32 lon,struct RouteSnapCandidate*out){struct
 #define ROUTE_MEM_MAX_KB 32768u
 #define ROUTE_MEM_FALLBACK_KB 8192u
 #define ROUTE_MEM_ALLOC_STEP (1024u*1024u)
-struct ChState {u32 node,df,db,pf,pb,hash_next,posf,posb,qoff;u8 sf,sb;u16 pad;};
+struct ChState {u32 node,df,db,pf,pb,hash_next,posf,posb,qoff;u8 sf,sb,seed_flags,pad;};
 static struct ChState*chst=0;static u32*chhf=0,*chhb=0,*chbucket=0;
 static u32 chst_cap=0,chst_n=0,chhf_n=0,chhb_n=0,chheap_cap=0,chbucket_n=0,chbucket_mask=0,chheap_peak=0;
 static void*route_arena=0;static u32 route_arena_bytes=0,route_workspace_bytes=0,route_mem_avail_kb=0;
@@ -1823,7 +1835,7 @@ static int nav_man_type=MAN_NONE,nav_man_idx=-1,nav_man_scan_head=0,nav_man_exit
 static int nav_next_type=MAN_NONE,nav_next_exit=0;static u32 nav_next_m=0;
 static void nav_maneuver_find(void);
 static void nav_maneuver_reset(void){nav_man_exit=0;nav_man_type=MAN_NONE;nav_man_idx=-1;nav_man_m=0;nav_next_type=MAN_NONE;nav_next_exit=0;nav_next_m=0;nav_man_scan_head=route_head;}
-static struct RouteSnapCandidate route_start_snap,route_dest_cand[ROUTE_DEST_CAND_MAX];static int route_dest_count=0,route_dest_idx=0;
+static struct RouteSnapCandidate route_start_snap,route_start_twin,route_dest_cand[ROUTE_DEST_CAND_MAX],route_dest_twin;static int route_dest_count=0,route_dest_idx=0,route_start_twin_ok=0,route_start_used_twin=0,route_dest_twin_ok=0,route_dest_used_twin=0;static u32 route_start_pen0=0,route_start_pen1=0;
 
 /* local CH repair.
  *
@@ -1900,7 +1912,7 @@ static void route_repair_reset(void){
 /* Cooperative route finalisation state.  Search, CH parent tracing, shortcut
  * unpacking and base-geometry reconstruction all advance in small steps so
  * none of them owns the UI thread for an entire long-route build. */
-enum {RB_IDLE=0,RB_TRACE_F,RB_COPY_F,RB_TRACE_B,RB_START_INIT,RB_START_POINTS,RB_UNPACK,RB_BASE_NEXT,RB_BASE_TOTAL,RB_BASE_OUTPUT,RB_DEST_INIT,RB_DEST_POINTS,RB_REPAIR_SUFFIX,RB_DONE};
+enum {RB_IDLE=0,RB_TRACE_F,RB_COPY_F,RB_TRACE_B,RB_START_INIT,RB_START_POINTS,RB_UNPACK,RB_BASE_NEXT,RB_BASE_TOTAL,RB_BASE_OUTPUT,RB_DEST_INIT,RB_DEST_POINTS,RB_REPAIR_SUFFIX,RB_DONE,RB_CLEANUP};
 static int route_build_phase=RB_IDLE,route_build_nf=0,route_build_nb=0,route_build_copy=-1,route_build_arc_idx=0,route_build_sp=0,route_build_after_base=RB_UNPACK;
 static u32 route_build_u=0,route_build_i=0,route_build_total=0,route_build_cum=0,route_build_prev_cost=0;
 static struct QRec7 route_base_meta[ROUTE_PATH_MAX];static int route_base_meta_n=0,route_base_meta_idx=0;
@@ -1932,7 +1944,7 @@ static int route_arena_alloc(u32 bytes){bytes=(bytes+4095u)&~4095u;
 static int route_partition_arena(void){if(!route_arena||route_arena_bytes<512u*1024u)return 0;u32 mincap=rh.nodes<1024u?rh.nodes:1024u,guess=route_arena_bytes/52u;if(guess>rh.nodes)guess=rh.nodes;if(guess<mincap)guess=mincap;u32 buckets=next_pow2((guess+1u)>>1);if(buckets<1024u)buckets=1024u;u32 cap=0;for(int it=0;it<4;it++){u32 bb=buckets*4u;if(bb+4096u>=route_arena_bytes)return 0;cap=(route_arena_bytes-bb-8u)/(u32)(sizeof(struct ChState)+8u);if(cap>rh.nodes)cap=rh.nodes;if(cap<mincap)return 0;u32 want=next_pow2((cap+1u)>>1);if(want<1024u)want=1024u;if(want==buckets)break;buckets=want;}u32 bb=buckets*4u;cap=(route_arena_bytes-bb-8u)/(u32)(sizeof(struct ChState)+8u);if(cap>rh.nodes)cap=rh.nodes;if(cap<mincap)return 0;u8*p=(u8*)route_arena;chbucket=(u32*)p;p+=bb;chst=(struct ChState*)p;p+=cap*(u32)sizeof(struct ChState);chhf=(u32*)p;p+=(cap+1u)*4u;chhb=(u32*)p;p+=(cap+1u)*4u;chst_cap=chheap_cap=cap;chbucket_n=buckets;chbucket_mask=buckets-1u;route_workspace_bytes=(u32)(p-(u8*)route_arena);return route_workspace_bytes<=route_arena_bytes;}
 static int route_arena_prepare(void){route_arena_release();u32 want=route_memory_budget();while(want>=1024u*1024u){if(route_arena_alloc(want)){if(route_partition_arena())return 1;route_arena_release();}if(want<=ROUTE_MEM_ALLOC_STEP)break;want-=ROUTE_MEM_ALLOC_STEP;}return 0;}
 static u32 ch_hash(u32 n){return(n*2654435761u)&chbucket_mask;}
-static struct ChState*ch_state(u32 node,int create){if(!chst||!chbucket_n)return 0;u32 b=ch_hash(node),x=chbucket[b];while(x){struct ChState*s=&chst[x-1u];if(s->node==node)return s;x=s->hash_next;}if(!create||chst_n>=chst_cap)return 0;struct ChState*s=&chst[chst_n];s->node=node;s->df=s->db=ROUTE_INF;s->pf=s->pb=ROUTE_NOARC;s->posf=s->posb=0;s->qoff=ROUTE_NOARC;s->sf=s->sb=0;s->hash_next=chbucket[b];chbucket[b]=++chst_n;return s;}
+static struct ChState*ch_state(u32 node,int create){if(!chst||!chbucket_n)return 0;u32 b=ch_hash(node),x=chbucket[b];while(x){struct ChState*s=&chst[x-1u];if(s->node==node)return s;x=s->hash_next;}if(!create||chst_n>=chst_cap)return 0;struct ChState*s=&chst[chst_n];s->node=node;s->df=s->db=ROUTE_INF;s->pf=s->pb=ROUTE_NOARC;s->posf=s->posb=0;s->qoff=ROUTE_NOARC;s->sf=s->sb=s->seed_flags=s->pad=0;s->hash_next=chbucket[b];chbucket[b]=++chst_n;return s;}
 static u32 ch_slot(struct ChState*s){return(u32)(s-chst);}static u32 ch_dist(struct ChState*s,int dir){return dir?s->db:s->df;}static u32*ch_posp(struct ChState*s,int dir){return dir?&s->posb:&s->posf;}static u32*ch_heap(int dir){return dir?chhb:chhf;}static u32*ch_heapnp(int dir){return dir?&chhb_n:&chhf_n;}
 static int ch_heap_less(int dir,u32 a,u32 b){return ch_dist(&chst[a],dir)<ch_dist(&chst[b],dir);}static void ch_heap_swap(int dir,u32 a,u32 b){u32*h=ch_heap(dir);u32 x=h[a];h[a]=h[b];h[b]=x;*ch_posp(&chst[h[a]],dir)=a;*ch_posp(&chst[h[b]],dir)=b;}static void ch_heap_up(int dir,u32 p){u32*h=ch_heap(dir);while(p>1){u32 q=p>>1;if(!ch_heap_less(dir,h[p],h[q]))break;ch_heap_swap(dir,p,q);p=q;}}static void ch_heap_down(int dir,u32 p){u32*h=ch_heap(dir),n=*ch_heapnp(dir);for(;;){u32 l=p<<1,r=l+1,b=p;if(l<=n&&ch_heap_less(dir,h[l],h[b]))b=l;if(r<=n&&ch_heap_less(dir,h[r],h[b]))b=r;if(b==p)break;ch_heap_swap(dir,p,b);p=b;}}
 static int ch_heap_insert(int dir,struct ChState*s){u32*pos=ch_posp(s,dir),*h=ch_heap(dir),*np=ch_heapnp(dir);if(*pos){ch_heap_up(dir,*pos);return 1;}if(*np>=chheap_cap)return 0;h[++(*np)]=ch_slot(s);*pos=*np;if(*np>chheap_peak)chheap_peak=*np;ch_heap_up(dir,*np);return 1;}static struct ChState*ch_heap_pop(int dir){u32*h=ch_heap(dir),*np=ch_heapnp(dir);if(!*np)return 0;struct ChState*s=&chst[h[1]];*ch_posp(s,dir)=0;if(*np>1){h[1]=h[*np];*ch_posp(&chst[h[1]],dir)=1;}(*np)--;if(*np)ch_heap_down(dir,1);return s;}static u32 ch_heap_min(int dir){u32 n=dir?chhb_n:chhf_n;if(!n)return ROUTE_INF;return ch_dist(&chst[ch_heap(dir)[1]],dir);}
@@ -2079,17 +2091,69 @@ static int route_repair_begin(const struct RouteSnapCandidate*nearest){
 }
 
 static void traffic_invalidate(void);
+static void route_cleanup_begin(u32 now);
+static int route_cleanup_step(u32 now);
 static void ch_reset(void){traffic_invalidate();if(chbucket&&chbucket_n)memzero(chbucket,chbucket_n*4u);chst_n=chhf_n=chhb_n=0;chheap_peak=0;route_expanded=0;route_best=route_meet=ROUTE_INF;route_n=0;route_head=0;route_result_cost=0;route_result_m=0;route_tick=0;route_arc_check_tick=0;route_offroute_checks=0;route_emit_arc=route_emit_phys=ROUTE_NOARC;route_build_phase=RB_IDLE;route_build_nf=route_build_nb=route_build_arc_idx=route_build_sp=0;route_build_copy=-1;route_build_after_base=RB_UNPACK;route_base_meta_n=route_base_meta_idx=0;route_sched_slices=route_sched_yields=route_build_steps=0;nav_maneuver_reset();}
 static void ch_update_meet(struct ChState*s){if(!s||s->df==ROUTE_INF||s->db==ROUTE_INF)return;u32 v=sat_add32(s->df,s->db);if(v<route_best){route_best=v;route_meet=s->node;}}
 static u32 route_exact_from=ROUTE_NOARC,route_exact_to=ROUTE_NOARC;
 static void route_mark_query_start(void){route_query_lat=route_exact_from==ROUTE_NOARC?(atlas_probe?atlas_origin_lat:car_lat()):route_start_snap.snap_lat;route_query_lon=route_exact_from==ROUTE_NOARC?(atlas_probe?atlas_origin_lon:car_lon()):route_start_snap.snap_lon;}
-static int ch_seed_destination(const struct RouteSnapCandidate*dest,u32 comp){if(dest&&dest->arc==ROUTE_NOARC){struct CprNode n;if(!route_read_node(dest->node,&n)||n.comp!=comp)return 0;struct ChState*s=ch_state(dest->node,1);if(!s)return 0;s->db=0;s->pb=ROUTE_NOARC;return ch_heap_insert(1,s);}struct CprBase b;if(!dest||!route_read_base(dest->arc,&b)||!b.src_count)return 0;int seeded=0;for(u32 i=0;i<b.src_count;i++){u32 node;if(!route_read_srcref(b.src_first+i,&node))return 0;struct CprNode rn;if(!route_read_node(node,&rn))return 0;if(rn.comp!=comp)continue;struct ChState*s=ch_state(node,1);if(!s)return 0;if(dest->extra<s->db){s->db=dest->extra;s->pb=ROUTE_NOARC;if(!ch_heap_insert(1,s))return 0;}seeded=1;}return seeded;}
+static int ch_seed_dest_arc(const struct RouteSnapCandidate*cand,u32 comp,int is_twin){
+ struct CprBase b;if(!cand||!route_read_base(cand->arc,&b)||!b.src_count)return 0;
+ int seeded=0;
+ for(u32 i=0;i<b.src_count;i++){
+  u32 node;if(!route_read_srcref(b.src_first+i,&node))return 0;
+  struct CprNode rn;if(!route_read_node(node,&rn))return 0;
+  if(rn.comp!=comp)continue;
+  struct ChState*s=ch_state(node,1);if(!s)return 0;
+  if(cand->extra<s->db){
+   s->db=cand->extra;s->pb=ROUTE_NOARC;
+   if(is_twin)s->seed_flags|=2u;else s->seed_flags&=~2u;
+   if(!ch_heap_insert(1,s))return 0;
+  }
+  seeded=1;
+ }
+ return seeded;
+}
+static int ch_seed_destination(const struct RouteSnapCandidate*dest,u32 comp){
+ route_dest_twin_ok=route_dest_used_twin=0;
+ if(dest&&dest->arc==ROUTE_NOARC){
+  struct CprNode n;if(!route_read_node(dest->node,&n)||n.comp!=comp)return 0;
+  struct ChState*s=ch_state(dest->node,1);if(!s)return 0;
+  s->db=0;s->pb=ROUTE_NOARC;s->seed_flags&=~2u;return ch_heap_insert(1,s);
+ }
+ int seeded=ch_seed_dest_arc(dest,comp,0);
+ if(seeded&&route_exact_to==ROUTE_NOARC&&route_find_twin_arc(dest,route_dest_cand,route_dest_count,&route_dest_twin)){
+  if(ch_seed_dest_arc(&route_dest_twin,comp,1))route_dest_twin_ok=1;
+ }
+ return seeded;
+}
 static int route_dest_has_component(const struct RouteSnapCandidate*dest,u32 comp){if(dest&&dest->arc==ROUTE_NOARC){struct CprNode n;return route_read_node(dest->node,&n)&&n.comp==comp;}struct CprBase b;if(!dest||!route_read_base(dest->arc,&b))return 0;for(u32 i=0;i<b.src_count;i++){u32 node;struct CprNode n;if(!route_read_srcref(b.src_first+i,&node)||!route_read_node(node,&n))return 0;if(n.comp==comp)return 1;}return 0;}
-static int ch_begin(const struct RouteSnapCandidate*start,const struct RouteSnapCandidate*dest){if(route_prof_on&&!route_prof_query_ms){route_prof_query_ms=s_now_ms();route_prof_pre_io=route_prof_io_bytes();}ch_reset();struct ChState*a=ch_state(start->node,1);if(!a)return 0;a->df=start->extra;if(!ch_heap_insert(0,a)||!ch_seed_destination(dest,route_dest_comp))return 0;route_mark_query_start();ch_update_meet(a);return 1;}
-static int ch_retarget_start(const struct RouteSnapCandidate*start){traffic_invalidate();if(!chst||!chbucket)return 0;chhf_n=0;route_best=route_meet=ROUTE_INF;route_n=0;route_head=0;route_result_cost=0;route_result_m=0;nav_maneuver_reset();route_expanded=0;route_tick=0;chheap_peak=chhb_n;/* A completed route leaves the cooperative finaliser in RB_DONE.
+static int ch_seed_start(const struct RouteSnapCandidate*start,u32 comp,int check_comp){
+ route_start_used_twin=0;route_start_pen0=route_start_pen1=0;
+ int use_twin=route_start_twin_ok&&route_exact_from==ROUTE_NOARC&&start->arc!=ROUTE_NOARC&&route_start_twin.arc!=ROUTE_NOARC;
+ if(use_twin){
+  struct CprNode tn;
+  if(!route_read_node(route_start_twin.node,&tn)||(check_comp&&tn.comp!=comp)||route_start_twin.node==start->node)use_twin=0;
+ }
+ if(use_twin){
+  route_start_pen0=route_repair_heading_penalty(start);
+  route_start_pen1=route_repair_heading_penalty(&route_start_twin);
+ }
+ struct ChState*a=ch_state(start->node,1);if(!a)return 0;
+ a->df=sat_add32(start->extra,route_start_pen0);a->seed_flags&=~1u;
+ if(!ch_heap_insert(0,a))return 0;
+ if(use_twin){
+  struct ChState*b=ch_state(route_start_twin.node,1);if(!b)return 0;
+  u32 d=sat_add32(route_start_twin.extra,route_start_pen1);
+  if(d<b->df){b->df=d;b->pf=ROUTE_NOARC;b->seed_flags|=1u;if(!ch_heap_insert(0,b))return 0;}
+ }else route_start_twin_ok=0;
+ return 1;
+}
+static int ch_begin(const struct RouteSnapCandidate*start,const struct RouteSnapCandidate*dest){if(route_prof_on&&!route_prof_query_ms){route_prof_query_ms=s_now_ms();route_prof_pre_io=route_prof_io_bytes();}ch_reset();if(!ch_seed_start(start,route_dest_comp,1)||!ch_seed_destination(dest,route_dest_comp))return 0;route_mark_query_start();ch_update_meet(ch_state(start->node,0));if(route_start_twin_ok)ch_update_meet(ch_state(route_start_twin.node,0));return 1;}
+static int ch_retarget_start(const struct RouteSnapCandidate*start){traffic_invalidate();if(!chst||!chbucket)return 0;chhf_n=0;route_best=route_meet=ROUTE_INF;route_n=0;route_head=0;route_result_cost=0;route_result_m=0;nav_maneuver_reset();route_expanded=0;route_tick=0;chheap_peak=chhb_n;route_start_twin_ok=route_start_used_twin=0;route_start_pen0=route_start_pen1=0;/* A completed route leaves the cooperative finaliser in RB_DONE.
      * A start-only CH retarget must reset every start/path-build field just as
      * a fresh CH query would. Leaving RB_DONE set after clearing route_n
-     * makes the next routing slice finalise an empty path and raise R_ERROR. */route_emit_arc=route_emit_phys=ROUTE_NOARC;route_build_phase=RB_IDLE;route_build_nf=route_build_nb=route_build_arc_idx=route_build_sp=0;route_build_copy=-1;route_build_after_base=RB_UNPACK;route_base_meta_n=route_base_meta_idx=0;route_build_u=route_build_i=route_build_total=route_build_cum=route_build_prev_cost=0;route_build_steps=0;for(u32 i=0;i<chst_n;i++){chst[i].df=ROUTE_INF;chst[i].pf=ROUTE_NOARC;chst[i].posf=0;chst[i].sf=0;}struct ChState*a=ch_state(start->node,1);if(!a)return 0;a->df=start->extra;if(!ch_heap_insert(0,a))return 0;route_mark_query_start();ch_update_meet(a);return 1;}
+     * makes the next routing slice finalise an empty path and raise R_ERROR. */route_emit_arc=route_emit_phys=ROUTE_NOARC;route_build_phase=RB_IDLE;route_build_nf=route_build_nb=route_build_arc_idx=route_build_sp=0;route_build_copy=-1;route_build_after_base=RB_UNPACK;route_base_meta_n=route_base_meta_idx=0;route_build_u=route_build_i=route_build_total=route_build_cum=route_build_prev_cost=0;route_build_steps=0;for(u32 i=0;i<chst_n;i++){chst[i].df=ROUTE_INF;chst[i].pf=ROUTE_NOARC;chst[i].posf=0;chst[i].sf=0;chst[i].seed_flags&=~1u;}struct ChState*a=ch_state(start->node,1);if(!a)return 0;a->df=start->extra;if(!ch_heap_insert(0,a))return 0;route_mark_query_start();ch_update_meet(a);return 1;}
 static int ch_qad7_ensure_off(struct ChState*s){if(!s||qadjmode!=7)return 1;if(s->qoff!=ROUTE_NOARC)return s->qoff<qh7_query.data_bytes;u32 off=0;if(!qadj7_index_get(s->node,&off))return 0;s->qoff=off;return 1;}
 static int ch_qad7_stall(int dir,u32 du,struct QAdj7Entry*f,u16 fc,struct QAdj7Entry*r,u16 rc){struct QAdj7Entry*e=dir?f:r;u32 n=dir?fc:rc;for(u32 i=0;i<n;i++){if(e[i].other>=rh.nodes)continue;struct ChState*t=ch_state(e[i].other,0);if(!t)continue;u32 d=dir?t->db:t->df;if(d!=ROUTE_INF&&sat_add32(d,e[i].cost)<du)return 1;}return 0;}
 static int ch_relax_entries7(int dir,u32 du,struct QAdj7Entry*qe,u32 cnt){for(u32 j=0;j<cnt;j++){u32 v=qe[j].other,aid=qe[j].arc,off=qe[j].next_off;if(v>=rh.nodes||aid>=rh.ch_arcs||off>=qh7_query.data_bytes)return-1;struct ChState*t=ch_state(v,1);if(!t)return-2;if(t->qoff==ROUTE_NOARC)t->qoff=off;else if(t->qoff!=off)return-1;u32 nd=sat_add32(du,qe[j].cost);u32*dist=dir?&t->db:&t->df;if(nd<*dist){*dist=nd;if(dir)t->pb=aid;else t->pf=aid;if(!ch_heap_insert(dir,t))return-2;ch_update_meet(t);}}return 1;}
@@ -2128,12 +2192,12 @@ case RB_TRACE_F:{
   if(route_repair_active){
     if(!s)return 0;
     if(s->pf==ROUTE_NOARC){int si=route_repair_start_for_node(route_build_u);if(si<0)return 0;route_repair_chosen_start=si;route_build_copy=route_build_nf-1;route_build_phase=RB_COPY_F;return 1;}
-  }else if(route_build_u==start->node){route_build_copy=route_build_nf-1;route_build_phase=RB_COPY_F;return 1;}
+  }else if(s&&s->pf==ROUTE_NOARC&&(route_build_u==start->node||(route_start_twin_ok&&route_build_u==route_start_twin.node))){route_start_used_twin=(s->seed_flags&1u)!=0;route_build_copy=route_build_nf-1;route_build_phase=RB_COPY_F;return 1;}
   if(route_build_nf>=ROUTE_PATH_MAX||!s||s->pf==ROUTE_NOARC)return 0;u32 fr=0;if(qadjmode==7){struct QRec7 q;if(!qadj7_read_qrec(s->pf,&q))return 0;fr=q.from;}else{struct CprArc a;if(!route_read_arc(s->pf,&a))return 0;fr=a.from;}ch_arc_tmp[route_build_nf++]=s->pf;route_build_u=fr;return 1;}
 case RB_COPY_F:if(route_build_copy<0){route_build_u=route_meet;route_build_phase=RB_TRACE_B;return 1;}if(route_build_nb>=ROUTE_PATH_MAX)return 0;ch_arc_path[route_build_nb++]=ch_arc_tmp[route_build_copy--];return 1;
-case RB_TRACE_B:{struct ChState*s=ch_state(route_build_u,0);if(!s||s->db==ROUTE_INF)return 0;if(s->pb==ROUTE_NOARC){route_build_phase=RB_START_INIT;return 1;}if(route_build_nb>=ROUTE_PATH_MAX)return 0;u32 to=0;if(qadjmode==7){struct QRec7 q;if(!qadj7_read_qrec(s->pb,&q))return 0;to=qrec7_to(&q);}else{struct CprArc a;if(!route_read_arc(s->pb,&a))return 0;to=a.to;}ch_arc_path[route_build_nb++]=s->pb;route_build_u=to;}return 1;
-case RB_START_INIT:{const struct RouteSnapCandidate*rs=route_repair_active?(route_repair_chosen_start>=0&&route_repair_chosen_start<route_repair_start_n?&route_repair_start[route_repair_chosen_start]:0):start;if(!rs||!route_build_start_init(rs))return 0;route_build_phase=RB_START_POINTS;return 1;}
-case RB_START_POINTS:{const struct RouteSnapCandidate*rs=route_repair_active?&route_repair_start[route_repair_chosen_start]:start;int r=route_build_start_point(rs);if(!r)return 0;if(r==2)route_build_phase=RB_UNPACK;return 1;}
+case RB_TRACE_B:{struct ChState*s=ch_state(route_build_u,0);if(!s||s->db==ROUTE_INF)return 0;if(s->pb==ROUTE_NOARC){route_dest_used_twin=(s->seed_flags&2u)!=0;route_build_phase=RB_START_INIT;return 1;}if(route_build_nb>=ROUTE_PATH_MAX)return 0;u32 to=0;if(qadjmode==7){struct QRec7 q;if(!qadj7_read_qrec(s->pb,&q))return 0;to=qrec7_to(&q);}else{struct CprArc a;if(!route_read_arc(s->pb,&a))return 0;to=a.to;}ch_arc_path[route_build_nb++]=s->pb;route_build_u=to;}return 1;
+case RB_START_INIT:{const struct RouteSnapCandidate*rs=route_repair_active?(route_repair_chosen_start>=0&&route_repair_chosen_start<route_repair_start_n?&route_repair_start[route_repair_chosen_start]:0):(route_start_used_twin?&route_start_twin:start);if(!rs||!route_build_start_init(rs))return 0;route_build_phase=RB_START_POINTS;return 1;}
+case RB_START_POINTS:{const struct RouteSnapCandidate*rs=route_repair_active?&route_repair_start[route_repair_chosen_start]:(route_start_used_twin?&route_start_twin:start);int r=route_build_start_point(rs);if(!r)return 0;if(r==2)route_build_phase=RB_UNPACK;return 1;}
 case RB_UNPACK:
   if(route_build_sp){u32 x=ch_unpack_stack[--route_build_sp];if(qadjmode==7){struct QRec7 q;if(!qadj7_read_qrec(x,&q))return 0;if(qrec7_flags(&q)&CPR_ARC_SHORTCUT){if(route_build_sp+2>ROUTE_PATH_MAX)return 0;ch_unpack_stack[route_build_sp++]=q.right_geom;ch_unpack_stack[route_build_sp++]=q.left;return 1;}if(route_base_meta_n>=ROUTE_PATH_MAX)return 0;route_base_meta[route_base_meta_n++]=q;return 1;}else{struct CprArc a;if(!route_read_arc(x,&a))return 0;if(a.flags&CPR_ARC_SHORTCUT){if(route_build_sp+2>ROUTE_PATH_MAX)return 0;ch_unpack_stack[route_build_sp++]=a.right;ch_unpack_stack[route_build_sp++]=a.left;return 1;}route_build_after_base=RB_UNPACK;return route_build_base_begin(x,&a)?1:0;}}
   if(route_build_arc_idx<route_build_nb){ch_unpack_stack[route_build_sp++]=ch_arc_path[route_build_arc_idx++];return 1;}
@@ -2142,8 +2206,8 @@ case RB_UNPACK:
 case RB_BASE_NEXT:if(route_base_meta_idx<route_base_meta_n){route_build_after_base=RB_BASE_NEXT;return route_build_base_begin_qrec7(&route_base_meta[route_base_meta_idx++])?1:0;}return route_build_finish_bases();
 case RB_BASE_TOTAL:return route_build_base_total_step()?1:0;
 case RB_BASE_OUTPUT:{int n=qadjmode==7?16:1;while(n--){if(!route_build_base_output_step())return 0;if(route_build_phase!=RB_BASE_OUTPUT)break;}return 1;}
-case RB_DEST_INIT:if(!route_build_dest_init(dest))return 0;route_build_phase=RB_DEST_POINTS;return 1;
-case RB_DEST_POINTS:{int r=route_build_dest_point(dest);if(!r)return 0;if(r==2){route_result_cost=route_best;route_build_phase=RB_DONE;return route_n>0?2:0;}return 1;}
+case RB_DEST_INIT:{const struct RouteSnapCandidate*rd=(!route_repair_active&&route_dest_used_twin)?&route_dest_twin:dest;if(!route_build_dest_init(rd))return 0;route_build_phase=RB_DEST_POINTS;return 1;}
+case RB_DEST_POINTS:{const struct RouteSnapCandidate*rd=(!route_repair_active&&route_dest_used_twin)?&route_dest_twin:dest;int r=route_build_dest_point(rd);if(!r)return 0;if(r==2){u32 spen=route_start_used_twin?route_start_pen1:route_start_pen0;route_result_cost=route_best>spen?route_best-spen:route_best;route_build_phase=RB_DONE;return route_n>0?2:0;}return 1;}
 case RB_REPAIR_SUFFIX:return route_repair_suffix_step();
 case RB_DONE:return route_n>0?2:0;default:return 0;}}
 
@@ -2187,19 +2251,19 @@ static int route_same_endpoint(const struct RouteSnapCandidate*a,const struct Ro
 /* An atlas request freezes both endpoints while it compares gateways. Snap
  * each coordinate once per regional namespace, rather than scanning the same
  * CPR geometry again for every trial. Final legs still snap the live car. */
-static struct RouteSnapCandidate atlas_start_snap,atlas_dest_snap[ROUTE_DEST_CAND_MAX];
-static int atlas_start_snap_region=-2,atlas_dest_snap_region=-2,atlas_start_snap_ok=0,atlas_dest_snap_count=0;
-static int route_query_start_snap(struct RouteSnapCandidate*out){
- if(!atlas_probe)return route_snap_node(car_lat(),car_lon(),out);
- if(atlas_start_snap_region!=atlas_route_region){atlas_start_snap_region=atlas_route_region;atlas_start_snap_ok=route_snap_node(atlas_origin_lat,atlas_origin_lon,&atlas_start_snap);}
- if(atlas_start_snap_ok)*out=atlas_start_snap;return atlas_start_snap_ok;
+static struct RouteSnapCandidate atlas_start_snap,atlas_start_twin,atlas_dest_snap[ROUTE_DEST_CAND_MAX];
+static int atlas_start_snap_region=-2,atlas_dest_snap_region=-2,atlas_start_snap_ok=0,atlas_start_twin_ok=0,atlas_dest_snap_count=0;
+static int route_query_start_snap(struct RouteSnapCandidate*out,struct RouteSnapCandidate*twin,int*has_twin){
+ if(!atlas_probe)return route_snap_node_ex(car_lat(),car_lon(),out,twin,has_twin);
+ if(atlas_start_snap_region!=atlas_route_region){atlas_start_snap_region=atlas_route_region;atlas_start_snap_ok=route_snap_node_ex(atlas_origin_lat,atlas_origin_lon,&atlas_start_snap,&atlas_start_twin,&atlas_start_twin_ok);}
+ if(atlas_start_snap_ok){*out=atlas_start_snap;if(has_twin){*has_twin=atlas_start_twin_ok;if(atlas_start_twin_ok&&twin)*twin=atlas_start_twin;}}return atlas_start_snap_ok;
 }
 static int route_query_dest_snaps(s32 lat,s32 lon){
  if(!atlas_probe)return route_snap_candidates(lat,lon,ROUTE_DEST_SNAP_D2,1,1,route_dest_cand,ROUTE_DEST_CAND_MAX);
  if(atlas_dest_snap_region!=atlas_route_region){atlas_dest_snap_region=atlas_route_region;atlas_dest_snap_count=route_snap_candidates(lat,lon,ROUTE_DEST_SNAP_D2,1,1,atlas_dest_snap,ROUTE_DEST_CAND_MAX);}
  for(int i=0;i<atlas_dest_snap_count;i++)route_dest_cand[i]=atlas_dest_snap[i];return atlas_dest_snap_count;
 }
-static int regional_route_start(s32 dest_lat,s32 dest_lon){route_repair_reset();route_prof_reset();route_arena_release();route_dest_count=route_dest_idx=0;route_dest_comp=0;route_offroute_checks=0;route_arc_check_tick=0;route_rerouting=0;route_target_lat=dest_lat;route_target_lon=dest_lon;if(!routeok){route_status=R_NOFILE;return 0;}if(!(route_exact_from!=ROUTE_NOARC?route_exact_snap(route_exact_from,&route_start_snap):route_query_start_snap(&route_start_snap))){route_status=R_NOROAD;return 0;}route_car_node=route_start_snap.node;/* at Z6 a CPR tile spans 256 coordinate units, larger than the 150-unit destination snap radius. A 3x3 neighbourhood therefore covers every geometrically legal candidate; the old 5x5 sweep only added I/O. */route_dest_count=route_exact_to!=ROUTE_NOARC?route_exact_snap(route_exact_to,&route_dest_cand[0]):route_query_dest_snaps(dest_lat,dest_lon);if(route_dest_count<1){route_status=R_NOROAD;return 0;}if(route_exact_to==ROUTE_NOARC&&route_same_endpoint(&route_start_snap,&route_dest_cand[0])){struct RouteSnapCandidate stop;memzero(&stop,sizeof(stop));stop.arc=ROUTE_NOARC;stop.node=route_start_snap.node;stop.snap_lat=route_start_snap.snap_lat;stop.snap_lon=route_start_snap.snap_lon;route_dest_cand[0]=stop;route_dest_count=1;}if(!route_arena_prepare()){route_status=R_MEMORY;return 0;}if(!route_begin_candidate(0)&&!route_retry_destination()){route_status=R_UNREACHABLE;return 0;}return 1;}
+static int regional_route_start(s32 dest_lat,s32 dest_lon){route_repair_reset();route_prof_reset();route_arena_release();route_dest_count=route_dest_idx=0;route_dest_comp=0;route_start_twin_ok=route_start_used_twin=route_dest_twin_ok=route_dest_used_twin=0;route_start_pen0=route_start_pen1=0;route_offroute_checks=0;route_arc_check_tick=0;route_rerouting=0;route_target_lat=dest_lat;route_target_lon=dest_lon;if(!routeok){route_status=R_NOFILE;return 0;}if(!(route_exact_from!=ROUTE_NOARC?route_exact_snap(route_exact_from,&route_start_snap):route_query_start_snap(&route_start_snap,&route_start_twin,&route_start_twin_ok))){route_status=R_NOROAD;return 0;}route_car_node=route_start_snap.node;/* at Z6 a CPR tile spans 256 coordinate units, larger than the 150-unit destination snap radius. A 3x3 neighbourhood therefore covers every geometrically legal candidate; the old 5x5 sweep only added I/O. */route_dest_count=route_exact_to!=ROUTE_NOARC?route_exact_snap(route_exact_to,&route_dest_cand[0]):route_query_dest_snaps(dest_lat,dest_lon);if(route_dest_count<1){route_status=R_NOROAD;return 0;}if(route_exact_to==ROUTE_NOARC&&route_same_endpoint(&route_start_snap,&route_dest_cand[0])){struct RouteSnapCandidate stop;memzero(&stop,sizeof(stop));stop.arc=ROUTE_NOARC;stop.node=route_start_snap.node;stop.snap_lat=route_start_snap.snap_lat;stop.snap_lon=route_start_snap.snap_lon;route_dest_cand[0]=stop;route_dest_count=1;route_start_twin_ok=0;}if(!route_arena_prepare()){route_status=R_MEMORY;return 0;}if(!route_begin_candidate(0)&&!route_retry_destination()){route_status=R_UNREACHABLE;return 0;}return 1;}
 static int route_start(s32 lat,s32 lon){if(atlas_ready)return atlas_request(lat,lon);route_exact_from=route_exact_to=ROUTE_NOARC;return regional_route_start(lat,lon);}
 static int route_full_reroute(const char*why){
   if(atlas_active)return atlas_request(atlas_dest_lat,atlas_dest_lon);
@@ -2229,16 +2293,20 @@ static void route_progress_service(void){
     if(gps.mph10<20){route_offroute_checks=0;return;}
     if(++route_offroute_checks>=ROUTE_OFFROUTE_CHECKS){route_offroute_checks=0;traffic_note_offroute_avoidance();route_retarget_car(&c);}
 }
-static void route_calc_moving_start_service(void){if(atlas_probe||route_exact_from!=ROUTE_NOARC)return;/* A parked car cannot meaningfully stale the start. Avoid periodic CPR2 snapping (and cache pollution) while stationary. */if(gps.mph10<20){route_tick=0;return;}/* Once a repair prefix is being reconstructed the old route[] storage is no longer pristine. Finish the bounded build, then the normal stale-finish check can fall back safely if needed. */if(route_repair_active&&route_build_phase!=RB_IDLE)return;if(++route_tick<5)return;route_tick=0;struct RouteSnapCandidate c;if(!route_snap_car_component(route_dest_comp,&c))return;if(c.node==route_start_snap.node&&c.arc==route_start_snap.arc&&c.geom_seg==route_start_snap.geom_seg&&c.frac_q16==route_start_snap.frac_q16)return;if(route_point_d2(route_query_lat,route_query_lon,car_lat(),car_lon())>=ROUTE_CALC_STALE_D2)route_retarget_car(&c);}
+static void route_calc_moving_start_service(void){if(atlas_probe||route_exact_from!=ROUTE_NOARC)return;/* A parked car cannot meaningfully stale the start. Avoid periodic CPR2 snapping (and cache pollution) while stationary. */if(gps.mph10<20){route_tick=0;return;}/* Once a repair prefix is being reconstructed or post-build cleanup is running, finish it cleanly and let route_accept_finished_path() trim the prefix rather than discarding the completed route. */if((route_repair_active&&route_build_phase!=RB_IDLE)||route_build_phase==RB_CLEANUP)return;if(++route_tick<5)return;route_tick=0;struct RouteSnapCandidate c;if(!route_snap_car_component(route_dest_comp,&c))return;if(c.node==route_start_snap.node&&c.arc==route_start_snap.arc&&c.geom_seg==route_start_snap.geom_seg&&c.frac_q16==route_start_snap.frac_q16)return;if(route_point_d2(route_query_lat,route_query_lon,car_lat(),car_lon())>=ROUTE_CALC_STALE_D2)route_retarget_car(&c);}
 static void regional_service_until(u32 deadline_ms){
   if(route_status!=R_CALC&&route_status!=R_READY)return;
   if(route_status==R_READY){if(!atlas_probe)route_progress_service();return;}
   route_calc_moving_start_service();if(route_status!=R_CALC)return;route_sched_slices++;unsigned ops=0;
   while(route_status==R_CALC){
-    if((ops++&ROUTE_CLOCK_CHECK_MASK)==0u&&!time_before_u32(s_now_ms(),deadline_ms)){route_sched_yields++;break;}
+    if((ops++&(route_build_phase==RB_CLEANUP?0u:ROUTE_CLOCK_CHECK_MASK))==0u&&!time_before_u32(s_now_ms(),deadline_ms)){route_sched_yields++;break;}
     if(route_build_phase!=RB_IDLE){
-      int b=ch_finish_step(&route_start_snap,&route_dest_cand[route_dest_idx]);
+      int b=route_build_phase==RB_CLEANUP?(route_cleanup_step(s_now_ms())?2:1):ch_finish_step(&route_start_snap,&route_dest_cand[route_dest_idx]);
       if(b==2){
+        if(!atlas_probe&&route_build_phase==RB_DONE){
+          route_build_phase=RB_CLEANUP;route_cleanup_begin(s_now_ms());continue;
+        }
+        route_build_phase=RB_DONE;
         int was_repair=route_repair_active,a=route_accept_finished_path();
         if(a>0){
           route_status=R_READY;route_rerouting=0;nav_maneuver_find();
@@ -2836,6 +2904,15 @@ static void visual_snap_scan_tile(struct Tile*t,s32 rawlat4,s32 rawlon4,int cq,i
   p+=(unsigned)np*4;
  }
 }
+static void visual_snap_miss(int immediate){
+ visual_snap.matched=0;visual_snap.on_route=0;
+ if(visual_snap.lock_valid&&!immediate&&++visual_snap.off_ticks<3)return;
+ visual_snap.lock_valid=0;visual_snap.target_dlat4=0;visual_snap.target_dlon4=0;
+}
+static int visual_snap_settling(void){
+ return visual_snap.init&&((!visual_snap.matched&&visual_snap.lock_valid)||
+  visual_snap.dlat4!=visual_snap.target_dlat4||visual_snap.dlon4!=visual_snap.target_dlon4);
+}
 static void visual_snap_ease(int immediate){
  if(immediate){
   visual_snap.dlat4=visual_snap.target_dlat4;
@@ -2873,6 +2950,8 @@ static void update_visual_snap(int z,int immediate){
     visual_snap.synced_course==course&&
     visual_snap.synced_route_status==route_status&&
     visual_snap.synced_route_head==route_head){
+  /* A cached miss still ages the retained lock while the vehicle is parked. */
+  if(!visual_snap.matched&&visual_snap.lock_valid)visual_snap_miss(immediate);
   visual_snap_ease(immediate);
   return;
  }
@@ -2917,12 +2996,7 @@ static void update_visual_snap(int z,int immediate){
   visual_snap.lock_gi=best.gi;visual_snap.lock_cls=(u8)best.cls;
   visual_snap.target_dlat4=best.lat4-rawlat4;
   visual_snap.target_dlon4=lon_delta4(best.lon4-rawlon4);
- }else{
-  visual_snap.matched=0;visual_snap.on_route=0;
-  if(immediate||++visual_snap.off_ticks>=3){
-   visual_snap.lock_valid=0;visual_snap.target_dlat4=0;visual_snap.target_dlon4=0;
-  }
- }
+ }else visual_snap_miss(immediate);
  visual_snap_ease(immediate);
  visual_snap.init=1;visual_snap.active_z6=1;visual_snap.raw_lat=rlat;visual_snap.raw_lon=rlon;
  visual_snap.synced_valid=1;visual_snap.synced_z6=1;visual_snap.synced_lat=rlat;visual_snap.synced_lon=rlon;

@@ -257,6 +257,66 @@ static void test_easing_offroad_and_explore(void){
  assert(!visual_snap.init&&visual_snap.dlat4==0&&visual_snap.dlon4==0);
 }
 
+static void test_parked_offroad_releases_snap(void){
+ const s32 ty=21000,tx=-625;
+ const s32 lat=ty*256+128,lon=tx*256+128;
+ const u16 road[2][2]={{256,1952},{3840,1952}};
+ reset_world(ty,tx,lat,lon,90,200);
+ tile_begin(&tc[0],tx,ty);
+ tile_add_road(&tc[0],6,road,2);
+ update_visual_snap(9,1);
+ assert(visual_snap.matched&&visual_snap.dlat4==-96);
+
+ gps.lat=track_lat=ty*256+147;
+ gps.mph10=0;
+ update_visual_snap(9,0);
+ assert(!visual_snap.matched&&visual_snap.lock_valid&&visual_snap.off_ticks==1);
+ u32 tile_age=agec;
+ update_visual_snap(9,0);
+ assert(visual_snap.lock_valid&&visual_snap.off_ticks==2&&visual_snap.dlat4==-96);
+ update_visual_snap(9,0);
+ assert(!visual_snap.lock_valid&&visual_snap.target_dlat4==0);
+ assert(visual_snap.dlat4>-96&&visual_snap.dlat4<0);
+ for(int step=0;step<24;step++)update_visual_snap(9,0);
+ assert(display_car_lat4()==gps.lat*16&&display_car_lon4()==gps.lon*16);
+ assert(agec==tile_age);
+
+ /* End-to-end framebuffer scheduler test: pulling off-road and stopping
+  * (gps.mph10 == 0) must still advance the parked map through the 3-tick
+  * grace period and smooth ease-back to GPS, then stop redrawing once settled. */
+ reset_world(ty,tx,lat,lon,90,200);
+ tile_begin(&tc[0],tx,ty);
+ tile_add_road(&tc[0],6,road,2);
+ pref.autozoom=0;manual_zoom=9;zoom_override=-1;screen=SCR_MAP;
+ hud_capture_clock=1;hud_capture_ms=10000u;
+ render_runtime_reset(hud_capture_ms);
+ render_runtime_step(hud_capture_ms,1);
+ assert(visual_snap.matched&&visual_snap.dlat4==-96);
+ /* Pull off-road and come to a complete stop with unchanged coordinates thereafter. */
+ gps.lat=track_lat=ty*256+147;gps.mph10=0;
+ u32 maps_before=render_stats.maps;
+ u32 eased_frames=0;
+ for(int tick=1;tick<=30;tick++){
+  hud_capture_ms+=FRAME_MAP_MS;
+  s32 prev_dlat=visual_snap.dlat4;
+  update_visual_snap(active_zoom(),0);
+  render_runtime_step(hud_capture_ms,1);
+  if(visual_snap.dlat4!=prev_dlat)eased_frames++;
+ }
+ assert(eased_frames>=3);
+ assert(!visual_snap.lock_valid&&visual_snap.dlat4==0&&visual_snap.dlon4==0&&!visual_snap_settling());
+ assert(render_stats.maps>=maps_before+eased_frames);
+ /* Once settled at GPS while parked, no further map redraws or tile reads occur. */
+ u32 settled_maps=render_stats.maps,settled_age=agec;
+ for(int tick=0;tick<10;tick++){
+  hud_capture_ms+=FRAME_MAP_MS;
+  update_visual_snap(active_zoom(),0);
+  render_runtime_step(hud_capture_ms,1);
+ }
+ assert(render_stats.maps==settled_maps&&agec==settled_age);
+ hud_capture_clock=0;
+}
+
 int main(void){
  test_close_zoom_camera_alignment();
  test_heading_blocks_cross_street();
@@ -264,6 +324,7 @@ int main(void){
  test_active_route_preference();
  test_hysteresis_and_tile_seam();
  test_easing_offroad_and_explore();
- puts("Z6-reference visual road snap: camera-coupled Z6-Z9 alignment, heading/cross-street filter, service penalty, active-route corridor, hysteresis/tile-seam, smooth easing, Explore parity and no-GPS safety passed.");
+ test_parked_offroad_releases_snap();
+ puts("Z6-reference visual road snap: camera-coupled Z6-Z9 alignment, heading/cross-street filter, service penalty, active-route corridor, hysteresis/tile-seam, moving and parked off-road release, Explore parity and no-GPS safety passed.");
  return 0;
 }

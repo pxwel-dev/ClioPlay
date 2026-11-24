@@ -275,54 +275,67 @@ def main():
                 'route geometry are asserted. GPS is held stationary. The 1.3-second '
                 'calculation display is a controlled preview interval, not a timing benchmark.'),
             'v220-intelligent-diversions.gif': (
-                'Real Newcastle route and legal alternative geometry from '
-                'the installed CPR2 routing graph. Historical congestion '
-                'observations are controlled examples. The production traffic '
-                'search, shared-geometry rendering, BT CTRL, Explore diversion '
-                'preview and direct map confirmation handler are used. This is '
+                'Real Central London (Paddington to City of London) route and legal '
+                'alternative geometry from the installed CPR2 routing graph. The active '
+                'route uses the v2.2.6.2 fewer-turns preference (-3 turns for +1.0 s, '
+                'zero U-turn spurs) and is shorter and faster than the diversion in clear '
+                'traffic. Historical congestion observations are controlled examples. The '
+                'production traffic search, shared-geometry rendering, BT CTRL, Explore '
+                'diversion preview and direct map confirmation handler are used. This is '
                 'not a claim about actual traffic conditions.'),
             'v223-view-diversion.gif': (
-                'Real Newcastle route and legal alternative geometry from '
-                'the installed CPR2 routing graph. Historical congestion '
-                'observations are controlled examples. The production traffic '
-                'search, shared-geometry rendering, BT CTRL, Explore diversion '
-                'preview and direct map confirmation handler are used. This is '
-                'not a claim about actual traffic conditions.'),
+                'Real Central London (Paddington to City of London) route and legal '
+                'alternative geometry from the installed CPR2 routing graph. The clip '
+                'starts with the clear-road ETA on the v2.2.6.2 route chosen by the '
+                'fewer-turns preference (-3 turns for +1.0 s, zero U-turn spurs). The '
+                'diversion is longer and slower in clear traffic. Historical congestion '
+                'observations are controlled examples. The production traffic search, '
+                'shared-geometry rendering, BT CTRL, Explore diversion preview and direct '
+                'map confirmation handler are used. This is not a claim about actual '
+                'traffic conditions.'),
             'v223-secondary-manoeuvre.gif': (
-                'Real Newcastle city-centre route calculated by production routing '
-                'from the installed CPR2 routing graph. Vehicle movement along route '
-                'vertices is simulated; production nav_maneuver_find() and '
-                'nav_next_maneuver_find() drive both Turn cards.'),
+                'Real Milton Keynes (Central Milton Keynes to Bletchley) route calculated '
+                'by v2.2.6.2 production routing from the installed CPR2 routing graph '
+                'with zero U-turn spurs. Vehicle movement along route vertices is '
+                'simulated; production nav_maneuver_find() and nav_next_maneuver_find() '
+                'drive both Turn cards across chained normal turns and roundabouts.'),
             'v223-nearby-pois.gif': (
-                'Real Newcastle POI tiles scanned offline by production nearby_scan() '
-                'from the installed CPM5 map bundle (Z5 3x3 inner pass plus Z3 expanding '
-                'rings), using production remote handlers to add a stop to the itinerary.'),
+                'Real Bristol city-centre POI tiles scanned offline by production '
+                'nearby_scan() from the installed CPM5 map bundle (Z5 3x3 inner pass '
+                'plus Z3 expanding rings), using production remote handlers to add a '
+                'nearby Bristol fuel stop to the itinerary.'),
             'v224-ml-eta-and-habits.gif': (
-                'Real Durham (Gilesgate to Neville\'s Cross) route and legal usual-route '
-                'alternative from the installed CPR2 routing graph with zero historical '
-                'traffic congestion, driven by production ml_pref_arcs search and calibrated '
+                'Real Central London (Westminster to Paddington via Mayfair) spur-free '
+                'route and legal parallel-street usual-route alternative (Park Street and '
+                'Bryanston Street bypassing the Oxford Street dogleg) from the installed '
+                'CPR2 routing graph with zero historical traffic congestion, driven by '
+                'production unguided ml_pref_arcs search and calibrated '
                 'ETA variance (active route stays normal route colour with no yellow bypass).'),
             'v224-ml-slowdowns.gif': (
-                'Real York (Station to Heworth) route from the installed CPR2 routing graph '
-                'with production ml_observe_decel() / ml_hazard_level() / traffic_scan_ex() '
-                'demonstrating warm repeat slowdown alerts, deduplication, cold-only silence '
-                'at 18C, cold-weather slowdown alerts at 1C and winter-calibrated ETA.'),
+                'Real Liverpool (Lime Street to Sefton Park) route from the installed '
+                'CPR2 routing graph with zero U-turn spurs and production '
+                'ml_observe_decel() / ml_hazard_level() / traffic_scan_ex() '
+                'demonstrating warm repeat slowdown alerts, deduplication, cold-only '
+                'silence at 18C, cold-weather slowdown alerts at 1C and winter-calibrated ETA.'),
             'v224-ml-parking-and-pois.gif': (
-                'Real Newcastle city-centre routing and offline CPM5 POI tiles, with '
-                'controlled local ML parking, recurring-stop and fuel-affinity records '
-                'driving production confirmation sheets, route-coloured POI highlighting '
-                'and Nearby POI ranking.'),
+                'Real Leeds city-centre routing (to Work / Q-Park The Light) and offline '
+                'CPM5 POI tiles, with controlled local ML parking, recurring-stop and '
+                'fuel-affinity records driving production confirmation sheets, '
+                'route-coloured POI highlighting and Nearby POI ranking.'),
             'v224-ml-adaptive-hud.gif': (
-                'Real Newcastle map tiles demonstrating production ml_note_zoom_override() '
-                'speed-band Auto-zoom personalisation and ml_learned_brightness() automatic '
-                'Day-to-Night brightness adjustment on an Auto theme transition.'),
+                'Real Edinburgh (Princes Street) map tiles demonstrating production '
+                'ml_note_zoom_override() speed-band Auto-zoom personalisation and '
+                'ml_learned_brightness() automatic Day-to-Night brightness adjustment '
+                'on an Auto theme transition.'),
             'v225-gps-panel.gif': (
-                'Real Newcastle driving map demonstrating the expandable Clock/GPS HUD pill: '
-                'double-OK expansion from the driving map (first OK shows road name and ETA, '
-                'second OK expands the clock pill with live seconds, recessed compass, heading, '
-                'GST accuracy, signal bars/satellites, altitude and coordinates), non-overlapping '
-                'BT CTRL status pill, compact 52 px strip above a centred confirmation popup, '
-                'seconds-only menu fold, and smooth return to full driving GPS HUD.'),
+                'Real Liverpool Waterfront (Liver Street to Lime Street) driving map '
+                'demonstrating the expandable Clock/GPS HUD pill: double-OK expansion '
+                'from the driving map (first OK shows road name and ETA, second OK '
+                'expands the clock pill with live seconds, recessed compass, heading, '
+                'GST accuracy, signal bars/satellites, altitude and coordinates), '
+                'non-overlapping BT CTRL status pill, compact 52 px strip above a '
+                'centred confirmation popup, seconds-only menu fold, and smooth return '
+                'to full driving GPS HUD.'),
         }
         for name, note in provenance.items():
             if name in reports:
@@ -338,9 +351,10 @@ def main():
             'schema': 'clioplay-readme-previews-1',
             'framebuffer': '480x272 RGB565 from production C draw() and key_handle()',
             'example': (
-                'Newcastle upon Tyne, with simulated car and phone inputs; '
-                'This demonstration uses controlled learned records and a real '
-                'map-backed diversion calculated by production routing'
+                'Manchester baseline (Deansgate to Salford Quays) plus Central London, '
+                'Milton Keynes, Liverpool, Leeds, Bristol, Edinburgh and Newcastle '
+                'routes with simulated car and phone inputs; all routes and diversions '
+                'are calculated by v2.2.6.2 production routing against the UK CPR2 graph'
             ),
             'native_sources': capture['native_sources'],
             'executables': capture['executables'],

@@ -30,7 +30,7 @@ DIVERSION_EVENTS = (
 
 # Production routing graph with controlled historical traffic observations.
 MAP_DIVERSION_EVENTS = (
-    (0, 'preview_map_diversion_seed();bt_control_mode=0;key_handle(K_BACK);assert(mapok&&traffic_offer_valid()&&bt_control_mode);'),
+    (0, 'bt_control_mode=0;key_handle(K_BACK);assert(mapok&&traffic_offer_valid()&&bt_control_mode);'),
     (1400, 'key_handle(K_BACK);assert(!bt_control_mode&&traffic_offer_valid());'),
     (2600, 'settle();assert(streq(hud_tween[HC_STATUS].target.traffic_hint,"OK to review"));assert(hud_diversion_shortcut_ready());key_handle(K_ENTER);assert(sheet_page==P_CONFIRM&&confirm_kind==3&&sheet_focus==0);'),
     (4400,

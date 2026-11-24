@@ -291,6 +291,96 @@ static void tiny_graph(void){
  fclose(f);routefd=-1;routeok=0;mob_clear();
 }
 
+/* A spur returns to the same junction with a different turn state. Only the
+ * legal alternative via state 6 can remove it in the restricted case. */
+static void route_spur(int same_state,int have_alternative,int separate_roads){
+ struct SpurGraph {
+  struct CprNode node[7];u32 edge[7];struct CprBase base[7];
+  struct CprArc arc[7];struct CprPoint geom[14];
+ } g={0};
+ const struct CprPoint coords[]={{5497000,-161000},{5497300,-161000},{5497300,-160900},
+  {5497300,separate_roads?-160990:-161000},{5497600,-161000},{5497900,-161000},{5497400,-161150}};
+ u32 from[]={0,1,2,same_state?1u:3u,4,0,6};
+ u32 to[]={1,2,same_state?1u:3u,4,5,6,4};
+ const u32 cost[]={100,50,50,100,100,140,180};
+ for(int i=0;i<7;i++){
+  g.node[i].lat=coords[i].lat;g.node[i].lon=coords[i].lon;g.node[i].comp=1;
+  g.base[i].geom_first=i==2&&!separate_roads?2u:2u*i;g.base[i].geom_count=2;
+  if(i==2&&!separate_roads)g.base[i].flags=CPR_ARC_GEOM_REVERSED;
+  g.geom[2*i]=coords[from[i]];g.geom[2*i+1]=coords[to[i]];
+  g.arc[i]=(struct CprArc){from[i],to[i],cost[i],(u32)i,ROUTE_NOARC,0,0,0};
+ }
+ u32 n=0;
+ for(u32 node=0;node<7;node++){
+  g.node[node].first_edge=n;
+  for(u32 arc=0;arc<(have_alternative?7u:5u);arc++)if(to[arc]==node){g.edge[n++]=arc;g.node[node].edge_count++;}
+ }
+ FILE*f=tmpfile();assert(f&&fwrite(&g,sizeof(g),1,f)==1);assert(!fflush(f));routefd=fileno(f);
+ memzero(&rh,sizeof(rh));rh.nodes=7;rh.route_edges=n;rh.base_edges=rh.ch_arcs=7;rh.geom_points=14;
+ rh.node_off=offsetof(struct SpurGraph,node);rh.edge_off=offsetof(struct SpurGraph,edge);
+ rh.base_off=offsetof(struct SpurGraph,base);rh.arc_off=offsetof(struct SpurGraph,arc);rh.geom_off=offsetof(struct SpurGraph,geom);
+ cpr_bcache_count=0;memzero(cpr_acache_count,sizeof(cpr_acache_count));memzero(cpr_gcache_count,sizeof(cpr_gcache_count));
+ routeok=1;route_geom_map_ok=0;route_dest_comp=1;qadjmode=0;atlas_ready=atlas_probe=0;
+ pref.learn_history=pref.diversions=0;gps.mph10=0;route_exact_from=0;
+ traffic_invalidate();route_status=R_CALC;route_build_phase=RB_DONE;route_head=0;route_n=6;route_result_cost=400;route_result_m=0;
+ for(int i=0;i<6;i++){
+  route_lat[i]=coords[i].lat;route_lon[i]=coords[i].lon;route_node[i]=i==3&&same_state?1u:(u32)i;
+  route_seg_arc[i]=i?(u32)i-1u:ROUTE_NOARC;route_seg_phys[i]=i?g.base[i-1].geom_first:ROUTE_NOARC;
+  route_seg_cost[i]=i?cost[i-1]:0;route_seg_m[i]=i?geo_seg_m(coords[i-1].lat,coords[i-1].lon,coords[i].lat,coords[i].lon):0;
+  route_result_m+=route_seg_m[i];
+ }
+ for(int i=0;route_status==R_CALC&&i<200;i++)regional_service_until(s_now_ms()+10u);
+ assert(route_status==R_READY&&route_node[route_n-1]==5&&route_result_m==route_compute_m());
+ if(same_state){assert(route_n==4&&route_node[1]==1&&route_node[2]==4&&route_result_cost==300);}
+ else if(have_alternative){assert(route_n==4&&route_node[1]==6&&route_node[2]==4&&route_result_cost==420);}
+ else{assert(route_n==6&&route_node[1]==1&&route_node[2]==2&&route_node[3]==3&&route_result_cost==400);}
+ assert(!traffic_offer_valid());fclose(f);routefd=-1;routeok=0;route_exact_from=ROUTE_NOARC;
+}
+
+/* Both routes reach the same directed rejoin, then use the same final road.
+ * The zigzag is fastest. The branch via state 6 has fewer turns. */
+static void route_fewer_turns(u32 alternate_cost,int legal,int long_detour,int expected){
+ struct TurnGraph {
+  struct CprNode node[7];u32 edge[7];struct CprBase base[7];
+  struct CprArc arc[7];struct CprPoint geom[14];
+ } g={0};
+ const struct CprPoint coords[]={{5497000,-161000},{5497110,-161000},{5497110,-160840},
+  {5497220,-160840},{5497220,-160640},{5497220,-160450},
+  {long_detour?5497000:5497110,long_detour?-160200:-160820}};
+ const u32 from[]={0,1,2,3,4,0,6},to[]={1,2,3,4,5,6,4};
+ const u32 cost[]={140,160,140,160,100,alternate_cost/2u,alternate_cost-alternate_cost/2u};
+ for(int i=0;i<7;i++){
+  g.node[i].lat=coords[i].lat;g.node[i].lon=coords[i].lon;g.node[i].comp=1;
+  g.base[i].geom_first=2u*i;g.base[i].geom_count=2;
+  g.geom[2*i]=coords[from[i]];g.geom[2*i+1]=coords[to[i]];
+  g.arc[i]=(struct CprArc){from[i],to[i],cost[i],(u32)i,ROUTE_NOARC,0,0,0};
+ }
+ u32 n=0;
+ for(u32 node=0;node<7;node++){
+  g.node[node].first_edge=n;
+  for(u32 arc=0;arc<(legal?7u:6u);arc++)if(to[arc]==node){g.edge[n++]=arc;g.node[node].edge_count++;}
+ }
+ FILE*f=tmpfile();assert(f&&fwrite(&g,sizeof(g),1,f)==1);assert(!fflush(f));routefd=fileno(f);
+ memzero(&rh,sizeof(rh));rh.nodes=7;rh.route_edges=n;rh.base_edges=rh.ch_arcs=7;rh.geom_points=14;
+ rh.node_off=offsetof(struct TurnGraph,node);rh.edge_off=offsetof(struct TurnGraph,edge);
+ rh.base_off=offsetof(struct TurnGraph,base);rh.arc_off=offsetof(struct TurnGraph,arc);rh.geom_off=offsetof(struct TurnGraph,geom);
+ cpr_bcache_count=0;memzero(cpr_acache_count,sizeof(cpr_acache_count));memzero(cpr_gcache_count,sizeof(cpr_gcache_count));
+ routeok=1;route_geom_map_ok=0;route_dest_comp=1;qadjmode=0;atlas_ready=atlas_probe=0;
+ pref.learn_history=pref.diversions=0;gps.mph10=0;route_exact_from=0;
+ traffic_invalidate();route_status=R_CALC;route_build_phase=RB_DONE;route_head=0;route_n=6;route_result_cost=700;route_result_m=0;
+ for(int i=0;i<6;i++){
+  route_lat[i]=coords[i].lat;route_lon[i]=coords[i].lon;route_node[i]=(u32)i;
+  route_seg_arc[i]=i?(u32)i-1u:ROUTE_NOARC;route_seg_phys[i]=i?g.base[i-1].geom_first:ROUTE_NOARC;
+  route_seg_cost[i]=i?cost[i-1]:0;route_seg_m[i]=i?geo_seg_m(coords[i-1].lat,coords[i-1].lon,coords[i].lat,coords[i].lon):0;
+  route_result_m+=route_seg_m[i];
+ }
+ for(int i=0;route_status==R_CALC&&i<200;i++)regional_service_until(s_now_ms()+10u);
+ assert(route_status==R_READY&&route_node[route_n-1]==5&&route_result_m==route_compute_m());
+ if(expected){assert(route_n==4&&route_node[1]==6&&route_node[2]==4&&route_result_cost==alternate_cost+100u);}
+ else{assert(route_n==6&&route_node[1]==1&&route_result_cost==700);}
+ assert(!traffic_offer_valid());fclose(f);routefd=-1;routeok=0;route_exact_from=ROUTE_NOARC;
+}
+
 /* Two non-overlapping slow stretches, each with a genuinely legal bypass. */
 struct TwoGraph {
  struct CprNode node[9];u32 edge[10];struct CprBase base[10];
@@ -859,4 +949,344 @@ static void ml_features(void){
  ml_load();assert(mob_ml.road_cls[3].count==0&&ml_hazard_level(991u,0)==0);
  assert(ml_save());mob_clear();assert(fopen(MOB_ML_FILE,"rb")==0);
 }
-int main(void){(void)load_font();learner();predictor_quality();prediction_names();prediction_ui();frequent_places();shared_geometry();tiny_graph();two_diversions();ml_features();puts("Mobility recording, contextual predictor, session dismissal, startup and trajectory evidence, map confirmation, offline names, frequent-place prompts and persistence, road profiles, diversion regressions and extended local ML features passed.");return 0;}
+/* Excessive U-turn/spur bypasses are rejected so required turnarounds never
+ * turn into multi-minute or multi-kilometre detours. */
+static void route_spur_detour_cap(int separate_roads,u32 alt_cost,int expect_bypass){
+ struct SpurCapGraph {
+  struct CprNode node[7];u32 edge[7];struct CprBase base[7];
+  struct CprArc arc[7];struct CprPoint geom[14];
+ } g={0};
+ const struct CprPoint coords[]={{5497000,-161000},{5497300,-161000},{5497300,-160900},
+  {5497300,separate_roads?-160990:-161000},{5497600,-161000},{5497900,-161000},{5497400,-161150}};
+ u32 from[]={0,1,2,3,4,0,6},to[]={1,2,3,4,5,6,4};
+ u32 cost[]={100,50,50,100,100,alt_cost/2u,alt_cost-alt_cost/2u};
+ for(int i=0;i<7;i++){
+  g.node[i].lat=coords[i].lat;g.node[i].lon=coords[i].lon;g.node[i].comp=1;
+  g.base[i].geom_first=i==2&&!separate_roads?2u:2u*i;g.base[i].geom_count=2;
+  if(i==2&&!separate_roads)g.base[i].flags=CPR_ARC_GEOM_REVERSED;
+  g.geom[2*i]=coords[from[i]];g.geom[2*i+1]=coords[to[i]];
+  g.arc[i]=(struct CprArc){from[i],to[i],cost[i],(u32)i,ROUTE_NOARC,0,0,0};
+ }
+ u32 n=0;
+ for(u32 node=0;node<7;node++){
+  g.node[node].first_edge=n;
+  for(u32 arc=0;arc<7u;arc++)if(to[arc]==node){g.edge[n++]=arc;g.node[node].edge_count++;}
+ }
+ FILE*f=tmpfile();assert(f&&fwrite(&g,sizeof(g),1,f)==1);assert(!fflush(f));routefd=fileno(f);
+ memzero(&rh,sizeof(rh));rh.nodes=7;rh.route_edges=n;rh.base_edges=rh.ch_arcs=7;rh.geom_points=14;
+ rh.node_off=offsetof(struct SpurCapGraph,node);rh.edge_off=offsetof(struct SpurCapGraph,edge);
+ rh.base_off=offsetof(struct SpurCapGraph,base);rh.arc_off=offsetof(struct SpurCapGraph,arc);rh.geom_off=offsetof(struct SpurCapGraph,geom);
+ cpr_bcache_count=0;memzero(cpr_acache_count,sizeof(cpr_acache_count));memzero(cpr_gcache_count,sizeof(cpr_gcache_count));
+ routeok=1;route_geom_map_ok=0;route_dest_comp=1;qadjmode=0;atlas_ready=atlas_probe=0;
+ pref.learn_history=pref.diversions=0;gps.mph10=0;route_exact_from=0;
+ traffic_invalidate();route_status=R_CALC;route_build_phase=RB_DONE;route_head=0;route_n=6;route_result_cost=400;route_result_m=0;
+ for(int i=0;i<6;i++){
+  route_lat[i]=coords[i].lat;route_lon[i]=coords[i].lon;route_node[i]=(u32)i;
+  route_seg_arc[i]=i?(u32)i-1u:ROUTE_NOARC;route_seg_phys[i]=i?g.base[i-1].geom_first:ROUTE_NOARC;
+  route_seg_cost[i]=i?cost[i-1]:0;route_seg_m[i]=i?geo_seg_m(coords[i-1].lat,coords[i-1].lon,coords[i].lat,coords[i].lon):0;
+  route_result_m+=route_seg_m[i];
+ }
+ for(int i=0;route_status==R_CALC&&i<200;i++)regional_service_until(s_now_ms()+10u);
+ assert(route_status==R_READY&&route_result_m==route_compute_m());
+ if(expect_bypass){assert(route_n==4&&route_node[1]==6&&route_result_cost==alt_cost+100u);}
+ else{assert(route_n==6&&route_node[2]==2&&route_result_cost==400u);}
+ fclose(f);routefd=-1;routeok=0;route_exact_from=ROUTE_NOARC;
+}
+
+/* A cleanup bypass that loops through an earlier prefix coordinate must be
+ * rejected by traffic_path_revisits_route() instead of creating a figure-8. */
+static void route_cleanup_blocks_revisit(void){
+ struct RevisitGraph {
+  struct CprNode node[8];u32 edge[9];struct CprBase base[9];
+  struct CprArc arc[9];struct CprPoint geom[18];
+ } g={0};
+ /* Node 0 is retained prefix; spur at [2..4] tries bypass via node 7 which shares
+  * coordinates with prefix node 0 (figure-8 revisit). */
+ const struct CprPoint coords[]={{5496500,-161000},{5497000,-161000},{5497300,-161000},
+  {5497300,-160900},{5497300,-161000},{5497600,-161000},{5497900,-161000},{5496500,-161000}};
+ u32 from[]={0,1,2,3,4,5,1,7,7},to[]={1,2,3,4,5,6,7,5,5};
+ u32 cost[]={100,100,50,50,100,100,140,180,180};
+ for(int i=0;i<8;i++){g.node[i].lat=coords[i].lat;g.node[i].lon=coords[i].lon;g.node[i].comp=1;}
+ for(int i=0;i<8;i++){
+  g.base[i].geom_first=i==3?4u:2u*i;g.base[i].geom_count=2;
+  if(i==3)g.base[i].flags=CPR_ARC_GEOM_REVERSED;
+  g.geom[2*i]=coords[from[i]];g.geom[2*i+1]=coords[to[i]];
+  g.arc[i]=(struct CprArc){from[i],to[i],cost[i],(u32)i,ROUTE_NOARC,0,0,0};
+ }
+ u32 n=0;
+ for(u32 node=0;node<8;node++){
+  g.node[node].first_edge=n;
+  for(u32 arc=0;arc<8u;arc++)if(to[arc]==node){g.edge[n++]=arc;g.node[node].edge_count++;}
+ }
+ FILE*f=tmpfile();assert(f&&fwrite(&g,sizeof(g),1,f)==1);assert(!fflush(f));routefd=fileno(f);
+ memzero(&rh,sizeof(rh));rh.nodes=8;rh.route_edges=n;rh.base_edges=rh.ch_arcs=8;rh.geom_points=16;
+ rh.node_off=offsetof(struct RevisitGraph,node);rh.edge_off=offsetof(struct RevisitGraph,edge);
+ rh.base_off=offsetof(struct RevisitGraph,base);rh.arc_off=offsetof(struct RevisitGraph,arc);rh.geom_off=offsetof(struct RevisitGraph,geom);
+ cpr_bcache_count=0;memzero(cpr_acache_count,sizeof(cpr_acache_count));memzero(cpr_gcache_count,sizeof(cpr_gcache_count));
+ routeok=1;route_geom_map_ok=0;route_dest_comp=1;qadjmode=0;atlas_ready=atlas_probe=0;
+ pref.learn_history=pref.diversions=0;gps.mph10=0;route_exact_from=0;
+ traffic_invalidate();route_status=R_CALC;route_build_phase=RB_DONE;route_head=0;route_n=7;route_result_cost=500;route_result_m=0;
+ for(int i=0;i<7;i++){
+  route_lat[i]=coords[i].lat;route_lon[i]=coords[i].lon;route_node[i]=(u32)i;
+  route_seg_arc[i]=i?(u32)i-1u:ROUTE_NOARC;route_seg_phys[i]=i?g.base[i-1].geom_first:ROUTE_NOARC;
+  route_seg_cost[i]=i?cost[i-1]:0;route_seg_m[i]=i?geo_seg_m(coords[i-1].lat,coords[i-1].lon,coords[i].lat,coords[i].lon):0;
+  route_result_m+=route_seg_m[i];
+ }
+ /* Run cleanup directly with begin=1, join=5 (node 0 is retained prefix). */
+ route_cleanup_begin(s_now_ms());
+ route_cleanup_limit_ds=300u+ROUTE_CLEANUP_SPUR_EXTRA_DS;
+ route_cleanup_distance_m=route_seg_m[2]+route_seg_m[3]+route_seg_m[4]+route_seg_m[5];
+ route_cleanup_extra_m=ROUTE_CLEANUP_SPUR_EXTRA_M;
+ route_build_phase=RB_CLEANUP;traffic_search_kind=TRAFFIC_SEARCH_ROUTE_CLEANUP;
+ traffic_search_init(1,5,2u,300u,s_now_ms());
+ for(int i=0;traffic_searching&&i<64;i++)traffic_search_step(s_now_ms());
+ /* Figure-8 revisit through node 7 (same lat/lon as prefix node 0) must be rejected! */
+ assert(route_n==7&&route_node[3]==3&&route_result_cost==500u);
+ fclose(f);routefd=-1;routeok=0;route_exact_from=ROUTE_NOARC;
+}
+
+/* A 4-turn residential zigzag cluster (within 350 m between turns, <= 800 m span)
+ * must be simplified in a single TRAFFIC_SEARCH_FEWER_TURNS pass. */
+static void route_four_turn_cluster(void){
+ struct Zig4Graph {
+  struct CprNode node[9];u32 edge[9];struct CprBase base[9];
+  struct CprArc arc[9];struct CprPoint geom[18];
+ } g={0};
+ /* 0->1 (N), 1->2 (E, turn 1), 2->3 (N, turn 2), 3->4 (W, turn 3), 4->5 (N, turn 4), 5->6 (N)
+  * Simpler bypass: 0 -> 7 -> 5 (straight N corridor, 0 turns!). */
+ const struct CprPoint coords[]={{5497000,-161000},{5497200,-161000},{5497200,-160850},
+  {5497350,-160850},{5497350,-161000},{5497550,-161000},{5497800,-161000},
+  {5497300,-161000},{5497900,-161000}};
+ const u32 from[]={0,1,2,3,4,5,0,7,5},to[]={1,2,3,4,5,6,7,5,8};
+ const u32 cost[]={100,80,80,80,100,100,240,240,100};
+ for(int i=0;i<9;i++){g.node[i].lat=coords[i].lat;g.node[i].lon=coords[i].lon;g.node[i].comp=1;}
+ for(int i=0;i<8;i++){
+  g.base[i].geom_first=2u*i;g.base[i].geom_count=2;
+  g.geom[2*i]=coords[from[i]];g.geom[2*i+1]=coords[to[i]];
+  g.arc[i]=(struct CprArc){from[i],to[i],cost[i],(u32)i,ROUTE_NOARC,0,0,0};
+ }
+ u32 n=0;
+ for(u32 node=0;node<8;node++){
+  g.node[node].first_edge=n;
+  for(u32 arc=0;arc<8u;arc++)if(to[arc]==node){g.edge[n++]=arc;g.node[node].edge_count++;}
+ }
+ FILE*f=tmpfile();assert(f&&fwrite(&g,sizeof(g),1,f)==1);assert(!fflush(f));routefd=fileno(f);
+ memzero(&rh,sizeof(rh));rh.nodes=8;rh.route_edges=n;rh.base_edges=rh.ch_arcs=8;rh.geom_points=16;
+ rh.node_off=offsetof(struct Zig4Graph,node);rh.edge_off=offsetof(struct Zig4Graph,edge);
+ rh.base_off=offsetof(struct Zig4Graph,base);rh.arc_off=offsetof(struct Zig4Graph,arc);rh.geom_off=offsetof(struct Zig4Graph,geom);
+ cpr_bcache_count=0;memzero(cpr_acache_count,sizeof(cpr_acache_count));memzero(cpr_gcache_count,sizeof(cpr_gcache_count));
+ routeok=1;route_geom_map_ok=0;route_dest_comp=1;qadjmode=0;atlas_ready=atlas_probe=0;
+ pref.learn_history=pref.diversions=0;gps.mph10=0;route_exact_from=0;
+ traffic_invalidate();route_status=R_CALC;route_build_phase=RB_DONE;route_head=0;route_n=7;route_result_cost=540;route_result_m=0;
+ for(int i=0;i<7;i++){
+  route_lat[i]=coords[i].lat;route_lon[i]=coords[i].lon;route_node[i]=(u32)i;
+  route_seg_arc[i]=i?(u32)i-1u:ROUTE_NOARC;route_seg_phys[i]=i?g.base[i-1].geom_first:ROUTE_NOARC;
+  route_seg_cost[i]=i?cost[i-1]:0;route_seg_m[i]=i?geo_seg_m(coords[i-1].lat,coords[i-1].lon,coords[i].lat,coords[i].lon):0;
+  route_result_m+=route_seg_m[i];
+ }
+ for(int i=0;route_status==R_CALC&&i<200;i++)regional_service_until(s_now_ms()+10u);
+ assert(route_status==R_READY&&route_turn_attempts==1);
+ assert(route_n==4&&route_node[1]==7&&route_node[2]==5&&route_result_cost==580u&&route_window_turns(0,route_n-1)==0);
+ fclose(f);routefd=-1;routeok=0;route_exact_from=ROUTE_NOARC;
+}
+
+/* Two-way start & destination twin seeding eliminates U-turn spurs when the
+ * lowest-ID snap arc faces away from the journey, while moving heading penalty
+ * steers a moving vehicle forward without inflating the displayed ETA. */
+static void route_twoway_endpoint_twins(void){
+ struct TwinGraph {
+  struct CprNode node[4];
+  u32 upf[6],upr[6],tref[6],sref[6];
+  struct CprBase base[6];
+  struct CprArc arc[6];
+  struct CprPoint geom[6];
+  struct CprTile tile[1];
+ } g={0};
+ /* Start street: 0(N) <-> 1(S) [phys geom 0..1]; arc0 is 1->0 (N, wrong way), arc1 is 0->1 (S, right way).
+  * Connector: 1 -> 2 [phys geom 2..3], plus long forward loop 0 -> 2 (cost 400) for moving heading test.
+  * Dest street: 2(N) <-> 3(S) [phys geom 4..5]; arc4 is 3->2 (N, wrong way), arc5 is 2->3 (S, right way). */
+ const s32 base_lat=21472*256;
+ const struct CprPoint pts[4]={{base_lat+220,-161000},{base_lat+160,-161000},{base_lat+100,-161000},{base_lat+40,-161000}};
+ for(int i=0;i<4;i++){g.node[i].lat=pts[i].lat;g.node[i].lon=pts[i].lon;g.node[i].comp=1;g.node[i].phys=(u32)i;}
+ g.geom[0]=pts[1];g.geom[1]=pts[0];
+ g.geom[2]=pts[1];g.geom[3]=pts[2];
+ g.geom[4]=pts[3];g.geom[5]=pts[2];
+ /* Arcs: 0: 1->0(100), 1: 0->1(100,rev), 2: 1->2(100), 3: 0->2(150), 4: 3->2(100), 5: 2->3(100,rev) */
+ const u32 af[6]={1,0,1,0,3,2},at[6]={0,1,2,2,2,3},ac[6]={100,100,100,150,100,100};
+ const u32 gf[6]={0,0,2,2,4,4};const u8 fl[6]={0,CPR_ARC_GEOM_REVERSED,0,0,0,CPR_ARC_GEOM_REVERSED};
+ for(int i=0;i<6;i++){
+  g.base[i].cost=ac[i];g.base[i].to_state=at[i];g.base[i].geom_first=gf[i];g.base[i].geom_count=2;
+  g.base[i].flags=fl[i];g.base[i].src_first=(u32)i;g.base[i].src_count=1;g.sref[i]=af[i];
+  g.arc[i]=(struct CprArc){af[i],at[i],ac[i],(u32)i,ROUTE_NOARC,0,0,0};
+  g.tref[i]=(u32)i;
+ }
+ /* Simple CH upward graphs (all ranks equal -> put all outgoing in upf, all incoming in upr). */
+ u32 nf=0,nr=0;
+ for(u32 v=0;v<4;v++){
+  g.node[v].upf_first=nf;for(u32 i=0;i<6;i++)if(af[i]==v){g.upf[nf++]=i;g.node[v].upf_count++;}
+  g.node[v].upr_first=nr;for(u32 i=0;i<6;i++)if(at[i]==v){g.upr[nr++]=i;g.node[v].upr_count++;}
+ }
+ g.tile[0].tx=tile_div(-161000,6);g.tile[0].ty=tile_div(base_lat+190,6);g.tile[0].first=0;g.tile[0].count=6;
+ assert(tile_div(base_lat+70,6)==g.tile[0].ty); /* both start & dest in same Z6 tile */
+ FILE*f=tmpfile();assert(f&&fwrite(&g,sizeof(g),1,f)==1);assert(!fflush(f));routefd=fileno(f);
+ memzero(&rh,sizeof(rh));rh.nodes=rh.phys_nodes=4;rh.base_edges=rh.ch_arcs=6;rh.geom_points=6;rh.tiles=1;
+ rh.upf_count=nf;rh.upr_count=nr;rh.tile_refs=6;rh.src_refs=6;
+ rh.minlat=5490000;rh.maxlat=5500000;rh.minlon=-170000;rh.maxlon=-150000;
+ rh.node_off=offsetof(struct TwinGraph,node);rh.base_off=offsetof(struct TwinGraph,base);
+ rh.arc_off=offsetof(struct TwinGraph,arc);rh.geom_off=offsetof(struct TwinGraph,geom);
+ rh.tile_off=offsetof(struct TwinGraph,tile);rh.upf_off=offsetof(struct TwinGraph,upf);
+ rh.upr_off=offsetof(struct TwinGraph,upr);rh.tref_off=offsetof(struct TwinGraph,tref);
+ rh.src_off=offsetof(struct TwinGraph,sref);
+ cpr_bcache_count=0;memzero(cpr_acache_count,sizeof(cpr_acache_count));memzero(cpr_gcache_count,sizeof(cpr_gcache_count));
+ routeok=1;route_geom_map_ok=0;qadjmode=0;atlas_ready=atlas_probe=0;pref.learn_history=pref.diversions=0;
+
+ /* Case 1: Parked halfway along 0<->1 going to halfway along 2<->3.
+  * Lowest-ID arcs (0 and 4) both face NORTH (wrong way); twin seeding picks
+  * SOUTHBOUND arcs (1 and 5) -> direct 200 ds route with ZERO U-turns! */
+ gps.fix=1;gps.mph10=0;gps.lat=track_lat=base_lat+190;gps.lon=track_lon=-161000;track_valid=1;
+ route_exact_from=route_exact_to=ROUTE_NOARC;
+ assert(regional_route_start(base_lat+70,-161000));
+ for(int i=0;route_status==R_CALC&&i<200;i++)regional_service_until(s_now_ms()+10u);
+ assert(route_status==R_READY&&route_start_used_twin&&route_dest_used_twin);
+ assert(route_result_cost==200u);
+ for(int i=1;i<route_n-1;i++)assert(!route_cleanup_uturn(i));
+
+ /* Case 2: Moving NORTH (course=0, 20 mph) along 1->0: soft +180 s U-turn penalty
+  * on southbound twin (1) makes forward path 0->2 (cost 50+150+50=250) beat
+  * backward U-turn (50+1800+100+50=2000), and displayed ETA stays true (250 ds)! */
+ route_cancel();
+ gps.mph10=200;gps.course=track_course=display_course=0;display_course_valid=1;
+ gps.lat=track_lat=base_lat+190;gps.lon=track_lon=-161000;
+ assert(regional_route_start(base_lat+70,-161000));
+ for(int i=0;route_status==R_CALC&&i<200;i++)regional_service_until(s_now_ms()+10u);
+ assert(route_status==R_READY&&!route_start_used_twin&&route_dest_used_twin);
+ assert(route_result_cost==250u);
+
+ /* Case 3: Moving NORTH with a 400 s forward detour (cost 4000) and no U-turn
+  * edge at node 0: penalized backward twin (50+1800+100+50=2000) beats forward
+  * detour (50+4000+50=4100), and the soft +180 s penalty is stripped from ETA (200 ds)! */
+ g.arc[3].cost=g.base[3].cost=4000u;g.node[0].upf_first=0;g.node[0].upf_count=1;g.upf[0]=3;g.node[1].upr_count=0;
+ rewind(f);assert(fwrite(&g,sizeof(g),1,f)==1&&!fflush(f));
+ cpr_bcache_count=0;memzero(cpr_acache_count,sizeof(cpr_acache_count));memzero(cpr_rcache_count,sizeof(cpr_rcache_count));
+ route_cancel();
+ assert(regional_route_start(base_lat+70,-161000));
+ for(int i=0;route_status==R_CALC&&i<200;i++)regional_service_until(s_now_ms()+10u);
+ assert(route_status==R_READY&&route_start_used_twin&&route_dest_used_twin);
+ assert(route_result_cost==200u);
+
+ route_cancel();fclose(f);routefd=-1;routeok=0;gps.mph10=0;
+}
+
+/* Divided-carriageway V-pinch U-turns (two separate one-way carriageways meeting
+ * at a 120-150 deg flare that widens to a 160-200 deg reversal over 30 m) must
+ * be detected by route_cleanup_uturn() and rejected during RB_CLEANUP so a
+ * cheaper V-pinch never replaces a spur ahead of a clean earlier bypass. */
+static void route_divided_vpinch_rejected(void){
+ struct VPinchGraph {
+  struct CprNode node[9];u32 edge[12];struct CprBase base[12];
+  struct CprArc arc[12];struct CprPoint geom[26];
+ } g={0};
+ /* Mirrors Newcastle B1307 Percy Street southbound/northbound V-pinch at node 2. */
+ const struct CprPoint coords[]={
+  {5497520,-161670}, /* 0: north approach */
+  {5497433,-161710}, /* 1: southbound carriageway */
+  {5497419,-161725}, /* 2: V-pinch junction node */
+  {5497413,-161619}, /* 3: spur tip east */
+  {5497419,-161725}, /* 4: spur return state */
+  {5497410,-161798}, /* 5: west destination approach */
+  {5497434,-161724}, /* 6: northbound carriageway (17 m flare, dir 0 deg) */
+  {5497458,-161715}, /* 7: northbound carriageway (44 m corridor, dir 10 deg) */
+  {5497520,-161800}, /* 8: clean earlier westward bypass */
+ };
+ /* Arcs:
+  * 0: 0->1 (sb approach, cost 60)
+  * 1: 1->2 (sb flare via (5497428,-161714), local exit 220 deg, cost 20)
+  * 2: 2->3 (spur out, cost 40)
+  * 3: 3->4 (spur back, same phys as 2, cost 40)
+  * 4: 4->5 (final west leg, cost 50)
+  * 5: 2->6 (nb flare via (5497429,-161725), local entry 0 deg, cost 20)
+  * 6: 6->7 (nb carriageway, cost 20)
+  * 7: 7->5 (short loop back to 5, cost 60 -> V-pinch total 0->1->2->6->7->5 = 180)
+  * 8: 0->8 (clean early turn west, cost 130)
+  * 9: 8->5 (clean approach south to 5, cost 130 -> clean total = 260)
+  * 10: 5->5 dummy tail? No, use 10: 5->dest not needed; join at 5 with arc 10 outgoing 5->west */
+ const u32 af[]={0,1,2,3,4,2,6,7,0,8};
+ const u32 at[]={1,2,3,4,5,6,7,5,8,5};
+ const u32 ac[]={60,20,40,40,50,20,20,60,130,130};
+ for(int i=0;i<9;i++){g.node[i].lat=coords[i].lat;g.node[i].lon=coords[i].lon;g.node[i].comp=1;}
+ u32 gp=0;
+ for(int i=0;i<10;i++){
+  if(i==3){
+   g.base[i].geom_first=g.base[2].geom_first;g.base[i].geom_count=2;g.base[i].flags=CPR_ARC_GEOM_REVERSED;
+  }else if(i==1){
+   g.base[i].geom_first=gp;g.base[i].geom_count=3;
+   g.geom[gp++]=coords[1];g.geom[gp++]=(struct CprPoint){5497428,-161714};g.geom[gp++]=coords[2];
+  }else if(i==5){
+   g.base[i].geom_first=gp;g.base[i].geom_count=3;
+   g.geom[gp++]=coords[2];g.geom[gp++]=(struct CprPoint){5497429,-161725};g.geom[gp++]=coords[6];
+  }else{
+   g.base[i].geom_first=gp;g.base[i].geom_count=2;
+   g.geom[gp++]=coords[af[i]];g.geom[gp++]=coords[at[i]];
+  }
+  g.base[i].cost=ac[i];
+  g.arc[i]=(struct CprArc){af[i],at[i],ac[i],(u32)i,ROUTE_NOARC,0,0,0};
+ }
+ u32 ne=0;
+ for(u32 v=0;v<9;v++){
+  g.node[v].first_edge=ne;
+  for(u32 i=0;i<10;i++)if(at[i]==v){g.edge[ne++]=i;g.node[v].edge_count++;}
+ }
+ FILE*f=tmpfile();assert(f&&fwrite(&g,sizeof(g),1,f)==1);assert(!fflush(f));routefd=fileno(f);
+ memzero(&rh,sizeof(rh));rh.nodes=9;rh.route_edges=ne;rh.base_edges=rh.ch_arcs=10;rh.geom_points=gp;
+ rh.node_off=offsetof(struct VPinchGraph,node);rh.edge_off=offsetof(struct VPinchGraph,edge);
+ rh.base_off=offsetof(struct VPinchGraph,base);rh.arc_off=offsetof(struct VPinchGraph,arc);rh.geom_off=offsetof(struct VPinchGraph,geom);
+ cpr_bcache_count=0;memzero(cpr_acache_count,sizeof(cpr_acache_count));memzero(cpr_gcache_count,sizeof(cpr_gcache_count));
+ memzero(route_turn_cache,sizeof(route_turn_cache));
+ routeok=1;route_geom_map_ok=0;route_dest_comp=1;qadjmode=0;atlas_ready=atlas_probe=0;
+ pref.learn_history=pref.diversions=0;gps.mph10=0;route_exact_from=0;route_exact_to=ROUTE_NOARC;route_dest_twin_ok=0;
+
+ /* Part 1: Verify route_cleanup_uturn() flags the V-pinch (140 deg local, 170 deg 30 m corridor)
+  * and ignores it when either carriageway carries the roundabout flag. */
+ struct {s32 lat,lon;u32 node,arc;} vp[]={
+  {5497520,-161670,0,ROUTE_NOARC},{5497433,-161710,1,0},{5497428,-161714,ROUTE_NOARC,1},
+  {5497419,-161725,2,1},{5497429,-161725,ROUTE_NOARC,5},{5497434,-161724,6,5},
+  {5497458,-161715,7,6},{5497410,-161798,5,7}
+ };
+ route_head=0;route_n=8;
+ for(int i=0;i<8;i++){
+  route_lat[i]=vp[i].lat;route_lon[i]=vp[i].lon;route_node[i]=vp[i].node;route_seg_arc[i]=vp[i].arc;
+  route_seg_phys[i]=vp[i].arc==ROUTE_NOARC?ROUTE_NOARC:g.base[vp[i].arc].geom_first;
+  route_seg_m[i]=i?geo_seg_m(vp[i-1].lat,vp[i-1].lon,vp[i].lat,vp[i].lon):0;
+ }
+ assert(!route_turns_back(route_lat[2],route_lon[2],route_lat[3],route_lon[3],route_lat[4],route_lon[4]));
+ assert(route_cleanup_uturn(3));
+ g.base[5].flags|=4;rewind(f);assert(fwrite(&g,sizeof(g),1,f)==1&&!fflush(f));
+ cpr_bcache_count=0;memzero(route_turn_cache,sizeof(route_turn_cache));
+ assert(!route_cleanup_uturn(3));
+ g.base[5].flags&=~4u;rewind(f);assert(fwrite(&g,sizeof(g),1,f)==1&&!fflush(f));
+ cpr_bcache_count=0;memzero(route_turn_cache,sizeof(route_turn_cache));
+
+ /* Part 2: Run RB_CLEANUP on the spur route 0->1->2->3->4->5.
+  * The cheaper V-pinch (0->1->2->6->7->5, cost 180) must be rejected in favour
+  * of the clean westward bypass (0->8->5, cost 260). */
+ struct {s32 lat,lon;u32 node,arc,cost;} sp[]={
+  {5497520,-161670,0,ROUTE_NOARC,0},{5497433,-161710,1,0,60},{5497428,-161714,ROUTE_NOARC,1,10},
+  {5497419,-161725,2,1,10},{5497413,-161619,3,2,40},{5497419,-161725,4,3,40},{5497410,-161798,5,4,50}
+ };
+ traffic_invalidate();route_status=R_CALC;route_build_phase=RB_DONE;route_head=0;route_n=7;route_result_cost=210;route_result_m=0;
+ for(int i=0;i<7;i++){
+  route_lat[i]=sp[i].lat;route_lon[i]=sp[i].lon;route_node[i]=sp[i].node;route_seg_arc[i]=sp[i].arc;
+  route_seg_phys[i]=sp[i].arc==ROUTE_NOARC?ROUTE_NOARC:g.base[sp[i].arc].geom_first;
+  route_seg_cost[i]=sp[i].cost;
+  route_seg_m[i]=i?geo_seg_m(sp[i-1].lat,sp[i-1].lon,sp[i].lat,sp[i].lon):0;
+  route_result_m+=route_seg_m[i];
+ }
+ for(int i=0;route_status==R_CALC&&i<200;i++)regional_service_until(s_now_ms()+10u);
+ assert(route_status==R_READY&&route_result_m==route_compute_m());
+ assert(route_n==3&&route_node[0]==0&&route_node[1]==8&&route_node[2]==5&&route_result_cost==260u);
+ for(int i=1;i<route_n-1;i++)assert(!route_cleanup_uturn(i));
+
+ route_cancel();fclose(f);routefd=-1;routeok=0;route_exact_from=ROUTE_NOARC;
+}
+
+int main(void){(void)load_font();learner();predictor_quality();prediction_names();prediction_ui();frequent_places();shared_geometry();tiny_graph();two_diversions();ml_features();route_spur(1,0,0);route_spur(0,1,0);route_spur(0,0,0);route_spur(0,1,1);route_spur(0,0,1);route_spur_detour_cap(0,1300u,0);route_spur_detour_cap(1,950u,0);route_spur_detour_cap(1,800u,1);route_cleanup_blocks_revisit();route_four_turn_cluster();route_twoway_endpoint_twins();route_divided_vpinch_rejected();route_fewer_turns(670u,1,0,1);route_fewer_turns(780u,1,0,0);route_fewer_turns(620u,0,0,0);route_fewer_turns(620u,1,1,0);assert(route_count_turn(0,ROUTE_HEADING_ROUNDABOUT)==1&&route_count_turn(ROUTE_HEADING_ROUNDABOUT,ROUTE_HEADING_ROUNDABOUT)==0&&route_count_turn(ROUTE_HEADING_ROUNDABOUT,9)==0);puts("Mobility, historical diversions, two-way endpoint twins, divided-carriageway V-pinch guard, bounded U-turn avoidance and legal routing with fewer turns passed.");return 0;}

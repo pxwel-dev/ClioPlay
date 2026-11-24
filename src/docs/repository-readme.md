@@ -11,35 +11,40 @@
 
 ## Version @@VERSION@@
 
-- **Fixed close-up road alignment at Z6–Z9 (2.2.6.1 bug fix):** adds display-only, camera-coupled **Z6-reference visual road matching** (`1/16`-world-unit precision from already-cached Z6 tiles, with zero extra SD reads or map rebuilds) so normal 3–10 m GPS scatter no longer makes the car appear beside the road or detaches the start of the magenta route at cropped zooms **Z7–Z9**. Uses continuous heading alignment (active while moving and stopped at junctions), active-route corridor preference, service-road penalty, dual-carriageway lock hysteresis with hitch-free tile-seam handoffs, smooth per-frame easing, and **Explore** parity — keeping the car icon anchored at `(240, 211)` clear of bottom HUD cards while leaving raw GPS, routing, speed limits, cameras, and ML history completely untouched.
-- **Unguided local ML learning & road alerts (2.2.6):** everyday unguided drives (with no active route set) automatically learn **Preferred Nearby POIs** (`Fuel`, `Parking`, `Hospital`), **Usual Parking** spots (both paired to a unique nearby Favourite/Recent *and* for any mapped car park visited `≥ 3` times unguided with no saved places nearby whenever you later route within `100–600 m`), **POI-named Recurring Intermediate Stops, Destination Predictions & Frequent-Place prompts**, and **Usual Route** shortcuts (`≥ 4` unguided drives on an alternate road entering an unfamiliar routed junction), while **Likely traffic ahead**, **Frequent slowdown ahead**, and **Cold-weather slowdown ahead** warn you during unguided commutes too (filtered by directed road heading, with dynamic smooth-pass decay and age expiry so cleared roadworks fade away without summer drives erasing winter ice spots), plus weekday/weekend regime weighting for destination predictions and aligned **Adaptive Auto-zoom** with a 20-second sustained-override guard — all 100% compatible with existing `mobility-ml.dat` files.
+Version **2.2.6.2** is a software-only routing and close-up map bug-fix release (**100% compatible with existing `2.1.8–2.2.6.1` maps**, no map rebuild needed):
+
+- **Eliminated unnecessary U-turn spurs (2.2.6.2):** Two-way streets now evaluate both legal directions at route start and destination directly inside the router (with a gentle forward preference while moving that never inflates ETA), eliminating wrong-way departures and overshoot-and-U-turn arrivals at the source without requiring map rebuilds. A bounded local cleanup search also replaces remaining turn-restricted spurs, sharp reversals and divided-carriageway V-pinch hairpins within tight time/distance caps while keeping genuinely necessary U-turns intact.
+- **Simpler routes with fewer turns (2.2.6.2):** Clusters of tight residential turns are simplified onto straighter legal main roads when a cleaner corridor adds at most a few seconds (`≤ +20%` travel time, capped at `30 s` per regional leg; `≤ +25%` / `300 m` distance per section), counting roundabouts once and always showing true driving-time ETA.
+- **Fixed close-up road snap staying frozen after parking off-road (2.2.6.2):** At **Z6–Z9**, pulling off-road into a car park or driveway and stopping now releases the stale road match and smoothly eases the map and vehicle arrow back to GPS with zero extra tile reads, then stops idle redraws once settled.
+- **Fixed close-up road alignment at Z6–Z9 (2.2.6.1).** Display-only road matching uses the existing Z6 road geometry at `1/16`-world-unit precision and keeps the map, vehicle marker and visible route origin aligned. Heading, the active route and the current road match help the display stay steady at junctions and on parallel roads.
+- **Unguided local ML learning & road alerts (2.2.6):** everyday unguided drives (with no active route set) automatically learn **Preferred Nearby POIs** (`Fuel`, `Parking`, `Hospital`), **Usual Parking** spots (both paired to a unique nearby Favourite/Recent *and* for any mapped car park visited `≥ 3` times unguided with no saved places nearby whenever you later route within `100–600 m`), **POI-named Recurring Intermediate Stops, Destination Predictions & Frequent-Place prompts**, and **Usual Route** shortcuts (`≥ 4` unguided drives on an alternate road entering an unfamiliar routed junction), while **Likely traffic ahead**, **Frequent slowdown ahead**, and **Cold-weather slowdown ahead** warn you during unguided commutes too (filtered by directed road heading, with dynamic smooth-pass decay and age expiry so cleared roadworks fade away without summer drives erasing winter ice spots), plus weekday/weekend regime weighting for destination predictions and aligned **Adaptive Auto-zoom** with a 20-second sustained-override guard - all 100% compatible with existing `mobility-ml.dat` files.
 - **Carried forward from 2.2.5, 2.2.4 & 2.2.3:** expandable live **GPS HUD** built into the top clock/temperature pill (three-tier adaptive layout with persistent `HH:MM:SS` seconds, recessed Day/Night pivot-aligned compass dial, `$GPGST`/HDOP accuracy, signal bars, recessed Altitude/Lat/Lon tray across 18 languages, toggled via double-**OK** or console **REPEAT**), expanded **Z9–Z4** Auto zoom with close-up Z7–Z9 street names and sub-unit vector precision, tighter **View diversion** / **View route** framing, strictly offline on-device ML (`mobility-ml.dat`) for personal/cold-weather ETA calibration, `~X-Y min` ETA reliability ranges, dwell-time trip chains, Day/Night learned brightness, route-coloured stop/destination markers and POI highlights, expandable roundabout **Then …** secondary manoeuvre pill, offline Nearby POIs, AVRCP 1.3 instant Bluetooth notifications, `tools/replay_history.py`, and `tools/favourites_tool.py`.
 
 See [version history](CHANGELOG.md) for implemented changes by version, [intelligent navigation](src/docs/intelligent-navigation.md) for ML behaviour and privacy, and the [zoom & controls guide](src/README.md#auto-zoom-and-close-up-street-names).
 
 ## UI previews
 
-See the [full preview index](src/docs/demo/README.md) for all animations.
+All previews below are freshly rendered from **v2.2.6.2** across real UK map regions (**Manchester**, **Central London**, **Milton Keynes**, **Bristol**, **Liverpool**, **Leeds**, **Edinburgh** and **Newcastle**). See the [full preview index](src/docs/demo/README.md) for all animations.
 
-| Live expandable GPS HUD | View and take a diversion |
+| Live expandable GPS HUD | View and take a diversion (Central London) |
 | --- | --- |
-| ![Double-OK expands the clock pill into a live driving GPS HUD with seconds, compass dial, heading, accuracy, satellites, altitude and coordinates, adapting cleanly to popups and menus](src/docs/demo/v225-gps-panel.gif) | ![Preview a proposed real-map diversion tightly framed in Explore, inspect the junction, return via MAP and accept](src/docs/demo/v223-view-diversion.gif) |
+| ![Double-OK expands the clock pill into a live driving GPS HUD on the Liverpool waterfront with seconds, compass dial, heading, accuracy, satellites, altitude and coordinates, adapting cleanly to popups and menus](src/docs/demo/v225-gps-panel.gif) | ![Preview a proposed real-map Central London diversion tightly framed in Explore on a v2.2.6.2 fewer-turns route, inspect the junction, return via MAP and accept](src/docs/demo/v223-view-diversion.gif) |
 
-| Dynamically-resizing, animated frosted-glass menu | Expandable secondary manoeuvre cue |
+| Dynamically-resizing, animated frosted-glass menu | Expandable secondary manoeuvre cue (Milton Keynes) |
 | --- | --- |
-| ![Animated on-map menus, Itinerary, Recents, Favourites, Bluetooth actions and Settings](src/docs/demo/menus.gif) | ![Secondary Then pill expanding for a follow-up roundabout with exit number visible and staying compact for normal turns](src/docs/demo/v223-secondary-manoeuvre.gif) |
+| ![Animated on-map menus, Itinerary, Recents, Favourites, Bluetooth actions and Settings over Manchester](src/docs/demo/menus.gif) | ![Secondary Then pill expanding for chained Milton Keynes roundabouts with exit number visible and returning compact for normal turns](src/docs/demo/v223-secondary-manoeuvre.gif) |
 
 | Send a destination with [ClioPlay Send](https://pxwel-dev.github.io/ClioPlay-Send/) | Bluetooth playback and volume |
 | --- | --- |
 | <img src="src/docs/demo/phone-destination.gif" width="391"> | <img src="src/docs/demo/bluetooth.gif" width="391"> |
 
-| Usual route & calibrated ETA ranges | Frequent & cold-weather slowdown alerts |
+| Usual route & calibrated ETA ranges (Mayfair, London) | Frequent & cold-weather slowdown alerts (Liverpool) |
 | --- | --- |
-| ![Clear-road Durham route showing calibrated ETA reliability range, Usual route available with normal active route colour plus dashed teal alternative, and Use usual route? confirmation](src/docs/demo/v224-ml-eta-and-habits.gif) | ![Real York route showing warm Frequent slowdown ahead alert, deduplication, silence on a cold-only spot at 18 C, Cold-weather slowdown ahead at 1 C and winter-calibrated ETA](src/docs/demo/v224-ml-slowdowns.gif) |
+| ![Clear-road Central London Mayfair route showing calibrated ETA reliability range, Usual route available with normal active route colour plus dashed teal parallel Park Street alternative bypassing the Oxford Street dogleg, and Use usual route? confirmation](src/docs/demo/v224-ml-eta-and-habits.gif) | ![Real Liverpool Lime Street to Sefton Park route showing warm Frequent slowdown ahead alert, deduplication, silence on a cold-only spot at 18 C, Cold-weather slowdown ahead at 1 C and winter-calibrated ETA](src/docs/demo/v224-ml-slowdowns.gif) |
 
-| Usual parking, recurring stops & preferred POIs | Offline Nearby POIs |
+| Usual parking, recurring stops & preferred POIs (Leeds) | Offline Nearby POIs (Bristol) |
 | --- | --- |
-| ![Usual parking review with route-coloured Parking POI highlight, recurring intermediate stop ring and preferred Fuel POI star ranking in Newcastle](src/docs/demo/v224-ml-parking-and-pois.gif) | ![Browse nearby hospitals and fuel stations offline in Newcastle and add a stop to the itinerary](src/docs/demo/v223-nearby-pois.gif) |
+| ![Usual parking review for Q-Park The Light with route-coloured Parking POI highlight, recurring intermediate stop ring and preferred Fuel POI star ranking in Leeds](src/docs/demo/v224-ml-parking-and-pois.gif) | ![Browse nearby hospitals and fuel stations offline in Bristol from The Haymarket and add a stop to the itinerary](src/docs/demo/v223-nearby-pois.gif) |
 
 | Destination prediction | Frequent-place suggestion |
 | --- | --- |
@@ -94,7 +99,7 @@ BT CTRL also requires a connected phone. Unavailable radio/volume readings stay 
 
 - Offline OpenStreetMap navigation, routing, rerouting and chained secondary manoeuvre cues.
 - Browse the map and route to a selected point, search offline **Nearby** Fuel/Parking/Hospital POIs, send destinations from a connected phone, or manually enter named decimal-degree lat/long coordinates.
-- Manage stops, recents and favourites on the head unit or import/export them on desktop (`tools/favourites_tool.py` — CSV, JSON, GPX).
+- Manage stops, recents and favourites on the head unit or import/export them on desktop (`tools/favourites_tool.py` - CSV, JSON, GPX).
 - Optional offline destination learning, historical traffic-aware ETAs and local diversions with on-map Explore preview based on personal GPS history.
 - Bluetooth phone audio with instant AVRCP track updates and remote playback controls.
 - Vehicle audio controls remain responsible for physical volume and mute.
@@ -207,10 +212,10 @@ Original ClioPlay development includes:
 
 ### Contributions and acknowledgements
 
-- [bobczan/Renatka](https://github.com/bobczan/Renatka) — physical Renault console protocol, button mappings and alternative vehicle temperature interface, subsequently integrated into ClioPlay's native application.
-- [qspi](https://github.com/qspi) — NMEA `$GPGST`/HDOP/altitude parsing, antialiased compass dial and initial GPS information panel ([PR #8](https://github.com/pxwel-dev/ClioPlay/pull/8)), subsequently adapted into the expandable live GPS HUD.
-- [OpenStreetMap](https://www.openstreetmap.org/copyright) and its contributors — geographic and navigation data.
-- [Geofabrik](https://www.geofabrik.de/) — distribution of regional OpenStreetMap extracts.
+- [bobczan/Renatka](https://github.com/bobczan/Renatka) - physical Renault console protocol, button mappings and alternative vehicle temperature interface, subsequently integrated into ClioPlay's native application.
+- [qspi](https://github.com/qspi) - NMEA `$GPGST`/HDOP/altitude parsing, antialiased compass dial and initial GPS information panel ([PR #8](https://github.com/pxwel-dev/ClioPlay/pull/8)), subsequently adapted into the expandable live GPS HUD.
+- [OpenStreetMap](https://www.openstreetmap.org/copyright) and its contributors - geographic and navigation data.
+- [Geofabrik](https://www.geofabrik.de/) - distribution of regional OpenStreetMap extracts.
 
 Third-party software and dependencies retain their respective licences and attribution notices, as documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 

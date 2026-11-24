@@ -3,20 +3,36 @@
 This history records implemented changes for each release.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
 
-## Version 2.2.6.1 — Bug-fix release
+## Version 2.2.6.2 - Bug-fix release
+
+Software-only routing and close-up map bug-fix release, 100% compatible with existing `2.1.8–2.2.6.1` maps (`CPM5`, `CPR2 v5`, `QAD7`) and saved user data, no map rebuild required.
+
+- **Eliminated unnecessary U-turn spurs at route starts, destinations and junctions:**
+  - **Two-way start & destination direction selection:** Most endpoint U-turn spurs came from snapping onto one arbitrary direction of a two-way street. ClioPlay now considers both legal directions on two-way streets at the start and destination right inside the existing router (keeping one-way streets and dual carriageways strictly directional), fixing wrong-way departures and overshoot-and-U-turn arrivals at the source without rebuilding map files. While moving (`≥ 5 mph`), a gentle forward preference avoids reversing direction unless continuing ahead is substantially worse, and never inflates the displayed ETA.
+  - **Bounded post-build U-turn & spur cleanup:** Remaining turn-restricted out-and-back spurs, sharp `160°–200°` reversals, and divided-carriageway V-pinch hairpins (separate one-way carriageways reversing across a junction) are replaced with a bounded local search that honours all turn restrictions, blocks self-intersecting loops, and can approach a two-way destination from the opposite end when a no-turn restriction sits right before arrival. Strict time and distance limits (`≤ +90 s / +1.5 km` for spurs, `≤ +60 s / +900 m` for junction U-turns, `≤ 1.2 s` total cleanup budget per leg) keep genuinely necessary U-turns intact.
+  - **Moving-start stability:** Starting or recalculating a route while driving now lets the cleanup pass finish cleanly before trimming the moved prefix.
+- **Prefer simpler routes with fewer turns:**
+  - Pure shortest-time routing often cuts through multi-turn side streets just to save a few seconds. ClioPlay now scans clusters of closely spaced turns (`≥ 3`-turn zigzags prioritised ahead of `2`-turn pairs) and switches to a cleaner legal corridor whenever it removes turns within strict caps (`≤ +20%` travel time, `≤ 30 s` total per regional leg, `≤ +25%` / `300 m` distance per section). Roundabouts count as one manoeuvre, and the displayed ETA always reflects true driving time.
+- **Fixed close-up road offset staying frozen after parking off-road (`Z6–Z9`):**
+  - Pulling off-road into a car park or driveway and stopping could previously leave the `Z6–Z9` visual road snap locked onto the nearby street. The off-road grace period now expires even while stationary (`< 0.5 mph`), smoothly easing the map and vehicle arrow back to the GPS position with zero extra tile reads before halting idle redraws.
+- **Tests & refreshed UK previews:**
+  - Expanded host UBSan regression tests in `src/tests/map-car-snap.c`, `src/tests/mobility.c` and `src/tests/atlas-qad7.c` (covering two-way endpoint selection, moving-heading bias, detour caps, loop blocking, divided-carriageway V-pinches, multi-turn clusters and parked snap release).
+  - Re-rendered all 34 published UI and routing previews across fresh UK routes and cities (Manchester, Central London, Milton Keynes, Bristol, Liverpool, Leeds, Edinburgh and Newcastle).
+
+## Version 2.2.6.1 - Bug-fix release
 
 - **Fixed close-up road alignment at cropped zooms (Z6–Z9):** normal consumer GPS scatter (3–10 m) magnified at `Z7–Z9` (`2×`–`8×` digital crop of Z6 tiles) could previously make the vehicle icon appear off the road beside thin road strokes and bend the start of the active magenta route sideways. ClioPlay now performs lightweight, display-only **Z6-reference visual road matching** across `Z6–Z9` (`Z4–Z5` remain untouched):
-  - **Camera, marker and route origin move together in `1/16`-world-unit (Q4) space:** matches directly against the exact sub-unit Z6 road vertices already in the tile cache (zero extra SD reads, no map rebuild, no floats/heap) and shifts the visual driving camera, vehicle marker and active route origin together so the car arrow stays nailed to `(240, 211)` (never slipping underneath bottom HUD cards or hitting viewport-edge jumps) and the magenta route line starts cleanly underneath the arrow.
+  - **Camera, marker and route origin move together in `1/16`-world-unit (Q4) space:** matches against exact sub-unit road vertices from the existing Z6 map data through the normal tile cache. A cache miss can read a tile from the SD card. The visual driving camera, vehicle marker and active route origin shift together so the car arrow stays at `(240, 211)`, clear of the bottom HUD cards, and the magenta route line starts beneath the arrow.
   - **Heading, active-route, road-class and hysteresis filtering:** penalises perpendicular cross streets using continuous `sin²θ` heading alignment (both while moving and while stopped at traffic lights via the latched driving heading), prefers Z6 roads aligned with the active route corridor (`≤ 45°`), applies a service-road (`cls 7`) penalty so nearby driveways/aisles do not pull highway or residential driving off-road, retains interior carriageway lock hysteresis on dual carriageways while releasing immediately at polyline endpoints for hitch-free Z6 tile-seam handoffs, and eases smoothly per frame with off-road debounce.
   - **Explore parity & untouched core navigation:** raw GPS, `car_lat()/car_lon()`, routing, off-route detection, road context, speed limits, speed cameras and ML history remain completely untouched; entering **Explore** starts on the visually snapped road position and preserves the snap offset across buffered orientation transitions.
   - Added host UBSan regression coverage in `src/tests/map-car-snap.c`, wired into both `src/tools/verify_ci.py` and `src/tools/verify.py`.
 
-## Version 2.2.6 — Release
+## Version 2.2.6 - Release
 
-- **Unguided local ML learning & alerts** (full backwards compatibility with existing `mobility-ml.dat` `MML1` files — no active route required to learn everyday habits or receive repeat-slowdown warnings):
+- **Unguided local ML learning & alerts** (full backwards compatibility with existing `mobility-ml.dat` `MML1` files - no active route required to learn everyday habits or receive repeat-slowdown warnings):
   - **Unguided Nearby-POI affinity:** finishing any unguided drive (or short chained stop) right at a mapped **Fuel** (`≤ 55 m`), **Parking** (`≤ 75 m`) or **Hospital** (`≤ 100 m`) POI now automatically learns preferred-POI affinity (deduplicated per session so explicit **Trip → Nearby** selections never double-count).
-  - **Unguided Usual Parking learning & habitual car-park fallback:** arriving unguided at a mapped **Parking** POI (`≤ 75 m`) located `100–600 m` from a unique saved **Favourite** or **Recent** (skipping spots `< 100 m` from any saved place or ambiguous between multiple Favourites) automatically teaches that destination’s Usual Parking spot; in addition, any mapped **Parking** POI visited `≥ 3` times unguided — even with zero Favourites or Recents nearby — now acts as a Priority-2 Usual Parking fallback whenever you later route to a new destination `100–600 m` away from it (skipped if the target is itself a car park, a place with `≥ 2` direct arrivals `< 100 m`, or your current departure car park).
-  - **Unguided Frequent & Cold-weather Slowdown alerts with dynamic decay:** `traffic_service()` now runs a lightweight forward lookahead across learned hard-braking hotspots (`40–350 m` ahead, filtered by directed road-arc heading and forward bearing cone to ignore opposite carriageways and cross streets) so **Frequent slowdown ahead** and **Cold-weather slowdown ahead** warn you during unguided commutes as well as active guidance. Hazard counts are now capped (`6` warm / `5` cold), decay smoothly by `-1` on non-braking passes once `≥ 4` journeys have elapsed (with cold counts decaying only at `≤ 3 °C` so summer drives never wipe winter ice spots), reclaim empty slots, and expire automatically when unvisited for `> 256` journeys (warm) or `> 512` journeys (cold) — mirrored in `tools/replay_history.py`.
+  - **Unguided Usual Parking learning & habitual car-park fallback:** arriving unguided at a mapped **Parking** POI (`≤ 75 m`) located `100–600 m` from a unique saved **Favourite** or **Recent** (skipping spots `< 100 m` from any saved place or ambiguous between multiple Favourites) automatically teaches that destination’s Usual Parking spot; in addition, any mapped **Parking** POI visited `≥ 3` times unguided - even with zero Favourites or Recents nearby - now acts as a Priority-2 Usual Parking fallback whenever you later route to a new destination `100–600 m` away from it (skipped if the target is itself a car park, a place with `≥ 2` direct arrivals `< 100 m`, or your current departure car park).
+  - **Unguided Frequent & Cold-weather Slowdown alerts with dynamic decay:** `traffic_service()` now runs a lightweight forward lookahead across learned hard-braking hotspots (`40–350 m` ahead, filtered by directed road-arc heading and forward bearing cone to ignore opposite carriageways and cross streets) so **Frequent slowdown ahead** and **Cold-weather slowdown ahead** warn you during unguided commutes as well as active guidance. Hazard counts are now capped (`6` warm / `5` cold), decay smoothly by `-1` on non-braking passes once `≥ 4` journeys have elapsed (with cold counts decaying only at `≤ 3 °C` so summer drives never wipe winter ice spots), reclaim empty slots, and expire automatically when unvisited for `> 256` journeys (warm) or `> 512` journeys (cold) - mirrored in `tools/replay_history.py`.
   - **Weekday vs. weekend destination weighting:** `mob_journey_weight()` now pools same-regime days (`Mon–Fri` vs `Sat–Sun`) at `75%` when exact-day history is sparse (`35%` when exact-day routines have `≥ 3` sessions) while damping cross weekday↔weekend trips to `20–25%`, helping weekday commutes predict earlier in the week without leaking onto weekends.
   - **Unguided historical traffic warnings (`Likely traffic ahead`):** when **Route diversions** and **Learn driving history** are enabled on unguided drives (`≥ 5` recorded journeys), `traffic_service()` checks the current snapped corridor and a `~220 m` forward probe along `gps.course` against the current 2-hour time bucket, surfacing a one-shot amber **Likely traffic ahead** notice (`≥ 60 s` confirmed historical delay, once per congested road per trip) without proposing a diversion.
   - **Unguided-learned Usual Route proposals:** in addition to avoided arcs (`score ≤ -30`), **Usual route available** now also detects rejoin junctions where an alternate incoming road has strong unguided familiarity (`score ≥ +40`, driven 4+ times unguided) while the routed arrival road is unfamiliar (`score ≤ 0`), favouring familiar roads in the usual-route search and verifying `alt_pref ≥ old_pref + 40`.
@@ -25,11 +41,11 @@ Release dates are added when a version is published; older versions are not reco
   - Aligned Adaptive Auto-zoom’s three learned speed regimes with `Z9–Z4`’s hysteresis tiers (`< 25 mph` / `Z9–Z7`, `25–45 mph` / `Z6`, `≥ 45 mph` / `Z5–Z4`) and keyed the applied `±1` offset from the hysteresis-smoothed base `auto_zoom_level`, eliminating boundary oscillation at `20` and `40 mph`.
   - Required manual zoom overrides in Auto zoom to remain active for at least **20 seconds** before recording a session vote (resetting the timer on follow-up zoom taps and cancelling if restored via **MAP**, **Explore**, or undone back to the starting Auto-zoom level), preventing accidental misclicks or brief look-ahead peeks from biasing learned Auto-zoom preferences.
 
-## Version 2.2.5 — Release
+## Version 2.2.5 - Release
 
 - Added an **expandable live GPS HUD inside the top clock/temperature pill** (building on `qspi`'s NMEA `$GPGST`/HDOP/altitude and compass dial contribution in PR #8), designed to stay genuinely usable while driving without blocking the map, car arrow, status notices or controls:
   - **Adaptive three-tier layout with persistent seconds:** toggling the GPS HUD on immediately adds live seconds (`HH:MM:SS`) to the clock pill (persisted in `prefs.ini` as `gpshud=1`) and expands smoothly downward (`164 × 148 px`) on the driving map to display a recessed antialiased compass dial with pivot-aligned `N/E/S/W` markers, centre pivot cap and theme-tuned Day/Night heading needle, bold heading (`074° NE`), colour-coded horizontal accuracy (`$GPGST` error estimate with HDOP × 5 m fallback, green/amber/red at `≤ 5 m` / `≤ 15 m` / `> 15 m`), 3-bar signal indicator with satellite count, and a recessed key–value tray for **Altitude**, **Lat** and **Lon** (marine degrees & decimal minutes, right-to-left mirrored in Arabic and Hebrew, Metric/Imperial units).
-  - **Popup-aware & non-blocking:** stays fully expanded while driving and alongside active status notices (`ETA`, `VOL`, `BT CTRL`, slowdown alerts and `OK to review` invitations), automatically switches to a **Compact** live strip (`164 × 52 px`: header + mini live compass, heading, accuracy and signal-bar count) above popups so confirmation and modal dialogs remain vertically centred, and folds cleanly to **Minimised** (`27 px`, keeping seconds visible) while browsing **Menus** or **Explore** — then smoothly glides back open on returning to the driving map. Mirrors cleanly with **Clock left** (`hudtopswap`).
+  - **Popup-aware & non-blocking:** stays fully expanded while driving and alongside active status notices (`ETA`, `VOL`, `BT CTRL`, slowdown alerts and `OK to review` invitations), automatically switches to a **Compact** live strip (`164 × 52 px`: header + mini live compass, heading, accuracy and signal-bar count) above popups so confirmation and modal dialogs remain vertically centred, and folds cleanly to **Minimised** (`27 px`, keeping seconds visible) while browsing **Menus** or **Explore** - then smoothly glides back open on returning to the driving map. Mirrors cleanly with **Clock left** (`hudtopswap`).
   - **Direct toggle controls:** kept **Menu** compact (`Trip`, `Bluetooth`, `Settings`); toggle the live GPS HUD on/off from the driving map by pressing **Centre / OK** (or pushing the console knob) **twice within 4 seconds** (the first press still shows road name/ETA, and existing `OK to review`, Explore and `BT CTRL` priorities stay intact) or with one press of the physical console **REPEAT** button (`btn7`, default `GPS`, remappable via `cswmap.ini`).
   - Added full translations across all 18 languages, native regression tests, and a real-map demo preview (`src/docs/demo/v225-gps-panel.gif`).
 - Expanded **Auto zoom** from Z6–Z4 to **Z9–Z4** (and allowed manual driving zoom and persisted `manualzoom` up to Z9 on standard Z6 map packs), widening the Adaptive Auto-zoom clamp to Z4–Z9. Default speed bands and hysteresis thresholds (`mph` / approx. `km/h`):
@@ -43,7 +59,7 @@ Release dates are added when a version is published; older versions are not reco
 - Tightened **View diversion** / **View route** Explore framing to use the full `480 × 272` viewport (`448 × 240` fit box up to Z9, visually centred vertically) instead of dropping out prematurely.
 - Added `--only` / `--gif` and `--list` support to `tools/regenerate_gifs.py`, `tools/render_previews.py` and `tools/render_mapless_gifs.py` so individual demo GIFs can be re-rendered in seconds (merging cleanly into `docs/demo/manifest.json`), and regenerated all demo GIFs with Auto zoom enabled at road-matched driving speeds (or `0 mph` / Z9 for stationary workflows).
 
-## Version 2.2.4 — Release
+## Version 2.2.4 - Release
 
 - Added **expanded local on-device machine learning** in a fixed-capacity, integer-only companion model (`clio843/mobility-ml.dat`, `MML1`, ~26 KiB, FNV-1a checksummed atomic saves, strictly opt-in under **Learn driving history** and wiped by **Clear driving history**, with zero cloud or telemetry):
   - **Personal road-class & cold-weather ETA calibration:** learns per-road-class and roundabout travel-time multipliers with Bayesian shrinkage to calibrate unfamiliar roads, plus separate cold-weather profiles whenever vehicle exterior temperature is `<= 3 °C`.
@@ -58,7 +74,7 @@ Release dates are added when a version is published; older versions are not reco
 - Added the desktop offline **`tools/replay_history.py`** CLI (Python stdlib only) to replay `history.prev.dat` / `history.dat` against a single `route.cpr` or multi-region `atlas.cpa` map rebuild, run pure-Python DBSCAN endpoint denoising, preserve UI preferences (`zoom`, `brightness`, `POI affinity`, `parking`), and emit verified `mobility.dat` (`MOB1`) and `mobility-ml.dat` (`MML1`) files without printing raw coordinates.
 - Added translations for all new local ML, traffic-diversion and usual-route prompts across all 18 interface languages, widened `notice_text` to prevent multi-byte UTF-8 truncation, added comprehensive UBSan host tests and Python↔C binary parity tests (`tests/test_replay_history.py`), and added/updated real-map demo GIFs (`v224-ml-eta-and-habits.gif` on a clear-road Durham route, `v224-ml-slowdowns.gif` on a York route, `v224-ml-parking-and-pois.gif`, `v224-ml-adaptive-hud.gif`, `v223-secondary-manoeuvre.gif`, `v223-view-diversion.gif`, `v220-intelligent-diversions.gif`).
 
-## Version 2.2.3 — Release
+## Version 2.2.3 - Release
 
 - Added **Offline Nearby POIs** as a fourth Trip tab (**Itinerary → Recents → Favourites → Nearby**) and as a source inside **Add stop** and **Change destination**. Scans installed map tiles completely offline (two-pass Z5 3 × 3 inner tiles plus expanding Z3 rings) for **Fuel**, **Parking** and **Hospital** POIs, sorted by distance with 16 × 16 antialiased category badges and route, add-stop and save-to-favourites actions.
 - Added a **secondary ("Then …") manoeuvre cue** (`HC_TURN_NEXT`): when a follow-up turn or roundabout occurs within 250 m of the next manoeuvre, a compact frosted-glass pill with a precomputed 17 × 17 antialiased icon docks above the Turn card and smoothly promotes as you complete the current manoeuvre.
@@ -70,7 +86,7 @@ Release dates are added when a version is published; older versions are not reco
 - Added the desktop `tools/favourites_tool.py` CLI to list, export and import `faves.dat` and `recent.dat` (`CLP2`) in CSV, JSON and GPX formats with atomic writes and deduplication.
 - Added translations for all new interface labels across all 18 languages, unified the freestanding ARM runtime header (`arm_runtime.h`), cleaned up stale AVRCP comments, and expanded host regression tests and real-map Newcastle demo GIFs.
 
-## Version 2.2.2 — Release (Major Performance Optimisation)
+## Version 2.2.2 - Release (Major Performance Optimisation)
 
 - Increased the Bluetooth PCM prefill from 150 to 200 ms for more playback headroom under UI load.
 - Reused the finished map while parked and updated only changed framebuffer rows when the driver supports partial writes.
@@ -83,12 +99,12 @@ Release dates are added when a version is published; older versions are not reco
 - Replaced the heading notice with on-demand road names. Press Centre / OK to show the current road for about four seconds. During guidance, the ETA and remaining distance appear too. Console INFO and REPEAT offer the same information.
 - Centred the Latitude and Longitude labels and values in the manual coordinate entry fields.
 
-## Version 2.2.1 — Release
+## Version 2.2.1 - Release
 
 - The guided installer and navigation builder accept multiple matching OSM extracts for one cross-border build. The installer merges them locally and rejects conflicting versions of shared objects.
 - Bluetooth SBC decoding uses less computation while preserving the same PCM output and playback configuration.
 
-## Version 2.2.0 — Release
+## Version 2.2.0 - Release
 
 ### Changes in this version
 
@@ -106,7 +122,7 @@ Release dates are added when a version is published; older versions are not reco
 - Added native regression cases and two controlled preview storyboards. Historical traffic is not live traffic; a physical head-unit trial remains necessary.
 - Added a software-only update mode with verified staged copies, a dated software backup and rollback; existing maps, settings and personal history remain untouched.
 
-## Version 2.1.8 — Release
+## Version 2.1.8 - Release
 
 ### Changes in this version
 
@@ -115,7 +131,7 @@ Release dates are added when a version is published; older versions are not reco
 - Removed obsolete saved-place, map, routing and bundle-format readers. Current CLP2 places and current navigation packs remain supported; unsupported formats require fresh data.
 - Reduced the size of confirmation dialogs and their action menus while retaining readable labels, existing choices, focus targets and animation behaviour.
 
-## Version 2.1.7 — Release
+## Version 2.1.7 - Release
 
 ### Changes in this version
 
@@ -124,7 +140,7 @@ Release dates are added when a version is published; older versions are not reco
 - **Next** validates both fields and opens optional naming; invalid entries stay editable. Soft-right still cycles latitude/longitude and soft-left deletes.
 - Updated directional/rotary navigation, regression checks and demo capture scripts.
 
-## Version 2.1.6 — Release
+## Version 2.1.6 - Release
 
 ### Changes in this version
 
@@ -135,13 +151,13 @@ Release dates are added when a version is published; older versions are not reco
    - Speed pill in left / Direction pill on right (DEFAULT VALUE), Speed pill on right / Direction pill on left
 4) If hw_bluetooth = 0, hide all bluetooth-related functionality in the UI.
 
-## Version 2.1.5 — Release
+## Version 2.1.5 - Release
 
 ### Changes in this version
 
 - Resized the trips pages to fit in-between the top and bottom pills. Only the keyboard expands to allow more room for entering destination names.
 
-## 2.1.0 — Release
+## 2.1.0 - Release
 
 ###  Changes in this version
 
@@ -181,7 +197,7 @@ Release dates are added when a version is published; older versions are not reco
   the new menu, keyboard and itinerary presentation. Host checks and previews do
   not establish physical head-unit performance or compatibility.
 
-## 2.0.0 — Baseline
+## 2.0.0 - Baseline
 
 The baseline for this history includes the major UI redesign: full-screen maps,
 animated frosted-glass pills and popups, updated roads/POIs/vehicle marker,
