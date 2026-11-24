@@ -26,11 +26,11 @@ See [version history](CHANGELOG.md) for implemented changes by version, [intelli
 
 All previews below are freshly rendered from **v2.2.6.2** across real UK map regions (**Manchester**, **Central London**, **Milton Keynes**, **Bristol**, **Liverpool**, **Leeds**, **Edinburgh** and **Newcastle**). See the [full preview index](src/docs/demo/README.md) for all animations.
 
-| Live expandable GPS HUD | View and take a diversion (Central London) |
+| Live expandable GPS HUD | View and take a diversion |
 | --- | --- |
 | ![Double-OK expands the clock pill into a live driving GPS HUD on the Liverpool waterfront with seconds, compass dial, heading, accuracy, satellites, altitude and coordinates, adapting cleanly to popups and menus](src/docs/demo/v225-gps-panel.gif) | ![Preview a proposed real-map Central London diversion tightly framed in Explore on a v2.2.6.2 fewer-turns route, inspect the junction, return via MAP and accept](src/docs/demo/v223-view-diversion.gif) |
 
-| Dynamically-resizing, animated frosted-glass menu | Expandable secondary manoeuvre cue (Milton Keynes) |
+| Dynamically-resizing, animated frosted-glass menu | Expandable secondary manoeuvre cue |
 | --- | --- |
 | ![Animated on-map menus, Itinerary, Recents, Favourites, Bluetooth actions and Settings over Manchester](src/docs/demo/menus.gif) | ![Secondary Then pill expanding for chained Milton Keynes roundabouts with exit number visible and returning compact for normal turns](src/docs/demo/v223-secondary-manoeuvre.gif) |
 
@@ -38,11 +38,11 @@ All previews below are freshly rendered from **v2.2.6.2** across real UK map reg
 | --- | --- |
 | <img src="src/docs/demo/phone-destination.gif" width="391"> | <img src="src/docs/demo/bluetooth.gif" width="391"> |
 
-| Usual route & calibrated ETA ranges (Mayfair, London) | Frequent & cold-weather slowdown alerts (Liverpool) |
+| Usual route & calibrated ETA ranges | Frequent & cold-weather slowdown alerts |
 | --- | --- |
 | ![Clear-road Central London Mayfair route showing calibrated ETA reliability range, Usual route available with normal active route colour plus dashed teal parallel Park Street alternative bypassing the Oxford Street dogleg, and Use usual route? confirmation](src/docs/demo/v224-ml-eta-and-habits.gif) | ![Real Liverpool Lime Street to Sefton Park route showing warm Frequent slowdown ahead alert, deduplication, silence on a cold-only spot at 18 C, Cold-weather slowdown ahead at 1 C and winter-calibrated ETA](src/docs/demo/v224-ml-slowdowns.gif) |
 
-| Usual parking, recurring stops & preferred POIs (Leeds) | Offline Nearby POIs (Bristol) |
+| Usual parking, recurring stops & preferred POIs | Offline Nearby POIs |
 | --- | --- |
 | ![Usual parking review for Q-Park The Light with route-coloured Parking POI highlight, recurring intermediate stop ring and preferred Fuel POI star ranking in Leeds](src/docs/demo/v224-ml-parking-and-pois.gif) | ![Browse nearby hospitals and fuel stations offline in Bristol from The Haymarket and add a stop to the itinerary](src/docs/demo/v223-nearby-pois.gif) |
 
