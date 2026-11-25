@@ -1,10 +1,16 @@
-# ClioPlay version 2.2.6.3
+# ClioPlay version 2.2.6.4
 
-Version 2.2.6.3 is an installer, map-builder and release-integrity update. It
-is **100% compatible with existing `2.1.8–2.2.6.2` maps (`CPM5`, `CPR2 v5`,
-`QAD7`)** and saved user data (head-unit runtime behaviour is unchanged from
-`2.2.6.2`, no map rebuild is needed):
+Version 2.2.6.4 is a software-only physical console input bug-fix release. It
+is **100% compatible with existing `2.1.8–2.2.6.3` maps (`CPM5`, `CPR2 v5`,
+`QAD7`)** and saved user data (no map rebuild is needed):
 
+- **Scénic III console knob push fix (2.2.6.4, contributed by `@qspi`):**
+  Confirmed from on-car `csw.log` captures, the Scénic III vehicle daemon sends
+  a single `pressed=1` record per knob push without a release record. Each push
+  record now triggers OK with a sliding 250 ms burst guard (matching the hard
+  buttons), so consecutive knob pushes (Menu confirmation, double-OK for the
+  live GPS HUD) work reliably without needing a rotation first, while explicit
+  `pressed=0` records still re-arm immediately.
 - **FAT32/exFAT card install & Windows WSL fixes (2.2.6.3, contributed by `@bobczan`):**
   Fresh installs, re-installs and `--update` now handle non-POSIX filesystems
   (WSL 2 `drvfs`, Linux `vfat`/exFAT) cleanly without aborting on `chmod`

@@ -1,6 +1,6 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
-<h1 align="center">ClioPlay 2.2.6.3</h1>
+<h1 align="center">ClioPlay 2.2.6.4</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
 <p align="center">
   Created and maintained by <a href="https://github.com/pxwel-dev">Pawel (pxwel-dev)</a>.
@@ -9,10 +9,11 @@
 
 <p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-## Version 2.2.6.3
+## Version 2.2.6.4
 
-Version **2.2.6.3** is an installer, map-builder and release-integrity update (**100% compatible with existing `2.1.8–2.2.6.2` maps** and saved user data; head-unit navigation behaviour is unchanged from `2.2.6.2`):
+Version **2.2.6.4** is a software-only physical console input bug-fix release (**100% compatible with existing `2.1.8–2.2.6.3` maps** and saved user data; no map rebuild required):
 
+- **Fixed Scénic III console knob push handling (2.2.6.4, thanks to `@qspi`):** Confirmed from on-car `csw.log` captures, the Scénic III vehicle daemon sends a single `pressed=1` record per knob push with no release record; consecutive knob pushes (including Menu confirmation and double-OK for the live GPS HUD) now register reliably without needing a rotation first, while a sliding 250 ms guard still suppresses duplicate or held records.
 - **FAT32/exFAT SD-card install & WSL fixes (2.2.6.3, thanks to `@bobczan`):** Fresh installs, re-installs and `--update` now tolerate non-POSIX filesystems (WSL 2 `drvfs`, Linux `vfat`/exFAT) without aborting on `chmod` `EPERM`, and the Windows WSL preflight now verifies `venv` + `ensurepip` before starting a build.
 - **Opt-in parallel atlas builder & cached C++ helpers (2.2.6.3, thanks to `@bobczan`):** Set `CLIOPLAY_PIPELINE=1` to overlap extraction and regional builds inside `build_atlas.py` on Linux, WSL 2 and macOS with deterministic splits, fail-fast cancellation and deadlock-free RAM throttling; `ch_preprocess` and `build_qadj` now cache in a private per-user directory across regions for both sequential and pipelined builds.
 - **Eliminated unnecessary U-turn spurs (2.2.6.2):** Two-way streets now evaluate both legal directions at route start and destination directly inside the router (with a gentle forward preference while moving that never inflates ETA), eliminating wrong-way departures and overshoot-and-U-turn arrivals at the source without requiring map rebuilds. A bounded local cleanup search also replaces remaining turn-restricted spurs, sharp reversals and divided-carriageway V-pinch hairpins within tight time/distance caps while keeping genuinely necessary U-turns intact.
@@ -214,8 +215,8 @@ Original ClioPlay development includes:
 
 ### Contributions and acknowledgements
 
-- [bobczan/Renatka](https://github.com/bobczan/Renatka) - physical Renault console protocol, button mappings and alternative vehicle temperature interface, subsequently integrated into ClioPlay's native application.
-- [qspi](https://github.com/qspi) - NMEA `$GPGST`/HDOP/altitude parsing, antialiased compass dial and initial GPS information panel ([PR #8](https://github.com/pxwel-dev/ClioPlay/pull/8)), subsequently adapted into the expandable live GPS HUD.
+- [bobczan](https://github.com/bobczan) ([Renatka](https://github.com/bobczan/Renatka)) - physical Renault console protocol, button mappings and alternative vehicle temperature interface ([PR #2](https://github.com/pxwel-dev/ClioPlay/pull/2)), FAT32/exFAT install and Windows WSL preflight fixes ([PR #12](https://github.com/pxwel-dev/ClioPlay/pull/12), [PR #13](https://github.com/pxwel-dev/ClioPlay/pull/13)), and the opt-in pipelined atlas builder ([PR #11](https://github.com/pxwel-dev/ClioPlay/pull/11)).
+- [qspi](https://github.com/qspi) - landlocked extract support in the ocean map builder ([PR #4](https://github.com/pxwel-dev/ClioPlay/pull/4)), NMEA `$GPGST`/HDOP/altitude parsing, antialiased compass dial and initial GPS information panel ([PR #8](https://github.com/pxwel-dev/ClioPlay/pull/8), subsequently adapted into the expandable live GPS HUD), and the Scénic III console knob push fix ([PR #18](https://github.com/pxwel-dev/ClioPlay/pull/18)).
 - [OpenStreetMap](https://www.openstreetmap.org/copyright) and its contributors - geographic and navigation data.
 - [Geofabrik](https://www.geofabrik.de/) - distribution of regional OpenStreetMap extracts.
 

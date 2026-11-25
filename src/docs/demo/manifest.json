@@ -28,7 +28,7 @@
     "clio843/src/overlay_frames.h": "b1b6e79491dad7a2a62004f999793bccfef7bb6580b3a877777c284f4537557c",
     "clio843/src/boot_transition.h": "8ea391927a52cf8eaa9f010a70b8f8e012b768346ca9cd297110e40e6a850007",
     "clio843/src/menu_sheet.h": "e2068ba47e7e7dd4ad49d6c2b40eae7dcfe7fd5477b8338d9217709bde5428eb",
-    "clio843/src/release_version.h": "5ff32031c4e0016fd974ade5b04f9f73ff5fbfd3f64749c01b9cb7445a5f1f32",
+    "clio843/src/release_version.h": "3fd678dce2f481b0c260593adad69aca62717069548b6754a76829ac9ce4dd48",
     "clio843/src/vehicle_icon.h": "dfcb48775858684a323506e4cb6f61eba56ce3d8c7507a5ef86b58d917f24b4a",
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
     "clio843/src/cliospl.c": "523530da194e4a859de29b448926f347d70c6c6c243d08d9b048fb68e08e3d33",
@@ -47,7 +47,7 @@
     "clio843/src/global_cameras.h": "d07e8dabf65f3513a5ec88eb15e34bdcad628cdb291f08a518eb46a3ebed9cd9",
     "clio843/src/urban_speed_defaults.h": "a719a3d065f16bc39727b01d7ed73f412beeb4d8703b5bde73a8c6ff1c35ac10",
     "clio843/src/cswd.c": "707aa0a1fdcd8048d2fa252a14ce32176fae347d512e11869f2905a69380530c",
-    "clio843/src/clio040.c": "bd60794c0c13e78f9d95d7ef6e217bafaae174fb98d621ae60bef8fa4165dc9b",
+    "clio843/src/clio040.c": "4e769ad5e688043f7066ad4a6c591ded1a4eab2f856953372df42904d7472e4d",
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/vstatd.c": "a359d214853cdd511fb79e905fafc52f5413b635bb3288b268d04c15724a666f",
     "clio843/src/audio_chime.h": "184c222e448db2707fc752bc38f7f6c735b6cb1f4d168d88ddc7da7cf20f4d75",
@@ -512,9 +512,9 @@
     "clio843/src/vendor/sheenbidi/Headers/SheenBidi/SheenBidi.h": "44a644a72edf2300838d32c3e32aa14a7cb66b584fb9da643b8311aa21991cbe"
   },
   "executables": {
-    "clio040": "285145c5cc2b71c2b7974ecc7bc1fd08afd73eb941c5eeea26088448207697a4",
-    "cliospl": "b4ae227607b28794226a74b071b50eaed1f1442caa6593e9b29e423a82499e3a",
-    "clioa2dp": "021e3f687d6e1b387269c07a4e634c30c148b5fb439432c230b76ccc993736bb"
+    "clio040": "55e6115c39b78e672c4e75b4961f5be31b8d169962141881eb6b6e8249d707c7",
+    "cliospl": "a65de5a6babd113a58a25049b5310664250f6add54771703f518b8e4fb697109",
+    "clioa2dp": "4cb3d105167b10da75a21ee116276c5938c91df6dc21c5a4952a88ca4ac1e03f"
   },
   "generator_inputs": {
     "tools/render_previews.py": "b01753c0510acee6df729e4ef7581eafc11141e12a104700af2a139f24b697ca",
@@ -5771,7 +5771,7 @@
       ]
     },
     "boot-day.gif": {
-      "sha256": "44f668ad9109b129671ff5d344bb6f3e6ceeb8d5ecb63aad2f8ab4334d4ae1d4",
+      "sha256": "a4b288d51392034c330f792056568ad73ed284dad1295640b5449328c9e8cdd5",
       "frames": 11,
       "duration_ms": 2300,
       "reserved_pointer_colours": [
@@ -5799,43 +5799,43 @@
       "source_frames": [
         {
           "frame": "day/boot-fade-0000.png",
-          "rgb565_sha256": "1b9dfb356d93da29fca333963310d3957970fc4a3b4e57858322451e903c795b"
+          "rgb565_sha256": "177024390654a2fa5ad0cb27132605a0e7c5c3c89738d67c5e86cd7836ea2507"
         },
         {
           "frame": "day/boot-fade-0050.png",
-          "rgb565_sha256": "296b495f9da41b9a39b0123c069972615a8c341b4c1b2dff2fc82eab0c18f62c"
+          "rgb565_sha256": "3f7c7a91ffc17435338e3b37bfd52e4cebf2e1377cfb7f3b6c43c0dc247b3ce0"
         },
         {
           "frame": "day/boot-fade-0100.png",
-          "rgb565_sha256": "e3fcc12f0dca1242917ae900fdd5da693e0ded108135b74dd0358c7708dccca0"
+          "rgb565_sha256": "133f69c1f90aee839c080afcc49e73275357c54104ee1517107769b21cd87240"
         },
         {
           "frame": "day/boot-fade-0150.png",
-          "rgb565_sha256": "ca636e7bc4a3a91eb8e7db8cb96f38b2fb9870d7dca309c59292110501f40259"
+          "rgb565_sha256": "8d668025cad996ae7bfd6b87a81c1d8b0858da782dd07c8a0635291a633ef38d"
         },
         {
           "frame": "day/boot-fade-0200.png",
-          "rgb565_sha256": "dd00ea882a40322dc93c52638204d510776cfd6f416b91691dc416ff069f5db8"
+          "rgb565_sha256": "f5e9b66180a67a986be9e0362775c186e7ca152f505bbda73e6e1377ea48c607"
         },
         {
           "frame": "day/boot-fade-0250.png",
-          "rgb565_sha256": "c5d80bcbd2f98f5f47a2ffc3fe5ee7ea26cca6c3111f5fe3dc2d1a980507010c"
+          "rgb565_sha256": "10824b32aad072538f53aa4241ce17349019f88211d218d204031f7162c10de5"
         },
         {
           "frame": "day/boot-fade-0300.png",
-          "rgb565_sha256": "c83ba0da45df5af3f7ab6c302028c43dfd1043c019b51ff09b799fee3f1bd876"
+          "rgb565_sha256": "4b76e0fb64db4b7b1b406ff7006121c61870f93d704cdf77a27702fece594d12"
         },
         {
           "frame": "day/boot-fade-0350.png",
-          "rgb565_sha256": "2c3d7202b25fdc3a3701f9b16ec45b8a38abfbfc911de16214067bd846b17495"
+          "rgb565_sha256": "454673d34df8f80b44f563926def2e5bd2031655f223a5b695189fcf142b9570"
         },
         {
           "frame": "day/boot-fade-0400.png",
-          "rgb565_sha256": "a89915c0ae18f0b65adc9f4b4d56f243703bd3301248649283347fbfa93576be"
+          "rgb565_sha256": "7046dfd723f16d9d6f7b48c8ec8917328096549fa6bcbbd0e9d506cd91d84302"
         },
         {
           "frame": "day/boot-fade-0450.png",
-          "rgb565_sha256": "69f1aa8c23cd1f7933224175af5ea69ee73b6b56fb5d83f6684682220046850b"
+          "rgb565_sha256": "2553b51d40f11349468bc3e3e6855d57335e7cfd770b3ba674e2de2aaa69bf44"
         },
         {
           "frame": "day/boot-fade-0500.png",

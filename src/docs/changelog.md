@@ -3,6 +3,15 @@
 This history records implemented changes for each release.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
 
+## Version 2.2.6.4 - Bug-fix release
+
+Software-only physical console input bug-fix release, **100% compatible with existing `2.1.8–2.2.6.3` maps (`CPM5`, `CPR2 v5`, `QAD7`)** and saved user data (no map rebuild required):
+
+- **Fixed Scénic III console knob pushes being ignored until rotation (#18, contributed and vehicle-tested by `@qspi`):**
+  - On Scénic III hardware, the factory `vehicledaemon` sends a single `pressed=1` record per knob push and no release (`pressed=0`) record (confirmed from on-car `csw.log` captures). Previously waiting for a `0 -> 1` edge swallowed subsequent knob pushes (including Menu selection and the second press of double-OK for the GPS HUD) until a joystick or rotation record happened to clear `csw.pressed`.
+  - `csw_record()` now treats each `pressed=1` record as a click guarded by a sliding 250 ms burst window (`CSW_PUSH_GUARD_MS`, matching the hard buttons) so duplicate or held push records still produce one OK, while an explicit `pressed=0` record continues to re-arm immediately.
+  - Updated `src/docs/scenic-iii-hardware.md` and expanded host UBSan regression coverage in `src/tests/vehicle-input.c` (burst suppression, consecutive push sequences without release, immediate release re-arming, and `push -> MENU -> push`).
+
 ## Version 2.2.6.3 - Installer & map-builder update
 
 Desktop installer, map-builder and release-integrity maintenance release (head-unit runtime behaviour is unchanged from `2.2.6.2`; 100% compatible with existing `2.1.8–2.2.6.2` maps and saved user data):

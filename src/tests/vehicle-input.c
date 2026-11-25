@@ -22,8 +22,19 @@ static void console_protocol(void){
  }
  reset_console();record(b,0,0,0,1,0);csw_record(b,0);assert(!csw_next());record(b,0,5,3,0,0);csw_record(b,0);assert(!csw_next());
  record(b,0,5,3,1,0);csw_record(b,1);assert(csw_next()==K_ENTER);
- csw_record(b,1000);assert(!csw_next()); /* A render stall cannot turn a held knob into another OK. */
- record(b,0,5,3,0,0);csw_record(b,1001);record(b,0,5,3,1,0);csw_record(b,1002);assert(csw_next()==K_ENTER);
+ /* Duplicate/held push records (or a burst read after a render stall) give one OK. */
+ csw_record(b,1);assert(!csw_next());csw_record(b,200);assert(!csw_next());csw_record(b,400);assert(!csw_next());
+ /* The car sends one pressed==1 record per push and NO release record
+  * (csw.log): consecutive pushes must each be an OK. */
+ csw_record(b,1000);assert(csw_next()==K_ENTER&&!csw_next());
+ csw_record(b,1600);assert(csw_next()==K_ENTER&&!csw_next());
+ csw_record(b,2200);assert(csw_next()==K_ENTER&&!csw_next());
+ /* A real release still re-arms immediately. */
+ record(b,0,5,3,0,0);csw_record(b,2201);record(b,0,5,3,1,0);csw_record(b,2202);assert(csw_next()==K_ENTER);
+ /* Car sequence: push on the map, MENU button, push selects the first option. */
+ reset_console();record(b,0,5,3,1,0);put32(b+12,1);csw_record(b,5000);assert(csw_next()==K_ENTER);
+ record(b,5,0,0,0,0);csw_record(b,6000);assert(csw_next()==K_MENU);
+ record(b,0,5,3,1,0);put32(b+12,1);csw_record(b,7000);assert(csw_next()==K_ENTER&&!csw_next());
  reset_console();record(b,0,5,1,0,14);csw_record(b,100);for(int i=0;i<14;i++)assert(csw_next()==K_ROTCCW);assert(!csw_next());
  record(b,0,5,2,0,3);csw_record(b,101);for(int i=0;i<3;i++)assert(csw_next()==K_ROTCW);
  record(b,0,5,1,0,0);csw_record(b,102);assert(!csw_next());b[24]=255;csw_record(b,103);assert(!csw_next());
