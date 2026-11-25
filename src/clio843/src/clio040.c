@@ -3288,7 +3288,7 @@ static void draw_map_at_zoom(int z){
 }
 /* Approach cue: a compact card on the chosen side, clear of the speed limit. */
 static void draw_camera_popup(void){
- if(pref.cam_popup==2||!pref.cameras||!camera_visible||camera_distance>400)return;
+ if(pref.cam_popup==2||!pref.cameras||!camera_visible)return;
  if(screen!=SCR_MAP||modal)return;
  char title[64];title[0]=0;camera_alert_text(title,sizeof(title));
  char dist[32];dist[0]=0;camera_distance_text(dist,sizeof(dist));
