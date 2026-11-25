@@ -156,6 +156,18 @@
       "Non",
       "No"
     ],
+    "Left": [
+      "Gauche",
+      "Izquierda"
+    ],
+    "Right": [
+      "Droite",
+      "Derecha"
+    ],
+    "Camera popup": [
+      "Popup caméra",
+      "Aviso de cámara"
+    ],
     "Clock": [
       "Horloge",
       "Reloj"
