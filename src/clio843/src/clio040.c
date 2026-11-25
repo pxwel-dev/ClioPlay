@@ -3292,7 +3292,7 @@ static void draw_camera_popup(void){
  if(screen!=SCR_MAP||modal)return;
  char title[64];title[0]=0;camera_alert_text(title,sizeof(title));
  char dist[32];dist[0]=0;camera_distance_text(dist,sizeof(dist));
- int w=156,h=142,x=pref.cam_popup==1?W-8-w:8,y=(H-h)/2;
+ int w=156,h=142,x=pref.cam_popup==1?W-8-w:8,y=(H-h)/2-(pref.cam_popup==1?12:0);
  u16 edge=theme_resolved?rgb(206,140,54):rgb(226,146,42);
  u16 face=theme_resolved?rgb(122,74,20):rgb(255,216,158);
  u16 ink=theme_resolved?rgb(255,246,232):rgb(58,36,8);
