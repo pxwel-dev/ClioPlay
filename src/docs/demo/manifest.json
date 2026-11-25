@@ -28,7 +28,7 @@
     "clio843/src/overlay_frames.h": "b1b6e79491dad7a2a62004f999793bccfef7bb6580b3a877777c284f4537557c",
     "clio843/src/boot_transition.h": "8ea391927a52cf8eaa9f010a70b8f8e012b768346ca9cd297110e40e6a850007",
     "clio843/src/menu_sheet.h": "e2068ba47e7e7dd4ad49d6c2b40eae7dcfe7fd5477b8338d9217709bde5428eb",
-    "clio843/src/release_version.h": "9e69f0d6acfad2ec7d2a689b09ab9590dc0fcbaee9c022891f2fd1beab5160cc",
+    "clio843/src/release_version.h": "5ff32031c4e0016fd974ade5b04f9f73ff5fbfd3f64749c01b9cb7445a5f1f32",
     "clio843/src/vehicle_icon.h": "dfcb48775858684a323506e4cb6f61eba56ce3d8c7507a5ef86b58d917f24b4a",
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
     "clio843/src/cliospl.c": "523530da194e4a859de29b448926f347d70c6c6c243d08d9b048fb68e08e3d33",
@@ -512,9 +512,9 @@
     "clio843/src/vendor/sheenbidi/Headers/SheenBidi/SheenBidi.h": "44a644a72edf2300838d32c3e32aa14a7cb66b584fb9da643b8311aa21991cbe"
   },
   "executables": {
-    "clio040": "ff867de9f3d4882ca4d505fe0690b906adcc6ec0e17f5b15187a1a29258f385d",
-    "cliospl": "a9273a74fb08b82e9e5822d7b9c6d18878c9109516f6decf6c16945d83d1b555",
-    "clioa2dp": "61080632b0c531e83f5374875dddac5c3d327f2424fc9c9cb7714679aeeba7af"
+    "clio040": "285145c5cc2b71c2b7974ecc7bc1fd08afd73eb941c5eeea26088448207697a4",
+    "cliospl": "b4ae227607b28794226a74b071b50eaed1f1442caa6593e9b29e423a82499e3a",
+    "clioa2dp": "021e3f687d6e1b387269c07a4e634c30c148b5fb439432c230b76ccc993736bb"
   },
   "generator_inputs": {
     "tools/render_previews.py": "b01753c0510acee6df729e4ef7581eafc11141e12a104700af2a139f24b697ca",
@@ -5771,7 +5771,7 @@
       ]
     },
     "boot-day.gif": {
-      "sha256": "c415f1884624c935c8101b80194d917dd521895f61951b64c1103263ec00e741",
+      "sha256": "44f668ad9109b129671ff5d344bb6f3e6ceeb8d5ecb63aad2f8ab4334d4ae1d4",
       "frames": 11,
       "duration_ms": 2300,
       "reserved_pointer_colours": [
@@ -5799,43 +5799,43 @@
       "source_frames": [
         {
           "frame": "day/boot-fade-0000.png",
-          "rgb565_sha256": "226337c6c22bf3f978494c88e3433717bcf08dbf2f505fe83ab824569a30e61c"
+          "rgb565_sha256": "1b9dfb356d93da29fca333963310d3957970fc4a3b4e57858322451e903c795b"
         },
         {
           "frame": "day/boot-fade-0050.png",
-          "rgb565_sha256": "343068f84506889bf38ade5e17acf80f90895cd484ef50d791037bef1d1c20b7"
+          "rgb565_sha256": "296b495f9da41b9a39b0123c069972615a8c341b4c1b2dff2fc82eab0c18f62c"
         },
         {
           "frame": "day/boot-fade-0100.png",
-          "rgb565_sha256": "48f21e606b4b34084c8947da05d10e711a1412b2181f29c4c98178c11b156d92"
+          "rgb565_sha256": "e3fcc12f0dca1242917ae900fdd5da693e0ded108135b74dd0358c7708dccca0"
         },
         {
           "frame": "day/boot-fade-0150.png",
-          "rgb565_sha256": "94261b7356eb588746c5b56f1d011e1291ad554351f14195f11fcff7c2f8508e"
+          "rgb565_sha256": "ca636e7bc4a3a91eb8e7db8cb96f38b2fb9870d7dca309c59292110501f40259"
         },
         {
           "frame": "day/boot-fade-0200.png",
-          "rgb565_sha256": "7bf590bf74521d03b5c3d508052912e845686a67c7567bcbc205f9f6fa7c9e77"
+          "rgb565_sha256": "dd00ea882a40322dc93c52638204d510776cfd6f416b91691dc416ff069f5db8"
         },
         {
           "frame": "day/boot-fade-0250.png",
-          "rgb565_sha256": "44a2b0c978d45820ce633dbc3e95741f168e98e7b45642a8f947b6c26c3324cf"
+          "rgb565_sha256": "c5d80bcbd2f98f5f47a2ffc3fe5ee7ea26cca6c3111f5fe3dc2d1a980507010c"
         },
         {
           "frame": "day/boot-fade-0300.png",
-          "rgb565_sha256": "2fa7d9bea9e83799f1efb84bce03499d1c0a2a517b1d3e29b1ff9fff4d6eb0da"
+          "rgb565_sha256": "c83ba0da45df5af3f7ab6c302028c43dfd1043c019b51ff09b799fee3f1bd876"
         },
         {
           "frame": "day/boot-fade-0350.png",
-          "rgb565_sha256": "c2d9b2a01f436f613bca6bbf611367b5877dbbf063d18da60ae30a8b1e2ae292"
+          "rgb565_sha256": "2c3d7202b25fdc3a3701f9b16ec45b8a38abfbfc911de16214067bd846b17495"
         },
         {
           "frame": "day/boot-fade-0400.png",
-          "rgb565_sha256": "9fc9be5e9006d5e49871932d06f1c1ba9d8dcc859054ad3653f004440e5e9c7a"
+          "rgb565_sha256": "a89915c0ae18f0b65adc9f4b4d56f243703bd3301248649283347fbfa93576be"
         },
         {
           "frame": "day/boot-fade-0450.png",
-          "rgb565_sha256": "27d4d9b1b3e1339466bdad86b82274ddc24847607efb85bce7584f797b82ff35"
+          "rgb565_sha256": "69f1aa8c23cd1f7933224175af5ea69ee73b6b56fb5d83f6684682220046850b"
         },
         {
           "frame": "day/boot-fade-0500.png",

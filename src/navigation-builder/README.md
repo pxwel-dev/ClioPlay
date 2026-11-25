@@ -245,3 +245,38 @@ fail explicitly. Enough disk is required for scratch, outputs and card staging.
 
 OSM and imported camera datasets retain their own licences. Natural Earth boundaries are public domain; Noto font notices
 and OFL are in `data/`. The parent README describes the current release limitations.
+
+## Parallel atlas builds
+
+By default, `tools/build_atlas.py` builds one region at a time. On machines with
+enough RAM to overlap extraction and regional builds, set `CLIOPLAY_PIPELINE=1`
+to enable bounded extraction and region-build worker pools inside `build_atlas.py`:
+
+```sh
+CLIOPLAY_PIPELINE=1 python3 build_navigation.py great-britain-latest.osm.pbf --yes --country GB
+```
+
+Pool sizes are derived automatically from host RAM and physical cores on Linux,
+WSL 2 and macOS (each `osmium extract` needs about 2.5–3.5 GB):
+
+| Host | Extraction | Build |
+| --- | --- | --- |
+| 8 cores / 10 GB | 2 | 7 |
+| 12 cores / 16 GB | 4 | 11 |
+| 16 cores / 32 GB | 8 | 15 |
+
+Override with `CLIOPLAY_EXTRACT_JOBS` and `CLIOPLAY_BUILD_JOBS`. Regions are
+dispatched as slots free instead of in waves, extra parallel builds pause
+automatically when available RAM drops below 3 GiB (always keeping at least one
+build running so low-RAM hosts never stall), and failure or `Ctrl-C` cancels
+remaining work immediately.
+
+Sequential and pipelined modes share the exact same deterministic region naming
+(including split sub-regions), `atlas-region.json` stamps and catalog assembly,
+producing byte-identical output and allowing a half-finished atlas to resume in
+either mode.
+
+The C++ helpers (`ch_preprocess`, `build_qadj`) are compiled once and cached in
+a private per-user directory (`0700`) keyed by source, platform, architecture
+and compiler identity (with automatic local fallback if `/tmp` is mounted
+`noexec`), benefiting both sequential and pipelined builds.

@@ -3,6 +3,21 @@
 This history records implemented changes for each release.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
 
+## Version 2.2.6.3 - Installer & map-builder update
+
+Desktop installer, map-builder and release-integrity maintenance release (head-unit runtime behaviour is unchanged from `2.2.6.2`; 100% compatible with existing `2.1.8–2.2.6.2` maps and saved user data):
+
+- **Fixed FAT32/exFAT SD-card install and update failures (#12, #14, contributed by `@bobczan`):**
+  - Made POSIX executable `chmod` best-effort in both `install_nav.py` and `update_card.py` (ignoring `EPERM`, `EACCES`, `ENOTSUP`, `EOPNOTSUPP`, `EINVAL`, `NotImplementedError`) and switched persisted-data backups (`prefs.ini`, `recent.dat`, `faves.dat`, `trip.dat`) from `shutil.copy2` to `shutil.copyfile`, preventing aborts and rollbacks on FAT32/exFAT cards mounted through WSL 2 `drvfs` or Linux `vfat`.
+- **Tightened Windows WSL launcher preflight (#13, #15, contributed by `@bobczan`):**
+  - `src/tools/install_windows.ps1` now verifies `import venv, ensurepip` silently instead of `python3 -m venv --help`, catching missing `python3-venv` packages up front on fresh Ubuntu 24.04 WSL setups.
+- **Opt-in parallel atlas builder & cached C++ helpers (#11, contributed by `@bobczan` and unified into `build_atlas.py`):**
+  - Setting `CLIOPLAY_PIPELINE=1` enables bounded concurrent extraction and region-build worker pools directly inside `tools/build_atlas.py` (sized from host RAM and physical cores on Linux, WSL 2, ARM Linux and macOS, overridable via `CLIOPLAY_EXTRACT_JOBS` and `CLIOPLAY_BUILD_JOBS`).
+  - Uses deterministic hierarchical split naming (`rNNNN_k`) and tree-order catalog assembly so sequential and pipelined runs stay byte-identical and cross-resumable even when dense regions split, with accurate progress/ETA, fail-fast subprocess cancellation on errors/`Ctrl-C`, deadlock-free RAM throttling, and atomic `atlas-region.json` stamps.
+  - Added shared `tools/native_helper.py` so `ch_preprocess` and `build_qadj` compile once per source/platform/architecture/compiler into a private `0700` per-user cache (with automatic cleaned fallback for `noexec` `/tmp`), speeding up both sequential and pipelined builds.
+- **Release integrity & CI (#16, reported by `@bobczan`):**
+  - Added `.github/workflows/verify.yml` to check `SHA256SUMS` and `verify_ci.py` on pushes and tags (`--host-only` on PRs), plus new unit tests (`src/tests/test_atlas_pipeline.py` and FAT32 regression tests in `test_clean_install.py` and `test_update_card.py`).
+
 ## Version 2.2.6.2 - Bug-fix release
 
 Software-only routing and close-up map bug-fix release, 100% compatible with existing `2.1.8–2.2.6.1` maps (`CPM5`, `CPR2 v5`, `QAD7`) and saved user data, no map rebuild required.

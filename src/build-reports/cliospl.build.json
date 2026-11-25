@@ -3,7 +3,7 @@
   "abi": "ELF32 EABI5 soft-float; Linux OABI syscalls",
   "entry": "0x331a8",
   "bytes": 84224,
-  "sha256": "a9273a74fb08b82e9e5822d7b9c6d18878c9109516f6decf6c16945d83d1b555",
+  "sha256": "b4ae227607b28794226a74b071b50eaed1f1442caa6593e9b29e423a82499e3a",
   "sections": {
     ".text": {
       "address": "0x331a8",
@@ -22,9 +22,9 @@
       "bytes": 261124
     }
   },
-  "version": "2.2.6.2",
+  "version": "2.2.6.3",
   "source": "clio843/src/cliospl.c",
-  "source_tree_sha256": "5d2a97e749052d4e94155a6b2448e656992c55cc86960b422657cfd0041f080b",
+  "source_tree_sha256": "ba7666da11cf0443aa41dbe409e950f426e9c4eeae97508c35622decfd7486d6",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "7c1c5599a121e702a0fe7ac89fc957e07086e27f20aaf1511971d197de3a39a0",
@@ -74,7 +74,7 @@
     "clio843/src/overlay_frames.h": "b1b6e79491dad7a2a62004f999793bccfef7bb6580b3a877777c284f4537557c",
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
     "clio843/src/popups.h": "b16c75163580e2fbbe17a9359bc473d368a57c3c8c2347b5d5f56ce73295f61d",
-    "clio843/src/release_version.h": "9e69f0d6acfad2ec7d2a689b09ab9590dc0fcbaee9c022891f2fd1beab5160cc",
+    "clio843/src/release_version.h": "5ff32031c4e0016fd974ade5b04f9f73ff5fbfd3f64749c01b9cb7445a5f1f32",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
     "clio843/src/splash_icon.h": "1c0cb3bf3be97ce49cdf626bc0184b0736b49fee877a92f5bf2e5cb2d0ec17eb",
     "clio843/src/traffic.h": "b1927acad9ddb72ba2ef205c23ef8743f278d533ceeac9e633dd608b31ddc20a",
@@ -1044,7 +1044,7 @@
     "clio843/src/vendor/sheenbidi/Source/UBA/StatusStack.h": "348774283d029f4afa64b95ba9fe04240d754587b483a8bcc345e1d6e78c6261",
     "clio843/src/vstatd.c": "a359d214853cdd511fb79e905fafc52f5413b635bb3288b268d04c15724a666f",
     "tools/build_ui.py": "b5874193f7b1903d2da65043e329011c3df07a4b5fcfedd9e424814a905c5c05",
-    "VERSION": "6dec2ebc5b350949db21ffc2b013b6397e83efb1619f4f07d9801b2af2d39e81",
+    "VERSION": "a181d6f77f2e12decc1d5e6bcbb596a746f34b78f289815d359d32c22ed83a25",
     "tools/release_version.py": "60af5fa9cfbd5fac724ae4f97d2b360517e37c365a966e5cbe789eb437e5871f",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
     "tools/build_translations.py": "f0970483186937bbbc3b86f4bab877a2a6fe244830e99ee9ac82c2f58858e6f0",
