@@ -1,8 +1,25 @@
-# ClioPlay version 2.2.6.2
+# ClioPlay version 2.2.6.3
 
-Version 2.2.6.2 is a software-only routing and close-up map bug-fix release. It
-is **100% compatible with existing `2.1.8–2.2.6.1` maps (`CPM5`, `CPR2 v5`,
-`QAD7`)** — no map rebuild is needed:
+Version 2.2.6.3 is an installer, map-builder and release-integrity update. It
+is **100% compatible with existing `2.1.8–2.2.6.2` maps (`CPM5`, `CPR2 v5`,
+`QAD7`)** and saved user data (head-unit runtime behaviour is unchanged from
+`2.2.6.2`, no map rebuild is needed):
+
+- **FAT32/exFAT card install & Windows WSL fixes (2.2.6.3, contributed by `@bobczan`):**
+  Fresh installs, re-installs and `--update` now handle non-POSIX filesystems
+  (WSL 2 `drvfs`, Linux `vfat`/exFAT) cleanly without aborting on `chmod`
+  `EPERM`, and `install_windows.ps1` now checks `venv` + `ensurepip` before
+  starting a build.
+- **Opt-in parallel atlas builds & cached C++ helpers (2.2.6.3, contributed by `@bobczan`):**
+  Set `CLIOPLAY_PIPELINE=1` to overlap extraction and regional builds inside
+  `tools/build_atlas.py` on Linux, WSL 2 and macOS (with deterministic split
+  naming, cross-resume, fail-fast cancellation and deadlock-free RAM
+  throttling). `ch_preprocess` and `build_qadj` now compile once into a private
+  `0700` per-user cache across regions for both sequential and pipelined builds.
+- **Release integrity CI (2.2.6.3):** Added GitHub Actions verification for
+  `SHA256SUMS` and `verify_ci.py`, plus new installer and pipeline unit tests.
+
+Version 2.2.6.2 highlights (carried forward):
 
 - **No more unnecessary U-turn spurs:** Two-way streets now evaluate both legal
   directions at route start and destination directly inside the existing router

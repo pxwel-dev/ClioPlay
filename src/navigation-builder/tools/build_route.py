@@ -543,18 +543,9 @@ def write_raw(db,nstate,geom_points,path):
  return base_m,route_m
 
 def ensure_preprocessor(work):
- src=HERE/'ch_preprocess.cpp';exe=work/'ch_preprocess';cc=shutil.which('c++') or shutil.which('g++') or shutil.which('clang++')
- if not cc:raise SystemExit('C++17 compiler required for CPR2 hierarchy preprocessing')
- # Atlas builds call this once per region; reuse a binary cached by source content.
- import hashlib,tempfile
- cached=Path(tempfile.gettempdir())/('clioplay-ch_preprocess-'+hashlib.sha256(src.read_bytes()).hexdigest()[:16])
- if not cached.exists() or cached.stat().st_size==0:
-  handle,temporary=tempfile.mkstemp(prefix=cached.name+'.',suffix='.tmp');os.close(handle);tmp=Path(temporary)
-  try:
-   cmd=[cc,'-O3','-std=c++17','-DNDEBUG',str(src),'-o',str(tmp)];eprint('+',' '.join(cmd));subprocess.check_call(cmd)
-   tmp.chmod(0o755);os.replace(tmp,cached)
-  finally:tmp.unlink(missing_ok=True)
- shutil.copy2(cached,exe);return exe
+ from native_helper import ensure_compiled
+ src=HERE/'ch_preprocess.cpp'
+ return ensure_compiled('ch_preprocess',src,['-O3','-std=c++17','-DNDEBUG'],fallback_dir=work,log=eprint)
 
 class CHMeta:
  def __init__(self,path,n_expected,route_m_expected):
@@ -585,11 +576,12 @@ def copy_region(path,off,nbytes,out,chunk=4*1024*1024):
    out.write(b);left-=len(b)
 
 def pack(db,out,work,geom_path,nphys,nstate,raw_nodes,geom_points,witness_limit,max_shortcut_ratio,protected_nodes=None):
- raw=work/'cpr2.raw';physical_base_m,route_m=write_raw(db,nstate,geom_points,raw);prep=ensure_preprocessor(work);ch=work/'cpr2.ch'
- cmd=[str(prep),str(raw),str(ch),str(int(witness_limit)),str(float(max_shortcut_ratio))]
+ from native_helper import run_compiled
+ raw=work/'cpr2.raw';physical_base_m,route_m=write_raw(db,nstate,geom_points,raw);ch=work/'cpr2.ch'
+ args=[raw,ch,int(witness_limit),float(max_shortcut_ratio)]
  if protected_nodes is not None:
-  portal_file=work/'portals.u32';portal_file.write_bytes(b''.join(struct.pack('<I',int(i)) for i in sorted(set(protected_nodes))));cmd.append(str(portal_file))
- eprint('+',' '.join(cmd));subprocess.check_call(cmd);cm=CHMeta(ch,nstate,route_m)
+  portal_file=work/'portals.u32';portal_file.write_bytes(b''.join(struct.pack('<I',int(i)) for i in sorted(set(protected_nodes))));args.append(portal_file)
+ run_compiled('ch_preprocess',HERE/'ch_preprocess.cpp',['-O3','-std=c++17','-DNDEBUG'],args,fallback_dir=work,log=eprint);cm=CHMeta(ch,nstate,route_m)
  tile_rows=[];first=0
  for tx,ty,count in db.execute('select tx,ty,count(*) from tile_refs group by tx,ty order by tx,ty'):
   tile_rows.append((int(tx),int(ty),first,int(count)));first+=int(count)

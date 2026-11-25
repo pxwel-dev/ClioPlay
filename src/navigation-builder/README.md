@@ -248,17 +248,16 @@ and OFL are in `data/`. The parent README describes the current release limitati
 
 ## Parallel atlas builds
 
-`build_atlas.py` builds one region at a time. When the machine can hold more than
-one region's working set in RAM that leaves most cores idle, and the slowest
-region stalls the rest of its wave. `tools/build_atlas_pipeline.py` is a
-scheduling-only alternative with the same output, stamps and assembly:
+By default, `tools/build_atlas.py` builds one region at a time. On machines with
+enough RAM to overlap extraction and regional builds, set `CLIOPLAY_PIPELINE=1`
+to enable bounded extraction and region-build worker pools inside `build_atlas.py`:
 
 ```sh
 CLIOPLAY_PIPELINE=1 python3 build_navigation.py great-britain-latest.osm.pbf --yes --country GB
 ```
 
-It sizes both pools from the host: extraction slots from available RAM (each
-`osmium extract` needs about 2.5 GB) and build slots from physical cores.
+Pool sizes are derived automatically from host RAM and physical cores on Linux,
+WSL 2 and macOS (each `osmium extract` needs about 2.5–3.5 GB):
 
 | Host | Extraction | Build |
 | --- | --- | --- |
@@ -267,12 +266,17 @@ It sizes both pools from the host: extraction slots from available RAM (each
 | 16 cores / 32 GB | 8 | 15 |
 
 Override with `CLIOPLAY_EXTRACT_JOBS` and `CLIOPLAY_BUILD_JOBS`. Regions are
-dispatched as slots free instead of in waves, so one dense region no longer
-blocks the queue, and done/total with an ETA is printed as regions finish.
+dispatched as slots free instead of in waves, extra parallel builds pause
+automatically when available RAM drops below 3 GiB (always keeping at least one
+build running so low-RAM hosts never stall), and failure or `Ctrl-C` cancels
+remaining work immediately.
 
-The pipeline is output-equivalent to the sequential builder (checked by
-byte-comparing every file of a test atlas) and both drivers read and write the
-same `atlas-region.json` stamps, so a half-finished atlas resumes in either.
+Sequential and pipelined modes share the exact same deterministic region naming
+(including split sub-regions), `atlas-region.json` stamps and catalog assembly,
+producing byte-identical output and allowing a half-finished atlas to resume in
+either mode.
 
-The C++ helpers (`ch_preprocess`, `build_qadj`) are compiled once and cached by
-source hash in the system temporary directory instead of once per region.
+The C++ helpers (`ch_preprocess`, `build_qadj`) are compiled once and cached in
+a private per-user directory (`0700`) keyed by source, platform, architecture
+and compiler identity (with automatic local fallback if `/tmp` is mounted
+`noexec`), benefiting both sequential and pipelined builds.
