@@ -1,5 +1,6 @@
 
 """Software-only update: validate, preserve data, back up and roll back."""
+import errno
 import json
 import os
 from pathlib import Path
@@ -223,6 +224,19 @@ class UpdateTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Required regular file missing'):
             updater.install(self.card, self.root)
         self.assertEqual(self.snapshot(), before)
+
+    def test_fat32_chmod_errors_do_not_abort_update(self):
+        for exc in (
+            PermissionError(errno.EPERM, 'Operation not permitted'),
+            OSError(errno.ENOTSUP, 'Operation not supported'),
+        ):
+            with self.subTest(exc=type(exc).__name__):
+                with patch.object(Path, 'chmod', side_effect=exc):
+                    backup = updater.install(self.card, self.root)
+                self.assertTrue((backup/'update-backup.json').is_file())
+                self.assertFalse(list(self.card.glob('.clioplay-update-stage-*')))
+                # Reset card for next subtest.
+                self.setUp()
 
 
 if __name__ == '__main__':

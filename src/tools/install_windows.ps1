@@ -25,7 +25,7 @@ function Invoke-ClioPlayWindowsInstall {
             throw 'Cannot translate the project folder into a WSL path. Extract it to a local Windows drive.'
         }
         $linuxRoot = ($linuxRoot | Select-Object -Last 1).Trim()
-        $check = 'command -v python3 >/dev/null && command -v osmium >/dev/null && command -v c++ >/dev/null && command -v cabextract >/dev/null && python3 -c "import ensurepip" >/dev/null'
+        $check = 'command -v python3 >/dev/null && command -v osmium >/dev/null && command -v c++ >/dev/null && command -v cabextract >/dev/null && python3 -c "import venv, ensurepip" >/dev/null 2>&1'
         & wsl.exe --distribution $Distro --cd $linuxRoot --exec /bin/sh -c $check | Out-Host
         if ($LASTEXITCODE -ne 0) {
             throw 'Required Ubuntu tools are missing. Run the apt command in WINDOWS.md.'

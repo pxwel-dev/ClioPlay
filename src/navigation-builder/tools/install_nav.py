@@ -5,9 +5,17 @@ All files are staged and SHA-256 checked before changing live paths. A failed
 commit attempts rollback. Never remove the card or power the device while an
 installation is running. The device must be off during desktop installation.
 """
-import argparse,hashlib,json,os,shutil,struct,tempfile,time
+import argparse,errno,hashlib,json,os,shutil,struct,tempfile,time
 from pathlib import Path
 from bundle_layout import bundle_names
+_CHMOD_IGNORED_ERRNOS=tuple(
+ getattr(errno,name) for name in ('EPERM','EACCES','ENOTSUP','EOPNOTSUPP','EINVAL') if hasattr(errno,name)
+)
+def _chmod_best_effort(path,mode):
+ try:path.chmod(mode)
+ except (PermissionError,NotImplementedError):pass # vfat/exFAT cannot store POSIX mode bits
+ except OSError as exc:
+  if exc.errno not in _CHMOD_IGNORED_ERRNOS:raise
 def sha(p):
  h=hashlib.sha256()
  with Path(p).open('rb') as f:
@@ -82,14 +90,13 @@ def install(bundle,sd,runtime=None):
     shutil.copyfileobj(inp,out,4*1024*1024);out.flush();os.fsync(out.fileno())
    if sha(src)!=sha(dst):raise ValueError('staging verification failed: '+str(rel))
    if src.stat().st_mode&0o111:
-    try:dst.chmod(0o755)
-    except (PermissionError,NotImplementedError):pass # vfat/exFAT cannot store POSIX mode bits
+    _chmod_best_effort(dst,0o755)
   # Back up persisted data before updating the runtime. Unsupported state formats are ignored.
   # The live copies and Bluetooth pairing store stay in place.
   for name in ('prefs.ini','recent.dat','faves.dat','trip.dat'):
    rel=Path('clio843')/name
    if (sd/rel).is_file():
-    bak=backup/rel;bak.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(sd/rel,bak)
+    bak=backup/rel;bak.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(sd/rel,bak)
   for rel in obsolete:
    if (sd/rel).is_file():
     bak=backup/rel;bak.parent.mkdir(parents=True,exist_ok=True);os.replace(sd/rel,bak);moved.append(rel)

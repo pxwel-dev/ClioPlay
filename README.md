@@ -219,4 +219,4 @@ Original ClioPlay development includes:
 
 Third-party software and dependencies retain their respective licences and attribution notices, as documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-<sub>Release files refreshed 24 November 2026 (Europe/London).</sub>
+<sub>Release files refreshed 25 November 2026 (Europe/London).</sub>

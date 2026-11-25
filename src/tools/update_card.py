@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Update only the ClioPlay software on an existing Global installation."""
 import argparse
+import errno
 import json
 import os
 import re
@@ -106,7 +107,18 @@ def copy_checked(source, dest, expected, executable=False):
     if sha256(dest) != expected:
         raise ValueError('Copy checksum mismatch: ' + str(dest))
     if executable and os.name != 'nt':
-        dest.chmod(0o755)
+        ignored = tuple(
+            getattr(errno, name)
+            for name in ('EPERM', 'EACCES', 'ENOTSUP', 'EOPNOTSUPP', 'EINVAL')
+            if hasattr(errno, name)
+        )
+        try:
+            dest.chmod(0o755)
+        except (PermissionError, NotImplementedError):
+            pass  # FAT32/exFAT cards do not support POSIX mode bits
+        except OSError as exc:
+            if exc.errno not in ignored:
+                raise
 
 
 def plan(sd, root=ROOT):
