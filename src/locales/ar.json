@@ -256,5 +256,8 @@
   "Use usual route?": "استخدام مسارك المعتاد؟",
   "View route": "عرض المسار",
   "Usual route selected": "تم اختيار المسار المعتاد",
-  "Route unavailable": "المسار غير متاح"
+  "Route unavailable": "المسار غير متاح",
+  "Left": "Left",
+  "Right": "Right",
+  "Camera popup": "Camera popup"
 }

@@ -256,5 +256,8 @@
   "Use usual route?": "いつものルートを使いますか？",
   "View route": "ルートを表示",
   "Usual route selected": "いつものルートを選択",
-  "Route unavailable": "ルートを利用できません"
+  "Route unavailable": "ルートを利用できません",
+  "Left": "Left",
+  "Right": "Right",
+  "Camera popup": "Camera popup"
 }

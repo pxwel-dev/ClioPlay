@@ -256,5 +256,8 @@
   "Use usual route?": "להשתמש במסלול הקבוע?",
   "View route": "הצג מסלול",
   "Usual route selected": "נבחר המסלול הקבוע",
-  "Route unavailable": "המסלול אינו זמין"
+  "Route unavailable": "המסלול אינו זמין",
+  "Left": "Left",
+  "Right": "Right",
+  "Camera popup": "Camera popup"
 }

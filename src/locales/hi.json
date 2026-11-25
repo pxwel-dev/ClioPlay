@@ -256,5 +256,8 @@
   "Use usual route?": "सामान्य मार्ग अपनाएं?",
   "View route": "मार्ग देखें",
   "Usual route selected": "सामान्य मार्ग चुना गया",
-  "Route unavailable": "मार्ग उपलब्ध नहीं"
+  "Route unavailable": "मार्ग उपलब्ध नहीं",
+  "Left": "Left",
+  "Right": "Right",
+  "Camera popup": "Camera popup"
 }

@@ -256,5 +256,8 @@
   "Use usual route?": "Χρήση συνήθους διαδρομής;",
   "View route": "Προβολή διαδρομής",
   "Usual route selected": "Επιλέχθηκε συνήθης διαδρομή",
-  "Route unavailable": "Μη διαθέσιμη διαδρομή"
+  "Route unavailable": "Μη διαθέσιμη διαδρομή",
+  "Left": "Left",
+  "Right": "Right",
+  "Camera popup": "Camera popup"
 }

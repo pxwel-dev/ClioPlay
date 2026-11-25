@@ -256,5 +256,8 @@
   "Use usual route?": "Usare il percorso abituale?",
   "View route": "Mostra percorso",
   "Usual route selected": "Percorso abituale scelto",
-  "Route unavailable": "Percorso non disponibile"
+  "Route unavailable": "Percorso non disponibile",
+  "Left": "Left",
+  "Right": "Right",
+  "Camera popup": "Camera popup"
 }

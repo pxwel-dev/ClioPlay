@@ -256,5 +256,8 @@
   "Use usual route?": "使用常用路线？",
   "View route": "查看路线",
   "Usual route selected": "已选择常用路线",
-  "Route unavailable": "路线不可用"
+  "Route unavailable": "路线不可用",
+  "Left": "Left",
+  "Right": "Right",
+  "Camera popup": "Camera popup"
 }

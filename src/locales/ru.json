@@ -256,5 +256,8 @@
   "Use usual route?": "Выбрать привычный маршрут?",
   "View route": "Показать маршрут",
   "Usual route selected": "Привычный путь выбран",
-  "Route unavailable": "Маршрут недоступен"
+  "Route unavailable": "Маршрут недоступен",
+  "Left": "Left",
+  "Right": "Right",
+  "Camera popup": "Camera popup"
 }

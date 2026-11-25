@@ -256,5 +256,8 @@
   "Use usual route?": "Alışılmış rota kullanılsın mı?",
   "View route": "Rotayı gör",
   "Usual route selected": "Alışılmış rota seçildi",
-  "Route unavailable": "Rota mevcut değil"
+  "Route unavailable": "Rota mevcut değil",
+  "Left": "Left",
+  "Right": "Right",
+  "Camera popup": "Camera popup"
 }
