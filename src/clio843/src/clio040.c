@@ -439,8 +439,8 @@ static void text_center_fit(int cx,int y,int maxw,const char*s,u16 c){
 static int fb_flush(void){long fd=s_open(FB_PATH,O_WRONLY_|O_CREAT_,0666);if(fd<0)return 0;s_lseek((int)fd,0,SEEK_SET_);long n=s_write((int)fd,fb,sizeof(fb));s_close((int)fd);return n==(long)sizeof(fb);}
 
 enum { THEME_DAY=0, THEME_NIGHT=1, THEME_AUTO=2 };
-struct Prefs {int bright,hoff,moff,autozoom,debug,theme,units,cameras,clock_auto,language,day_start,night_start,top_swap,bottom_swap,learn_history,destination_predictions,diversions,gps_hud;};
-static struct Prefs pref={50,0,0,1,0,THEME_AUTO,0,1,1,0,CLIO_DAY_START,CLIO_NIGHT_START,0,0,0,1,1,0};
+struct Prefs {int bright,hoff,moff,autozoom,debug,theme,units,cameras,clock_auto,language,day_start,night_start,top_swap,bottom_swap,learn_history,destination_predictions,diversions,gps_hud,cam_popup;};
+static struct Prefs pref={50,0,0,1,0,THEME_AUTO,0,1,1,0,CLIO_DAY_START,CLIO_NIGHT_START,0,0,0,1,1,0,1};
 static int pref_keyboard_language=-1;
 /* The TomTom hardware export is authoritative when present; unknown hardware
  * keeps Bluetooth visible when the hardware export is unavailable. */
@@ -478,7 +478,7 @@ static const char*bt_unavailable_label(void){return pref.language==0?"Bluetooth 
 #define MAX_EXPLORE_ZOOM 9
 static int manual_zoom=5;
 static int prefs_dirty=0,prefs_delay=0;
-static void parse_pref_line(char*ln){char*eq=ln;while(*eq&&*eq!='=')eq++;if(!*eq)return;*eq++=0;if(streq(ln,"daystart")){pref.day_start=clio_theme_time(eq,CLIO_DAY_START);return;}if(streq(ln,"nightstart")){pref.night_start=clio_theme_time(eq,CLIO_NIGHT_START);return;}int v=atoi0(eq);if(streq(ln,"bright"))pref.bright=v;else if(streq(ln,"hoff"))pref.hoff=v;else if(streq(ln,"moff"))pref.moff=v;else if(streq(ln,"autozoom"))pref.autozoom=v?1:0;else if(streq(ln,"debug"))pref.debug=v?1:0;else if(streq(ln,"theme"))pref.theme=v;else if(streq(ln,"units"))pref.units=v;else if(streq(ln,"cameras"))pref.cameras=v>=0&&v<=2?v:1;else if(streq(ln,"clockauto"))pref.clock_auto=v?1:0;else if(streq(ln,"language"))pref.language=v>=0&&v<UI_LANGUAGE_COUNT?v:0;else if(streq(ln,"manualzoom"))manual_zoom=v;else if(streq(ln,"keyboardlanguage"))pref_keyboard_language=v>=0&&v<UI_LANGUAGE_COUNT?v:-1;
+static void parse_pref_line(char*ln){char*eq=ln;while(*eq&&*eq!='=')eq++;if(!*eq)return;*eq++=0;if(streq(ln,"daystart")){pref.day_start=clio_theme_time(eq,CLIO_DAY_START);return;}if(streq(ln,"nightstart")){pref.night_start=clio_theme_time(eq,CLIO_NIGHT_START);return;}int v=atoi0(eq);if(streq(ln,"bright"))pref.bright=v;else if(streq(ln,"hoff"))pref.hoff=v;else if(streq(ln,"moff"))pref.moff=v;else if(streq(ln,"autozoom"))pref.autozoom=v?1:0;else if(streq(ln,"debug"))pref.debug=v?1:0;else if(streq(ln,"theme"))pref.theme=v;else if(streq(ln,"units"))pref.units=v;else if(streq(ln,"cameras"))pref.cameras=v>=0&&v<=2?v:1;else if(streq(ln,"campopup"))pref.cam_popup=v>=0&&v<=2?v:1;else if(streq(ln,"clockauto"))pref.clock_auto=v?1:0;else if(streq(ln,"language"))pref.language=v>=0&&v<UI_LANGUAGE_COUNT?v:0;else if(streq(ln,"manualzoom"))manual_zoom=v;else if(streq(ln,"keyboardlanguage"))pref_keyboard_language=v>=0&&v<UI_LANGUAGE_COUNT?v:-1;
  else if(streq(ln,"hudtopswap"))pref.top_swap=v?1:0;
  else if(streq(ln,"hudbottomswap"))pref.bottom_swap=v?1:0;
  else if(streq(ln,"learnhistory"))pref.learn_history=v?1:0;
@@ -488,7 +488,7 @@ static void parse_pref_line(char*ln){char*eq=ln;while(*eq&&*eq!='=')eq++;if(!*eq
 static void load_prefs(void){pref.day_start=CLIO_DAY_START;pref.night_start=CLIO_NIGHT_START;char b[512],ln[96];unsigned u=0;long fd=s_open(PREF_PATH,O_RDONLY_,0);if(fd>=0){long n=s_read((int)fd,b,sizeof(b));s_close((int)fd);if(n>0){for(long i=0;i<n;i++){char c=b[i];if(c=='\r'||c=='\n'){if(u){ln[u]=0;parse_pref_line(ln);u=0;}}else if(u+1<sizeof(ln))ln[u++]=c;}if(u){ln[u]=0;parse_pref_line(ln);}}}if(pref.bright<10)pref.bright=10;if(pref.bright>100)pref.bright=100;if(pref.theme<THEME_DAY||pref.theme>THEME_AUTO)pref.theme=THEME_AUTO;if(pref.units<0||pref.units>2)pref.units=0;if(pref.hoff*60+pref.moff< -720||pref.hoff*60+pref.moff>840)pref.hoff=pref.moff=0;if(manual_zoom<0)manual_zoom=0;if(manual_zoom>MAX_EXPLORE_ZOOM)manual_zoom=MAX_EXPLORE_ZOOM;if(!clio_theme_schedule_valid(pref.day_start,pref.night_start)){pref.day_start=CLIO_DAY_START;pref.night_start=CLIO_NIGHT_START;}}
 /* Shared with the splash; the definition follows the wall-clock helpers. */
 static void seed_boot_theme(void);
-static void save_prefs(void){char b[512];b[0]=0;appendstr(b,sizeof(b),"version=8\nbright=");append_int(b,sizeof(b),pref.bright);appendstr(b,sizeof(b),"\nhoff=");append_int(b,sizeof(b),pref.hoff);appendstr(b,sizeof(b),"\nmoff=");append_int(b,sizeof(b),pref.moff);appendstr(b,sizeof(b),"\nautozoom=");append_int(b,sizeof(b),pref.autozoom);appendstr(b,sizeof(b),"\ndebug=");append_int(b,sizeof(b),pref.debug);appendstr(b,sizeof(b),"\ntheme=");append_int(b,sizeof(b),pref.theme);appendstr(b,sizeof(b),"\nunits=");append_int(b,sizeof(b),pref.units);appendstr(b,sizeof(b),"\ncameras=");append_int(b,sizeof(b),pref.cameras);appendstr(b,sizeof(b),"\nclockauto=");append_int(b,sizeof(b),pref.clock_auto);appendstr(b,sizeof(b),"\nlanguage=");append_int(b,sizeof(b),pref.language);appendstr(b,sizeof(b),"\ndaystart=");append_int(b,sizeof(b),pref.day_start);appendstr(b,sizeof(b),"\nnightstart=");append_int(b,sizeof(b),pref.night_start);appendstr(b,sizeof(b),"\nmanualzoom=");append_int(b,sizeof(b),manual_zoom);appendstr(b,sizeof(b),"\nkeyboardlanguage=");append_int(b,sizeof(b),pref_keyboard_language);
+static void save_prefs(void){char b[512];b[0]=0;appendstr(b,sizeof(b),"version=8\nbright=");append_int(b,sizeof(b),pref.bright);appendstr(b,sizeof(b),"\nhoff=");append_int(b,sizeof(b),pref.hoff);appendstr(b,sizeof(b),"\nmoff=");append_int(b,sizeof(b),pref.moff);appendstr(b,sizeof(b),"\nautozoom=");append_int(b,sizeof(b),pref.autozoom);appendstr(b,sizeof(b),"\ndebug=");append_int(b,sizeof(b),pref.debug);appendstr(b,sizeof(b),"\ntheme=");append_int(b,sizeof(b),pref.theme);appendstr(b,sizeof(b),"\nunits=");append_int(b,sizeof(b),pref.units);appendstr(b,sizeof(b),"\ncameras=");append_int(b,sizeof(b),pref.cameras);appendstr(b,sizeof(b),"\ncampopup=");append_int(b,sizeof(b),pref.cam_popup);appendstr(b,sizeof(b),"\nclockauto=");append_int(b,sizeof(b),pref.clock_auto);appendstr(b,sizeof(b),"\nlanguage=");append_int(b,sizeof(b),pref.language);appendstr(b,sizeof(b),"\ndaystart=");append_int(b,sizeof(b),pref.day_start);appendstr(b,sizeof(b),"\nnightstart=");append_int(b,sizeof(b),pref.night_start);appendstr(b,sizeof(b),"\nmanualzoom=");append_int(b,sizeof(b),manual_zoom);appendstr(b,sizeof(b),"\nkeyboardlanguage=");append_int(b,sizeof(b),pref_keyboard_language);
  appendstr(b,sizeof(b),"\nhudtopswap=");append_int(b,sizeof(b),pref.top_swap);
  appendstr(b,sizeof(b),"\nhudbottomswap=");append_int(b,sizeof(b),pref.bottom_swap);
  appendstr(b,sizeof(b),"\nlearnhistory=");append_int(b,sizeof(b),pref.learn_history);
@@ -3251,17 +3251,62 @@ static void draw_trip_markers(int z){
   if(i==trip.count-1)map_dot_q8(x,y,C_ROUTE,1);
  }
 }
+/* UK speed-camera sign: black rounded border, white face, plain camera with a
+ * lens ring. Used at marker and popup sizes. */
+static void draw_camera_sign(int cx,int cy,int s){
+ int b=s/10;if(b<2)b=2;
+ u16 ink=rgb(24,24,24),face=rgb(255,255,255);
+ round_rect(cx-s/2,cy-s/2,s,s,s/4,ink,15);
+ round_rect(cx-s/2+b,cy-s/2+b,s-2*b,s-2*b,(s-2*b)/5,face,15);
+ int bw=s*60/100,bh=s*40/100,bx=cx-bw/2,by=cy-bh/2;
+ round_rect(bx,by,bw,bh,s/12,ink,15);
+ int lr=s*14/100;if(lr<3)lr=3;
+ int lx=cx-bw*8/100,ly=cy+bh*4/100;
+ hud_disc(lx,ly,lr,face);hud_disc(lx,ly,lr*55/100,ink);
+ int sr=s*4/100;if(sr>0)hud_disc(bx+bw*80/100,by+bh*24/100,sr,face);
+}
+/* Every camera in the current region that is in view, with or without a route. */
+static void draw_camera_markers(int z){
+ if(!pref.cameras||(!gps.fix&&!freecam))return;
+ if(z<2)return;
+ int size=z<4?16:20;s32 vl=view_lat();
+ for(u32 i=camera_lower(vl-7000);i<camera_count;i++){
+  struct Camera c;if(!camera_read(i,&c))break;
+  if(c.lat>vl+7000)break;
+  if(c.iso[0]!=region_iso[0]||c.iso[1]!=region_iso[1])continue;
+  int x,y;world_to_screen(c.lat,c.lon,z,&x,&y);
+  if(x<-14||x>W+14||y<MAP_TOP-14||y>HUD_BOTTOM_Y+14)continue;
+  draw_camera_sign(x,y,size);
+ }
+}
 static void draw_map_at_zoom(int z){
  perspective_scale_update();
  visual_snap_for_draw(z);
  if(!freecam||z>6)drive_label_prepare(z);
  draw_map_geometry(z);draw_route_overlay(z);if(!freecam||z>6)drive_label_render(z);poi_trip_prepare(z);poi_render();draw_diversion_markers(z);draw_trip_markers(z);
- draw_car_marker(z);draw_explore_crosshair();
+ draw_camera_markers(z);draw_car_marker(z);draw_explore_crosshair();
+}
+/* Approach cue: a compact card on the chosen side, clear of the speed limit. */
+static void draw_camera_popup(void){
+ if(!pref.cam_popup||!pref.cameras||!camera_visible||camera_distance>400)return;
+ if(screen!=SCR_MAP||modal)return;
+ char title[64];title[0]=0;camera_alert_text(title,sizeof(title));
+ char dist[32];dist[0]=0;camera_distance_text(dist,sizeof(dist));
+ int w=156,h=142,x=pref.cam_popup==2?W-8-w:8,y=(H-h)/2;
+ u16 edge=theme_resolved?rgb(206,140,54):rgb(226,146,42);
+ u16 face=theme_resolved?rgb(122,74,20):rgb(255,216,158);
+ u16 ink=theme_resolved?rgb(255,246,232):rgb(58,36,8);
+ u16 sub=theme_resolved?rgb(240,208,170):rgb(124,80,28);
+ round_rect(x-2,y-2,w+4,h+4,10,edge,15);
+ round_rect(x,y,w,h,8,face,15);
+ draw_camera_sign(x+w/2,y+48,72);
+ compact_center(x+w/2,y+94,w-16,0,title,ink);
+ compact_center(x+w/2,y+114,w-16,0,dist,sub);
 }
 static void draw_map_background(void){draw_map_at_zoom(active_zoom());}
 static void draw_map(void){
  u32 now=hud_now_ms();freecam_orientation_anim_update(now);hud_prepare(active_zoom(),now,1);hud_driver_prepare(now);
- draw_map_background();hud_draw_all(hud_now_ms(),1);
+ draw_map_background();hud_draw_all(hud_now_ms(),1);draw_camera_popup();
 }
 
 /* CLP2 is the only saved-place layout. Reject unsupported or truncated files. */
@@ -3643,9 +3688,9 @@ static void draw_bluetooth(void){
 static int set_focus=0;
 static void settingrow(int y,const char*l,const char*v,int f){int vw=width(v,1);if(vw<76)vw=76;if(vw>180)vw=180;int vx=446-vw;ui_choice(18,y-5,444,24,f);compact_fit(30,y-2,vx-42,1,l,ui_choice_text(f));compact_fit(vx,y-2,vw,1,v,f?C_ACTIVE_TEXT:C_MUTED);}
 static const char* theme_value(void){if(pref.theme==THEME_DAY)return"DAY";if(pref.theme==THEME_NIGHT)return"NIGHT";return"AUTO";}
-enum {SETTING_COUNT=16,SETTING_VISIBLE_ROWS=8,SETTING_ROW_STEP=26};
+enum {SETTING_COUNT=17,SETTING_VISIBLE_ROWS=8,SETTING_ROW_STEP=26};
 static int theme_time_part;
-static const char* setting_names[]={"Brightness","Theme","Units","Auto zoom","Camera alerts","Clock","Debug log","Language","Day starts","Night starts","Top pill order","Bottom pill order","Learn driving history","Destination suggestions","Intelligent diversions","Clear driving history"};
+static const char* setting_names[]={"Brightness","Theme","Units","Auto zoom","Camera alerts","Clock","Debug log","Language","Day starts","Night starts","Top pill order","Bottom pill order","Learn driving history","Destination suggestions","Intelligent diversions","Clear driving history","Camera popup"};
 static const char* units_value(void){return pref.units==1?ui_tr("Metric"):pref.units==2?ui_tr("Imperial"):ui_tr("Auto");}
 static const char* setting_value(int row,char b[96]){
  switch(row){
@@ -3670,6 +3715,7 @@ static const char* setting_value(int row,char b[96]){
   case 13:return ui_tr(pref.destination_predictions?"On":"Off");
   case 14:return ui_tr(pref.diversions?"On":"Off");
   case 15:copystr(b,96,ui_tr("Journeys: "));append_int(b,96,(int)mob.n);return b;
+  case 16:return pref.cam_popup==1?ui_tr("Left"):pref.cam_popup==2?ui_tr("Right"):ui_tr("Off");
  case 8:case 9:{
   int minute=row==8?pref.day_start:pref.night_start;
   b[0]='0'+minute/60/10;b[1]='0'+minute/60%10;b[2]=':';
@@ -3701,6 +3747,7 @@ static void settings_key(int code){
  if(code==K_ENTER&&set_focus==5){
   pref.clock_auto=!pref.clock_auto;clock_next_ms=0;clock_service();
  }else if(code==K_ENTER&&set_focus==7)pref.language=(pref.language+1)%UI_LANGUAGE_COUNT;
+ else if(code==K_ENTER&&set_focus==16)pref.cam_popup=(pref.cam_popup+1)%3;
  else if(code==K_LEFT||code==K_RIGHT){
   int d=code==K_RIGHT?1:-1;
   switch(set_focus){
@@ -3729,6 +3776,7 @@ static void settings_key(int code){
    case 12:pref.learn_history=!pref.learn_history;if(!pref.learn_history){mob_stop_recording();traffic_invalidate();traffic_learning_reset();ml_zoom_cancel_override();ml_park_valid=ml_stop_valid=0;ml_route_var_ds=0;ml_offer_kind=0;}break;
    case 13:pref.destination_predictions=!pref.destination_predictions;if(!pref.destination_predictions){mob_suggest_valid=0;ml_park_valid=ml_stop_valid=0;}mob_predict_ms=0;break;
    case 14:pref.diversions=!pref.diversions;traffic_invalidate();break;
+   case 16:pref.cam_popup=(pref.cam_popup+d+3)%3;break;
    case 15:return;
   case 8:case 9:{
    int*value=set_focus==8?&pref.day_start:&pref.night_start;
@@ -3755,7 +3803,7 @@ static void draw(void){
  u32 now=hud_now_ms();freecam_orientation_anim_update(now);clock_service();region_service();camera_service();refresh_theme();
  hud_prepare(active_zoom(),now,1);hud_driver_prepare(now);menu_prepare(now);draw_map_background();
  hud_glass_background_changed();
- hud_glass_frame_begin();menu_draw(hud_now_ms());draw_modal();hud_glass_frame_end();boot_fade_apply(hud_now_ms());fb_flush();
+ hud_glass_frame_begin();menu_draw(hud_now_ms());draw_modal();hud_glass_frame_end();draw_camera_popup();boot_fade_apply(hud_now_ms());fb_flush();
 }
 
 struct input_event16 {s32 sec,usec;u16 type,code;s32 value;};

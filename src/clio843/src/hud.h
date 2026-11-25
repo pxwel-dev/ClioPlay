@@ -475,7 +475,7 @@ static void hud_show_driving_info(void){
 }
 static void hud_driver_prepare(u32 now){
  struct HudCard speed={0},road={0},road_name={0},turn={0},turn_next={0};
- int camera=gps.fix&&camera_visible;
+ int camera=0; /* camera markers and the approach popup replace the bottom strip */
  int show_speed=gps.fix&&(!freecam||camera);
  const char*name=hud_current_road_name();
  if(gps.fix&&roadctx.valid&&!streq(name,hud_last_road)){
