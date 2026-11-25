@@ -545,7 +545,16 @@ def write_raw(db,nstate,geom_points,path):
 def ensure_preprocessor(work):
  src=HERE/'ch_preprocess.cpp';exe=work/'ch_preprocess';cc=shutil.which('c++') or shutil.which('g++') or shutil.which('clang++')
  if not cc:raise SystemExit('C++17 compiler required for CPR2 hierarchy preprocessing')
- cmd=[cc,'-O3','-std=c++17','-DNDEBUG',str(src),'-o',str(exe)];eprint('+',' '.join(cmd));subprocess.check_call(cmd);return exe
+ # Atlas builds call this once per region; reuse a binary cached by source content.
+ import hashlib,tempfile
+ cached=Path(tempfile.gettempdir())/('clioplay-ch_preprocess-'+hashlib.sha256(src.read_bytes()).hexdigest()[:16])
+ if not cached.exists() or cached.stat().st_size==0:
+  handle,temporary=tempfile.mkstemp(prefix=cached.name+'.',suffix='.tmp');os.close(handle);tmp=Path(temporary)
+  try:
+   cmd=[cc,'-O3','-std=c++17','-DNDEBUG',str(src),'-o',str(tmp)];eprint('+',' '.join(cmd));subprocess.check_call(cmd)
+   tmp.chmod(0o755);os.replace(tmp,cached)
+  finally:tmp.unlink(missing_ok=True)
+ shutil.copy2(cached,exe);return exe
 
 class CHMeta:
  def __init__(self,path,n_expected,route_m_expected):

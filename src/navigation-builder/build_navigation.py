@@ -247,7 +247,10 @@ def main():
         if input('Is this the country/region you intend to install? [y/N] ').strip().lower() not in ('y','yes'):raise SystemExit('Cancelled before building files.')
     print(f'Output folder: {output}\nBuild work: {work}',flush=True)
     if args.atlas or (not args.single_region and pbf.stat().st_size>350*1024*1024):
-        from build_atlas import build
+        if os.environ.get('CLIOPLAY_PIPELINE','') not in ('','0'):
+            from build_atlas_pipeline import build
+        else:
+            from build_atlas import build
         build(pbf,bounds,output,work,args.cache,args.camera_import,args.country,args.speed_import,source=source);return
     staged = work/'result'; staged.mkdir(parents=True,exist_ok=True)
     steps=4 if args.atlas_region else 5

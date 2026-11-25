@@ -245,3 +245,34 @@ fail explicitly. Enough disk is required for scratch, outputs and card staging.
 
 OSM and imported camera datasets retain their own licences. Natural Earth boundaries are public domain; Noto font notices
 and OFL are in `data/`. The parent README describes the current release limitations.
+
+## Parallel atlas builds
+
+`build_atlas.py` builds one region at a time. When the machine can hold more than
+one region's working set in RAM that leaves most cores idle, and the slowest
+region stalls the rest of its wave. `tools/build_atlas_pipeline.py` is a
+scheduling-only alternative with the same output, stamps and assembly:
+
+```sh
+CLIOPLAY_PIPELINE=1 python3 build_navigation.py great-britain-latest.osm.pbf --yes --country GB
+```
+
+It sizes both pools from the host: extraction slots from available RAM (each
+`osmium extract` needs about 2.5 GB) and build slots from physical cores.
+
+| Host | Extraction | Build |
+| --- | --- | --- |
+| 8 cores / 10 GB | 2 | 7 |
+| 12 cores / 16 GB | 4 | 11 |
+| 16 cores / 32 GB | 8 | 15 |
+
+Override with `CLIOPLAY_EXTRACT_JOBS` and `CLIOPLAY_BUILD_JOBS`. Regions are
+dispatched as slots free instead of in waves, so one dense region no longer
+blocks the queue, and done/total with an ETA is printed as regions finish.
+
+The pipeline is output-equivalent to the sequential builder (checked by
+byte-comparing every file of a test atlas) and both drivers read and write the
+same `atlas-region.json` stamps, so a half-finished atlas resumes in either.
+
+The C++ helpers (`ch_preprocess`, `build_qadj`) are compiled once and cached by
+source hash in the system temporary directory instead of once per region.
