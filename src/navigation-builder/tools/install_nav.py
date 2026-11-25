@@ -81,7 +81,9 @@ def install(bundle,sd,runtime=None):
    with src.open('rb') as inp,dst.open('wb') as out:
     shutil.copyfileobj(inp,out,4*1024*1024);out.flush();os.fsync(out.fileno())
    if sha(src)!=sha(dst):raise ValueError('staging verification failed: '+str(rel))
-   if src.stat().st_mode&0o111:dst.chmod(0o755)
+   if src.stat().st_mode&0o111:
+    try:dst.chmod(0o755)
+    except (PermissionError,NotImplementedError):pass # vfat/exFAT cannot store POSIX mode bits
   # Back up persisted data before updating the runtime. Unsupported state formats are ignored.
   # The live copies and Bluetooth pairing store stay in place.
   for name in ('prefs.ini','recent.dat','faves.dat','trip.dat'):
