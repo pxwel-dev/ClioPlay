@@ -4,7 +4,7 @@ enum {P_CLOSED,P_HOME,P_SETTINGS,P_TRIP,P_PLACES,P_NEARBY,P_NEARBY_LIST,P_STOP,P
  P_NAME,P_COORD,P_REVIEW,P_LANG,P_PHONE,P_PHONE_ACTIONS,P_PAIR,P_CONFIRM,P_SOURCE,P_SET_DISPLAY,P_SET_HUD,P_SET_NAV,P_SET_HISTORY,P_SET_SYSTEM};
 /* Settings IDs remain stable; categories only control navigation and presentation. */
 static const struct {const char*title;int count,rows[4];} settings_groups[]={
- {"Display",4,{0,1,8,9}}, {"HUD layout",2,{10,11}}, {"Navigation",3,{2,3,4}},
+ {"Display",4,{0,1,8,9}}, {"HUD layout",2,{10,11}}, {"Navigation",4,{2,3,4,16}},
  {"Driving history",4,{12,13,14,15}}, {"System",3,{7,5,6}}
 };
 enum {SETTINGS_GROUP_COUNT=sizeof(settings_groups)/sizeof(settings_groups[0])};
