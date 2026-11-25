@@ -1978,7 +1978,7 @@ static void three_stops(void){trip.count=4;trip.active_idx=0;for(int i=0;i<3;i++
 static void full_itinerary(void){three_stops();trip.target[TRIP_MAX_TARGETS-1]=trip.target[3];for(int i=3;i<TRIP_MAX_TARGETS-1;i++){trip.target[i]=trip.target[0];snprintf(trip.target[i].name,sizeof(trip.target[i].name),"Stop %d",i+1);}trip.count=TRIP_MAX_TARGETS;}
 static void incoming(const char*name,char action){phone_dest.valid=1;phone_dest.action=action;phone_dest.lat=5347740;phone_dest.lon=-223090;copystr(phone_dest.name,sizeof(phone_dest.name),name);phone_destination_apply();}
 static void incoming_sender(const char*name,int seq,char action,int lat,int lon){char packet[512];int n=snprintf(packet,sizeof(packet),"SEQ=%d\nACTION=%c\nLAT=%d\nLON=%d\nNAME=%s\n",seq,action,lat,lon,name);long fd=s_open(BT_NAV_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);assert(fd>=0);assert(s_write((int)fd,packet,n)==n);s_close((int)fd);poll_phone_destination();assert(phone_dest.valid);phone_destination_apply();}
-static void show_camera(int kind,int avg){camera_visible=1;camera_average=avg;camera_current.kind=kind;camera_current.speed=30;camera_current.flags=2;camera_distance=avg?850:180;camera_average_speed=42;}
+static void show_camera(int kind,int avg){screen=SCR_MAP;modal=MOD_NONE;camera_visible=1;camera_average=avg;camera_current.kind=kind;camera_current.speed=30;camera_current.flags=2;camera_distance=avg?850:180;camera_average_speed=42;camera_fixture=1;}
 static void preview_track(const char*title,const char*artist){
  FILE*f=fopen(BT_STATUS_PATH,"w");assert(f);fputs("BT STREAMING\n",f);fclose(f);
  f=fopen(BT_META_PATH,"w");assert(f);fprintf(f,"DEVICE=Example iPhone\nCONNECTED=1\nPLAYING=1\nTITLE=%s\nARTIST=%s\nALBUM=\nPOS=0\nDUR=240\n",title,artist);fclose(f);

@@ -440,7 +440,7 @@ static int fb_flush(void){long fd=s_open(FB_PATH,O_WRONLY_|O_CREAT_,0666);if(fd<
 
 enum { THEME_DAY=0, THEME_NIGHT=1, THEME_AUTO=2 };
 struct Prefs {int bright,hoff,moff,autozoom,debug,theme,units,cameras,clock_auto,language,day_start,night_start,top_swap,bottom_swap,learn_history,destination_predictions,diversions,gps_hud,cam_popup;};
-static struct Prefs pref={50,0,0,1,0,THEME_AUTO,0,1,1,0,CLIO_DAY_START,CLIO_NIGHT_START,0,0,0,1,1,0,1};
+static struct Prefs pref={50,0,0,1,0,THEME_AUTO,0,1,1,0,CLIO_DAY_START,CLIO_NIGHT_START,0,0,0,1,1,0,0};
 static int pref_keyboard_language=-1;
 /* The TomTom hardware export is authoritative when present; unknown hardware
  * keeps Bluetooth visible when the hardware export is unavailable. */
@@ -478,7 +478,7 @@ static const char*bt_unavailable_label(void){return pref.language==0?"Bluetooth 
 #define MAX_EXPLORE_ZOOM 9
 static int manual_zoom=5;
 static int prefs_dirty=0,prefs_delay=0;
-static void parse_pref_line(char*ln){char*eq=ln;while(*eq&&*eq!='=')eq++;if(!*eq)return;*eq++=0;if(streq(ln,"daystart")){pref.day_start=clio_theme_time(eq,CLIO_DAY_START);return;}if(streq(ln,"nightstart")){pref.night_start=clio_theme_time(eq,CLIO_NIGHT_START);return;}int v=atoi0(eq);if(streq(ln,"bright"))pref.bright=v;else if(streq(ln,"hoff"))pref.hoff=v;else if(streq(ln,"moff"))pref.moff=v;else if(streq(ln,"autozoom"))pref.autozoom=v?1:0;else if(streq(ln,"debug"))pref.debug=v?1:0;else if(streq(ln,"theme"))pref.theme=v;else if(streq(ln,"units"))pref.units=v;else if(streq(ln,"cameras"))pref.cameras=v>=0&&v<=2?v:1;else if(streq(ln,"campopup"))pref.cam_popup=v>=0&&v<=2?v:1;else if(streq(ln,"clockauto"))pref.clock_auto=v?1:0;else if(streq(ln,"language"))pref.language=v>=0&&v<UI_LANGUAGE_COUNT?v:0;else if(streq(ln,"manualzoom"))manual_zoom=v;else if(streq(ln,"keyboardlanguage"))pref_keyboard_language=v>=0&&v<UI_LANGUAGE_COUNT?v:-1;
+static void parse_pref_line(char*ln){char*eq=ln;while(*eq&&*eq!='=')eq++;if(!*eq)return;*eq++=0;if(streq(ln,"daystart")){pref.day_start=clio_theme_time(eq,CLIO_DAY_START);return;}if(streq(ln,"nightstart")){pref.night_start=clio_theme_time(eq,CLIO_NIGHT_START);return;}int v=atoi0(eq);if(streq(ln,"bright"))pref.bright=v;else if(streq(ln,"hoff"))pref.hoff=v;else if(streq(ln,"moff"))pref.moff=v;else if(streq(ln,"autozoom"))pref.autozoom=v?1:0;else if(streq(ln,"debug"))pref.debug=v?1:0;else if(streq(ln,"theme"))pref.theme=v;else if(streq(ln,"units"))pref.units=v;else if(streq(ln,"cameras"))pref.cameras=v>=0&&v<=2?v:1;else if(streq(ln,"campopup"))pref.cam_popup=v>=0&&v<=2?v:0;else if(streq(ln,"clockauto"))pref.clock_auto=v?1:0;else if(streq(ln,"language"))pref.language=v>=0&&v<UI_LANGUAGE_COUNT?v:0;else if(streq(ln,"manualzoom"))manual_zoom=v;else if(streq(ln,"keyboardlanguage"))pref_keyboard_language=v>=0&&v<UI_LANGUAGE_COUNT?v:-1;
  else if(streq(ln,"hudtopswap"))pref.top_swap=v?1:0;
  else if(streq(ln,"hudbottomswap"))pref.bottom_swap=v?1:0;
  else if(streq(ln,"learnhistory"))pref.learn_history=v?1:0;
@@ -3288,11 +3288,11 @@ static void draw_map_at_zoom(int z){
 }
 /* Approach cue: a compact card on the chosen side, clear of the speed limit. */
 static void draw_camera_popup(void){
- if(!pref.cam_popup||!pref.cameras||!camera_visible||camera_distance>400)return;
+ if(pref.cam_popup==2||!pref.cameras||!camera_visible||camera_distance>400)return;
  if(screen!=SCR_MAP||modal)return;
  char title[64];title[0]=0;camera_alert_text(title,sizeof(title));
  char dist[32];dist[0]=0;camera_distance_text(dist,sizeof(dist));
- int w=156,h=142,x=pref.cam_popup==2?W-8-w:8,y=(H-h)/2;
+ int w=156,h=142,x=pref.cam_popup==1?W-8-w:8,y=(H-h)/2;
  u16 edge=theme_resolved?rgb(206,140,54):rgb(226,146,42);
  u16 face=theme_resolved?rgb(122,74,20):rgb(255,216,158);
  u16 ink=theme_resolved?rgb(255,246,232):rgb(58,36,8);
@@ -3715,7 +3715,7 @@ static const char* setting_value(int row,char b[96]){
   case 13:return ui_tr(pref.destination_predictions?"On":"Off");
   case 14:return ui_tr(pref.diversions?"On":"Off");
   case 15:copystr(b,96,ui_tr("Journeys: "));append_int(b,96,(int)mob.n);return b;
-  case 16:return pref.cam_popup==1?ui_tr("Left"):pref.cam_popup==2?ui_tr("Right"):ui_tr("Off");
+  case 16:return pref.cam_popup==0?ui_tr("Left"):pref.cam_popup==1?ui_tr("Right"):ui_tr("Off");
  case 8:case 9:{
   int minute=row==8?pref.day_start:pref.night_start;
   b[0]='0'+minute/60/10;b[1]='0'+minute/60%10;b[2]=':';
@@ -3799,8 +3799,11 @@ static int modal_action_count(void){if(modal==MOD_RECENT)return trip.active?3:2;
 #include "menu_sheet.h"
 #include "gps_panel.h"
 
+static int camera_fixture=0; /* preview harness supplies camera state */
 static void draw(void){
- u32 now=hud_now_ms();freecam_orientation_anim_update(now);clock_service();region_service();camera_service();refresh_theme();
+ u32 now=hud_now_ms();freecam_orientation_anim_update(now);clock_service();region_service();
+ if(!camera_fixture)camera_service();
+ refresh_theme();
  hud_prepare(active_zoom(),now,1);hud_driver_prepare(now);menu_prepare(now);draw_map_background();
  hud_glass_background_changed();
  hud_glass_frame_begin();menu_draw(hud_now_ms());draw_modal();hud_glass_frame_end();draw_camera_popup();boot_fade_apply(hud_now_ms());fb_flush();
