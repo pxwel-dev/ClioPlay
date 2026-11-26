@@ -256,5 +256,7 @@
   "Use usual route?": "자주 가는 경로로 갈까요?",
   "View route": "경로 보기",
   "Usual route selected": "자주 가는 경로 선택됨",
-  "Route unavailable": "경로 이용 불가"
+  "Route unavailable": "경로 이용 불가",
+  "Limit ": "제한 ",
+  "Overspeed audio": "과속 시 음성"
 }

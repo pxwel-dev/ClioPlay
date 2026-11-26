@@ -256,5 +256,7 @@
   "Use usual route?": "להשתמש במסלול הקבוע?",
   "View route": "הצג מסלול",
   "Usual route selected": "נבחר המסלול הקבוע",
-  "Route unavailable": "המסלול אינו זמין"
+  "Route unavailable": "המסלול אינו זמין",
+  "Limit ": "מגבלה ",
+  "Overspeed audio": "שמע בחריגה"
 }

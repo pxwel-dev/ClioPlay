@@ -363,40 +363,52 @@ int main(void){
  assert(on_trip.x==(W-on_trip.w)/2&&on_trip.a>0);
  assert(hud_pose(name,t+10000).a==0&&hud_pose(name,t+10160).a>0);
  hud_driver_prepare(t+14000);assert(!road->target.box.a&&hud_pose(road,t+14160).a>0&&hud_pose(road,t+14320).a==0);
- // Camera alone on the same road. A new road expands it, then expires.
- camera_visible=1;camera_current.kind=1;camera_current.speed=30;camera_current.flags=2;camera_distance=180;
+ // Camera alone renders a sleek flush 43 px card (aligned with Speed and Turn)
+ // and owns the centre slot cleanly; road-name flashes stay suppressed while active.
+ pref.language=0;
+ camera_visible=1;camera_current.id=501;camera_current.kind=1;camera_current.speed=30;camera_current.flags=2;camera_distance=180;camera_warn_span_m=360;
+ gps.mph10=280;
  hud_driver_prepare(t+15000);
- assert(road->target.kind&&road->target.box.h==29&&!name->target.box.a&&hud_pose(road,t+15160).a>0);
- int camera_w=2*HUD_CAMERA_PAD+HUD_CAMERA_ICON_W+2*HUD_CAMERA_GAP+
-  width(road->target.title,0)+width(road->target.badge,0);
- assert(road->target.box.w==camera_w);
+ assert(road->target.kind==1&&road->target.box.h==43&&road->target.box.y==HUD_BOTTOM_Y&&!name->target.box.a&&hud_pose(road,t+15160).a>0);
+ assert(streq(road->target.title,"Speed camera")&&streq(road->target.detail,"Limit 30 mph")&&streq(road->target.badge,"200 yd"));
+ assert(hud_camera_bar.valid&&hud_camera_bar.mode==1&&hud_camera_bar_fraction(t+15000)==32768u);
+ assert(!hud_camera_over&&hud_camera_red(t+15000)==0);
+ int camera_w=road->target.box.w;
+ assert(camera_w>=124&&camera_w<=W-2*(HUD_BOTTOM_MARGIN+HUD_SIDE_W+HUD_BOTTOM_GAP));
+ /* Overspeeding triggers the synced frosted-glass red rim pulse on HC_ROAD. */
+ gps.mph10=350;hud_driver_prepare(t+15400);
+ assert(hud_camera_over&&hud_camera_red(t+15400)==0&&hud_camera_red(t+15580)>0&&hud_camera_red(t+15760)==256);
+ gps.mph10=280;hud_driver_prepare(t+15800);assert(!hud_camera_over);
  copystr(roadctx.street,sizeof(roadctx.street),"Sandgate");hud_driver_prepare(t+16000);
- assert(road->target.box.h==43&&hud_pose(road,t+16160).h>29&&hud_pose(road,t+16160).h<43);
- assert(road->target.box.x==(W-road->target.box.w)/2&&road->target.box.w==camera_w);
- assert(hud_pose(name,t+16000).a==0&&hud_pose(name,t+16160).a>0&&streq(name->target.title,"Sandgate"));
- hud_driver_prepare(t+20000);
- assert(road->target.kind&&road->target.box.h==29&&!name->target.box.a);
- assert(hud_pose(road,t+20160).h>29&&hud_pose(name,t+20160).a>0&&hud_pose(name,t+20320).a==0);
- camera_visible=0;hud_driver_prepare(t+21000);
+ assert(road->target.box.h==43&&road->target.box.x==(W-road->target.box.w)/2&&road->target.box.w==camera_w);
+ assert(!name->target.box.a);
+ /* Clearing the camera while Sandgate is still live resumes the 29 px road pill. */
+ camera_visible=0;hud_driver_prepare(t+17000);
+ assert(!road->target.kind&&road->target.box.h==29&&name->target.box.a&&streq(name->target.title,"Sandgate"));
+ hud_driver_prepare(t+21000);
  assert(!road->target.box.a&&!name->target.box.a&&hud_pose(road,t+21160).a>0);
- // Without guidance, a camera joins the same centred pill as the road name.
+ // Without guidance, a camera cleanly takes over an active 29 px road-name pill,
+ // smoothly expanding it to 43 px while fading out the street name.
  route_status=R_IDLE;trip.active=0;nav_man_type=MAN_NONE;
  copystr(roadctx.street,sizeof(roadctx.street),"City Road");hud_driver_prepare(t+22000);
- assert(!road->target.kind&&road->target.box.x==(W-road->target.box.w)/2);
+ assert(!road->target.kind&&road->target.box.h==29&&road->target.box.x==(W-road->target.box.w)/2);
  struct HudBox off_trip=hud_pose(road,t+22160);
  assert(hud_pose(road,t+22000).x==road->target.box.x);
  assert(off_trip.x==road->target.box.x&&off_trip.a>0&&off_trip.a<256);
  camera_visible=1;hud_driver_prepare(t+23000);
- assert(road->target.kind&&road->target.box.h==43&&road->target.box.x==(W-road->target.box.w)/2);
- assert(road->target.box.w==camera_w);
+ assert(road->target.kind==1&&road->target.box.h==43&&road->target.box.x==(W-road->target.box.w)/2);
+ assert(road->target.box.w==camera_w&&!name->target.box.a);
  struct HudBox expanding=hud_pose(road,t+23160);
  assert(abs(2*expanding.x+expanding.w-W)<=2&&expanding.h>29&&expanding.h<43);
- hud_driver_prepare(t+25999);assert(name->target.box.a);
- hud_driver_prepare(t+26000);
- assert(!name->target.box.a&&road->target.box.a&&road->target.kind&&road->target.box.h==29);
- // Replacing a still-visible name also animates its text, even at equal width.
+ assert(hud_pose(name,t+23160).a>0&&hud_pose(name,t+23320).a==0);
+ /* Active average-speed zone fills the capsule bar from 0 -> 100%. */
+ camera_average=1;camera_current.kind=3;camera_average_m=400;camera_distance=400;camera_average_speed=45;
+ hud_driver_prepare(t+24000);
+ assert(hud_camera_bar.valid&&hud_camera_bar.mode==2&&hud_camera_bar_fraction(t+24000)==32768u);
+ camera_average=0;camera_visible=0;
+ // Replacing a still-visible name (no camera) animates its text, even at equal width.
  copystr(roadctx.street,sizeof(roadctx.street),"A Road");hud_driver_prepare(t+28000);
- assert(road->target.kind&&road->target.box.h==43);
+ assert(!road->target.kind&&road->target.box.h==29&&name->target.box.a);
  copystr(roadctx.street,sizeof(roadctx.street),"B Road");hud_driver_prepare(t+28600);
  int alpha,offset;
  assert(streq(hud_ink_card(name,t+28600,&alpha,&offset)->title,"A Road"));
@@ -404,7 +416,7 @@ int main(void){
  assert(streq(incoming->title,"B Road")&&alpha<16);
  trip.active=1;route_status=R_READY;hud_driver_prepare(t+29000);
  assert(road->position_at==t+28000&&name->content_at==t+28600);
- assert(road->target.kind&&road->target.box.h==43&&road->target.box.x==(W-road->target.box.w)/2);
+ assert(!road->target.kind&&road->target.box.h==29&&road->target.box.x==(W-road->target.box.w)/2);
  nav_man_type=MAN_RIGHT;nav_man_idx=0;hud_driver_prepare(t+29500);
  struct HudBox speed_box=hud_tween[HC_SPEED].target.box,turn_box=hud_tween[HC_TURN].target.box;
  assert(speed_box.w==turn_box.w&&speed_box.h==turn_box.h&&speed_box.y==turn_box.y);
@@ -415,7 +427,6 @@ int main(void){
  hud_driver_prepare(t+30000);
  assert(road->target.box.x==speed_box.x+speed_box.w+HUD_BOTTOM_GAP);
  assert(road->target.box.x+road->target.box.w==turn_box.x-HUD_BOTTOM_GAP);
- camera_visible=0;
  route_status=R_IDLE;route_rerouting=0;trip.active=0;
  t+=10000;
  // Confirmed limit uses raw speed, independent of the display unit. Estimation,

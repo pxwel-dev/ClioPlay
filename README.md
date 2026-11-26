@@ -1,6 +1,6 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
-<h1 align="center">ClioPlay 2.2.6.4</h1>
+<h1 align="center">ClioPlay 2.2.7</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
 <p align="center">
   Created and maintained by <a href="https://github.com/pxwel-dev">Pawel (pxwel-dev)</a>.
@@ -9,29 +9,24 @@
 
 <p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-## Version 2.2.6.4
+## Version 2.2.7
 
-Version **2.2.6.4** is a software-only physical console input bug-fix release (**100% compatible with existing `2.1.8–2.2.6.3` maps** and saved user data; no map rebuild required):
+Version **2.2.7** is a software-only camera warning overhaul (**100% compatible with existing `2.1.8–2.2.6.4` maps** and saved user data; no map rebuild required):
 
-- **Fixed Scénic III console knob push handling (2.2.6.4, thanks to `@qspi`):** Confirmed from on-car `csw.log` captures, the Scénic III vehicle daemon sends a single `pressed=1` record per knob push with no release record; consecutive knob pushes (including Menu confirmation and double-OK for the live GPS HUD) now register reliably without needing a rotation first, while a sliding 250 ms guard still suppresses duplicate or held records.
-- **FAT32/exFAT SD-card install & WSL fixes (2.2.6.3, thanks to `@bobczan`):** Fresh installs, re-installs and `--update` now tolerate non-POSIX filesystems (WSL 2 `drvfs`, Linux `vfat`/exFAT) without aborting on `chmod` `EPERM`, and the Windows WSL preflight now verifies `venv` + `ensurepip` before starting a build.
-- **Opt-in parallel atlas builder & cached C++ helpers (2.2.6.3, thanks to `@bobczan`):** Set `CLIOPLAY_PIPELINE=1` to overlap extraction and regional builds inside `build_atlas.py` on Linux, WSL 2 and macOS with deterministic splits, fail-fast cancellation and deadlock-free RAM throttling; `ch_preprocess` and `build_qadj` now cache in a private per-user directory across regions for both sequential and pipelined builds.
-- **Eliminated unnecessary U-turn spurs (2.2.6.2):** Two-way streets now evaluate both legal directions at route start and destination directly inside the router (with a gentle forward preference while moving that never inflates ETA), eliminating wrong-way departures and overshoot-and-U-turn arrivals at the source without requiring map rebuilds. A bounded local cleanup search also replaces remaining turn-restricted spurs, sharp reversals and divided-carriageway V-pinch hairpins within tight time/distance caps while keeping genuinely necessary U-turns intact.
-- **Simpler routes with fewer turns (2.2.6.2):** Clusters of tight residential turns are simplified onto straighter legal main roads when a cleaner corridor adds at most a few seconds (`≤ +20%` travel time, capped at `30 s` per regional leg; `≤ +25%` / `300 m` distance per section), counting roundabouts once and always showing true driving-time ETA.
-- **Fixed close-up road snap staying frozen after parking off-road (2.2.6.2):** At **Z6–Z9**, pulling off-road into a car park or driveway and stopping now releases the stale road match and smoothly eases the map and vehicle arrow back to GPS with zero extra tile reads, then stops idle redraws once settled.
-- **Fixed close-up road alignment at Z6–Z9 (2.2.6.1).** Display-only road matching uses the existing Z6 road geometry at `1/16`-world-unit precision and keeps the map, vehicle marker and visible route origin aligned. Heading, the active route and the current road match help the display stay steady at junctions and on parallel roads.
-- **Unguided local ML learning & road alerts (2.2.6):** everyday unguided drives (with no active route set) automatically learn **Preferred Nearby POIs** (`Fuel`, `Parking`, `Hospital`), **Usual Parking** spots (both paired to a unique nearby Favourite/Recent *and* for any mapped car park visited `≥ 3` times unguided with no saved places nearby whenever you later route within `100–600 m`), **POI-named Recurring Intermediate Stops, Destination Predictions & Frequent-Place prompts**, and **Usual Route** shortcuts (`≥ 4` unguided drives on an alternate road entering an unfamiliar routed junction), while **Likely traffic ahead**, **Frequent slowdown ahead**, and **Cold-weather slowdown ahead** warn you during unguided commutes too (filtered by directed road heading, with dynamic smooth-pass decay and age expiry so cleared roadworks fade away without summer drives erasing winter ice spots), plus weekday/weekend regime weighting for destination predictions and aligned **Adaptive Auto-zoom** with a 20-second sustained-override guard - all 100% compatible with existing `mobility-ml.dat` files.
-- **Carried forward from 2.2.5, 2.2.4 & 2.2.3:** expandable live **GPS HUD** built into the top clock/temperature pill (three-tier adaptive layout with persistent `HH:MM:SS` seconds, recessed Day/Night pivot-aligned compass dial, `$GPGST`/HDOP accuracy, signal bars, recessed Altitude/Lat/Lon tray across 18 languages, toggled via double-**OK** or console **REPEAT**), expanded **Z9–Z4** Auto zoom with close-up Z7–Z9 street names and sub-unit vector precision, tighter **View diversion** / **View route** framing, strictly offline on-device ML (`mobility-ml.dat`) for personal/cold-weather ETA calibration, `~X-Y min` ETA reliability ranges, dwell-time trip chains, Day/Night learned brightness, route-coloured stop/destination markers and POI highlights, expandable roundabout **Then …** secondary manoeuvre pill, offline Nearby POIs, AVRCP 1.3 instant Bluetooth notifications, `tools/replay_history.py`, and `tools/favourites_tool.py`.
+- **Matching upcoming-camera map markers:** Distinct `8×8`-supersampled icons for **Speed**, **Red-light** (with red top lamp) and **Average-speed** (twin-camera) alerts appear strictly for the active upcoming camera (or average-speed exit) straight from RAM with zero per-frame SD reads, following 3D tilt and `Z6–Z9` road snap and turning red when over the limit.
+- **Sleek flush `43 px` frosted-glass camera card:** Aligned top-and-bottom with the Speed and Turn pills and dedicated cleanly to the active camera, featuring matching twin icons, clean typography (`Limit XX` only when relevant), a BT-CTRL-style 3 px antialiased capsule progress bar (draining on approach, filling across average-speed zones), synced pulsing red overspeed rim and full RTL mirroring.
+- **Smarter detection & reliability:** Speed-scaled warning and chime horizons (~14–22 s lookahead with hysteresis), curved-road unguided corridor matching, high-speed 1 Hz segment-crossing average-speed entry, along-route remaining zone distance with slip-road auto-clear, and exact overspeed parity with the Speed pill.
+- **Two-tier audio & `Overspeed audio` mode:** Distinct soft approach vs brisk overspeed chimes over Bluetooth audio, plus a new **Overspeed audio** setting in **Settings → Navigation → Camera alerts** (quiet when compliant on speed/average cameras; soft approach cue only for red-light cameras), keeping the strict fail-closed 19-country policy across all 18 languages.
 
-See [version history](CHANGELOG.md) for implemented changes by version, [intelligent navigation](src/docs/intelligent-navigation.md) for ML behaviour and privacy, and the [zoom & controls guide](src/README.md#auto-zoom-and-close-up-street-names).
+See [CHANGELOG.md](CHANGELOG.md) for all prior releases, [intelligent navigation](src/docs/intelligent-navigation.md) for local ML behaviour and privacy, and the [zoom & controls guide](src/README.md#auto-zoom-and-close-up-street-names).
 
 ## UI previews
 
-All previews below are freshly rendered from **v2.2.6.2** across real UK map regions (**Manchester**, **Central London**, **Milton Keynes**, **Bristol**, **Liverpool**, **Leeds**, **Edinburgh** and **Newcastle**). See the [full preview index](src/docs/demo/README.md) for all animations.
+All previews below are freshly rendered across real UK map regions (**Manchester**, **Central London**, **Milton Keynes**, **Bristol**, **Liverpool**, **Leeds**, **Edinburgh** and **Newcastle**). See the [full preview index](src/docs/demo/README.md) for all animations.
 
-| Live expandable GPS HUD | View and take a diversion |
+| Upgraded camera warnings & map markers | Live expandable GPS HUD |
 | --- | --- |
-| ![Double-OK expands the clock pill into a live driving GPS HUD on the Liverpool waterfront with seconds, compass dial, heading, accuracy, satellites, altitude and coordinates, adapting cleanly to popups and menus](src/docs/demo/v225-gps-panel.gif) | ![Preview a proposed real-map Central London diversion tightly framed in Explore on a v2.2.6.2 fewer-turns route, inspect the junction, return via MAP and accept](src/docs/demo/v223-view-diversion.gif) |
+| ![Upgraded v2.2.7 camera warnings on Central London Victoria Embankment showing matching supersampled on-map badges, flush 43 px frosted-glass card, capsule progress bar, synced red overspeed rim, red-light alert and average-speed zone progress](src/docs/demo/v227-camera-alerts.gif) | ![Double-OK expands the clock pill into a live driving GPS HUD on the Liverpool waterfront with seconds, compass dial, heading, accuracy, satellites, altitude and coordinates, adapting cleanly to popups and menus](src/docs/demo/v225-gps-panel.gif) |
 
 | Dynamically-resizing, animated frosted-glass menu | Expandable secondary manoeuvre cue |
 | --- | --- |
@@ -53,9 +48,9 @@ All previews below are freshly rendered from **v2.2.6.2** across real UK map reg
 | --- | --- |
 | ![Learned destination in the driving HUD with explicit review](src/docs/demo/v220-destination-prediction.gif) | ![Stationary startup frequent-place suggestion opening the editable favourite keyboard](src/docs/demo/v220-frequent-place.gif) |
 
-| Speeding warning | Driving and camera alerts |
+| Speeding warning | View and take a diversion |
 | --- | --- |
-| ![The speed pill pulses red above a confirmed limit and settles when speed drops](src/docs/demo/speed-warning.gif) | ![Driving with a temporary road name and a camera warning](src/docs/demo/driving.gif) |
+| ![The speed pill pulses red above a confirmed limit and settles when speed drops](src/docs/demo/speed-warning.gif) | ![Preview a proposed real-map Central London diversion tightly framed in Explore on a fewer-turns route, inspect the junction, return via MAP and accept](src/docs/demo/v223-view-diversion.gif) |
 
 | HUD customisability | Browse and zoom the map |
 | --- | --- |
@@ -222,4 +217,4 @@ Original ClioPlay development includes:
 
 Third-party software and dependencies retain their respective licences and attribution notices, as documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-<sub>Release files refreshed 25 November 2026 (Europe/London).</sub>
+<sub>Release files refreshed 26 November 2026 (Europe/London).</sub>

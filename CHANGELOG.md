@@ -3,6 +3,29 @@
 This history records implemented changes for each release.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
 
+## Version 2.2.7 - Camera system overhaul
+
+Software-only camera warning overhaul — **100% compatible with existing `2.1.8–2.2.6.4` maps (`CPM5`, `CPR2 v5`, `QAD7`, `CPC1`)** and saved user data (no map rebuild required), preserving the strict fail-closed 19-country legal policy across map markers, HUD and audio:
+
+- **Matching supersampled icons for the upcoming camera only (`src/tools/build_camera_icons.py` → `camera_icons.h`):**
+  - Added three bespoke `8×8`-supersampled vector silhouettes (**Fixed speed camera**, **Red-light traffic signal** with accented red top lamp, and **Twin-camera average-speed check**) in matched `18×18` on-map badge and `14×14` HUD mini-icon sizes.
+  - `draw_camera_marker()` renders **only** the active upcoming camera from RAM (zero per-frame SD-card reads and zero map clutter), projected via `map_project_q8()` so it honours 3D perspective tilt, `Z6–Z9` visual road snap and Explore panning, showing the entry gantry on approach and switching to the exit gantry once inside an average-speed zone. Rim and icon shift cleanly from cyan to warning red when exceeding a speed limit.
+- **Redesigned flush `43 px` frosted-glass camera HUD pill (`hud.h`, `frame_renderer.h`):**
+  - Aligned top-and-bottom with the Speed and Turn pills (`43 px` tall, compact `124–200 px` width) and cleanly dedicated to the active camera (suppressing automatic temporary street-name flashes while a camera warning is visible so the limit and progress bar stay uninterrupted; normal `29 px` road-name pills resume once the camera clears).
+  - Clean typography: matching `14×14` twin icon, concise camera label (or bold `Avg XX mph/km/h` in-zone), right-aligned distance (`km`/`mi` above 1 km / 0.5 mi, `5 m`/`10 yd` close-in), subtle `Limit XX mph/km/h` subtitle (omitted cleanly on red-light / no-limit cameras with vertical centring), and full RTL mirroring for Arabic and Hebrew.
+  - Added a smooth BT-CTRL-style 3 px antialiased capsule progress bar (`hud_playback_strip()`) along the bottom edge that drains smoothly as you approach a camera and fills from `0% → 100%` across an active average-speed zone, turning amber when over the limit.
+  - Added a synced eased frosted-glass red rim pulse (`hud_camera_red()`) on `HC_ROAD` matching the Speed pill whenever exceeding the camera limit.
+- **Detection & reliability fixes (`global_cameras.h`):**
+  - **Speed-scaled warning & chime horizons** with `+60 m` hysteresis (`250–1000 m` routed / `250–800 m` unguided visual, `180–600 m` audio — ~14–22 s lookahead instead of fixed distances that warned two minutes early in town).
+  - **Curved-road unguided corridor:** stays tight (`±18` units / ~20 m) close up to reject adjacent parallel streets while flaring gently at distance (`up to ±48` units) to catch sweeping motorway and A-road bends earlier.
+  - **High-speed average-speed entry & abandoned-zone auto-clear:** segment-crossing check catches 70 mph 1 Hz GPS steps across an entry gantry without fabricating mid-zone averages; remaining zone distance now follows the active route when guided and auto-clears after 15 s of sustained divergence (`> +120 m`, e.g. taking a slip road mid-zone).
+  - **Exact `mph10` overspeed parity** between the Speed pill and Camera pill, plus immediate wakeup on fresh GPS fixes.
+- **Two-tier audio cues & new `Overspeed audio` mode (`audio_chime.h`, `clioa2dp.c`):**
+  - Wired `/tmp/clalert` `kind=1` (existing calm 2-tone `880 → 1174 Hz` approach cue) and `kind=2` (distinct brisk 3-tone `988 → 1244 → 988 Hz` overspeed cue, with per-camera cooldowns and 30 s average-zone cooldown).
+  - Added **`Overspeed audio`** (`pref.cameras=3`, alongside `Off`, `Visual`, `Phone audio`) in **Settings → Navigation → Camera alerts**: stays quiet on compliant speed/average-speed approaches, plays the urgent overspeed cue only when exceeding the limit, and plays only the soft approach cue for red-light cameras.
+- **Translations, tests & preview:**
+  - Added `"Limit "` and `"Overspeed audio"` across all 18 interface languages, expanded UBSan host tests (`global-cameras.c`, `audio-chime.c`, `ui-labels-alerts.c`, `hud-customization.c`), and added the real-map Central London preview (`src/docs/demo/v227-camera-alerts.gif`).
+
 ## Version 2.2.6.4 - Bug-fix release
 
 Software-only physical console input bug-fix release, **100% compatible with existing `2.1.8–2.2.6.3` maps (`CPM5`, `CPR2 v5`, `QAD7`)** and saved user data (no map rebuild required):

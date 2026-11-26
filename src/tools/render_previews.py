@@ -19,7 +19,7 @@ from render_gallery import (ANIMATION_SAMPLE_MS, BLUETOOTH_SAMPLES, MENU_ENTRY_S
                             V223_NEARBY_SAMPLES, V223_SECONDARY_MANOEUVRE_SAMPLES, V223_VIEW_DIVERSION_SAMPLES,
                             V224_ML_ETA_HABITS_SAMPLES, V224_ML_SLOWDOWNS_SAMPLES,
                             V224_ML_PARKING_POIS_SAMPLES, V224_ML_ADAPTIVE_HUD_SAMPLES,
-                            V225_GPS_PANEL_SAMPLES, ROOT, sha)
+                            V225_GPS_PANEL_SAMPLES, V227_CAMERA_ALERTS_SAMPLES, ROOT, sha)
 
 
 
@@ -48,6 +48,7 @@ def previews():
         'v224-ml-parking-and-pois.gif': timeline('night', timed_scenes('preview-v224-ml-parking-and-pois', V224_ML_PARKING_POIS_SAMPLES, 10500)),
         'v224-ml-adaptive-hud.gif': timeline('day', timed_scenes('preview-v224-ml-adaptive-hud', V224_ML_ADAPTIVE_HUD_SAMPLES, 10100)),
         'v225-gps-panel.gif': timeline('night', timed_scenes('preview-v225-gps-panel', V225_GPS_PANEL_SAMPLES, 8700)),
+        'v227-camera-alerts.gif': timeline('night', timed_scenes('preview-v227-camera-alerts', V227_CAMERA_ALERTS_SAMPLES, 8600)),
         'v220-frequent-place.gif': timeline('night', timed_scenes('preview-v220-frequent-place', V220_FREQUENT_PLACE_SAMPLES, 5900)),
         'v220-destination-prediction.gif': timeline('night', timed_scenes('preview-v220-destination-prediction', V220_DESTINATION_SAMPLES, 6500)),
         'v220-intelligent-diversions.gif': timeline('night', timed_scenes('preview-v220-intelligent-diversions', V220_DIVERSION_SAMPLES, 6200)),
@@ -336,6 +337,14 @@ def main():
                 'non-overlapping BT CTRL status pill, compact 52 px strip above a '
                 'centred confirmation popup, seconds-only menu fold, and smooth return '
                 'to full driving GPS HUD.'),
+            'v227-camera-alerts.gif': (
+                'Real Central London route (A3211 Victoria Embankment to Blackfriars) '
+                'calculated against the UK CPR2 graph, demonstrating v2.2.7 camera '
+                'warnings: matching supersampled on-map upcoming-camera badges placed '
+                'on the real carriageway, flush 43 px frosted-glass camera card with '
+                'BT-CTRL-style capsule progress bar, synced red overspeed rim and red '
+                'map badge, clean centred red-light alert, and active average-speed '
+                'zone progress with twin-camera exit marker.'),
         }
         for name, note in provenance.items():
             if name in reports:

@@ -10,7 +10,7 @@
     "clio843/src/atlas_router.h": "2c2130e992435277157a46ce985554797269ef605393580fe3748cd0ed7bf514",
     "clio843/src/boot_art.h": "367249c4bf35acfa7ce5092dce4a906c566d5e9e818d1bbd3d65c35ba128dbeb",
     "clio843/src/popups.h": "b16c75163580e2fbbe17a9359bc473d368a57c3c8c2347b5d5f56ce73295f61d",
-    "clio843/src/hud.h": "86e07911d6537bfa8b0ba1714c33f713b99101479398471bb4b3b8784a8b79c6",
+    "clio843/src/hud.h": "82745aa23e62a1fc7d52686b94b473154f14fee9f36c6c8c7513563c85e1aeba",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
     "clio843/src/audio_schedule.h": "bf37e189f7a0f372567287380820a357878fc1aaf519f85309224cd0d5ae85a6",
     "clio843/src/coordinates.h": "303c229e4c186fab01b092a770a434fca622047b792515df940ddec1983109ef",
@@ -19,8 +19,9 @@
     "clio843/src/splash_icon.h": "1c0cb3bf3be97ce49cdf626bc0184b0736b49fee877a92f5bf2e5cb2d0ec17eb",
     "clio843/src/hud_status.h": "91f9d2cc57aeae72deebee57974292a8c3033631b4cd11b83d57fdececbaeaed",
     "clio843/src/last_fix.h": "eaf9a30204c7b146bf83ea6ea6f2f4a9c25486dcbf69bc366824888426668cca",
-    "clio843/src/clioa2dp.c": "eee113f0a920ca591c740ab0bb429f2765d0e66c3e8829b625a473ce14e037da",
+    "clio843/src/clioa2dp.c": "81cfe216f74e6ed918819d11c7f39eaad776976adac856aa49756ff6e5f6d832",
     "clio843/src/atlas_catalog.h": "7c1c5599a121e702a0fe7ac89fc957e07086e27f20aaf1511971d197de3a39a0",
+    "clio843/src/camera_icons.h": "19a560ac05e8e769659da5d7ba3c138ca600bf057c21664e9da31a03d9f5ac2c",
     "clio843/src/menu_keyboard.h": "394310c060e073c651cbc61a64c69d5ba61cfd4072e43277f70c40b8344e77f9",
     "clio843/src/traffic.h": "b1927acad9ddb72ba2ef205c23ef8743f278d533ceeac9e633dd608b31ddc20a",
     "clio843/src/map_raster.h": "ec43a401a89354fc27ded7fb3d6320ed04226de4daa5a86ed9a8da0bf11eafe1",
@@ -28,7 +29,7 @@
     "clio843/src/overlay_frames.h": "b1b6e79491dad7a2a62004f999793bccfef7bb6580b3a877777c284f4537557c",
     "clio843/src/boot_transition.h": "8ea391927a52cf8eaa9f010a70b8f8e012b768346ca9cd297110e40e6a850007",
     "clio843/src/menu_sheet.h": "e2068ba47e7e7dd4ad49d6c2b40eae7dcfe7fd5477b8338d9217709bde5428eb",
-    "clio843/src/release_version.h": "3fd678dce2f481b0c260593adad69aca62717069548b6754a76829ac9ce4dd48",
+    "clio843/src/release_version.h": "b2a999d5d6e417f99d7af4f430315176d436a1094a387f421937561b96ee3439",
     "clio843/src/vehicle_icon.h": "dfcb48775858684a323506e4cb6f61eba56ce3d8c7507a5ef86b58d917f24b4a",
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
     "clio843/src/cliospl.c": "523530da194e4a859de29b448926f347d70c6c6c243d08d9b048fb68e08e3d33",
@@ -44,19 +45,19 @@
     "clio843/src/mobility.h": "1d273f5222008c317917874383a259480e0495aa28a4e7e9485b88b9c1129a2a",
     "clio843/src/hud_turn_masks.h": "14ff4606db601d4376a3790b13213f2f175c611eedf63f91e4e05111862ce493",
     "clio843/src/menu_layout.h": "c413f261277151f8bd9be15f08cc896a41fc186619ec607501c1a18a463bd23e",
-    "clio843/src/global_cameras.h": "d07e8dabf65f3513a5ec88eb15e34bdcad628cdb291f08a518eb46a3ebed9cd9",
+    "clio843/src/global_cameras.h": "3fc1b2aab42a5c72905f4be5a72e0f022a1190d7ca8a910903bb8dadb32ecb52",
     "clio843/src/urban_speed_defaults.h": "a719a3d065f16bc39727b01d7ed73f412beeb4d8703b5bde73a8c6ff1c35ac10",
     "clio843/src/cswd.c": "707aa0a1fdcd8048d2fa252a14ce32176fae347d512e11869f2905a69380530c",
-    "clio843/src/clio040.c": "4e769ad5e688043f7066ad4a6c591ded1a4eab2f856953372df42904d7472e4d",
+    "clio843/src/clio040.c": "01c770fd3af1a06192adea52b8ce2f4de33368097dbd0d1e151accb78dcabd96",
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/vstatd.c": "a359d214853cdd511fb79e905fafc52f5413b635bb3288b268d04c15724a666f",
-    "clio843/src/audio_chime.h": "184c222e448db2707fc752bc38f7f6c735b6cb1f4d168d88ddc7da7cf20f4d75",
+    "clio843/src/audio_chime.h": "31d9a5707c6fc561bd17f1df48ac89b8aee5a83e2a6beee6c47196a0ef52f0a7",
     "clio843/src/utf8.h": "e6e172fb98b7f4c9e958322d13296190fd003025562c05146bcc9a3d50af8b7c",
     "clio843/src/unicode_support.c": "43a20e8dde712fbdb5e087062ad68d3ae5aec704c1ab864dec9c57a99fd54b77",
-    "clio843/src/frame_renderer.h": "9338d72892a91fb8c9188c22fffbd2b3e6f965bf5bd086de10da84618fb53217",
+    "clio843/src/frame_renderer.h": "8d3812ef909c72b2807c00b1c0a01958bf607c7edb36dfb368159e05ff4eede4",
     "clio843/src/explore_frames.h": "7594c17aa28fff3cd2268975616a03fcdb56b0671f0aaddaf711e5a84dd5c480",
     "clio843/src/boot_theme.h": "fa46f1bda9c0f37306c90f34d497192953aa718b30fa688291bbc7a66ddab746",
-    "clio843/src/ui_translations.h": "36941894289b1b32128985af003e2b9b3925d9bbfeaf6d8c6224ceaa88282215",
+    "clio843/src/ui_translations.h": "2e534c8b09ad27caeef17a395f568610fb2fcac8273b20cc13286caddf1a2350",
     "clio843/src/nearby_pois.h": "10ef610b741b7f7a49810350875f827068c8115330549ff5da5e74690a0e8038",
     "clio843/src/keyboard-data/layouts.h": "22a3c1a36371612cf10b9db2811812d6320eef8065df4cd7586d4088ea25a6de",
     "clio843/src/keyboard-data/pinyin.h": "790948587decc97f934f36a06c1bf35ce537c96bfd2d18c833da5b94323b0001",
@@ -512,13 +513,13 @@
     "clio843/src/vendor/sheenbidi/Headers/SheenBidi/SheenBidi.h": "44a644a72edf2300838d32c3e32aa14a7cb66b584fb9da643b8311aa21991cbe"
   },
   "executables": {
-    "clio040": "55e6115c39b78e672c4e75b4961f5be31b8d169962141881eb6b6e8249d707c7",
-    "cliospl": "a65de5a6babd113a58a25049b5310664250f6add54771703f518b8e4fb697109",
-    "clioa2dp": "4cb3d105167b10da75a21ee116276c5938c91df6dc21c5a4952a88ca4ac1e03f"
+    "clio040": "4af32f3ddf834b38e53a447afc89fd786f0a564806dfe10a47f5d07df4d30ae7",
+    "cliospl": "556b73341411ab94a85e6059dfa3fcb8b58ce01797101c5ed3c9860c11ce8387",
+    "clioa2dp": "43c50c593717e0c9d007eb5dfd691c3b61f36563659563887eaa57b4f5c45dd7"
   },
   "generator_inputs": {
-    "tools/render_previews.py": "b01753c0510acee6df729e4ef7581eafc11141e12a104700af2a139f24b697ca",
-    "tools/render_gallery.py": "5981f0fc344d378c5ac12d44bfe0d8056596334030a8867894efd7589241e0e3",
+    "tools/render_previews.py": "77eac15cdaf05baa510106692a93828f1ce2b24fb79e1a3124e15b07e552f943",
+    "tools/render_gallery.py": "36c04871c87b6496ab397b9ad0934810ade1aaa69a249959feebc101f1c9283e",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
     "tools/mobility_stories.py": "b7e7d0d4b9e819a91339eb0cadf7d845e517af44e388f909268d18fe54315541",
     "tests/native.c": "f125852e4e0c57f557417c378d8168db0eb36efa7e29938adcaf40528d660b37",
@@ -5771,7 +5772,7 @@
       ]
     },
     "boot-day.gif": {
-      "sha256": "a4b288d51392034c330f792056568ad73ed284dad1295640b5449328c9e8cdd5",
+      "sha256": "0c404ce8dafe668282901cee8c5766c1d830fa49b531719b6203a9a9be6a6b32",
       "frames": 11,
       "duration_ms": 2300,
       "reserved_pointer_colours": [
@@ -5799,43 +5800,43 @@
       "source_frames": [
         {
           "frame": "day/boot-fade-0000.png",
-          "rgb565_sha256": "177024390654a2fa5ad0cb27132605a0e7c5c3c89738d67c5e86cd7836ea2507"
+          "rgb565_sha256": "c513c926c6349ee64c2bcae20307cc195a297fa79f7b0d3f2cedfcb6a67b1149"
         },
         {
           "frame": "day/boot-fade-0050.png",
-          "rgb565_sha256": "3f7c7a91ffc17435338e3b37bfd52e4cebf2e1377cfb7f3b6c43c0dc247b3ce0"
+          "rgb565_sha256": "41925e31a60a90a2842243dcae2d239c707fddf3987fa023d491206ed0c75328"
         },
         {
           "frame": "day/boot-fade-0100.png",
-          "rgb565_sha256": "133f69c1f90aee839c080afcc49e73275357c54104ee1517107769b21cd87240"
+          "rgb565_sha256": "16d529da657abe99f2f7259b31e7e4b1c0d5f5480290b9b2dc8a9b823c5e7adb"
         },
         {
           "frame": "day/boot-fade-0150.png",
-          "rgb565_sha256": "8d668025cad996ae7bfd6b87a81c1d8b0858da782dd07c8a0635291a633ef38d"
+          "rgb565_sha256": "f5d0963f51a8bb52e41c4b042c86d2939bbe9763a6a0e215926ae76686de2bcc"
         },
         {
           "frame": "day/boot-fade-0200.png",
-          "rgb565_sha256": "f5e9b66180a67a986be9e0362775c186e7ca152f505bbda73e6e1377ea48c607"
+          "rgb565_sha256": "1723f09af143c623c8d68272d7b5ef1b81b88f35ddf117d6422c9bfdd9135301"
         },
         {
           "frame": "day/boot-fade-0250.png",
-          "rgb565_sha256": "10824b32aad072538f53aa4241ce17349019f88211d218d204031f7162c10de5"
+          "rgb565_sha256": "389b866a26c9717dca582face1832a999c440ac1ec59a69630b9992a512d0822"
         },
         {
           "frame": "day/boot-fade-0300.png",
-          "rgb565_sha256": "4b76e0fb64db4b7b1b406ff7006121c61870f93d704cdf77a27702fece594d12"
+          "rgb565_sha256": "a4c7e8e8c4b221ffd838736a22bb32879692ea484000c0de075dfbb28010fa91"
         },
         {
           "frame": "day/boot-fade-0350.png",
-          "rgb565_sha256": "454673d34df8f80b44f563926def2e5bd2031655f223a5b695189fcf142b9570"
+          "rgb565_sha256": "0e75a3cc2639af10d48928a6cc84213f3df8ef39d0df052ac6d19f1f0d67f111"
         },
         {
           "frame": "day/boot-fade-0400.png",
-          "rgb565_sha256": "7046dfd723f16d9d6f7b48c8ec8917328096549fa6bcbbd0e9d506cd91d84302"
+          "rgb565_sha256": "4364414d7bab9b3db84c271c5a3c124d9b8d878a7b18cc7393766bcfbdbaa5b7"
         },
         {
           "frame": "day/boot-fade-0450.png",
-          "rgb565_sha256": "2553b51d40f11349468bc3e3e6855d57335e7cfd770b3ba674e2de2aaa69bf44"
+          "rgb565_sha256": "66662428040d5e8fc27d8e0695a73a159f43ab44bafa426f5bb1bf6c9f366d2a"
         },
         {
           "frame": "day/boot-fade-0500.png",
@@ -6872,8 +6873,8 @@
       ]
     },
     "driving.gif": {
-      "sha256": "e62b2df795b88bef560008430943383d0aee74ace1f6d96c316b156a162fbba1",
-      "frames": 20,
+      "sha256": "57b187a25839f225db7d433cd0c605e2d6e9a077fa328c532e2b5e857690cd5d",
+      "frames": 15,
       "duration_ms": 5300,
       "reserved_pointer_colours": [
         [
@@ -6936,67 +6937,67 @@
         },
         {
           "frame": "night/hud-road-then-camera-1100.png",
-          "rgb565_sha256": "fcd51e679677997fb310024e1ad9929e9a4eaf70a91668e1091c0a2f3010d155"
+          "rgb565_sha256": "cdf2cc41ed5048e5aafa7dc39737eeaa11c801bbb69ac8547bf2f85492db1ec8"
         },
         {
           "frame": "night/hud-road-then-camera-1150.png",
-          "rgb565_sha256": "c2ecb23cf2e463c1890f795ff6d83ac458ae54900537974ec443c70fd9ec2722"
+          "rgb565_sha256": "de7c02020f4d5486cb7084b97cec3fc96bacd28494e53e333c70729e2d25796c"
         },
         {
           "frame": "night/hud-road-then-camera-1200.png",
-          "rgb565_sha256": "79b2a902738eb1905e19024de544b26eeb1827a8b6a43edaf17ba89ae7485ad3"
+          "rgb565_sha256": "d0df849c1edd878c61f5cb42a571012a8a7e0a067cd56b1dcb3284a819142171"
         },
         {
           "frame": "night/hud-road-then-camera-1250.png",
-          "rgb565_sha256": "a24b16a2c3c630fdf4ea924cb2f2b1999b16a3f46f28fa1422faef866861cdea"
+          "rgb565_sha256": "9f52dc358d5a01d62896fa8a7f7fd30854770dbeba36fadf4c986b94e5747b51"
         },
         {
           "frame": "night/hud-road-then-camera-1300.png",
-          "rgb565_sha256": "bd34543ca47ceec2704551bad8670bc0e08fde046cf623d670a2f1915b019c45"
+          "rgb565_sha256": "5fb4279348f375e59c4ccb97f08aad5f4f598e8f1e485a65d93c8604f3e8ed76"
         },
         {
           "frame": "night/hud-road-then-camera-1350.png",
-          "rgb565_sha256": "bdc32b4a031968cf9d7ebfab39aea41310f8078bf9ebdd3b99e19cd2babc3139"
+          "rgb565_sha256": "8023f9fea4a6bc5a73d6244ef4bba02793e11075c63f8ee0e0853e7b816aae6b"
         },
         {
           "frame": "night/hud-road-then-camera-1400.png",
-          "rgb565_sha256": "a15d56e5b8bcdee5899e5c0f70c964bc2f046e550844560b85cbba6e64a81504"
+          "rgb565_sha256": "bcb0dfee8b2830b7fac11de999ad79bf505b7b81ae8c95e9d52f75c4d753b2d9"
         },
         {
           "frame": "night/hud-road-then-camera-1450.png",
-          "rgb565_sha256": "b3be68badc4726d48c20a044521d0c1ab470a820b2d2ff11794c8da258886e3b"
+          "rgb565_sha256": "733f27228cc48088bcc510c1ee43081479df712cd7252e5c5e2d57a3186505fe"
         },
         {
           "frame": "night/hud-road-then-camera-4100.png",
-          "rgb565_sha256": "b3be68badc4726d48c20a044521d0c1ab470a820b2d2ff11794c8da258886e3b"
+          "rgb565_sha256": "733f27228cc48088bcc510c1ee43081479df712cd7252e5c5e2d57a3186505fe"
         },
         {
           "frame": "night/hud-road-then-camera-4150.png",
-          "rgb565_sha256": "ae667dc27b637e0e6c061ff287c3c7d36612b3e2b7cac45555e169d5bd0f7cb9"
+          "rgb565_sha256": "733f27228cc48088bcc510c1ee43081479df712cd7252e5c5e2d57a3186505fe"
         },
         {
           "frame": "night/hud-road-then-camera-4200.png",
-          "rgb565_sha256": "209495a0f4bde220affedd4365e2b0d08ec76fe05d02ab8c2a6fac43e0e8eeb5"
+          "rgb565_sha256": "733f27228cc48088bcc510c1ee43081479df712cd7252e5c5e2d57a3186505fe"
         },
         {
           "frame": "night/hud-road-then-camera-4250.png",
-          "rgb565_sha256": "9c86be322e29194fd138119f0930d98d41d8e3f4f5abd170df0156b8bb41ea30"
+          "rgb565_sha256": "733f27228cc48088bcc510c1ee43081479df712cd7252e5c5e2d57a3186505fe"
         },
         {
           "frame": "night/hud-road-then-camera-4300.png",
-          "rgb565_sha256": "8c6a83c89beba22e0db3f6a784455581c5ace45a97572a9f08677f4f89d7bb09"
+          "rgb565_sha256": "733f27228cc48088bcc510c1ee43081479df712cd7252e5c5e2d57a3186505fe"
         },
         {
           "frame": "night/hud-road-then-camera-4350.png",
-          "rgb565_sha256": "baac563ac279ffd1ef19fc8d61aff38f50ee101e2d8bea31879fd051b6bc3b23"
+          "rgb565_sha256": "733f27228cc48088bcc510c1ee43081479df712cd7252e5c5e2d57a3186505fe"
         },
         {
           "frame": "night/hud-road-then-camera-4400.png",
-          "rgb565_sha256": "8cb323a4be7444c8c00cef814733a7dbe075e1607ef93d925be250fede8a1ebc"
+          "rgb565_sha256": "733f27228cc48088bcc510c1ee43081479df712cd7252e5c5e2d57a3186505fe"
         },
         {
           "frame": "night/hud-road-then-camera-4450.png",
-          "rgb565_sha256": "8cb323a4be7444c8c00cef814733a7dbe075e1607ef93d925be250fede8a1ebc"
+          "rgb565_sha256": "733f27228cc48088bcc510c1ee43081479df712cd7252e5c5e2d57a3186505fe"
         }
       ]
     },
@@ -8893,6 +8894,236 @@
           "rgb565_sha256": "d74fe0800b942e411d374c718caa5e3e94b12c9125300fc7828774f0b7d4c785"
         }
       ]
+    },
+    "v227-camera-alerts.gif": {
+      "sha256": "d2bb4eb7951d83d235d655e3fa1b96e3c088b0e0d1c59bf1230b100146c530dd",
+      "frames": 47,
+      "duration_ms": 8600,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
+      "source_frames": [
+        {
+          "frame": "night/preview-v227-camera-alerts-0000.png",
+          "rgb565_sha256": "4a3608c310720b51fa910dddf6f706bdc40418a332aa0aeed617d5534ccfef50"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-0600.png",
+          "rgb565_sha256": "7f488f30ffdc1df9b5bd2720ce50a040f214790ca85f197313657fb9e12eda64"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-0650.png",
+          "rgb565_sha256": "c3c4af44c39866c00b75b57aee588469caca7565d8b8818576ec9e1ac6544964"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-0700.png",
+          "rgb565_sha256": "826743332337f74ef518c8caeb43ad9d15720cb0e560c5d79465ada108c3c504"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-0750.png",
+          "rgb565_sha256": "6aaf672ceefb1d5e201f44719b3a5cd36d1d69900c1fb1426352d3fc5844c4d9"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-0800.png",
+          "rgb565_sha256": "a0689a11b7301b3d6b7366f7cb2d58a7ce9b718af907b0cb356b77046031189a"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-0850.png",
+          "rgb565_sha256": "09b19b3048baf23ed1741028c1c5fd0674b2bfb42fed3ac8c6a0e5fbcaf16a26"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-0900.png",
+          "rgb565_sha256": "d347351215fc7c4b1913d144ed7fe03f6f44035acad17d98e14ea7464994b30a"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-0950.png",
+          "rgb565_sha256": "d347351215fc7c4b1913d144ed7fe03f6f44035acad17d98e14ea7464994b30a"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-1800.png",
+          "rgb565_sha256": "decc8d765b41f34290dc0f72a2e428dac9326c6d23eb578c64885e7d1cbedbf0"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-1850.png",
+          "rgb565_sha256": "ea2662252ca4ae55a863361450d578c371c8d442ddc38e0385ea2852ced501a8"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-1900.png",
+          "rgb565_sha256": "ce6de55e113af414922c64bf989e3ca62f4c8c09f3aa29d8d78692dd5da2561a"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-1950.png",
+          "rgb565_sha256": "5b67203522304bdbe8640ef0371fff749aa44b629c2b1487f7c14a9015f42b68"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-2000.png",
+          "rgb565_sha256": "19294bff3b357939e19907d3f2300b76c90ea325dd29c13f954d6d2d87df8d4b"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-2050.png",
+          "rgb565_sha256": "8bd3e144541948250d4387caeb596648d7a714f0dc6900df838623a96f9c25a9"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-2100.png",
+          "rgb565_sha256": "e04f179b9e8327f961b705dab79acfc705c3b8658e942a2353817acbc8a08d5e"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-2150.png",
+          "rgb565_sha256": "43da076d8a16788f1efcf1725dc8f0e11e9be4de7c744c5d9625ca3a14bfb8a3"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-3100.png",
+          "rgb565_sha256": "fcf0addc1990c9ee79150a9afb52dbc9ea4aaaa4e0c1a8ef24f2bdbf2eafcce8"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-3150.png",
+          "rgb565_sha256": "0d6d37530628d65908d8db266381c6c31e242219abb5a3440a884137c26f18b5"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-3200.png",
+          "rgb565_sha256": "3c1df0d5ed1f6257c38f676e0c0fc17b0c1a556a8b624a0b913300dadd98953a"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-3250.png",
+          "rgb565_sha256": "110e98bd80830f54d0f15e99846eaf3b15a6e62b7fac1099cf1dc8729dd43b07"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-3300.png",
+          "rgb565_sha256": "d02b9faa23371f87f5451d2dbef98e221a32a9ffd9b7dfd827382f65a664dd43"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-3350.png",
+          "rgb565_sha256": "c8a1a3b027e4d2f8a57e081307e25527fea70655a18dcb9170f2dec87e359cc2"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-3400.png",
+          "rgb565_sha256": "34515f78db30a35845da0c1b166a72ca0d9db340552e33c87d270ea2777e56f3"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-3450.png",
+          "rgb565_sha256": "52e827e78c37ae7933e828821df1fb5381a6043cb06c1310f1f9a89b3d9d4722"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-4300.png",
+          "rgb565_sha256": "8b9a807baacaf409da83bdb027474596a7fde8413b1ad93f814e9feb6428a105"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-4350.png",
+          "rgb565_sha256": "9a2d52106cca0c24abe5e6dd6ffa37599091c40a3964ff570b0fd1d875503d2f"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-4400.png",
+          "rgb565_sha256": "e0c1b248b6da3c48ce8c2e79dcc4ed0368a44fcaa6b14745d6251e74dc5f831f"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-4450.png",
+          "rgb565_sha256": "5ba25d8375df9db16ebee759c627c44eef80c2aec2310b0437d8fb6d53c8e845"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-4500.png",
+          "rgb565_sha256": "a0f7cccbc5c49c7e5ae6af6359944a3971fde133618f74289ee7792b8feb9b25"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-4550.png",
+          "rgb565_sha256": "56b4e82140df06bca395178e55b5285cc49ea59a73ea7df8a24ba448728b1d34"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-4600.png",
+          "rgb565_sha256": "fec45f815c42b5528d8199c0d03d2e97dc0bc81873e4323552436d9c2d90e554"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-4650.png",
+          "rgb565_sha256": "fec45f815c42b5528d8199c0d03d2e97dc0bc81873e4323552436d9c2d90e554"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-5600.png",
+          "rgb565_sha256": "da5ba55a1b9ff5ccfea29d42578ff2847657dab0e824e8e79b1aac7d90ec635a"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-5650.png",
+          "rgb565_sha256": "9bd4c424b1108218481a3a6da7f1cf4d90d6bad26679a0f97a7d1e0cab386178"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-5700.png",
+          "rgb565_sha256": "733674ed62139418e237b9f3d136b7191a74bda349db0702bdcc11d6c66c082d"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-5750.png",
+          "rgb565_sha256": "a9bad373967d7b55fefeb71e743168a33ef1275f89ea7def81ce5ea9ac54099b"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-5800.png",
+          "rgb565_sha256": "9d4c29a3e2d352c5ca229ec4e44f229e083ba0cb53805bd877d6dfadea78b443"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-5850.png",
+          "rgb565_sha256": "1718a03ab641425b8fedbf1d25361b92d3f0db71c844cb87d78b8c1ef771373d"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-5900.png",
+          "rgb565_sha256": "128561e70a76415dfbb71946538e23e50dde556cbe24b957b0ac64c320b01b3c"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-5950.png",
+          "rgb565_sha256": "128561e70a76415dfbb71946538e23e50dde556cbe24b957b0ac64c320b01b3c"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-7100.png",
+          "rgb565_sha256": "c6a3b6303180049e0f9f854bdc83e4058cf16a7eedfa40bc5763b2ce4c5fc91d"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-7150.png",
+          "rgb565_sha256": "8a09d318aa37eba7a50e6a1d1823be59b283400a68acae257dae0bfe7e938e37"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-7200.png",
+          "rgb565_sha256": "e04ad283cf7c8dedffb2f347cc2fed657e346a745a451ee7d2d1ef49f6f7f3c2"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-7250.png",
+          "rgb565_sha256": "f9c1b196697edf6f43fa4e2dc15cf88f273de1d1eb789932070d82a5d6594995"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-7300.png",
+          "rgb565_sha256": "419327c5131a7a623ef24f58537f9004d6839243b4087ebea2b49e7d9671a45a"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-7350.png",
+          "rgb565_sha256": "a19a735cb007b39a4186d5c5ae913fc99e0ea249697341ebecefafd422d7db51"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-7400.png",
+          "rgb565_sha256": "d8546e923c7d4bb016555d836d950a71778df5c0a73d3704a7e005cfea3f939e"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-7450.png",
+          "rgb565_sha256": "8e93ed43745f741fae24a807d7ccab583fb0828df6b465d04c491e8da43f9cfe"
+        },
+        {
+          "frame": "night/preview-v227-camera-alerts-8500.png",
+          "rgb565_sha256": "81b0405840c6c6476c814f8ff5ee817fbae72c8f52e888f814a1c69866322a0a"
+        }
+      ],
+      "routing_provenance": "Real Central London route (A3211 Victoria Embankment to Blackfriars) calculated against the UK CPR2 graph, demonstrating v2.2.7 camera warnings: matching supersampled on-map upcoming-camera badges placed on the real carriageway, flush 43 px frosted-glass camera card with BT-CTRL-style capsule progress bar, synced red overspeed rim and red map badge, clean centred red-light alert, and active average-speed zone progress with twin-camera exit marker."
     }
   }
 }

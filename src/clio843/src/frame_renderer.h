@@ -5,7 +5,7 @@ static u16 render_maps[2][FB_PIX] __attribute__((aligned(4)));
 static u16 (*render_front)[FB_PIX]=&render_maps[0],(*render_work)[FB_PIX]=&render_maps[1];
 struct RenderMapScene {
  int zoom,close_road_hud;
- u32 state[20];
+ u32 state[23];
 };
 static struct {
  struct FrameClock ui;
@@ -109,14 +109,15 @@ static void frame_fb_present(int full,const u8*rows){
 /* Keep labels steady through HUD animation. Close views refresh once when the
  * current street moves between the temporary HUD name and the map labels. */
 static struct RenderMapScene render_map_scene(void){
- int z=active_zoom(),route=route_status==R_READY,offer=traffic_offer_valid();
+ int z=active_zoom(),route=route_status==R_READY,offer=traffic_offer_valid(),cam_m=camera_marker_active();
  return (struct RenderMapScene){z,z>6&&crop_road_hud_shown(hud_now_ms()),{
   (u32)freecam,freecam?(u32)cam_lat:0,freecam?(u32)cam_lon:0,
   (u32)gps.fix,(u32)track_valid,(u32)display_course_valid,(u32)mapok,(u32)mapfmt,
   (u32)route,route?(u32)route_n:0,route?(u32)route_head:0,
   route?traffic_route_revision:0,route?(u32)nav_man_idx:0,route?(u32)nav_man_type:0,
   (u32)offer,offer?traffic_offer_serial:0,offer?traffic_saving:0,offer?(u32)pref.language:0,
-  (u32)visual_snap.dlat4,(u32)visual_snap.dlon4
+  (u32)visual_snap.dlat4,(u32)visual_snap.dlon4,
+  (u32)cam_m,cam_m?camera_current.id:0,cam_m?(u32)(camera_average|(camera_is_overspeed()<<1)):0
  }};
 }
 static int render_same_scene(const struct RenderMapScene*a,const struct RenderMapScene*b){
@@ -135,14 +136,17 @@ static int render_transition_active(u32 now){
    if(now-t->position_at<320u||hud_status_frame_at-t->position_at<320u||
       now-t->fast_content_at<220u||hud_status_frame_at-t->fast_content_at<220u)return 1;
   }
-  if(hud_speed_over||now-hud_speed_at<360u||hud_status_frame_at-hud_speed_at<360u||(freecam_transition_active()&&!explore_preparing()))return 1;
+  if(hud_speed_over||now-hud_speed_at<360u||hud_status_frame_at-hud_speed_at<360u||
+     hud_camera_over||now-hud_camera_at<360u||hud_status_frame_at-hud_camera_at<360u||
+     (freecam_transition_active()&&!explore_preparing()))return 1;
   if(hud_pulse_live(&bt_transport_press,now))return 1;
  }
  return 0;
 }
 static int render_animation_active(u32 now){
- if(render_transition_active(now)||(screen==SCR_MAP&&bt_control_mode&&hud_playback.valid&&
-  (hud_playback.playing||now-hud_playback.at<320u)))return 1;
+ if(render_transition_active(now)||
+    (screen==SCR_MAP&&bt_control_mode&&hud_playback.valid&&(hud_playback.playing||now-hud_playback.at<320u))||
+    (screen==SCR_MAP&&hud_camera_bar.valid&&now-hud_camera_bar.at<320u))return 1;
  /* Value-only updates share the HUD cadence until their last fade frame.
   * An idle display still holds its last image without repainting it. */
  int cards=screen==SCR_MAP||bottom_pose(now)>0?HC_COUNT:HC_SPEED;

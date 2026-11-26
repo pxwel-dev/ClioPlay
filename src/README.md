@@ -1,52 +1,34 @@
-# ClioPlay version 2.2.6.4
+# ClioPlay version 2.2.7
 
-Version 2.2.6.4 is a software-only physical console input bug-fix release. It
-is **100% compatible with existing `2.1.8–2.2.6.3` maps (`CPM5`, `CPR2 v5`,
-`QAD7`)** and saved user data (no map rebuild is needed):
+Version 2.2.7 is a software-only camera warning overhaul. It is **100%
+compatible with existing `2.1.8–2.2.6.4` maps (`CPM5`, `CPR2 v5`, `QAD7`,
+`CPC1`)** and saved user data (no map rebuild is needed):
 
-- **Scénic III console knob push fix (2.2.6.4, contributed by `@qspi`):**
-  Confirmed from on-car `csw.log` captures, the Scénic III vehicle daemon sends
-  a single `pressed=1` record per knob push without a release record. Each push
-  record now triggers OK with a sliding 250 ms burst guard (matching the hard
-  buttons), so consecutive knob pushes (Menu confirmation, double-OK for the
-  live GPS HUD) work reliably without needing a rotation first, while explicit
-  `pressed=0` records still re-arm immediately.
-- **FAT32/exFAT card install & Windows WSL fixes (2.2.6.3, contributed by `@bobczan`):**
-  Fresh installs, re-installs and `--update` now handle non-POSIX filesystems
-  (WSL 2 `drvfs`, Linux `vfat`/exFAT) cleanly without aborting on `chmod`
-  `EPERM`, and `install_windows.ps1` now checks `venv` + `ensurepip` before
-  starting a build.
-- **Opt-in parallel atlas builds & cached C++ helpers (2.2.6.3, contributed by `@bobczan`):**
-  Set `CLIOPLAY_PIPELINE=1` to overlap extraction and regional builds inside
-  `tools/build_atlas.py` on Linux, WSL 2 and macOS (with deterministic split
-  naming, cross-resume, fail-fast cancellation and deadlock-free RAM
-  throttling). `ch_preprocess` and `build_qadj` now compile once into a private
-  `0700` per-user cache across regions for both sequential and pipelined builds.
-- **Release integrity CI (2.2.6.3):** Added GitHub Actions verification for
-  `SHA256SUMS` and `verify_ci.py`, plus new installer and pipeline unit tests.
+- **Matching upcoming-camera map markers:** Distinct `8×8`-supersampled icons
+  (**Speed**, **Red-light** with red top lamp, and twin-camera **Average-speed**)
+  appear strictly for the active upcoming camera (or average-zone exit) straight
+  from RAM with zero per-frame SD reads, following 3D tilt and `Z6–Z9` road snap
+  and turning red when over the limit.
+- **Sleek flush `43 px` frosted-glass camera pill:** Aligned top-and-bottom with
+  the Speed and Turn pills and dedicated cleanly to the active camera, featuring
+  matching twin icons, clean typography (`Limit XX` only when relevant), a
+  BT-CTRL-style 3 px antialiased capsule progress bar (draining on approach,
+  filling across average-speed zones), a synced pulsing red overspeed rim and
+  full RTL mirroring.
+- **Smarter detection & reliability:** Speed-scaled warning and chime horizons
+  (~14–22 s lookahead with hysteresis), curved-road unguided corridor matching,
+  high-speed 1 Hz segment-crossing average-speed entry, along-route zone
+  distance with slip-road auto-clear, and exact overspeed parity with the Speed
+  pill.
+- **Two-tier audio & `Overspeed audio` mode:** Distinct approach vs overspeed
+  chimes over Bluetooth audio, plus an **Overspeed audio** option in
+  **Settings → Navigation → Camera alerts** (quiet when compliant on
+  speed/average cameras; soft approach cue only for red-light cameras), keeping
+  the strict fail-closed 19-country policy across all 18 languages.
 
-Version 2.2.6.2 highlights (carried forward):
-
-- **No more unnecessary U-turn spurs:** Two-way streets now evaluate both legal
-  directions at route start and destination directly inside the existing router
-  (with a gentle forward preference while moving that never inflates ETA),
-  eliminating wrong-way departures and overshoot-and-U-turn arrivals at the
-  source. For remaining turn-restricted spurs and sharp reversals (including
-  divided-carriageway V-pinches), a bounded local search finds clean, loop-free
-  bypasses within tight time and distance caps while keeping genuinely required
-  U-turns intact.
-- **Simpler routes with fewer turns:** Rather than zigzagging down side streets
-  to shave a few seconds, ClioPlay now simplifies closely spaced turn clusters
-  onto straighter legal roads when added travel time stays small (`≤ +20%`,
-  capped at `30 s` per regional leg) and distance stays within `+25%` (`≤ 300 m`
-  per cluster). Roundabouts count as one manoeuvre, and the ETA always reflects
-  true driving time.
-- **Parked off-road road-snap release (`Z6–Z9`):** After pulling off-road into a
-  car park or driveway and stopping, the close-up visual road match now releases
-  and smoothly eases the map and vehicle arrow back to GPS with zero extra tile
-  reads, then stops idle redraws once settled.
-
-Version 2.2.6.1 is a bug-fix release that resolves close-up vehicle road-alignment drift at cropped zooms **Z7–Z9** (using display-only, camera-coupled **Z6-reference visual road matching** across **Z6–Z9** with heading alignment, active-route corridor preference, service-road penalty, dual-carriageway hysteresis, smooth per-frame easing and Explore parity, while leaving raw GPS, routing, speed limits, cameras and ML history untouched) — building on version 2.2.6’s unguided offline on-device learning (**Preferred Nearby POIs**, **Usual Parking** with habitual car-park fallback, **POI-named Recurring Stops, Destination Predictions & Frequent-Place prompts**, **Usual Route** shortcuts, unguided **Likely traffic ahead** / **Frequent slowdown ahead** / **Cold-weather slowdown ahead** alerts with dynamic hazard decay/expiry, weekday/weekend destination weighting and aligned **Adaptive Auto-zoom** with a 20-second sustained-override guard), version 2.2.5’s expandable live **GPS** HUD inside the top clock/temperature pill and **Z9–Z4** Auto zoom, offline Nearby POIs, expandable roundabout secondary manoeuvre pill, AVRCP 1.3 instant Bluetooth notifications and desktop migration/favourites tools. See [intelligent navigation](docs/intelligent-navigation.md) and the [changelog](docs/changelog.md).
+See the [changelog](docs/changelog.md) for all prior releases and
+[intelligent navigation](docs/intelligent-navigation.md) for local ML behaviour
+and privacy.
 
 ## Set up a card
 
@@ -147,19 +129,27 @@ custom `ttn` embeds AUX initialization; the installer omits `PNDNavigator`.
   below the device's signed 2 GiB seek limit. Build one PBF covering the intended
   journey; independently built country atlases are not automatically merged.
 - **Cameras:** OSM plus optional CSV imports; fixed, red-light and directional
-  average-speed sections. Mapped road identities reject a different bridge or
-  parallel road when a route is active. Average speed starts only after an
-  observed entry. GPS loss/staleness cancels it. Off-route matching is geometric
-  and can remain ambiguous. Speed values appear only on fixed/average-speed
-  alerts; red-light alerts show their type and distance.
+  average-speed sections with speed-scaled warning horizons, matching
+  supersampled icons for the upcoming camera on both the map and flush `43 px`
+  frosted-glass HUD pill, a 3 px capsule approach/zone progress bar, and a
+  synced red overspeed rim. Mapped road identities reject a different bridge or
+  parallel road when a route is active; unguided matching keeps close cross-track
+  tight while flaring gently on distant curves. Average speed starts only after
+  an observed entry (including 70 mph 1 Hz segment crossings), tracks along-route
+  remaining distance, auto-clears on sustained divergence, and cancels on GPS
+  loss/staleness. Speed values appear only on fixed/average-speed alerts;
+  red-light alerts show their icon, label and distance only.
 - **Camera policy:** information-only alerts enabled in **19 reviewed countries**;
   **FR/DE/CH/CY** excluded, with a conservative export border buffer. Other
   territories stay disabled pending review. Imports cannot bypass policy. See the
   [country list and review sources](docs/camera-support.md).
-- **Camera sound:** Off / Visual / **Phone audio**. The two-tone cue ducks and mixes
-  into our existing Bluetooth PCM stream, including paused playback. Radio/AUX
-  retain visual alerts; FM interruption is not implemented. Physical playback
-  timing still needs vehicle verification.
+- **Camera sound:** Off / Visual / **Phone audio** / **Overspeed audio**. A soft
+  two-tone approach cue and a brisk three-tone overspeed cue duck and mix into
+  our existing Bluetooth PCM stream, including paused playback. **Overspeed
+  audio** stays silent on compliant speed/average-speed approaches, chimes on
+  overspeed, and uses only the soft approach cue for red-light cameras.
+  Radio/AUX retain visual alerts; FM interruption is not implemented. Physical
+  playback timing still needs vehicle verification.
 - **Clock:** offline automatic timezone and DST from GPS, with a manual fallback.
   Settings → System → Clock: Enter toggles Auto/manual; Left/Right selects a manual offset
   in 15-minute steps. Rules span 2020–2060 and retain the last offset at boot.
@@ -403,7 +393,7 @@ Use **Up / Down** to highlight a category and **OK** to open it. Use the same co
 | HUD layout | Bottom pill order | Toggle Speed left / Direction left. | |
 | Navigation | Units | Cycle Auto, Metric and Imperial. | |
 | Navigation | Auto zoom | Toggle on or off. | |
-| Navigation | Camera alerts | Cycle Off, Visual and Phone audio (Off/Visual only if Bluetooth hardware is absent). | |
+| Navigation | Camera alerts | Cycle Off, Visual, Phone audio and Overspeed audio (Off/Visual only if Bluetooth hardware is absent). | |
 | Driving history | Learn driving history | Toggle recording and learning. | Toggle. |
 | Driving history | Destination suggestions | Toggle learned suggestions. | Toggle. |
 | Driving history | Intelligent diversions | Toggle historical traffic and diversion offers. | Toggle. |

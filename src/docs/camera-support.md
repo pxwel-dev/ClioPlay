@@ -35,7 +35,7 @@ The examples make the decisions visible across the interface languages. They are
 
 ## Enforcement and updates
 
-The one-PBF builder writes country policy flags into `regions.cpg` and filters exact locations from `cameras.cpc`. Both ends of an average-speed section must pass. A conservative 0.1° exclusion buffer surrounds explicitly restricted countries; nearby permitted locations can therefore be omitted too. The native UI suppresses alerts when the resolved country flag is disabled, regardless of language or the user's Visual/Phone audio preference. Unresolved/offshore positions fail closed. Generalized coastlines and borders can leave gaps; they are not a legal boundary survey.
+The one-PBF builder writes country policy flags into `regions.cpg` and filters exact locations from `cameras.cpc`. Both ends of an average-speed section must pass. A conservative 0.1° exclusion buffer surrounds explicitly restricted countries; nearby permitted locations can therefore be omitted too. The native UI suppresses HUD alerts, on-map camera markers and audio cues whenever the resolved country flag is disabled, regardless of language or the user's Visual / Phone audio / Overspeed audio preference. Unresolved/offshore positions fail closed. Generalized coastlines and borders can leave gaps; they are not a legal boundary survey.
 
 Navigation builds apply the bundled policy automatically. Existing navigation bundles retain their stored policy until their camera/country metadata is refreshed; a UI language change alone cannot update that metadata. Install a complete validated navigation bundle through the installer. OSM coverage remains incomplete and is not live enforcement data.
 

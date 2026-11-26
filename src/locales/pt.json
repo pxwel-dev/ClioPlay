@@ -256,5 +256,7 @@
   "Use usual route?": "Usar a rota habitual?",
   "View route": "Ver rota",
   "Usual route selected": "Rota habitual escolhida",
-  "Route unavailable": "Rota indisponível"
+  "Route unavailable": "Rota indisponível",
+  "Limit ": "Limite ",
+  "Overspeed audio": "Áudio excesso"
 }

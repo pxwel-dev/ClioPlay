@@ -239,6 +239,16 @@ V225_GPS_PANEL_EVENTS = (
 )
 V225_GPS_PANEL_SAMPLES = sorted({0} | {at+step for at,_ in V225_GPS_PANEL_EVENTS for step in TWEEN_STEPS} | {8600})
 
+V227_CAMERA_ALERTS_EVENTS = (
+    (600,  'preview_cam_state(1,0,220,380,0,0,30,270);assert(camera_visible&&camera_marker_active()&&!camera_is_overspeed());'),
+    (1800, 'preview_cam_state(1,0,140,380,0,0,30,360);assert(camera_is_overspeed());'),
+    (3100, 'preview_cam_state(1,0,70,380,0,0,30,280);assert(!camera_is_overspeed());'),
+    (4300, 'preview_cam_state(2,0,150,320,0,0,0,260);assert(camera_current.kind==2&&!camera_is_overspeed());'),
+    (5600, 'roadctx.speed=50;roadctx.speed_flags=2;preview_cam_state(3,1,1280,0,920,76,50,480);assert(camera_average&&!camera_is_overspeed());'),
+    (7100, 'preview_cam_state(3,1,820,0,1380,85,50,530);assert(camera_average&&camera_is_overspeed());'),
+)
+V227_CAMERA_ALERTS_SAMPLES = sorted({0} | {at+step for at,_ in V227_CAMERA_ALERTS_EVENTS for step in TWEEN_STEPS} | {8500})
+
 
 
 def add(group, name, title, setup='', action='', check='', note=''):
@@ -599,7 +609,7 @@ def catalog(sender_receipts=None):
     for on in (False,True):
         key('Settings','autozoom-'+str(int(on)),'Auto zoom · '+('On' if on else 'Off'),f'menu_open_setting(3,hud_now_ms());pref.autozoom={int(not on)};','key_handle(K_RIGHT);',f'assert(pref.autozoom=={int(on)});')
         key('Settings','debug-'+str(int(on)),'Debug log · '+('On' if on else 'Off'),f'menu_open_setting(6,hud_now_ms());pref.debug={int(not on)};','key_handle(K_RIGHT);',f'assert(pref.debug=={int(on)});')
-    for value,title in enumerate(('Off','Visual','Phone audio')):
+    for value,title in enumerate(('Off','Visual','Phone audio','Overspeed audio')):
         key('Settings',f'camera-setting-{value}','Camera alerts · '+title,'menu_open_setting(4,hud_now_ms());pref.cameras=0;','key_handle(K_RIGHT);'*value,f'assert(pref.cameras=={value});')
     for on in (False,True):
         key('Settings','clock-'+str(int(on)),'Clock · '+('Automatic' if on else 'Manual'),f'menu_open_setting(5,hud_now_ms());pref.clock_auto={int(not on)};','key_handle(K_ENTER);',f'assert(pref.clock_auto=={int(on)});')
@@ -639,8 +649,8 @@ def catalog(sender_receipts=None):
         ('theme-wrap-right','menu_open_setting(1,hud_now_ms());pref.theme=2;','K_RIGHT','assert(pref.theme==0);'),
         ('units-wrap-left','menu_open_setting(2,hud_now_ms());pref.units=0;','K_LEFT','assert(pref.units==2);'),
         ('units-wrap-right','menu_open_setting(2,hud_now_ms());pref.units=2;','K_RIGHT','assert(pref.units==0);'),
-        ('cameras-wrap-left','menu_open_setting(4,hud_now_ms());pref.cameras=0;','K_LEFT','assert(pref.cameras==2);'),
-        ('cameras-wrap-right','menu_open_setting(4,hud_now_ms());pref.cameras=2;','K_RIGHT','assert(pref.cameras==0);'),
+        ('cameras-wrap-left','menu_open_setting(4,hud_now_ms());pref.cameras=0;','K_LEFT','assert(pref.cameras==3);'),
+        ('cameras-wrap-right','menu_open_setting(4,hud_now_ms());pref.cameras=3;','K_RIGHT','assert(pref.cameras==0);'),
         ('language-wrap-right','menu_open_setting(7,hud_now_ms());pref.language=UI_LANGUAGE_COUNT-1;','K_RIGHT','assert(pref.language==0);'),
         ('language-wrap-enter','menu_open_setting(7,hud_now_ms());pref.language=UI_LANGUAGE_COUNT-1;','K_ENTER','assert(sheet_page==P_LANG&&sheet_focus==UI_LANGUAGE_COUNT-1);'),
         ('connected-choice-right','screen=SCR_BT;','K_RIGHT','assert(bt_page_connected_choice==1);'),
@@ -845,6 +855,14 @@ def modern_menus():
         'preview_gps_panel_seed();settle();',
         V225_GPS_PANEL_EVENTS,
         V225_GPS_PANEL_SAMPLES
+    )
+    motion(
+        'Version 2.2.7',
+        'preview-v227-camera-alerts',
+        'Upgraded camera warnings with matching on-map markers, flush 43 px HUD pill, capsule progress bar and synced overspeed rim',
+        'preview_v227_cameras_seed();settle();',
+        V227_CAMERA_ALERTS_EVENTS,
+        V227_CAMERA_ALERTS_SAMPLES
     )
     add('Menu sheets','empty-receive','Empty itinerary receives phone destinations automatically','gps.lat=track_lat=5498800;gps.lon=track_lon=-160400;display_course=track_course=gps.course=210;copystr(roadctx.street,sizeof(roadctx.street),"Osborne Road");gps.mph10=0;auto_zoom_level=-1;trip.active=trip.count=0;menu_open(P_TRIP,0,hud_now_ms());')
     add_stop='gps.mph10=0;auto_zoom_level=-1;key_handle(K_MENU);key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_DOWN);'
@@ -1978,7 +1996,108 @@ static void three_stops(void){trip.count=4;trip.active_idx=0;for(int i=0;i<3;i++
 static void full_itinerary(void){three_stops();trip.target[TRIP_MAX_TARGETS-1]=trip.target[3];for(int i=3;i<TRIP_MAX_TARGETS-1;i++){trip.target[i]=trip.target[0];snprintf(trip.target[i].name,sizeof(trip.target[i].name),"Stop %d",i+1);}trip.count=TRIP_MAX_TARGETS;}
 static void incoming(const char*name,char action){phone_dest.valid=1;phone_dest.action=action;phone_dest.lat=5347740;phone_dest.lon=-223090;copystr(phone_dest.name,sizeof(phone_dest.name),name);phone_destination_apply();}
 static void incoming_sender(const char*name,int seq,char action,int lat,int lon){char packet[512];int n=snprintf(packet,sizeof(packet),"SEQ=%d\nACTION=%c\nLAT=%d\nLON=%d\nNAME=%s\n",seq,action,lat,lon,name);long fd=s_open(BT_NAV_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);assert(fd>=0);assert(s_write((int)fd,packet,n)==n);s_close((int)fd);poll_phone_destination();assert(phone_dest.valid);phone_destination_apply();}
-static void show_camera(int kind,int avg){camera_visible=1;camera_average=avg;camera_current.kind=kind;camera_current.speed=30;camera_current.flags=2;camera_distance=avg?850:180;camera_average_speed=42;}
+static int demo_cam_n, demo_cam_region, demo_cam_start, demo_cam_p1, demo_cam_p2, demo_cam_p3;
+static u32 demo_cam_m, demo_cam_cost;
+static s32 demo_cam_lat[ROUTE_PATH_MAX], demo_cam_lon[ROUTE_PATH_MAX];
+static u32 demo_cam_node[ROUTE_PATH_MAX], demo_cam_arc[ROUTE_PATH_MAX], demo_cam_phys[ROUTE_PATH_MAX];
+static u32 demo_cam_seg_m[ROUTE_PATH_MAX], demo_cam_seg_cost[ROUTE_PATH_MAX];
+static void preview_v227_cameras_seed(void){
+ /* Real Central London route (A3211 Victoria Embankment -> Blackfriars):
+  * car arrow, route line and every camera badge sit squarely on the actual carriageway. */
+ if(!demo_cam_n){
+  gps.lat=track_lat=5150250;gps.lon=track_lon=-12300;
+  gps.fix=1;track_valid=1;display_course_valid=1;
+  gps.course=track_course=display_course=23;
+  region_resolve(gps.lat,gps.lon);
+  assert(route_start(5151350,-10550));
+  u32 deadline=s_now_ms()+10000u;
+  while(route_status==R_CALC&&time_before_u32(s_now_ms(),deadline))route_service_until(s_now_ms()+12u);
+  assert(route_status==R_READY&&route_n>35);
+  demo_cam_n=route_n;demo_cam_region=atlas_route_region;
+  demo_cam_m=route_result_m;demo_cam_cost=route_result_cost;
+  memcpy(demo_cam_lat,route_lat,sizeof(demo_cam_lat));
+  memcpy(demo_cam_lon,route_lon,sizeof(demo_cam_lon));
+  memcpy(demo_cam_node,route_node,sizeof(demo_cam_node));
+  memcpy(demo_cam_arc,route_seg_arc,sizeof(demo_cam_arc));
+  memcpy(demo_cam_phys,route_seg_phys,sizeof(demo_cam_phys));
+  memcpy(demo_cam_seg_m,route_seg_m,sizeof(demo_cam_seg_m));
+  memcpy(demo_cam_seg_cost,route_seg_cost,sizeof(demo_cam_seg_cost));
+  demo_cam_start=20;
+  u32 along=0;demo_cam_p1=demo_cam_p2=demo_cam_p3=demo_cam_start+1;
+  for(int i=demo_cam_start+1;i<route_n;i++){
+   along+=nav_seg_m(route_lat[i-1],route_lon[i-1],route_lat[i],route_lon[i]);
+   if(along<65u)demo_cam_p1=i;
+   if(along<115u)demo_cam_p2=i;
+   if(along<165u)demo_cam_p3=i;
+  }
+ }
+ if(atlas_ready&&demo_cam_region>=0)assert(atlas_open_route(demo_cam_region));
+ atlas_active=0;atlas_future_m=atlas_future_cost=0;
+ route_n=demo_cam_n;route_head=demo_cam_start;
+ route_result_m=demo_cam_m;route_result_cost=demo_cam_cost;
+ route_status=R_READY;
+ memcpy(route_lat,demo_cam_lat,sizeof(route_lat));
+ memcpy(route_lon,demo_cam_lon,sizeof(route_lon));
+ memcpy(route_node,demo_cam_node,sizeof(route_node));
+ memcpy(route_seg_arc,demo_cam_arc,sizeof(route_seg_arc));
+ memcpy(route_seg_phys,demo_cam_phys,sizeof(route_seg_phys));
+ memcpy(route_seg_m,demo_cam_seg_m,sizeof(route_seg_m));
+ memcpy(route_seg_cost,demo_cam_seg_cost,sizeof(route_seg_cost));
+ trip.active=1;trip.paused=0;trip.count=1;trip.active_idx=0;
+ trip.target[0].lat=route_target_lat=route_lat[route_n-1];
+ trip.target[0].lon=route_target_lon=route_lon[route_n-1];
+ copystr(trip.target[0].name,sizeof(trip.target[0].name),"Blackfriars");
+ gps.lat=track_lat=route_lat[demo_cam_start];
+ gps.lon=track_lon=route_lon[demo_cam_start];
+ gps.course=track_course=display_course=23;
+ track_valid=display_course_valid=1;
+ gps.fix=1;gps.mph10=270;auto_zoom_level=-1;pref.autozoom=0;manual_zoom=7;
+ region_resolve(gps.lat,gps.lon);
+ roadctx.valid=1;roadctx.speed=30;roadctx.speed_flags=2;
+ copystr(roadctx.street,sizeof(roadctx.street),"Victoria Embankment");
+ copystr(hud_last_road,sizeof(hud_last_road),"Victoria Embankment");hud_road_live=0;
+ nav_maneuver_find();
+ camera_clear();
+ camera_last_gps_ms=gps_fix_ms;
+ render_background_dirty=1;
+}
+static void preview_cam_state(int kind,int avg,u32 dist,u32 span,u32 avg_m,int avg_spd,int limit_spd,int mph10){
+ camera_visible=1;camera_average=avg;camera_current.id=(u32)(950+kind*10+avg);
+ camera_current.kind=(u8)kind;camera_current.speed=(u16)limit_spd;
+ camera_current.flags=(u8)(limit_spd?2:0);
+ camera_current.iso[0]=region_iso[0];camera_current.iso[1]=region_iso[1];
+ camera_distance=dist;camera_warn_span_m=span;camera_average_m=avg_m;camera_average_speed=avg_spd;
+ gps.mph10=mph10;
+ int pick=avg?demo_cam_p2:(dist>=180u?demo_cam_p3:(dist>=100u?demo_cam_p2:demo_cam_p1));
+ s32 tlat=route_lat[pick],tlon=route_lon[pick];
+ if(avg){camera_current.endlat=tlat;camera_current.endlon=tlon;camera_current.lat=gps.lat;camera_current.lon=gps.lon;}
+ else{camera_current.lat=tlat;camera_current.lon=tlon;camera_current.endlat=0;camera_current.endlon=0;}
+ camera_last_gps_ms=gps_fix_ms;
+ render_background_dirty=1;
+}
+static void show_camera(int kind,int avg){
+ camera_visible=1;camera_average=avg;camera_current.id=(u32)(900+kind*10+avg);
+ camera_current.kind=(u8)kind;camera_current.speed=30;camera_current.flags=2;
+ camera_current.iso[0]=region_iso[0];camera_current.iso[1]=region_iso[1];
+ camera_distance=avg?850:180;camera_warn_span_m=420;camera_average_m=avg?550:0;camera_average_speed=42;
+ s32 tlat=gps.lat,tlon=gps.lon;
+ if(route_status==R_READY&&route_n-route_head>1){
+  u32 along=0;int pick=route_head+1;
+  for(int i=route_head+1;i<route_n;i++){
+   along+=nav_seg_m(route_lat[i-1],route_lon[i-1],route_lat[i],route_lon[i]);
+   pick=i;if(along>=80u)break;
+  }
+  tlat=route_lat[pick];tlon=route_lon[pick];
+ }else{
+  int k=((shown_course()+5)/10)%36,cq=coslat_q15(gps.lat);
+  tlat=gps.lat+((110*COS36[k])>>15);
+  s32 dx=(110*SIN36[k])>>15;
+  tlon=gps.lon+(cq>0?(s32)(((long long)dx<<15)/cq):dx);
+ }
+ if(avg){camera_current.endlat=tlat;camera_current.endlon=tlon;camera_current.lat=gps.lat;camera_current.lon=gps.lon;}
+ else{camera_current.lat=tlat;camera_current.lon=tlon;camera_current.endlat=0;camera_current.endlon=0;}
+ camera_last_gps_ms=gps_fix_ms;
+}
 static void preview_track(const char*title,const char*artist){
  FILE*f=fopen(BT_STATUS_PATH,"w");assert(f);fputs("BT STREAMING\n",f);fclose(f);
  f=fopen(BT_META_PATH,"w");assert(f);fprintf(f,"DEVICE=Example iPhone\nCONNECTED=1\nPLAYING=1\nTITLE=%s\nARTIST=%s\nALBUM=\nPOS=0\nDUR=240\n",title,artist);fclose(f);
@@ -2026,7 +2145,7 @@ static void gallery_reset(int night){
  copystr(roadctx.street,sizeof(roadctx.street),"King Street");
  roadctx.speed=30;roadctx.speed_flags=2;roadctx.reverse_speed=30;roadctx.reverse_flags=2;
  nav_maneuver_find();
- camera_clear();camera_next_ms=s_now_ms()+60000;clock_next_ms=0;region_next_ms=0;region_resolve(gps.lat,gps.lon);
+ camera_clear();camera_next_ms=s_now_ms()+60000;camera_last_gps_ms=gps_fix_ms;clock_next_ms=0;region_next_ms=0;region_resolve(gps.lat,gps.lon);
 }
 '''
 

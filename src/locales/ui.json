@@ -1051,6 +1051,14 @@
     "Route unavailable": [
       "Itinéraire indisponible",
       "Ruta no disponible"
+    ],
+    "Limit ": [
+      "Limite ",
+      "Límite "
+    ],
+    "Overspeed audio": [
+      "Audio excès",
+      "Audio exceso"
     ]
   },
   "language_names": {

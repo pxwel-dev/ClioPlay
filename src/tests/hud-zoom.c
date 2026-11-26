@@ -68,13 +68,14 @@ static void driving_info(void){
   prepare(15000);hud_driver_prepare(15000);
   assert(!name->target.box.a&&!hud_navigation.kind);
   key_handle(K_ENTER);prepare(15000);hud_driver_prepare(15000);
-  assert(!!name->target.box.a==named);
-  if(named)assert(streq(name->target.title,"Quayside")&&hud_pose(name,15160).a>0);
+  int expect_name=named&&!camera_visible;
+  assert(!!name->target.box.a==expect_name);
+  if(expect_name)assert(streq(name->target.title,"Quayside")&&hud_pose(name,15160).a>0);
   assert(hud_navigation.kind==(guidance?HUD_JOURNEY:HUD_NONE));
   if(guidance)assert(card()->kind==HUD_JOURNEY&&streq(card()->tag,"ETA")&&hud_tween[HC_ROAD].target.kind);
   /* Console INFO extends the driving-info display without opening GPS. */
   prepare(16000);key_handle(K_CONSOLE_INFO);prepare(16000);hud_driver_prepare(19999);
-  assert(screen==SCR_MAP&&!!name->target.box.a==named);
+  assert(screen==SCR_MAP&&!!name->target.box.a==expect_name);
   hud_driver_prepare(20000);assert(!name->target.box.a);
   assert(!!hud_tween[HC_ROAD].target.box.a==guidance);
   /* Pressing OK twice within 4 s toggles the live GPS HUD on/off on the map. */

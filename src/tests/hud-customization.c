@@ -29,7 +29,8 @@ static void test_hardware(void){
  pref.gps_hud=0;
  key_handle(K_CONSOLE_GPS);assert(pref.gps_hud&&screen==SCR_MAP&&gps_hud_mode()==GPS_HUD_FULL);
  key_handle(K_CONSOLE_GPS);assert(!pref.gps_hud&&screen==SCR_MAP&&gps_hud_mode()==GPS_HUD_OFF);
- pref.cameras=2;char b[96];assert(streq(setting_value(4,b),ui_tr("Visual")));
+ pref.cameras=3;char b[96];assert(streq(setting_value(4,b),ui_tr("Visual")));
+ pref.cameras=2;assert(streq(setting_value(4,b),ui_tr("Visual")));
  set_focus=4;settings_key(K_RIGHT);assert(pref.cameras<2);
  hardware_file("  export hw_bluetooth='1'\n");
  hardware_load_bluetooth();assert(hw_bluetooth_enabled);

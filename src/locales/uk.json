@@ -256,5 +256,7 @@
   "Use usual route?": "Обрати звичний маршрут?",
   "View route": "Показати маршрут",
   "Usual route selected": "Звичний маршрут обрано",
-  "Route unavailable": "Маршрут недоступний"
+  "Route unavailable": "Маршрут недоступний",
+  "Limit ": "Ліміт ",
+  "Overspeed audio": "При перевищенні"
 }

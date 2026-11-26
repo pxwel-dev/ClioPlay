@@ -707,10 +707,10 @@ static int av_signal(int fd,const u8*b,int n){if(n<2)return 1;int tl=(b[0]>>4)&1
 }
 #include "audio_chime.h"
 static struct AudioChime camera_chime;
-static u32 alert_seq=0,alert_idle_until=0,alert_last_media=0;
+static u32 alert_seq=0,alert_last_id=0,alert_last_kind=0,alert_idle_until=0,alert_last_media=0;
 static u32 alert_now_ms(void){struct {long sec,nsec;}t;if(sc2(263,1,(long)&t)>=0)return (u32)t.sec*1000u+(u32)(t.nsec/1000000L);return snd_now_ms();}
 static void alert_service(void){u32 now=alert_now_ms(),msg[4];snd_feed_now=now;long f=s_open(CAMERA_ALERT_PATH,O_RDONLY_,0);
- if(f>=0){long n=s_read((int)f,msg,sizeof(msg));s_close((int)f);if(n==sizeof(msg)&&msg[0]==0x4c414c43u&&msg[2]!=alert_seq){alert_seq=msg[2];if(!msg[3]){camera_chime.total=0;alert_idle_until=0;if(sndfd>=0&&now-alert_last_media>200)snd_close();}else if(source_active&&(s32)(msg[2]-now)>=0&&(s32)(msg[2]-now)<=1500&&snd_open()){chime_start(&camera_chime,udiv32(44100u,(u32)snd_div));alert_idle_until=now+1100u;}}}
+ if(f>=0){long n=s_read((int)f,msg,sizeof(msg));s_close((int)f);if(n==sizeof(msg)&&msg[0]==0x4c414c43u&&(msg[2]!=alert_seq||msg[1]!=alert_last_id||msg[3]!=alert_last_kind)){alert_seq=msg[2];alert_last_id=msg[1];alert_last_kind=msg[3];if(!msg[3]){camera_chime.total=0;alert_idle_until=0;if(sndfd>=0&&now-alert_last_media>200)snd_close();}else if(source_active&&(s32)(msg[2]-now)>=0&&(s32)(msg[2]-now)<=1500&&snd_open()){unsigned kind=msg[3]==2u?2u:1u;chime_start_kind(&camera_chime,udiv32(44100u,(u32)snd_div),kind);alert_idle_until=now+(kind==2u?1200u:1100u);}}}
  if(!source_active){camera_chime.total=0;alert_idle_until=0;return;}
  if(!alert_idle_until)return;
  if((s32)(now-alert_idle_until)>=0){alert_idle_until=0;if(now-alert_last_media>200&&sndfd>=0)snd_close();return;}

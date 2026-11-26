@@ -256,5 +256,7 @@
   "Use usual route?": "Vaste route gebruiken?",
   "View route": "Route bekijken",
   "Usual route selected": "Vaste route gekozen",
-  "Route unavailable": "Route niet beschikbaar"
+  "Route unavailable": "Route niet beschikbaar",
+  "Limit ": "Limiet ",
+  "Overspeed audio": "Audio te snel"
 }

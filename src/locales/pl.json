@@ -256,5 +256,7 @@
   "Use usual route?": "Użyć zwykłej trasy?",
   "View route": "Pokaż trasę",
   "Usual route selected": "Wybrano zwykłą trasę",
-  "Route unavailable": "Trasa niedostępna"
+  "Route unavailable": "Trasa niedostępna",
+  "Limit ": "Limit ",
+  "Overspeed audio": "Przy przekroczeniu"
 }

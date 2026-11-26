@@ -256,5 +256,7 @@
   "Use usual route?": "Alışılmış rota kullanılsın mı?",
   "View route": "Rotayı gör",
   "Usual route selected": "Alışılmış rota seçildi",
-  "Route unavailable": "Rota mevcut değil"
+  "Route unavailable": "Rota mevcut değil",
+  "Limit ": "Limit ",
+  "Overspeed audio": "Hız aşımı sesi"
 }
