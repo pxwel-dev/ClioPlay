@@ -34,9 +34,21 @@ struct RoadVert {
  u16 eff_cas4;       /* final casing margin per side in Q4 */
 };
 
+struct RoadEndTaper {
+ u16 tgt_w4;       /* target fill width at join (d=0) in Q4 (0 = inactive) */
+ s16 dx_q8,dy_q8;  /* draw-center alignment delta (tgt - self) at d=0 in Q8 */
+ u8  tgt_cas4;     /* target casing width per side at join in Q4 */
+ u8  len_px;       /* total S-curve arc length in px */
+ u8  off_px;       /* starting arc distance at this endpoint (multi-poly chain) */
+ u8  tgt_slot;     /* target fill/casing colour slot (0..5) */
+ u8  flags;        /* bit 0: cross_group (cls==1 motorway -> cls>=2 surface) */
+ u8  pad;
+};
+
 struct RoadPoly {
  u16 first,count;
  u8 cls,slot;
+ struct RoadEndTaper taper[2]; /* 0 = start vertex, 1 = end vertex */
 };
 
 struct RoadSegRef {
@@ -211,6 +223,7 @@ static void road_pass_add(const int*x,const int*y,int n,int cls){
   }
   if(cur_poly<0){
    cur_poly=road_npolys++;
+   memzero(&road_polys[cur_poly],sizeof(road_polys[cur_poly]));
    road_polys[cur_poly].first=(u16)road_nverts;
    road_polys[cur_poly].count=1;
    road_polys[cur_poly].cls=(u8)cls;
@@ -470,40 +483,392 @@ static void road_pass_solve(void){
  }
 }
 
+static int road_seg_len_q8(s32 x0,s32 y0,s32 x1,s32 y1){
+ s32 dx=x1-x0,dy=y1-y0;
+ s32 adx=dx<0?-dx:dx,ady=dy<0?-dy:dy;
+ int sh=0;
+ while(adx>32767||ady>32767){adx>>=1;ady>>=1;sh++;}
+ return (int)(isqrt32((u32)((long long)adx*adx+(long long)ady*ady))<<sh);
+}
+
+static int road_poly_len_q8(int p){
+ const struct RoadPoly*rp=&road_polys[p];
+ int total=0,f=rp->first,cnt=rp->count;
+ for(int i=1;i<cnt;i++){
+  const struct RoadVert*a=&road_verts[f+i-1],*b=&road_verts[f+i];
+  total+=road_seg_len_q8(a->draw_x,a->draw_y,b->draw_x,b->draw_y);
+ }
+ return total;
+}
+
+static int road_poly_is_loop(int p){
+ const struct RoadPoly*rp=&road_polys[p];
+ if(rp->count<3)return 0;
+ const struct RoadVert*a=&road_verts[rp->first];
+ const struct RoadVert*b=&road_verts[rp->first+rp->count-1];
+ return iabs32(a->x-b->x)<=384&&iabs32(a->y-b->y)<=384;
+}
+
+static int road_smoothstep_q8(int num,int den){
+ if(num<=0||den<=0)return 0;
+ if(num>=den)return 256;
+ int t=(int)(((long long)num*256+(den>>1))/den);
+ int t2=(t*t)>>8;
+ int s=3*t2-((2*t2*t)>>8);
+ if(s<0)s=0;if(s>256)s=256;
+ return s;
+}
+
+/* Detect end-to-end wider-to-narrower road transitions so wide carriageways
+ * glide smoothly into narrower continuations via a C1 S-curve funnel and
+ * optional colour cross-fade, with zero bulbous overhangs or hard steps. */
+static void road_solve_transitions(void){
+ int z=road_pass_zoom;
+ if(z<4||road_nsegs<2)return;
+ const int tol_q8=384; /* 1.5 px captures same-tile, cross-tile and simplified junctions */
+ int min_len=z>=9?24:(z==8?18:(z==7?14:(z==6?11:8)));
+ int max_len=z>=9?64:(z==8?48:(z==7?36:24));
+
+ for(int p=0;p<road_npolys;p++){
+  struct RoadPoly*rp=&road_polys[p];
+  if(rp->count<2||road_poly_is_loop(p))continue;
+  for(int end=0;end<2;end++){
+   int vi=end==0?rp->first:(rp->first+rp->count-1);
+   const struct RoadVert*v=&road_verts[vi];
+   if(v->x<-16*256||v->x>(W+16)*256||v->y<(MAP_TOP-16)*256||v->y>(MAP_BOTTOM+16)*256)continue;
+
+   int vx_px=v->x>>8,vy_px=v->y>>8;
+   int c0=(vx_px-3)/32,c1=(vx_px+3)/32;
+   int r0=(vy_px-3-MAP_TOP)/32,r1=(vy_px+3-MAP_TOP)/32;
+   if(c0<0)c0=0;if(c1>=ROAD_GRID_COLS)c1=ROAD_GRID_COLS-1;
+   if(r0<0)r0=0;if(r1>=ROAD_GRID_ROWS)r1=ROAD_GRID_ROWS-1;
+   s32 vx4=v->x>>4,vy4=v->y>>4;
+
+   int blocked=0,best_w4=0,best_cas4=0,best_slot=0,best_cls=99;
+   s32 best_dx=0,best_dy=0;
+   for(int r=r0;r<=r1&&!blocked;r++)for(int c=c0;c<=c1&&!blocked;c++){
+    u16 node=road_grid_head[r*ROAD_GRID_COLS+c];
+    while(node){
+     struct RoadGridNode*gn=&road_grid_nodes[node-1];
+     node=gn->next;
+     struct RoadSegRef*sg=&road_segs[gn->seg];
+     if((int)sg->poly==p)continue;
+     if(vx_px+3<sg->minx||vx_px-3>sg->maxx||vy_px+3<sg->miny||vy_px-3>sg->maxy)continue;
+     const struct RoadVert*a=&road_verts[sg->v0],*b=&road_verts[sg->v0+1];
+     s32 ax4=a->x>>4,ay4=a->y>>4,sx4=(b->x>>4)-ax4,sy4=(b->y>>4)-ay4;
+     long long len2=(long long)sx4*sx4+(long long)sy4*sy4;
+     int t_q12=0;
+     s32 qx=a->x,qy=a->y;
+     if(len2>0){
+      long long dot=(long long)(vx4-ax4)*sx4+(long long)(vy4-ay4)*sy4;
+      if(dot>=len2){t_q12=4096;qx=b->x;qy=b->y;}
+      else if(dot>0){
+       t_q12=(int)((dot*4096)/len2);
+       qx=a->x+(s32)(((long long)(b->x-a->x)*t_q12)>>12);
+       qy=a->y+(s32)(((long long)(b->y-a->y)*t_q12)>>12);
+      }
+     }
+     if(iabs32(qx-v->x)>tol_q8||iabs32(qy-v->y)>tol_q8)continue;
+     int uw4=(int)a->eff_w4+((((int)b->eff_w4-(int)a->eff_w4)*t_q12+2048)>>12);
+     int qcls=(int)road_polys[sg->poly].cls;
+     if(qcls<=(int)rp->cls||uw4>=(int)v->eff_w4-4){blocked=1;break;}
+     if(uw4>best_w4||(uw4==best_w4&&qcls<best_cls)){
+      int ucas4=(int)a->eff_cas4+((((int)b->eff_cas4-(int)a->eff_cas4)*t_q12+2048)>>12);
+      s32 udx=a->draw_x+(s32)(((long long)(b->draw_x-a->draw_x)*t_q12)>>12);
+      s32 udy=a->draw_y+(s32)(((long long)(b->draw_y-a->draw_y)*t_q12)>>12);
+      best_w4=uw4;
+      best_cas4=ucas4;
+      best_slot=(int)road_polys[sg->poly].slot;
+      best_cls=qcls;
+      best_dx=udx-v->draw_x;
+      best_dy=udy-v->draw_y;
+     }
+    }
+   }
+   if(blocked||best_w4<=0)continue;
+   int dw4=(int)v->eff_w4-best_w4;
+   if(dw4<6&&best_slot==(int)rp->slot)continue;
+
+   int len_px=(dw4*3+8)>>4;
+   if(len_px<min_len)len_px=min_len;
+   if(len_px>max_len)len_px=max_len;
+   if(best_dx<-2048)best_dx=-2048;if(best_dx>2048)best_dx=2048;
+   if(best_dy<-2048)best_dy=-2048;if(best_dy>2048)best_dy=2048;
+
+   struct RoadEndTaper*tp=&rp->taper[end];
+   tp->tgt_w4=(u16)best_w4;
+   tp->tgt_cas4=(u8)(best_cas4>255?255:best_cas4);
+   tp->len_px=(u8)len_px;
+   tp->off_px=0;
+   tp->dx_q8=(s16)best_dx;
+   tp->dy_q8=(s16)best_dy;
+   tp->tgt_slot=(u8)best_slot;
+   tp->flags=(u8)((rp->cls==1&&best_cls>=2)?1:0);
+  }
+ }
+
+ /* Resolve short polylines: clamp opposing double tapers or propagate an
+  * uninterrupted S-curve backward across up to 2 collinear same-class segments. */
+ for(int p=0;p<road_npolys;p++){
+  struct RoadPoly*rp=&road_polys[p];
+  int has0=(rp->taper[0].tgt_w4!=0&&rp->taper[0].off_px==0);
+  int has1=(rp->taper[1].tgt_w4!=0&&rp->taper[1].off_px==0);
+  if(!has0&&!has1)continue;
+  int plen_px=(road_poly_len_q8(p)+128)>>8;
+  if(plen_px<1)plen_px=1;
+  if(has0&&has1){
+   int sum=(int)rp->taper[0].len_px+(int)rp->taper[1].len_px;
+   if(sum>plen_px){
+    int l0=(int)rp->taper[0].len_px*plen_px/sum;
+    int l1=plen_px-l0;
+    if(l0<1)l0=1;if(l1<1)l1=1;
+    rp->taper[0].len_px=(u8)l0;
+    rp->taper[1].len_px=(u8)l1;
+   }
+   continue;
+  }
+  int end=has0?0:1;
+  int want_len=(int)rp->taper[end].len_px;
+  if(plen_px>=want_len)continue;
+
+  int chain_p[3]={p,-1,-1},chain_e[3]={end,0,0},nchain=1;
+  int cur_p=p,cur_end=end,cur_off=plen_px;
+  for(int hop=0;hop<2&&cur_off<want_len;hop++){
+   struct RoadPoly*cp=&road_polys[cur_p];
+   int oend=1-cur_end;
+   int ovi=oend==0?cp->first:(cp->first+cp->count-1);
+   int ovi2=oend==0?(cp->first+1):(cp->first+cp->count-2);
+   const struct RoadVert*ov=&road_verts[ovi];
+   s16 ux,uy;
+   road_unit_vec_q8(road_verts[ovi2].x-ov->x,road_verts[ovi2].y-ov->y,&ux,&uy);
+
+   int vx_px=ov->x>>8,vy_px=ov->y>>8;
+   int c0=(vx_px-3)/32,c1=(vx_px+3)/32;
+   int r0=(vy_px-3-MAP_TOP)/32,r1=(vy_px+3-MAP_TOP)/32;
+   if(c0<0)c0=0;if(c1>=ROAD_GRID_COLS)c1=ROAD_GRID_COLS-1;
+   if(r0<0)r0=0;if(r1>=ROAD_GRID_ROWS)r1=ROAD_GRID_ROWS-1;
+
+   int cand_p=-1,cand_e=0,same_or_wider=0;
+   for(int r=r0;r<=r1&&same_or_wider<=1;r++)for(int c=c0;c<=c1&&same_or_wider<=1;c++){
+    u16 node=road_grid_head[r*ROAD_GRID_COLS+c];
+    while(node){
+     struct RoadGridNode*gn=&road_grid_nodes[node-1];
+     node=gn->next;
+     struct RoadSegRef*sg=&road_segs[gn->seg];
+     int q=(int)sg->poly;
+     if(q==cur_p)continue;
+     if(vx_px+3<sg->minx||vx_px-3>sg->maxx||vy_px+3<sg->miny||vy_px-3>sg->maxy)continue;
+     struct RoadPoly*rq=&road_polys[q];
+     for(int k=0;k<2;k++){
+      int qvi=(int)sg->v0+k;
+      const struct RoadVert*qu=&road_verts[qvi];
+      if(iabs32(qu->x-ov->x)>tol_q8||iabs32(qu->y-ov->y)>tol_q8)continue;
+      if(rq->cls<=cp->cls){
+       if(q!=cand_p)same_or_wider++;
+       int is_q0=(qvi==(int)rq->first),is_q1=(qvi==(int)rq->first+rq->count-1);
+       if(rq->cls==cp->cls&&(is_q0||is_q1)&&!road_poly_is_loop(q)){
+        int qe=is_q0?0:1;
+        int qvi2=is_q0?(rq->first+1):(rq->first+rq->count-2);
+        s16 qx,qy;
+        road_unit_vec_q8(road_verts[qvi2].x-qu->x,road_verts[qvi2].y-qu->y,&qx,&qy);
+        int dot=((int)ux*(int)qx+(int)uy*(int)qy)>>8;
+        if(dot<=-170&&!rq->taper[qe].tgt_w4&&!rq->taper[1-qe].tgt_w4){
+         cand_p=q;cand_e=qe;
+        }
+       }
+      }
+     }
+    }
+   }
+   if(same_or_wider!=1||cand_p<0)break;
+   struct RoadPoly*nq=&road_polys[cand_p];
+   nq->taper[cand_e]=rp->taper[end];
+   nq->taper[cand_e].off_px=(u8)(cur_off>255?255:cur_off);
+   chain_p[nchain]=cand_p;chain_e[nchain]=cand_e;nchain++;
+   int qlen=(road_poly_len_q8(cand_p)+128)>>8;
+   if(qlen<1)qlen=1;
+   cur_off+=qlen;
+   cur_p=cand_p;cur_end=cand_e;
+  }
+  if(cur_off<want_len){
+   int cl=cur_off<2?2:cur_off;
+   for(int i=0;i<nchain;i++)road_polys[chain_p[i]].taper[chain_e[i]].len_px=(u8)cl;
+  }
+ }
+}
+
+static void road_draw_taper_piece(int x0,int y0,int x1,int y1,
+                                  int w0,int w1,int cas0,int cas1,
+                                  int fa0,int fa1,int slot,int tgt_slot,
+                                  int is_casing,int caps,int fade_caps){
+ if(is_casing){
+  if(cas0<=0&&cas1<=0)return;
+  int cw0=w0+cas0*2,cw1=w1+cas1*2;
+  if(tgt_slot<slot&&road_casing_colours[tgt_slot]!=road_casing_colours[slot]){
+   map_mask_select(tgt_slot);
+   map_line_q8_taper(x0,y0,x1,y1,road_casing_colours[tgt_slot],cw0,cw1,32,32,caps);
+   map_mask_select(slot);
+   map_line_q8_taper(x0,y0,x1,y1,road_casing_colours[slot],cw0,cw1,fa0,fa1,fade_caps);
+  }else{
+   map_line_q8_taper(x0,y0,x1,y1,road_casing_colours[slot],cw0,cw1,32,32,caps);
+  }
+ }else{
+  if(tgt_slot<slot){
+   map_mask_select(tgt_slot);
+   map_line_q8_taper(x0,y0,x1,y1,road_colours[tgt_slot],w0,w1,32,32,3);
+   map_mask_select(slot);
+   map_line_q8_taper(x0,y0,x1,y1,road_colours[slot],w0,w1,fa0,fa1,fade_caps);
+  }else{
+   map_line_q8_taper(x0,y0,x1,y1,road_colours[slot],w0,w1,32,32,3);
+  }
+ }
+}
+
+static void road_draw_taper_span(const struct RoadVert*a,const struct RoadVert*b,
+                                 int s0_q8,int seg_q8,int total_q8,
+                                 int ia,int ib,const struct RoadEndTaper*tp,
+                                 int end_idx,int slot,int is_casing){
+ int span_q8=ib-ia;
+ if(span_q8<=0||seg_q8<=0)return;
+ int steps=(span_q8+1023)>>10; /* ~4 px per S-curve step */
+ if(steps<2&&span_q8>=512)steps=2;
+ if(steps<1)steps=1;
+ if(steps>8)steps=8;
+
+ int len_q8=(int)tp->len_px*256;
+ int off_q8=(int)tp->off_px*256;
+ int tgt_w4=(int)tp->tgt_w4,tgt_cas4=(int)tp->tgt_cas4;
+ int tgt_slot=(int)tp->tgt_slot,cross_grp=(tp->flags&1);
+
+ int px=0,py=0,pw=0,pcas=0,pfa=32,pd=0;
+ for(int k=0;k<=steps;k++){
+  int t=k==steps?ib:(ia+(int)(((long long)span_q8*k)/steps));
+  int rel=t-s0_q8;
+  int bx=a->draw_x+(int)(((long long)(b->draw_x-a->draw_x)*rel)/seg_q8);
+  int by=a->draw_y+(int)(((long long)(b->draw_y-a->draw_y)*rel)/seg_q8);
+  int bw=(int)a->eff_w4+(int)(((long long)((int)b->eff_w4-(int)a->eff_w4)*rel)/seg_q8);
+  int bc=(int)a->eff_cas4+(int)(((long long)((int)b->eff_cas4-(int)a->eff_cas4)*rel)/seg_q8);
+  int d_q8=end_idx==0?(off_q8+t):(off_q8+(total_q8-t));
+  int S=road_smoothstep_q8(d_q8,len_q8);
+  int w4=tgt_w4+(((bw-tgt_w4)*S+128)>>8);
+  int cas4=tgt_cas4+(((bc-tgt_cas4)*S+128)>>8);
+  int sx=bx+(((int)tp->dx_q8*(256-S)+128)>>8);
+  int sy=by+(((int)tp->dy_q8*(256-S)+128)>>8);
+  int fa=(S*32+128)>>8;
+  if(k>0){
+   int caps=3;
+   if(is_casing&&cross_grp){
+    if(pd==0)caps&=~1;
+    if(d_q8==0)caps&=~2;
+   }
+   /* For the colour-fade overlay, keep a round cap only on the higher-alpha
+    * end (filling outer bend wedges invisibly) and use a half-px padded butt
+    * cap on the lower-alpha end so wide round caps never ring into the fade. */
+   int fade_caps=end_idx==0?(2|4):(1|8);
+   if(is_casing&&cross_grp){
+    if(pd==0)fade_caps&=~(1|4);
+    if(d_q8==0)fade_caps&=~(2|8);
+   }
+   road_draw_taper_piece(px,py,sx,sy,pw,w4,pcas,cas4,pfa,fa,slot,tgt_slot,is_casing,caps,fade_caps);
+  }
+  px=sx;py=sy;pw=w4;pcas=cas4;pfa=fa;pd=d_q8;
+ }
+}
+
+static void road_draw_poly_pass(const struct RoadPoly*rp,int is_casing){
+ int slot=rp->slot,f=rp->first,cnt=rp->count;
+ u16 col=is_casing?road_casing_colours[slot]:road_colours[slot];
+ int has0=(rp->taper[0].tgt_w4!=0),has1=(rp->taper[1].tgt_w4!=0);
+ map_mask_select(slot);
+ if(!has0&&!has1){
+  for(int i=1;i<cnt;i++){
+   if(!(i&7))render_checkpoint();
+   const struct RoadVert*a=&road_verts[f+i-1],*b=&road_verts[f+i];
+   if(is_casing){
+    if(!a->eff_cas4&&!b->eff_cas4)continue;
+    map_line_q8_taper(a->draw_x,a->draw_y,b->draw_x,b->draw_y,col,
+                      (int)a->eff_w4+(int)a->eff_cas4*2,
+                      (int)b->eff_w4+(int)b->eff_cas4*2,32,32,3);
+   }else{
+    map_line_q8_taper(a->draw_x,a->draw_y,b->draw_x,b->draw_y,col,
+                      (int)a->eff_w4,(int)b->eff_w4,32,32,3);
+   }
+  }
+  return;
+ }
+
+ int total_q8=0;
+ for(int i=1;i<cnt;i++){
+  const struct RoadVert*a=&road_verts[f+i-1],*b=&road_verts[f+i];
+  total_q8+=road_seg_len_q8(a->draw_x,a->draw_y,b->draw_x,b->draw_y);
+ }
+ if(total_q8<=0)return;
+ int b0=has0?((int)rp->taper[0].len_px-(int)rp->taper[0].off_px)*256:0;
+ int b1=has1?(total_q8-((int)rp->taper[1].len_px-(int)rp->taper[1].off_px)*256):total_q8;
+ if(b0<0)b0=0;if(b0>total_q8)b0=total_q8;
+ if(b1<b0)b1=b0;if(b1>total_q8)b1=total_q8;
+ int fade0=has0&&((int)rp->taper[0].tgt_slot<slot)&&(!is_casing||road_casing_colours[rp->taper[0].tgt_slot]!=road_casing_colours[slot]);
+ int fade1=has1&&((int)rp->taper[1].tgt_slot<slot)&&(!is_casing||road_casing_colours[rp->taper[1].tgt_slot]!=road_casing_colours[slot]);
+
+ int s_q8=0;
+ for(int i=1;i<cnt;i++){
+  if(!(i&7))render_checkpoint();
+  const struct RoadVert*a=&road_verts[f+i-1],*b=&road_verts[f+i];
+  int seg_q8=road_seg_len_q8(a->draw_x,a->draw_y,b->draw_x,b->draw_y);
+  int s0=s_q8,s1=s_q8+seg_q8;
+  s_q8=s1;
+  if(seg_q8<=0)continue;
+  /* Sub-interval 1: inside taper[0] [s0, min(s1, b0)] */
+  if(has0&&s0<b0){
+   int ib=s1<b0?s1:b0;
+   road_draw_taper_span(a,b,s0,seg_q8,total_q8,s0,ib,&rp->taper[0],0,slot,is_casing);
+  }
+  /* Sub-interval 2: untapered middle [max(s0, b0), min(s1, b1)] */
+  int ma=s0>b0?s0:b0,mb=s1<b1?s1:b1;
+  if(ma<mb){
+   int ra=ma-s0,rb=mb-s0;
+   int x0=ra==0?a->draw_x:a->draw_x+(int)(((long long)(b->draw_x-a->draw_x)*ra)/seg_q8);
+   int y0=ra==0?a->draw_y:a->draw_y+(int)(((long long)(b->draw_y-a->draw_y)*ra)/seg_q8);
+   int x1=rb==seg_q8?b->draw_x:a->draw_x+(int)(((long long)(b->draw_x-a->draw_x)*rb)/seg_q8);
+   int y1=rb==seg_q8?b->draw_y:a->draw_y+(int)(((long long)(b->draw_y-a->draw_y)*rb)/seg_q8);
+   int w0=(int)a->eff_w4+(int)(((long long)((int)b->eff_w4-(int)a->eff_w4)*ra)/seg_q8);
+   int w1=(int)a->eff_w4+(int)(((long long)((int)b->eff_w4-(int)a->eff_w4)*rb)/seg_q8);
+   int c0=(int)a->eff_cas4+(int)(((long long)((int)b->eff_cas4-(int)a->eff_cas4)*ra)/seg_q8);
+   int c1=(int)a->eff_cas4+(int)(((long long)((int)b->eff_cas4-(int)a->eff_cas4)*rb)/seg_q8);
+   int mid_caps=3;
+   if(fade0&&ma==b0)mid_caps=(mid_caps&~1)|4;
+   if(fade1&&mb==b1)mid_caps=(mid_caps&~2)|8;
+   map_mask_select(slot);
+   if(is_casing){
+    if(c0>0||c1>0)map_line_q8_taper(x0,y0,x1,y1,col,w0+c0*2,w1+c1*2,32,32,mid_caps);
+   }else{
+    map_line_q8_taper(x0,y0,x1,y1,col,w0,w1,32,32,mid_caps);
+   }
+  }
+  /* Sub-interval 3: inside taper[1] [max(s0, b1), s1] */
+  if(has1&&s1>b1){
+   int ia=s0>b1?s0:b1;
+   road_draw_taper_span(a,b,s0,seg_q8,total_q8,ia,s1,&rp->taper[1],1,slot,is_casing);
+  }
+ }
+}
+
 static void road_draw_group(int motorways_only){
  /* Pass A: subtle kerb casings into the 6-class coverage buffer (zero blobs). */
  map_mask_begin(MAP_MASK_CASING);
  for(int p=0;p<road_npolys;p++){
-  struct RoadPoly*rp=&road_polys[p];
+  const struct RoadPoly*rp=&road_polys[p];
   if((rp->cls==1)!=motorways_only)continue;
-  map_mask_select(rp->slot);
-  u16 ccol=road_casing_colours[rp->slot];
-  int f=rp->first,cnt=rp->count;
-  for(int i=1;i<cnt;i++){
-   if(!(i&7))render_checkpoint();
-   struct RoadVert*a=&road_verts[f+i-1],*b=&road_verts[f+i];
-   int cas4=((int)a->eff_cas4+(int)b->eff_cas4+1)>>1;
-   if(cas4<=0)continue;
-   int wid4=(((int)a->eff_w4+(int)b->eff_w4+1)>>1)+cas4*2;
-   map_line_q8_w4(a->draw_x,a->draw_y,b->draw_x,b->draw_y,ccol,wid4);
-  }
+  road_draw_poly_pass(rp,1);
  }
  map_mask_end();
 
  /* Pass B: carriageway fills over casings (seamless junction mouths). */
  map_mask_begin(1);
  for(int p=0;p<road_npolys;p++){
-  struct RoadPoly*rp=&road_polys[p];
+  const struct RoadPoly*rp=&road_polys[p];
   if((rp->cls==1)!=motorways_only)continue;
-  map_mask_select(rp->slot);
-  u16 fcol=road_colours[rp->slot];
-  int f=rp->first,cnt=rp->count;
-  for(int i=1;i<cnt;i++){
-   if(!(i&7))render_checkpoint();
-   struct RoadVert*a=&road_verts[f+i-1],*b=&road_verts[f+i];
-   int wid4=((int)a->eff_w4+(int)b->eff_w4+1)>>1;
-   map_line_q8_w4(a->draw_x,a->draw_y,b->draw_x,b->draw_y,fcol,wid4);
-  }
+  road_draw_poly_pass(rp,0);
  }
  map_mask_end();
 }
@@ -513,6 +878,7 @@ static void road_pass_end(void){
  if(road_thin_open){map_mask_end();road_thin_open=0;}
  if(!road_npolys)return;
  road_pass_solve();
+ road_solve_transitions();
  road_draw_group(0);
  if(road_has_motorway)road_draw_group(1);
 }

@@ -193,6 +193,222 @@ static void parallel_road_expansion(void){
   assert(fb[100*W+(road_verts[road_polys[1].first].draw_x>>8)]==road_colours[3]);
   puts("Cartographic road layout: wide Q4 symmetry, priority main-first expansion, outward minor-road displacement, cross-street neutrality and dual-carriageway medians passed.");
 }
+static int column_non_bg_span(int x,int y0,int y1){
+  int lo=-1,hi=-1;
+  for(int y=y0;y<=y1;y++)if(fb[y*W+x]!=C_MAP_BG){if(lo<0)lo=y;hi=y;}
+  return lo<0?0:(hi-lo+1);
+}
+static void road_end_to_end_transitions(void){
+  static u16 ref_fb[FB_PIX];
+  /* 1. Tapered capsule rasterizer is bit-exact endpoint-order symmetric across
+   * widths, diagonals, butt caps, padded seams and axial alpha ramps. */
+  const struct {int x0,y0,x1,y1,w0,w1,a0,a1,caps;} cases[]={
+    {60*256+17,110*256+33,220*256+91,110*256+33,448,160,32,32,3},
+    {150*256+40,40*256+11,150*256+40,210*256+199,512,200,32,0,1|8},
+    {80*256+77,60*256+15,240*256+211,185*256+43,360,120,24,8,2|4},
+    {90*256+5,190*256+88,260*256+140,70*256+200,280,520,32,32,0},
+    {120*256,120*256,190*256,145*256,568,264,32,32,1},
+  };
+  for(unsigned k=0;k<sizeof(cases)/sizeof(cases[0]);k++){
+    int swap_caps=((cases[k].caps&1)<<1)|((cases[k].caps&2)>>1)|((cases[k].caps&4)<<1)|((cases[k].caps&8)>>1);
+    apply_palette(1);fill(0,0,W,H,C_MAP_BG);
+    map_mask_begin(1);map_mask_select(4);
+    map_line_q8_taper(cases[k].x0,cases[k].y0,cases[k].x1,cases[k].y1,road_colours[4],
+                      cases[k].w0,cases[k].w1,cases[k].a0,cases[k].a1,cases[k].caps);
+    map_mask_end();memcpy(ref_fb,fb,sizeof(fb));
+    fill(0,0,W,H,C_MAP_BG);
+    map_mask_begin(1);map_mask_select(4);
+    map_line_q8_taper(cases[k].x1,cases[k].y1,cases[k].x0,cases[k].y0,road_colours[4],
+                      cases[k].w1,cases[k].w0,cases[k].a1,cases[k].a0,swap_caps);
+    map_mask_end();
+    assert(!memcmp(ref_fb,fb,sizeof(fb)));
+  }
+
+  /* 2. Primary (cls=3) -> Local (cls=6) end-to-end join smoothly tapers width
+   * monotonically and blends colour across the funnel with zero bulbous step. */
+  for(int night=0;night<2;night++)for(int z=8;z<=9;z++){
+    scene(128,65,z,night,0,0);fill(0,0,W,H,C_MAP_BG);
+    int x1[2]={40*256,220*256},y1[2]={120*256,120*256};
+    int x2[2]={220*256,380*256},y2[2]={120*256,120*256};
+    road_pass_begin(z);
+    road_pass_add(x1,y1,2,3);
+    road_pass_add(x2,y2,2,6);
+    road_pass_end();
+    assert(road_npolys==2);
+    assert(road_polys[0].taper[1].tgt_w4>0);
+    assert(road_polys[0].taper[1].tgt_slot==0);
+    assert(road_polys[1].taper[0].tgt_w4==0&&road_polys[1].taper[1].tgt_w4==0);
+    int w_main=column_non_bg_span(100,60,180);
+    int w_mid=column_non_bg_span(220-(int)road_polys[0].taper[1].len_px/2,60,180);
+    int w_join=column_non_bg_span(220,60,180);
+    int w_minor=column_non_bg_span(300,60,180);
+    assert(w_main>w_mid&&w_mid>w_join);
+    assert(w_join<=w_minor+1&&w_join>=w_minor-1);
+    /* Colour transitions smoothly from Primary to Local with intermediate blend pixels. */
+    assert(fb[120*W+100]==road_colours[3]);
+    assert(fb[120*W+220]==road_colours[0]);
+    int saw_blend=0,tlen=(int)road_polys[0].taper[1].len_px;
+    for(int x=220-tlen+1;x<220;x++){
+      u16 px=fb[120*W+x];
+      if(px!=road_colours[3]&&px!=road_colours[0]){saw_blend=1;break;}
+    }
+    assert(saw_blend);
+  }
+
+  /* 3. Motorway (cls=1) -> Local (cls=6) end-to-end join smoothly tapers across
+   * render groups and never slices a dark motorway casing bar across the local road. */
+  for(int night=0;night<2;night++){
+    scene(128,65,9,night,0,0);fill(0,0,W,H,C_MAP_BG);
+    int x1[2]={40*256,220*256},y1[2]={130*256,130*256};
+    int x2[2]={220*256,380*256},y2[2]={130*256,130*256};
+    road_pass_begin(9);
+    road_pass_add(x1,y1,2,1);
+    road_pass_add(x2,y2,2,6);
+    road_pass_end();
+    assert((road_polys[0].taper[1].flags&1)!=0);
+    assert(fb[130*W+100]==road_colours[5]);
+    /* At and past the join, centerline must stay pure Local fill (zero casing bar). */
+    for(int x=220;x<=260;x++)assert(fb[130*W+x]==road_colours[0]);
+    int w_join=column_non_bg_span(220,70,190),w_minor=column_non_bg_span(300,70,190);
+    assert(w_join<=w_minor+1&&w_join>=w_minor-1);
+  }
+
+  /* 4. Point-to-segment detection (wide Primary dead-ending into simplified Local),
+   * plus negative checks: cul-de-sac, closed roundabout seam, continuous T-junction,
+   * and motorway flyover must not spuriously taper. */
+  scene(128,65,8,1,0,0);fill(0,0,W,H,C_MAP_BG);
+  road_pass_begin(8);
+  /* Poly 0 & 1: wide Primary dead-ending onto midpoint of long Local street */
+  {int x1[2]={40*256,120*256},y1[2]={80*256,80*256};
+   int x2[2]={120*256,120*256},y2[2]={30*256,130*256};
+   road_pass_add(x1,y1,2,3);road_pass_add(x2,y2,2,6);}
+  /* Poly 2: unconnected Primary cul-de-sac */
+  {int x1[2]={40*256,120*256},y1[2]={180*256,180*256};
+   road_pass_add(x1,y1,2,3);}
+  /* Poly 3 & 4: closed Primary roundabout loop + Local exit right at seam vertex 0 */
+  {int rx[5]={240*256,280*256,280*256,240*256,240*256};
+   int ry[5]={60*256,60*256,100*256,100*256,60*256};
+   int lx[2]={240*256,200*256},ly[2]={60*256,60*256};
+   road_pass_add(rx,ry,5,3);road_pass_add(lx,ly,2,6);}
+  /* Poly 5, 6, 7: continuous Primary T-junction with minor side road */
+  {int xa[2]={200*256,270*256},xb[2]={270*256,340*256},yh[2]={180*256,180*256};
+   int xc[2]={270*256,270*256},yc[2]={180*256,230*256};
+   road_pass_add(xa,yh,2,3);road_pass_add(xb,yh,2,3);road_pass_add(xc,yc,2,6);}
+  /* Poly 8 & 9: Motorway flyover crossing over Primary */
+  {int xm[2]={420*256,420*256},ym[2]={30*256,220*256};
+   int xp[2]={380*256,460*256},yp[2]={120*256,120*256};
+   road_pass_add(xm,ym,2,1);road_pass_add(xp,yp,2,3);}
+  road_pass_end();
+  assert(road_npolys==10);
+  assert(road_polys[0].taper[1].tgt_w4>0);  /* dead-end into narrow Local tapers */
+  assert(road_polys[2].taper[0].tgt_w4==0&&road_polys[2].taper[1].tgt_w4==0); /* cul-de-sac */
+  assert(road_polys[3].taper[0].tgt_w4==0&&road_polys[3].taper[1].tgt_w4==0); /* roundabout loop */
+  assert(road_polys[5].taper[1].tgt_w4==0&&road_polys[6].taper[0].tgt_w4==0); /* continuous T-junction */
+  assert(road_polys[8].taper[0].tgt_w4==0&&road_polys[8].taper[1].tgt_w4==0); /* motorway flyover */
+  assert(fb[120*W+420]==road_colours[5]);   /* motorway remains elevated over primary */
+  puts("Cartographic road transitions: tapered-capsule symmetry, S-curve width/colour funnels, cross-group motorway joins and topology guards passed.");
+}
+static void label_hysteresis_and_anchoring(void){
+  /* 1. Competition hysteresis & re-entry debounce on Z6 (capped at 6 labels). */
+  hud_capture_clock=1;hud_capture_ms=20000;
+  scene(1000,1000,6,1,1,0);label_track_reset();
+  const char*names[7]={"Alpha Rd","Bravo Rd","Charlie Rd","Delta Rd","Echo Rd","Foxtrot Rd","Golf Rd"};
+  const int xs[7]={90,190,300,390,110,360,240};
+  const int ys[7]={130,130,130,130,175,175,92};
+  drive_label_prepare(6);nlbox=nltxt=0;
+  for(int i=0;i<7;i++)drive_label_offer_geo(xs[i],ys[i],1000+i*10,1000+i*10,1,2,48,names[i]);
+  drive_label_render(6);
+  assert(nltxt==DRIVE_ROAD_LABELS);
+  assert(label_text_seen("Alpha Rd")&&!label_text_seen("Golf Rd"));
+
+  /* Frame 2 (+100 ms): Golf Rd moves right beside the car sweet spot (better raw
+   * score than Alpha Rd), yet active hysteresis preserves Alpha Rd with zero flicker. */
+  hud_capture_ms+=100;
+  drive_label_prepare(6);nlbox=nltxt=0;
+  for(int i=0;i<6;i++)drive_label_offer_geo(xs[i],ys[i],1000+i*10,1000+i*10,1,2,48,names[i]);
+  drive_label_offer_geo(240,165,1060,1060,1,2,48,"Golf Rd");
+  drive_label_render(6);
+  assert(nltxt==DRIVE_ROAD_LABELS);
+  assert(label_text_seen("Alpha Rd")&&!label_text_seen("Golf Rd"));
+
+  /* Frame 3 (+100 ms): Alpha Rd exits screen -> Golf Rd cleanly takes the vacancy. */
+  hud_capture_ms+=100;
+  drive_label_prepare(6);nlbox=nltxt=0;
+  for(int i=1;i<6;i++)drive_label_offer_geo(xs[i],ys[i],1000+i*10,1000+i*10,1,2,48,names[i]);
+  drive_label_offer_geo(240,165,1060,1060,1,2,48,"Golf Rd");
+  drive_label_render(6);
+  assert(label_text_seen("Golf Rd")&&!label_text_seen("Alpha Rd"));
+
+  /* Frame 4 (+200 ms, within cooldown): Alpha Rd jitters back inside -> debounced! */
+  hud_capture_ms+=200;
+  drive_label_prepare(6);nlbox=nltxt=0;
+  drive_label_offer_geo(90,130,1000,1000,1,2,48,"Alpha Rd");
+  drive_label_render(6);
+  assert(!label_text_seen("Alpha Rd"));
+
+  /* Frame 5 (+1300 ms, past cooldown): Alpha Rd is cleanly eligible again. */
+  hud_capture_ms+=1300;
+  drive_label_prepare(6);nlbox=nltxt=0;
+  drive_label_offer_geo(90,130,1000,1000,1,2,48,"Alpha Rd");
+  drive_label_render(6);
+  assert(label_text_seen("Alpha Rd"));
+
+  /* 2. Same-road multi-point anchor lock on Z6: once locked to Point A, Point B
+   * having a better raw score must not teleport the road name along the road. */
+  label_track_reset();hud_capture_ms+=100;
+  drive_label_prepare(6);nlbox=nltxt=0;
+  drive_label_offer_geo(200,175,1100,1200,1,2,48,"High Street"); /* Point A (wins) */
+  drive_label_offer_geo(360,115,1500,1600,1,2,48,"High Street"); /* Point B */
+  drive_label_render(6);
+  struct LabelTrack*tr=label_track_find("High Street");
+  assert(tr&&tr->active&&tr->lat4==1100*16&&tr->lon4==1200*16);
+
+  hud_capture_ms+=100;
+  drive_label_prepare(6);nlbox=nltxt=0;
+  drive_label_offer_geo(140,194,1100,1200,1,2,48,"High Street"); /* Point A drifted */
+  drive_label_offer_geo(240,175,1500,1600,1,2,48,"High Street"); /* Point B closer to sweet spot */
+  drive_label_render(6);
+  tr=label_track_find("High Street");
+  assert(tr&&tr->active&&tr->lat4==1100*16&&tr->lon4==1200*16&&tr->last_x==140&&tr->last_y==194);
+
+  /* 3. Close-zoom (Z8) world-anchored geometry locking: as the car drives along
+   * a road with heading jitter, the locked Q4 world anchor and side remain fixed. */
+  static const char king[]="King Street";
+  struct Tile tile={.lvl=6,.data={1,0,0,0,1,0,0,0,0,6,2,0}};
+  point(tile.data+12,0,128,2200);point(tile.data+12,1,3968,2200);
+  tile.data[24]=sizeof(king)-1;
+  memcpy(tile.data+25,king,sizeof(king)-1);
+  tile.len=25+sizeof(king)-1;
+
+  scene(128,128,8,1,1,0);track_lat4=128*16;track_lon4=128*16;
+  label_track_reset();hud_capture_ms+=100;
+  perspective_scale_update();drive_label_prepare(8);
+  fill(0,0,W,H,C_MAP_BG);road_pass_begin(8);draw_tile_geometry(&tile,8,MAP_DRAW_ROADS);road_pass_end();
+  nlbox=nltxt=0;drive_label_render(8);
+  tr=label_track_find(king);
+  assert(tr&&tr->active&&tr->has_geo&&tr->cropped);
+  s32 locked_lat4=tr->lat4,locked_lon4=tr->lon4;
+  signed char locked_side=tr->side;
+  u8 locked_vert=tr->vertical;
+  for(int step=1;step<=4;step++){
+    hud_capture_ms+=100;
+    gps.lat=track_lat=cam_lat=128+step*2;track_lat4=gps.lat*16;
+    gps.course=track_course=display_course=(step&1)?2:358;
+    perspective_scale_update();drive_label_prepare(8);
+    fill(0,0,W,H,C_MAP_BG);road_pass_begin(8);draw_tile_geometry(&tile,8,MAP_DRAW_ROADS);road_pass_end();
+    nlbox=nltxt=0;drive_label_render(8);
+    tr=label_track_find(king);
+    assert(tr&&tr->active&&tr->lat4==locked_lat4&&tr->lon4==locked_lon4);
+    assert(tr->side==locked_side&&tr->vertical==locked_vert);
+  }
+
+  /* 4. Context reset: zoom change cleanly clears stale tracks. */
+  hud_capture_ms+=100;
+  drive_label_prepare(7);
+  assert(nlabel_tracks==0);
+  hud_capture_clock=0;
+  puts("Road label stability: competition hysteresis, re-entry debounce, multi-point anchor locking, close-zoom Q4 world anchoring and context reset passed.");
+}
 int main(int argc,char**argv){
   /* Style lookup and packed coverage must agree in both palettes at all zooms.
    * Widths increase monotonically across road classes and zoom tiers. */
@@ -217,6 +433,8 @@ int main(int argc,char**argv){
     }
   }
   parallel_road_expansion();
+  road_end_to_end_transitions();
+  label_hysteresis_and_anchoring();
   cropped_labels();
   unsigned failures=synthetic();
   if(argc>1){

@@ -283,6 +283,197 @@ static void map_line_q8_w4(int x0,int y0,int x1,int y1,u16 c,int wid_q4){
   if(begin<end){if(steep)map_solid(begin,major,end-begin,1,c);else map_solid(major,begin,1,end-begin,c);}
  }
 }
+/* Continuous tapered capsule stroke: exact convex hull of circles (x0,y0,w0/2)
+ * and (x1,y1,w1/2) with optional axial alpha ramp (a0..a1 in 0..32) and
+ * independent round/butt endcaps (caps bit 0 = P0, bit 1 = P1).
+ * Fast solid spans in the interior; zero divisions inside the pixel loop. */
+static void map_line_q8_taper(int x0,int y0,int x1,int y1,u16 c,int w0_q4,int w1_q4,int a0,int a1,int caps){
+ if(a0<=0&&a1<=0)return;
+ if(a0<0)a0=0;if(a0>32)a0=32;
+ if(a1<0)a1=0;if(a1>32)a1=32;
+ if(w0_q4<12)w0_q4=12;if(w0_q4>768)w0_q4=768;
+ if(w1_q4<12)w1_q4=12;if(w1_q4>768)w1_q4=768;
+ int dw_q4=w1_q4-w0_q4;
+ if(dw_q4>=-2&&dw_q4<=2&&a0==32&&a1==32&&caps==3){map_line_q8_w4(x0,y0,x1,y1,c,(w0_q4+w1_q4+1)>>1);return;}
+ if(!MAP_ANTIALIAS){line1(x0>>8,y0>>8,x1>>8,y1>>8,c,(w0_q4+w1_q4+16)>>5);return;}
+ int r0_q8=w0_q4*8,r1_q8=w1_q4*8;
+ int rmax=r0_q8>r1_q8?r0_q8:r1_q8;
+ int cap_max=(rmax+383)>>8,bleed=(cap_max+4)*256;
+ if((x0< -bleed&&x1< -bleed)||(x0>W*256+bleed&&x1>W*256+bleed)||
+    (y0<MAP_TOP*256-bleed&&y1<MAP_TOP*256-bleed)||
+    (y0>MAP_BOTTOM*256+bleed&&y1>MAP_BOTTOM*256+bleed))return;
+ int dx=x1-x0,dy=y1-y0;
+ int adx=dx<0?-dx:dx,ady=dy<0?-dy:dy;
+ int steep=ady>adx;
+ if(steep){int t=x0;x0=y0;y0=t;t=x1;x1=y1;y1=t;}
+ if(x0>x1){
+  int t=x0;x0=x1;x1=t;t=y0;y0=y1;y1=t;
+  t=w0_q4;w0_q4=w1_q4;w1_q4=t;t=r0_q8;r0_q8=r1_q8;r1_q8=t;
+  t=a0;a0=a1;a1=t;
+  caps=((caps&1)<<1)|((caps&2)>>1)|((caps&4)<<1)|((caps&8)>>1);
+ }
+ dx=x1-x0;dy=y1-y0;
+ if(!dx){
+  if(!caps)return;
+  int ma=a0>a1?a0:a1;
+  if(ma==32){if(steep)map_dot_q8_r(y0,x0,c,rmax);else map_dot_q8_r(x0,y0,c,rmax);return;}
+  int r=(rmax+383)>>8,cx=x0>>8,cy=y0>>8;
+  for(int j=-r;j<=r;j++)for(int i=-r;i<=r;i++){
+   int cov=map_round_coverage_q8_r((cx+i)*256-x0,(cy+j)*256-y0,rmax);
+   cov=(cov*ma+16)>>5;
+   if(!cov)continue;
+   if(steep)map_blend(cy+j,cx+i,c,cov);else map_blend(cx+i,cy+j,c,cov);
+  }
+  return;
+ }
+ s32 sx=dx,sy=dy;int sh=0;
+ while(sx>32767||sy>32767||sy<-32767){sx>>=1;sy>>=1;sh++;}
+ u32 L_q8=isqrt32((u32)((long long)sx*sx+(long long)sy*sy))<<sh;
+ if(!L_q8)L_q8=1;
+ int dr=r1_q8-r0_q8,adr=dr<0?-dr:dr;
+ if((u32)adr>=L_q8&&caps==3&&a0==32&&a1==32){
+  int gx=r0_q8>=r1_q8?x0:x1,gy=r0_q8>=r1_q8?y0:y1;
+  if(steep)map_dot_q8_r(gy,gx,c,rmax);else map_dot_q8_r(gx,gy,c,rmax);
+  return;
+ }
+ int ux=(int)(((long long)dx*16384+(s32)(L_q8>>1))/(s32)L_q8);
+ int uy=(int)(((long long)dy*16384+(dy>=0?(s32)(L_q8>>1):-(s32)(L_q8>>1)))/(s32)L_q8);
+ int s=(int)(((long long)dr*16384)/(s32)L_q8);
+ if(s>16000)s=16000;if(s<-16000)s=-16000;
+ int c_t=(int)isqrt32((u32)(16384*16384-s*s));
+ int Lc_q8=(int)(((long long)L_q8*c_t)>>14);
+ int ntx=(int)((-(long long)s*ux-(long long)c_t*uy)>>14);
+ int nty=(int)((-(long long)s*uy+(long long)c_t*ux)>>14);
+ int nbx=(int)((-(long long)s*ux+(long long)c_t*uy)>>14);
+ int nby=(int)((-(long long)s*uy-(long long)c_t*ux)>>14);
+
+ int cap0=(r0_q8+383)>>8,cap1=(r1_q8+383)>>8;
+ int first=(x0>>8)-cap0,last=(x1>>8)+cap1;
+ int majorlo=steep?MAP_TOP:0,majorhi=steep?MAP_BOTTOM-1:W-1;
+ int minorlo=steep?0:MAP_TOP,minorhi=steep?W-1:MAP_BOTTOM-1;
+ if(first<majorlo)first=majorlo;if(last>majorhi)last=majorhi;if(first>last)return;
+
+ int slope=map_ratio_q16((u32)(dy<0?-dy:dy),(u32)dx),step=dy<0?-slope:slope;
+ long long pos=(long long)y0*256+(((long long)first*256-x0)*step>>8);
+ int max_band=rmax*362+65536;
+
+ int fast_mid=(nty>=2048&&nby<=-2048&&a0==32&&a1==32);
+ int mid_first=last+1,mid_last=first-1;
+ long long pos_top=0,pos_bot=0;
+ s32 step_top=0,step_bot=0,band_top=0,band_bot=0;
+ if(fast_mid){
+  int anby=-nby;
+  mid_first=((x0+r0_q8+384)>>8)+1;
+  mid_last=((x1-r1_q8-384)>>8)-1;
+  if(mid_first<first)mid_first=first;
+  if(mid_last>last)mid_last=last;
+  if(mid_first<=mid_last){
+   step_top=-(s32)(((long long)ntx*65536)/nty);
+   step_bot=(s32)(((long long)nbx*65536)/anby);
+   band_top=(s32)((65536LL*16384)/nty);
+   band_bot=(s32)((65536LL*16384)/anby);
+   long long px0=(long long)mid_first*256-x0;
+   pos_top=(long long)y0*256+(((long long)(r0_q8+128)*16384-px0*ntx)*256)/nty;
+   pos_bot=(long long)y0*256+((px0*nbx-(long long)(r0_q8+128)*16384)*256)/anby;
+  }
+ }
+
+ int do_fade=(a0!=32||a1!=32);
+ int hi_a=a0>a1?a0:a1;
+ s32 a_slope_q16=do_fade?(s32)(((long long)(a1-a0)*65536)/(s32)L_q8):0;
+ int outer0=r0_q8+128,inner0=r0_q8>128?r0_q8-128:0;
+ u32 outer0_2=(u32)outer0*(u32)outer0,inner0_2=(u32)inner0*(u32)inner0;
+ int outer1=r1_q8+128,inner1=r1_q8>128?r1_q8-128:0;
+ u32 outer1_2=(u32)outer1*(u32)outer1,inner1_2=(u32)inner1*(u32)inner1;
+ long long along_step=(long long)uy*256,perp_step=(long long)ux*256;
+
+ for(int major=first;major<=last;major++,pos+=step){
+  if(fast_mid&&major>=mid_first&&major<=mid_last){
+   int bot_lo=(int)(pos_bot>>16)-1,bot_hi=(int)((pos_bot+band_bot)>>16)+1;
+   int top_lo=(int)((pos_top-band_top)>>16),top_hi=(int)(pos_top>>16)+1;
+   pos_top+=step_top;pos_bot+=step_bot;
+   if(top_hi<minorlo||bot_lo>minorhi)continue;
+   s32 px=major*256-x0;
+   long long tbase=(long long)px*ntx,bbase=(long long)px*nbx;
+   if(bot_hi<=top_lo){
+    int f0=bot_lo<minorlo?minorlo:bot_lo,f1=bot_hi-1>minorhi?minorhi:bot_hi-1;
+    for(int m=f0;m<=f1;m++){
+     int sd=(int)((bbase+(long long)(m*256-y0)*nby)>>14)-r0_q8;
+     if(sd>=128)continue;
+     int cov=sd<=-128?32:((128-sd+4)>>3);if(cov>32)cov=32;
+     if(steep)map_blend(m,major,c,cov);else map_blend(major,m,c,cov);
+    }
+    int s0=bot_hi<minorlo?minorlo:bot_hi,s1=top_lo+1>minorhi+1?minorhi+1:top_lo+1;
+    if(s0<s1){if(steep)map_solid(s0,major,s1-s0,1,c);else map_solid(major,s0,1,s1-s0,c);}
+    int g0=top_lo+1<minorlo?minorlo:top_lo+1,g1=top_hi>minorhi?minorhi:top_hi;
+    for(int m=g0;m<=g1;m++){
+     int sd=(int)((tbase+(long long)(m*256-y0)*nty)>>14)-r0_q8;
+     if(sd>=128)continue;
+     int cov=sd<=-128?32:((128-sd+4)>>3);if(cov>32)cov=32;
+     if(steep)map_blend(m,major,c,cov);else map_blend(major,m,c,cov);
+    }
+   }else{
+    int f0=bot_lo<minorlo?minorlo:bot_lo,f1=top_hi>minorhi?minorhi:top_hi;
+    for(int m=f0;m<=f1;m++){
+     s32 py=m*256-y0;
+     int sb=(int)((bbase+(long long)py*nby)>>14)-r0_q8;
+     int st=(int)((tbase+(long long)py*nty)>>14)-r0_q8;
+     int sd=sb>st?sb:st;
+     if(sd>=128)continue;
+     int cov=sd<=-128?32:((128-sd+4)>>3);if(cov>32)cov=32;
+     if(steep)map_blend(m,major,c,cov);else map_blend(major,m,c,cov);
+    }
+   }
+   continue;
+  }
+
+  /* Cap / fade / steep-taper column: exact 3-region uneven-capsule SDF. */
+  s32 qx=major*256;
+  long long pos_c=qx<x0?(long long)y0*256:(qx>x1?(long long)y1*256:pos);
+  if(pos_c<(long long)minorlo*65536-max_band||pos_c>(long long)minorhi*65536+max_band)continue;
+  int begin=(int)((pos_c-max_band)>>16),end=(int)((pos_c+max_band)>>16)+1;
+  if(begin<minorlo)begin=minorlo;if(end>minorhi)end=minorhi;
+  if(begin>end)continue;
+  s32 px=qx-x0,qx1=qx-x1;
+  s32 py=begin*256-y0,qy1=begin*256-y1;
+  long long along_q14=(long long)px*ux+(long long)py*uy;
+  long long perp_q14=-(long long)px*uy+(long long)py*ux;
+  for(int minor=begin;minor<=end;minor++,py+=256,qy1+=256,along_q14+=along_step,perp_q14+=perp_step){
+   s32 along=(s32)(along_q14>>14),perp=(s32)(perp_q14>>14);
+   s32 aperp=perp<0?-perp:perp;
+   s32 proj=(s32)(((long long)along*c_t+(long long)aperp*s)>>14);
+   int sd;
+   if(proj<=0&&(caps&1)){
+    if(px<=-outer0||px>=outer0||py<=-outer0||py>=outer0)continue;
+    u32 d2=(u32)((long long)px*px+(long long)py*py);
+    if(d2>=outer0_2)continue;
+    if(inner0>0&&d2<=inner0_2)sd=-256;
+    else sd=(int)isqrt32(d2)-r0_q8;
+   }else if(proj>=Lc_q8&&(caps&2)){
+    if(qx1<=-outer1||qx1>=outer1||qy1<=-outer1||qy1>=outer1)continue;
+    u32 d2=(u32)((long long)qx1*qx1+(long long)qy1*qy1);
+    if(d2>=outer1_2)continue;
+    if(inner1>0&&d2<=inner1_2)sd=-256;
+    else sd=(int)isqrt32(d2)-r1_q8;
+   }else{
+    sd=(int)(((-(long long)along*s+(long long)aperp*c_t)>>14)-r0_q8);
+   }
+   if(!(caps&1)){int csd=-along-((caps&4)?128:0);if(csd>sd)sd=csd;}
+   if(!(caps&2)){int csd=along-(int)L_q8-((caps&8)?128:0);if(csd>sd)sd=csd;}
+   if(sd>=128)continue;
+   int cov=sd<=-128?32:((128-sd+4)>>3);
+   if(cov>32)cov=32;
+   if(do_fade){
+    int ax=a0+(int)(((long long)a_slope_q16*along+32768)>>16);
+    if(ax>hi_a)ax=hi_a;
+    if(ax<=0)continue;
+    if(ax<32)cov=(cov*ax+16)>>5;
+   }
+   if(!cov)continue;
+   if(steep)map_blend(minor,major,c,cov);else map_blend(major,minor,c,cov);
+  }
+ }
+}
 static void map_line(int x0,int y0,int x1,int y1,u16 c,int wid){map_line_q8(x0*256,y0*256,x1*256,y1*256,c,wid);}
 /* RDP in bounded 255-point chunks: retain every visible bend, while
  * avoiding repeated round-cap work for dense collinear route/road geometry.

@@ -1497,7 +1497,7 @@ static void draw_closed_area(struct Tile*t,int span,int layer,int style,int np,c
     }
   }
 }
-static void crop_label_from_path(const int*x,const int*y,int n,int cls,const u8*meta);
+static void crop_label_from_path(const int*x,const int*y,int n,int cls,const u8*meta,const u8*pts,s32 base_lat4,s32 base_lon4,int viewz);
 static const u8* cpm_meta_start(struct Tile*t,u16*nm);
 static int crop_road_meta_offsets(struct Tile*t,u16 offsets[255]){
  u16 count=0;
@@ -1511,7 +1511,7 @@ static int crop_road_meta_offsets(struct Tile*t,u16 offsets[255]){
  return count;
 }
 static void draw_path(struct Tile*t,int span,int layer,int style,int np,const u8**pp,const u8*end,int viewz,const u8*meta){
- const u8*p=*pp;if(np<2||np>255||p+np*4>end){*pp=end;return;}u16 col;int wid;geom_style(layer,style,viewz,&col,&wid);
+ const u8*pts=*pp,*p=pts;if(np<2||np>255||p+np*4>end){*pp=end;return;}u16 col;int wid;geom_style(layer,style,viewz,&col,&wid);
  map_mask_select(layer==0?((style>=1&&style<=5)?6-style:0):(layer==1?0:(layer==2?1:2)));
  int x[255],y[255];
  s32 lon=(s32)t->tx*span,lat=(s32)t->ty*span;
@@ -1534,7 +1534,7 @@ static void draw_path(struct Tile*t,int span,int layer,int style,int np,const u8
  }else{
   map_stroke_polyline(x,y,np,col,wid);
  }
- if(meta)crop_label_from_path(x,y,np,style,meta);
+ if(meta)crop_label_from_path(x,y,np,style,meta,span==256?pts:0,lat*16,lon*16,viewz);
  *pp=p;
 }
 enum {MAP_DRAW_CONTEXT=0,MAP_DRAW_AREAS=1,MAP_DRAW_ROADS=2,MAP_DRAW_OCEAN=3};
@@ -1572,14 +1572,42 @@ static void draw_tile_geometry(struct Tile*t,int viewz,int pass){
 #define DRIVE_ROAD_LABELS 6
 #define MAP_POI_LABELS 16
 #define DRIVE_ROUTE_SEGS 128
-struct DriveLabel {char name[113];s16 x,y;u8 kind,prio,vertical;int score;};
+#define LABEL_TRACK_MAX 16
+#define LABEL_MIN_DWELL_MS 1500u
+#define LABEL_COOLDOWN_MS 1200u
+#define LABEL_ACTIVE_BONUS 640
+#define LABEL_DWELL_BONUS 900
+#define LABEL_ANCHOR_BONUS 512
+#define LABEL_COOLDOWN_PENALTY 640
+struct DriveLabel {
+ char name[113];
+ s32 lat4,lon4;
+ s16 x,y,seg_dx,seg_dy;
+ signed char pref_side;
+ u8 kind,prio,vertical,has_geo,was_active,anchor_locked;
+ int score;
+};
+struct LabelTrack {
+ char name[113];
+ s32 lat4,lon4;
+ s16 last_x,last_y;
+ u32 shown_ms,seen_ms,lost_ms;
+ signed char side;
+ u8 vertical,kind,prio,active,cropped,has_geo;
+};
 struct DriveRouteSeg {s16 x0,y0,x1,y1;};
 static struct DriveLabel drive_labels[DRIVE_LABEL_CANDIDATES];
+static struct LabelTrack label_tracks[LABEL_TRACK_MAX];
 static struct DriveRouteSeg drive_route_segs[DRIVE_ROUTE_SEGS];
-static int ndrive_labels=0,ndrive_route_segs=0;
+static int ndrive_labels=0,ndrive_route_segs=0,nlabel_tracks=0;
+static int label_track_zoom=-1,label_track_freecam=-1;
+static s32 label_track_vlat=0,label_track_vlon=0;
+static u32 label_track_now=0;
 static int drive_turn_valid=0,drive_turn_x=0,drive_turn_y=0;
 static int crop_car_valid,crop_car_x,crop_car_y;
+static void drive_label_offer_geo(int x,int y,s32 lat,s32 lon,int has_geo,int kind,int prio,const char*name);
 static void drive_label_offer(int x,int y,int kind,int prio,const char*name);
+static void label_track_reset(void);
 static void drive_label_prepare(int z);
 static void drive_label_render(int z);
 struct LBox{s16 x0,y0,x1,y1;};
@@ -1589,17 +1617,18 @@ static struct LBox lbox[LABEL_BOXES];static int nlbox=0;
 static char ltxt[LABEL_TEXTS][113];static int nltxt=0;
 static int label_text_seen(const char*s){for(int i=0;i<nltxt;i++)if(streq(ltxt[i],s))return 1;return 0;}
 static void label_text_add(const char*s){if(nltxt<LABEL_TEXTS)copystr(ltxt[nltxt++],sizeof(ltxt[0]),s);}
-static int label_space_free(int x0,int y0,int x1,int y1,int avoid_status){
- if(x0<4||x1>W-4||y1<MAP_TOP+3||y1>MAP_BOTTOM-3)return 0;
- if(x1>=350&&y0<=38)return 0; /* clock and temperature */
- if(!freecam&&y1>=HUD_BOTTOM_Y-2)return 0;
- if(freecam&&x1>=390&&y1>=HUD_BOTTOM_Y+5)return 0;
- if(avoid_status&&nav_card_w&&x1>=nav_card_x-3&&x0<=nav_card_x+nav_card_w+3&&y1>=nav_card_y-3&&y0<=nav_card_y+nav_card_h+3)return 0;
- for(int i=0;i<nlbox;i++)if(!(x1<lbox[i].x0||x0>lbox[i].x1||y1<lbox[i].y0||y0>lbox[i].y1))return 0;
+static int label_space_free_ex(int x0,int y0,int x1,int y1,int avoid_status,int extra_pad){
+ if(x0-extra_pad<4||x1+extra_pad>W-4||y0-extra_pad<MAP_TOP+3||y1+extra_pad>MAP_BOTTOM-3)return 0;
+ if(x1+extra_pad>=350&&y0-extra_pad<=38)return 0; /* clock and temperature */
+ if(!freecam&&y1+extra_pad>=HUD_BOTTOM_Y-2)return 0;
+ if(freecam&&x1+extra_pad>=390&&y1+extra_pad>=HUD_BOTTOM_Y+5)return 0;
+ if(avoid_status&&nav_card_w&&x1+extra_pad>=nav_card_x-3&&x0-extra_pad<=nav_card_x+nav_card_w+3&&y1+extra_pad>=nav_card_y-3&&y0-extra_pad<=nav_card_y+nav_card_h+3)return 0;
+ for(int i=0;i<nlbox;i++)if(!(x1+extra_pad<lbox[i].x0||x0-extra_pad>lbox[i].x1||y1+extra_pad<lbox[i].y0||y0-extra_pad>lbox[i].y1))return 0;
  if(nlbox<LABEL_BOXES){lbox[nlbox].x0=x0;lbox[nlbox].y0=y0;lbox[nlbox].x1=x1;lbox[nlbox].y1=y1;nlbox++;}
  return 1;
 }
-static int label_free(int x0,int y0,int x1,int y1){return label_space_free(x0,y0,x1,y1,1);}
+static int label_space_free(int x0,int y0,int x1,int y1,int avoid_status){return label_space_free_ex(x0,y0,x1,y1,avoid_status,0);}
+static int label_free(int x0,int y0,int x1,int y1){return label_space_free_ex(x0,y0,x1,y1,1,0);}
 static u16 label_color(int kind){if(kind==3)return C_CYAN;if(kind==4)return C_WHITE;if(kind==5)return C_MUTED;if(kind>=6)return C_WARN;if(kind==1)return C_WHITE;return C_MUTED;}
 static int trip_matches_poi(s32 lat,s32 lon);
 #include "poi_icons.h"
@@ -1652,7 +1681,7 @@ static void poi_reserve(void){
  }
 }
 static void poi_render(void){for(int i=0;i<poi_visible;i++)poi_icon_tinted(poi_labels[i].kind,poi_labels[i].x,poi_labels[i].y,poi_trip_tinted[i]);}
-static void draw_tile_labels(struct Tile*t,int viewz,int plo,int phi){if(!t)return;const u8*p=t->data,*end=t->data+t->len;int hs=8;if(t->len<(u32)hs)return;u16 ng=rd16(p),nl=rd16(p+2);p+=hs;for(u16 f=0;f<ng&&p+4<=end;f++){int np=p[2];p+=4+(unsigned)np*4;if(p>end)return;}int span=span_for_level((int)t->lvl);for(u16 i=0;i<nl&&p+8<=end;i++){if(!(i&15))render_checkpoint();int kind=p[0],prio=p[1];u16 lx=rd16(p+2),ly=rd16(p+4);int tl=p[6];p+=8;if(p+tl>end)return;if(((plo==256&&kind>=6)||(plo!=256&&kind<6&&prio>=plo&&prio<=phi))&&tl>0&&tl<113){char b[113];int n=tl;for(int j=0;j<n;j++)b[j]=(char)p[j];b[n]=0;s32 lon=(s32)t->tx*span+map_tile_offset(lx,(u32)span);s32 lat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);int x,y;world_to_screen(lat,lon,viewz,&x,&y);if(kind>=6){if(plo==256)poi_offer_at(x,y,kind,prio,lat,lon,1);}else if(plo!=256){if(!freecam)drive_label_offer(x,y,kind,prio,b);else{int w=textw(b,1),x0=x-w/2,y0=y-6;if(!label_text_seen(b)&&label_free(x0-2,y0-2,x0+w+2,y0+14)){u16 c=label_color(kind);text(x0+1,y0+1,b,C_BG,1);text(x0,y0,b,c,1);label_text_add(b);}}}}p+=tl;}}
+static void draw_tile_labels(struct Tile*t,int viewz,int plo,int phi){if(!t)return;const u8*p=t->data,*end=t->data+t->len;int hs=8;if(t->len<(u32)hs)return;u16 ng=rd16(p),nl=rd16(p+2);p+=hs;for(u16 f=0;f<ng&&p+4<=end;f++){int np=p[2];p+=4+(unsigned)np*4;if(p>end)return;}int span=span_for_level((int)t->lvl);for(u16 i=0;i<nl&&p+8<=end;i++){if(!(i&15))render_checkpoint();int kind=p[0],prio=p[1];u16 lx=rd16(p+2),ly=rd16(p+4);int tl=p[6];p+=8;if(p+tl>end)return;if(((plo==256&&kind>=6)||(plo!=256&&kind<6&&prio>=plo&&prio<=phi))&&tl>0&&tl<113){char b[113];int n=tl;for(int j=0;j<n;j++)b[j]=(char)p[j];b[n]=0;s32 lon=(s32)t->tx*span+map_tile_offset(lx,(u32)span);s32 lat=(s32)t->ty*span+map_tile_offset(ly,(u32)span);int x,y;world_to_screen(lat,lon,viewz,&x,&y);if(kind>=6){if(plo==256)poi_offer_at(x,y,kind,prio,lat,lon,1);}else if(plo!=256){if(!freecam)drive_label_offer_geo(x,y,lat,lon,1,kind,prio,b);else{int w=textw(b,1),x0=x-w/2,y0=y-6;if(!label_text_seen(b)&&label_free(x0-2,y0-2,x0+w+2,y0+14)){u16 c=label_color(kind);text(x0+1,y0+1,b,C_BG,1);text(x0,y0,b,c,1);label_text_add(b);}}}}p+=tl;}}
 
 /* CPM5 directional speed/flag pairs and UTF-8 street names. */
 struct RoadCtx {int valid,speed,reverse_speed;u8 speed_flags,reverse_flags;char street[113];};static struct RoadCtx roadctx;
@@ -2636,9 +2665,45 @@ static void draw_route_overlay(int z){
  * unlike map geometry the bitmap font is never stretched or rotated. */
 static int drive_iabs(int x){return x<0?-x:x;}
 static int drive_label_eq(const char*a,const char*b){while(*a&&*b&&upc(*a)==upc(*b)){a++;b++;}return *a==*b;}
+static int drive_label_cmp(const char*a,const char*b){
+  while(*a&&*b){int ca=upc(*a),cb=upc(*b);if(ca!=cb)return ca-cb;a++;b++;}
+  return (int)(u8)*a-(int)(u8)*b;
+}
+static void label_track_reset(void){
+  nlabel_tracks=0;label_track_zoom=-1;label_track_freecam=-1;
+  label_track_vlat=0;label_track_vlon=0;label_track_now=0;
+}
+static struct LabelTrack*label_track_find(const char*name){
+  for(int i=0;i<nlabel_tracks;i++)if(drive_label_eq(label_tracks[i].name,name))return &label_tracks[i];
+  return 0;
+}
+static int label_track_bonus(const struct LabelTrack*tr,u32 now){
+  if(!tr)return 0;
+  if(tr->active)return (now-tr->shown_ms<LABEL_MIN_DWELL_MS)?-LABEL_DWELL_BONUS:-LABEL_ACTIVE_BONUS;
+  if(now-tr->lost_ms<LABEL_COOLDOWN_MS)return LABEL_COOLDOWN_PENALTY;
+  return 0;
+}
 static void display_car_screen_xy(int z,int*x,int*y);
 static void drive_label_prepare(int z){
   ndrive_labels=ndrive_route_segs=0;drive_turn_valid=0;
+  u32 now=hud_now_ms();
+  s32 vl=view_lat(),vo=view_lon();
+  if(z!=label_track_zoom||freecam!=label_track_freecam||
+     iabs32(vl-label_track_vlat)>2000||iabs32(vo-label_track_vlon)>2000||
+     now<label_track_now||(label_track_now&&now-label_track_now>5000u)){
+    nlabel_tracks=0;
+  }
+  label_track_zoom=z;label_track_freecam=freecam;
+  label_track_vlat=vl;label_track_vlon=vo;label_track_now=now;
+  /* Prune expired cooldown entries so the bounded table stays clean. */
+  int keep=0;
+  for(int i=0;i<nlabel_tracks;i++){
+    if(label_tracks[i].active||now-label_tracks[i].lost_ms<LABEL_COOLDOWN_MS){
+      if(keep!=i)label_tracks[keep]=label_tracks[i];
+      keep++;
+    }
+  }
+  nlabel_tracks=keep;
   crop_car_valid=z>6&&gps.fix;
   if(crop_car_valid)display_car_screen_xy(z,&crop_car_x,&crop_car_y);
   if(!freecam&&route_status==R_READY&&nav_man_type!=MAN_NONE&&
@@ -2652,25 +2717,51 @@ static int drive_label_score(int x,int y,int kind,int prio){
    * Within equal priority, favour names nearer the useful driving area. */
   int s=prio*1024 + drive_iabs(y-184)*2 + drive_iabs(x-MAP_ANCHOR_X);
   if(kind==3)s-=34;else if(kind==4)s-=18;
-  if(drive_turn_valid&&drive_iabs(x-drive_turn_x)<92&&drive_iabs(y-drive_turn_y)<40)s-=76;
+  if(drive_turn_valid){
+    /* Smooth linear ramp avoids a sudden 76-point jump at the turn box rim. */
+    int dx=drive_iabs(x-drive_turn_x),dy=drive_iabs(y-drive_turn_y);
+    if(dx<96&&dy<44){
+      int fx=96-dx,fy=44-dy;
+      int bonus=(76*fx*fy)/(96*44);
+      s-=bonus;
+    }
+  }
   return s;
 }
 static int drive_label_primary(const struct DriveLabel*d){
-  /* Uncluttered far-field criteria are first-pass preferences,
-   * not irreversible rejections.  Remaining road names can fill vacancies. */
+  /* Already-visible labels keep Pass-0 status so drifting across the far-field
+   * band never triggers an abrupt demotion or competition flicker. */
+  if(d->was_active)return 1;
   return d->prio<=159 && (d->y>=124||d->prio<=31) &&
          (d->y>=151||d->prio<=79);
 }
-static void drive_label_add(int x,int y,int kind,int prio,const char*name,int cropped,int vertical){
-  int score=drive_label_score(x,y,kind,prio),at=ndrive_labels;
-  /* Keep distant close-zoom anchors as alternatives if the best one is blocked. */
+static void drive_label_add_ex(int x,int y,s32 lat4,s32 lon4,int has_geo,
+                               int kind,int prio,const char*name,
+                               int cropped,int vertical,int seg_dx,int seg_dy,
+                               int pref_side,int force_lock){
+  const struct LabelTrack*tr=label_track_find(name);
+  /* Hard re-entry debounce: a label that just exited or lost a collision stays
+   * quietly off for LABEL_COOLDOWN_MS rather than strobing back on jitter. */
+  if(tr&&!tr->active&&label_track_now-tr->lost_ms<LABEL_COOLDOWN_MS)return;
+  int was_active=(tr&&tr->active)?1:0;
+  int anchor_locked=force_lock;
+  if(!cropped&&was_active&&has_geo&&tr->has_geo&&
+     iabs32(lat4-tr->lat4)<=256&&iabs32(lon4-tr->lon4)<=256){
+    anchor_locked=1;
+  }
+  int score=drive_label_score(x,y,kind,prio)+label_track_bonus(tr,label_track_now);
+  if(anchor_locked)score-=LABEL_ANCHOR_BONUS;
+
+  int at=ndrive_labels;
+  /* Keep distant close-zoom anchors (and locked vs fallback anchors) separate
+   * so a blocked preferred anchor can cleanly fall back without losing stability. */
   for(int i=0;i<ndrive_labels;i++){
     struct DriveLabel*d=&drive_labels[i];
+    if(!drive_label_eq(d->name,name))continue;
+    if(anchor_locked!=(int)d->anchor_locked)continue;
     if(cropped&&(drive_iabs(x-d->x)>48||drive_iabs(y-d->y)>32))continue;
-    if(drive_label_eq(d->name,name)){
-      if(score>=d->score)return;
-      at=i;break;
-    }
+    if(score>=d->score)return;
+    at=i;break;
   }
   if(at==ndrive_labels){
     if(at<DRIVE_LABEL_CANDIDATES)ndrive_labels++;
@@ -2682,16 +2773,33 @@ static void drive_label_add(int x,int y,int kind,int prio,const char*name,int cr
   }
   struct DriveLabel*d=&drive_labels[at];
   copystr(d->name,sizeof(d->name),name);
-  d->x=x;d->y=y;d->kind=(u8)kind;d->prio=(u8)prio;d->score=score;d->vertical=(u8)vertical;
+  d->lat4=lat4;d->lon4=lon4;d->has_geo=(u8)(has_geo!=0);
+  d->x=(s16)x;d->y=(s16)y;
+  d->seg_dx=(s16)(seg_dx>32767?32767:seg_dx);
+  d->seg_dy=(s16)(seg_dy>32767?32767:seg_dy);
+  d->pref_side=(signed char)pref_side;
+  d->kind=(u8)kind;d->prio=(u8)prio;d->score=score;
+  d->vertical=(u8)vertical;
+  d->was_active=(u8)was_active;
+  d->anchor_locked=(u8)(anchor_locked!=0);
+}
+static void drive_label_offer_geo(int x,int y,s32 lat,s32 lon,int has_geo,int kind,int prio,const char*name){
+  if(freecam||!name||!name[0])return;
+  if(kind>=6){poi_offer_at(x,y,kind,prio,lat,lon,has_geo);return;}
+  if(roadctx.valid&&roadctx.street[0]&&drive_label_eq(name,roadctx.street))return;
+  const struct LabelTrack*tr=label_track_find(name);
+  int active=(tr&&tr->active);
+  int w=textw(name,1),x0=x-w/2;
+  /* Schmitt-trigger bounds: stricter entry margin prevents newly arriving
+   * labels from strobing on edge jitter; active labels stay until cleanly clear. */
+  int xpad=active?6:12,ytop=active?76:84,ybot=active?204:198;
+  if(x0<xpad||x0+w>W-xpad||y<ytop||y>ybot)return;
+  int car_x=active?26:33,car_y=active?24:31;
+  if(drive_iabs(x-MAP_ANCHOR_X)<car_x&&y>view_anchor_y()-car_y)return; /* car/near road */
+  drive_label_add_ex(x,y,lat*16,lon*16,has_geo,kind,prio,name,0,0,0,0,0,0);
 }
 static void drive_label_offer(int x,int y,int kind,int prio,const char*name){
-  if(freecam||!name||!name[0])return;
-  if(kind>=6){poi_offer(x,y,kind,prio);return;}
-  int w=textw(name,1),x0=x-w/2;
-  if(x0<8||x0+w>W-8||y<80||y>202)return;
-  if(roadctx.valid&&roadctx.street[0]&&drive_label_eq(name,roadctx.street))return;
-  if(drive_iabs(x-MAP_ANCHOR_X)<31&&y>view_anchor_y()-29)return; /* car/near road */
-  drive_label_add(x,y,kind,prio,name,0,0);
+  drive_label_offer_geo(x,y,0,0,0,kind,prio,name);
 }
 static int map_clip_outside(int x,int y,int left,int top,int right,int bottom){
   return (x<left?1:x>right?2:0)|(y<top?4:y>bottom?8:0);
@@ -2711,23 +2819,64 @@ static int map_clip_segment(int*x0,int*y0,int*x1,int*y1,int left,int top,int rig
   }
   return 1;
 }
-static void crop_label_from_path(const int*x,const int*y,int n,int cls,const u8*meta){
-  int best=15,ax=0,ay=0,vertical=0;
+static void crop_label_from_path(const int*x,const int*y,int n,int cls,const u8*meta,
+                                 const u8*pts,s32 base_lat4,s32 base_lon4,int viewz){
+  char name[113];
+  for(int i=0;i<meta[4];i++)name[i]=(char)meta[5+i];
+  name[meta[4]]=0;
+  if(!name[0])return;
+  const struct LabelTrack*tr=label_track_find(name);
+  int active=(tr&&tr->active);
+  int min_len=active?12:20;
+  int best=min_len-1,best_i=-1,ax=0,ay=0,seg_dx=0,seg_dy=0,vertical=0;
   int bottom=freecam?MAP_BOTTOM-21:HUD_BOTTOM_Y-17;
   for(int i=1;i<n;i++){
     int x0=x[i-1]>>8,y0=y[i-1]>>8,x1=x[i]>>8,y1=y[i]>>8;
     if(!map_clip_segment(&x0,&y0,&x1,&y1,10,51,W-11,bottom))continue;
     int dx=drive_iabs(x1-x0),dy=drive_iabs(y1-y0);
     int length=dx>dy?dx+dy/2:dy+dx/2;
-    if(length>best){best=length;ax=(x0+x1)/2;ay=(y0+y1)/2;vertical=dy>dx;}
+    if(length>best){best=length;best_i=i;ax=(x0+x1)/2;ay=(y0+y1)/2;seg_dx=dx;seg_dy=dy;vertical=dy>dx;}
   }
-  if(best<16)return;
-  char name[113];
-  for(int i=0;i<meta[4];i++)name[i]=(char)meta[5+i];
-  name[meta[4]]=0;
-  if(name[0])drive_label_add(ax,ay,2,24+cls*4,name,1,vertical);
+  if(best_i<0)return;
+  /* Compute the exact Q4 world coordinate on segment best_i projecting to (ax,ay)
+   * so once placed, this street name stays bolted to the road across frames. */
+  s32 alat4=0,alon4=0;int has_geo=0;
+  if(pts){
+    u32 lx0=rd16(pts+(best_i-1)*4),ly0=rd16(pts+(best_i-1)*4+2);
+    u32 lx1=rd16(pts+best_i*4),ly1=rd16(pts+best_i*4+2);
+    s32 la0=base_lat4+(s32)(ly0+(ly0>=2048)),lo0=base_lon4+(s32)(lx0+(lx0>=2048));
+    s32 la1=base_lat4+(s32)(ly1+(ly1>=2048)),lo1=base_lon4+(s32)(lx1+(lx1>=2048));
+    int sdx=(x[best_i]-x[best_i-1])>>8,sdy=(y[best_i]-y[best_i-1])>>8;
+    int t_q12=2048;
+    if(map_tilt_q8>0&&(drive_iabs(sdx)>24||drive_iabs(sdy)>24)){
+      int lo=0,hi=4096;
+      for(int it=0;it<8;it++){
+        int mid=(lo+hi)>>1;
+        s32 ml=la0+(s32)(((long long)(la1-la0)*mid+2048)>>12);
+        s32 mo=lo0+(s32)(((long long)(lo1-lo0)*mid+2048)>>12);
+        int qx,qy;map_project_q8_4(ml,mo,viewz,&qx,&qy);
+        long long d=(long long)(qx-ax*256)*sdx+(long long)(qy-ay*256)*sdy;
+        if(d<0)lo=mid;else hi=mid;
+      }
+      t_q12=(lo+hi)>>1;
+    }else if(drive_iabs(sdx)>=drive_iabs(sdy)&&sdx!=0){
+      t_q12=(int)(((long long)(ax-(x[best_i-1]>>8))*4096)/sdx);
+    }else if(sdy!=0){
+      t_q12=(int)(((long long)(ay-(y[best_i-1]>>8))*4096)/sdy);
+    }
+    if(t_q12<0)t_q12=0;if(t_q12>4096)t_q12=4096;
+    alat4=la0+(s32)(((long long)(la1-la0)*t_q12+2048)>>12);
+    alon4=lo0+(s32)(((long long)(lo1-lo0)*t_q12+2048)>>12);
+    /* Project back once so Frame 1 already sits on the true perspective road
+     * point with zero jump to Frame 2's locked world projection. */
+    int qx,qy;map_project_q8_4(alat4,alon4,viewz,&qx,&qy);
+    ax=(qx+128)>>8;ay=(qy+128)>>8;
+    has_geo=1;
+  }
+  drive_label_add_ex(ax,ay,alat4,alon4,has_geo,2,24+cls*4,name,1,vertical,seg_dx,seg_dy,
+                     active?tr->side:0,0);
 }
-static int drive_label_hits_route(int x0,int y0,int x1,int y1,int cropped){
+static int drive_label_hits_route_pad(int x0,int y0,int x1,int y1,int cropped,int pad){
   /* Segment rectangles are recorded while the route is already being drawn,
    * avoiding a second route projection pass or map-data access. */
   for(int i=0;i<ndrive_route_segs;i++){
@@ -2736,73 +2885,197 @@ static int drive_label_hits_route(int x0,int y0,int x1,int y1,int cropped){
     int rx1=r->x0>r->x1?r->x0:r->x1;
     int ry0=r->y0<r->y1?r->y0:r->y1;
     int ry1=r->y0>r->y1?r->y0:r->y1;
-    if(x1+5>=rx0&&x0-5<=rx1&&y1+5>=ry0&&y0-5<=ry1){
+    if(x1+pad>=rx0&&x0-pad<=rx1&&y1+pad>=ry0&&y0-pad<=ry1){
       if(!cropped)return 1;
       int ax=r->x0,ay=r->y0,bx=r->x1,by=r->y1;
-      if(map_clip_segment(&ax,&ay,&bx,&by,x0-5,y0-5,x1+5,y1+5))return 1;
+      if(map_clip_segment(&ax,&ay,&bx,&by,x0-pad,y0-pad,x1+pad,y1+pad))return 1;
     }
   }
   return 0;
 }
+static int drive_label_hits_route(int x0,int y0,int x1,int y1,int cropped){
+  return drive_label_hits_route_pad(x0,y0,x1,y1,cropped,5);
+}
 static int crop_label_hits_hud(int x0,int y0,int x1,int y1);
 static int crop_label_repeats_hud(const char*name);
-static int crop_label_covers_point(int x0,int y0,int x1,int y1,int x,int y){
-  return x1>=x-16&&x0<=x+16&&y1>=y-16&&y0<=y+16;
+static int crop_label_covers_point_pad(int x0,int y0,int x1,int y1,int x,int y,int pad){
+  return x1>=x-pad&&x0<=x+pad&&y1>=y-pad&&y0<=y+pad;
 }
-static int crop_label_draw(const struct DriveLabel*d,int z){
+static int crop_label_draw(const struct DriveLabel*d,int z,signed char*out_side){
   if(crop_label_repeats_hud(d->name))return 0;
   int w=textw(d->name,1);
   int xpad=z>=9?18:(z==8?14:10);
   int ypad=z>=9?18:(z==8?15:13);
-  for(int side=-1;side<=1;side+=2){
+  int car_pad=d->was_active?13:17;
+  int route_pad=d->was_active?3:6;
+  int base_extra=d->was_active?0:4;
+  int sides[2]={d->pref_side==1?1:-1,d->pref_side==1?-1:1};
+  for(int si=0;si<2;si++){
+    int side=sides[si];
+    /* Flipping away from a locked side requires generous clearance so a label
+     * never ping-pongs into a razor-thin gap near a screen edge or neighbour. */
+    int extra_pad=(si==1&&d->pref_side!=0)?6:base_extra;
     int x0=d->x-w/2+(d->vertical?side*(w/2+xpad):0);
     if(!d->vertical){if(x0<7)x0=7;if(x0+w>W-7)x0=W-7-w;}
     int y0=d->y-6+(d->vertical?0:side*ypad),x1=x0+w,y1=y0+13;
-    if(crop_car_valid&&crop_label_covers_point(x0,y0,x1,y1,crop_car_x,crop_car_y))continue;
-    if(freecam&&crop_label_covers_point(x0,y0,x1,y1,MAP_ANCHOR_X,FREECAM_ANCHOR_Y))continue;
-    if(crop_label_hits_hud(x0,y0,x1,y1)||drive_label_hits_route(x0,y0,x1,y1,1))continue;
-    if(!label_free(x0-3,y0-3,x1+3,y1+2))continue;
+    if(crop_car_valid&&crop_label_covers_point_pad(x0,y0,x1,y1,crop_car_x,crop_car_y,car_pad))continue;
+    if(freecam&&crop_label_covers_point_pad(x0,y0,x1,y1,MAP_ANCHOR_X,FREECAM_ANCHOR_Y,car_pad))continue;
+    if(crop_label_hits_hud(x0,y0,x1,y1)||drive_label_hits_route_pad(x0,y0,x1,y1,1,route_pad))continue;
+    if(!label_space_free_ex(x0-2,y0-2,x1+2,y1+1,1,extra_pad))continue;
     text(x0+1,y0+1,d->name,C_BG,1);
     text(x0,y0,d->name,C_WHITE,1);
+    if(out_side)*out_side=(signed char)side;
     return 1;
   }
   return 0;
 }
+/* Re-project each currently active close-zoom label's locked world coordinate
+ * so the road name moves smoothly with the asphalt instead of jumping between
+ * clipped segment midpoints or street fragments as the vehicle drives. */
+static void drive_label_inject_locked(int z){
+  int bottom=freecam?MAP_BOTTOM-8:HUD_BOTTOM_Y-4;
+  for(int t=0;t<nlabel_tracks;t++){
+    const struct LabelTrack*tr=&label_tracks[t];
+    if(!tr->active||!tr->cropped||!tr->has_geo)continue;
+    int qx,qy;map_project_q8_4(tr->lat4,tr->lon4,z,&qx,&qy);
+    int px=(qx+128)>>8,py=(qy+128)>>8;
+    if(px<8||px>W-9||py<44||py>bottom)continue;
+    /* Confirm this road is still present in the visible tiles and read the
+     * local screen tangent from the closest fresh road fragment. */
+    int best_f=-1,best_d=0x7fffffff;
+    for(int i=0;i<ndrive_labels;i++){
+      if(!drive_label_eq(drive_labels[i].name,tr->name))continue;
+      int d=drive_iabs(drive_labels[i].x-px)+drive_iabs(drive_labels[i].y-py);
+      if(d<best_d){best_d=d;best_f=i;}
+    }
+    if(best_f<0)continue;
+    const struct DriveLabel*f=&drive_labels[best_f];
+    /* 22-degree angular deadband around 45 deg prevents horizontal/vertical
+     * side-jumping when heading jitters on diagonal roads. */
+    int vert=tr->vertical;
+    if(f->seg_dx||f->seg_dy){
+      if(!vert&&(int)f->seg_dy*2>(int)f->seg_dx*3)vert=1;
+      else if(vert&&(int)f->seg_dx*2>(int)f->seg_dy*3)vert=0;
+    }
+    if(best_d<=64){
+      /* Upgrade the nearby fresh candidate in-place to the locked world anchor. */
+      struct DriveLabel*d=&drive_labels[best_f];
+      int sc=drive_label_score(px,py,d->kind,d->prio)+label_track_bonus(tr,label_track_now)-LABEL_ANCHOR_BONUS;
+      d->x=(s16)px;d->y=(s16)py;d->lat4=tr->lat4;d->lon4=tr->lon4;d->has_geo=1;
+      d->vertical=(u8)vert;d->pref_side=tr->side;d->was_active=1;d->anchor_locked=1;d->score=sc;
+    }else{
+      drive_label_add_ex(px,py,tr->lat4,tr->lon4,1,f->kind,f->prio,tr->name,
+                         1,vert,f->seg_dx,f->seg_dy,tr->side,1);
+    }
+  }
+}
+static int drive_label_before(const struct DriveLabel*a,const struct DriveLabel*b){
+  if(a->score!=b->score)return a->score<b->score;
+  return drive_label_cmp(a->name,b->name)<0;
+}
 static void drive_label_render(int z){
   int cropped=z>6;
+  if(cropped)drive_label_inject_locked(z);
   int road_count=0,order[DRIVE_LABEL_CANDIDATES];
   for(int i=0;i<ndrive_labels;i++)order[i]=i;
-  /* A small, bounded insertion sort; no allocations or tile re-reads. */
+  /* A small, bounded insertion sort with deterministic tie-breaking. */
   for(int i=1;i<ndrive_labels;i++){
     int idx=order[i],j=i;
-    while(j>0&&drive_labels[idx].score<drive_labels[order[j-1]].score){
+    while(j>0&&drive_label_before(&drive_labels[idx],&drive_labels[order[j-1]])){
       order[j]=order[j-1];j--;
     }
     order[j]=idx;
   }
+  struct {
+    char name[113];s32 lat4,lon4;s16 x,y;signed char side;u8 vertical,kind,prio,has_geo;
+  } drawn[DRIVE_ROAD_LABELS];
   nltxt=0;
   for(int pass=0;pass<(cropped?1:2)&&road_count<DRIVE_ROAD_LABELS;pass++){
-    /* Pass 0: unobtrusive names, ordered by road priority/vicinity.
+    /* Pass 0: unobtrusive & already-active names, ordered by priority/hysteresis.
      * Pass 1: only if under six, admit distant/minor names into free space. */
     for(int k=0;k<ndrive_labels&&road_count<DRIVE_ROAD_LABELS;k++){
       struct DriveLabel*d=&drive_labels[order[k]];
       if(label_text_seen(d->name))continue;
       if(cropped){
-        if(crop_label_draw(d,z)){label_text_add(d->name);road_count++;}
+        signed char used_side=0;
+        if(crop_label_draw(d,z,&used_side)){
+          label_text_add(d->name);
+          copystr(drawn[road_count].name,sizeof(drawn[0].name),d->name);
+          drawn[road_count].lat4=d->lat4;drawn[road_count].lon4=d->lon4;
+          drawn[road_count].x=d->x;drawn[road_count].y=d->y;
+          drawn[road_count].side=used_side;drawn[road_count].vertical=d->vertical;
+          drawn[road_count].kind=d->kind;drawn[road_count].prio=d->prio;
+          drawn[road_count].has_geo=d->has_geo;
+          road_count++;
+        }
         continue;
       }
       if(drive_label_primary(d)!=(pass==0))continue;
       int w=textw(d->name,1),x0=d->x-w/2,y0=d->y-6;
-      if(drive_label_hits_route(x0,y0,x0+w,y0+12,0))continue;
-      if(label_free(x0-3,y0-3,x0+w+3,y0+15)){
+      int rpad=d->was_active?3:6;
+      int extra_pad=d->was_active?0:4;
+      if(drive_label_hits_route_pad(x0,y0,x0+w,y0+12,0,rpad))continue;
+      if(label_space_free_ex(x0-2,y0-2,x0+w+2,y0+14,1,extra_pad)){
         u16 c=label_color(d->kind);
         text(x0+1,y0+1,d->name,C_BG,1);
         text(x0,y0,d->name,c,1);
-        label_text_add(d->name);road_count++;
+        label_text_add(d->name);
+        copystr(drawn[road_count].name,sizeof(drawn[0].name),d->name);
+        drawn[road_count].lat4=d->lat4;drawn[road_count].lon4=d->lon4;
+        drawn[road_count].x=d->x;drawn[road_count].y=d->y;
+        drawn[road_count].side=0;drawn[road_count].vertical=0;
+        drawn[road_count].kind=d->kind;drawn[road_count].prio=d->prio;
+        drawn[road_count].has_geo=d->has_geo;
+        road_count++;
       }
     }
   }
-
+  /* Update cross-frame track table: retain active world anchors and place
+   * newly dropped labels into a brief competition cooldown. */
+  u32 now=label_track_now;
+  u8 matched[DRIVE_ROAD_LABELS];
+  memzero(matched,sizeof(matched));
+  for(int i=0;i<nlabel_tracks;i++){
+    struct LabelTrack*tr=&label_tracks[i];
+    int di=-1;
+    for(int j=0;j<road_count;j++)if(drive_label_eq(tr->name,drawn[j].name)){di=j;break;}
+    if(di>=0){
+      matched[di]=1;
+      if(!tr->active)tr->shown_ms=now;
+      tr->active=1;tr->seen_ms=now;tr->cropped=(u8)cropped;
+      tr->lat4=drawn[di].lat4;tr->lon4=drawn[di].lon4;tr->has_geo=drawn[di].has_geo;
+      tr->last_x=drawn[di].x;tr->last_y=drawn[di].y;
+      tr->side=drawn[di].side;tr->vertical=drawn[di].vertical;
+      tr->kind=drawn[di].kind;tr->prio=drawn[di].prio;
+    }else if(tr->active){
+      tr->active=0;tr->lost_ms=now;
+    }
+  }
+  for(int j=0;j<road_count;j++){
+    if(matched[j])continue;
+    int slot=nlabel_tracks;
+    if(slot<LABEL_TRACK_MAX)nlabel_tracks++;
+    else{
+      /* Prefer evicting the oldest inactive cooldown entry first. */
+      slot=0;
+      for(int i=1;i<LABEL_TRACK_MAX;i++){
+        int a_act=label_tracks[i].active,b_act=label_tracks[slot].active;
+        if(a_act!=b_act){if(!a_act)slot=i;}
+        else if(a_act?(label_tracks[i].seen_ms<label_tracks[slot].seen_ms):(label_tracks[i].lost_ms<label_tracks[slot].lost_ms)){
+          slot=i;
+        }
+      }
+    }
+    struct LabelTrack*tr=&label_tracks[slot];
+    memzero(tr,sizeof(*tr));
+    copystr(tr->name,sizeof(tr->name),drawn[j].name);
+    tr->lat4=drawn[j].lat4;tr->lon4=drawn[j].lon4;tr->has_geo=drawn[j].has_geo;
+    tr->last_x=drawn[j].x;tr->last_y=drawn[j].y;
+    tr->shown_ms=now;tr->seen_ms=now;
+    tr->side=drawn[j].side;tr->vertical=drawn[j].vertical;
+    tr->kind=drawn[j].kind;tr->prio=drawn[j].prio;
+    tr->active=1;tr->cropped=(u8)cropped;
+  }
 }
 static void append_miles_hud(char*b,unsigned cap,u32 m){if(!display_imperial()){append_metric_distance(b,cap,m,0);return;}u32 mi10=udiv32(m*10u+804u,1609u);if(mi10>=100u){append_int(b,cap,(int)udiv32(mi10+5u,10u));appendstr(b,cap,"mi");}else{append_int(b,cap,(int)(mi10/10u));appendstr(b,cap,".");char d[2]={(char)('0'+mi10%10u),0};appendstr(b,cap,d);appendstr(b,cap,"mi");}}
 static void append_eta_hud(char*b,unsigned cap,u32 ds){u32 min=udiv32(ds+300u,600u);if(min>=60u){append_int(b,cap,(int)(min/60u));appendstr(b,cap,"h");if(min%60u<10u)appendstr(b,cap,"0");append_int(b,cap,(int)(min%60u));}else{append_int(b,cap,(int)min);appendstr(b,cap,"min");}}
