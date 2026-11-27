@@ -22,7 +22,7 @@ See [CHANGELOG.md](CHANGELOG.md) for all prior releases, [intelligent navigation
 
 ## UI previews
 
-All previews below are captured from ClioPlay's native `480 × 272` renderer across real offline UK map regions (**Central London**, **Liverpool**, **Leeds**, **Edinburgh**, **Newcastle** and **Manchester**), arranged around what makes a **100% offline** head unit stand out — local on-device learning, zero-SIM phone integration, offline camera/GPS telemetry, and standalone routing. See the [preview notes and full capture index](src/docs/demo/README.md) for methodology and regression archives.
+All previews below are captured from ClioPlay's native `480 × 272` renderer across real offline UK map regions (**Central London**, **Liverpool**, **Leeds**, **Edinburgh**, **Newcastle** and **Manchester**). See the [preview notes and full capture index](src/docs/demo/README.md) for methodology and regression archives.
 
 | Offline traffic diversions & Explore preview | Learned usual routes & calibrated ETA ranges |
 | --- | --- |

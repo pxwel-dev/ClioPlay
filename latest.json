@@ -1,6 +1,6 @@
 {
   "format": "clioplay-latest-1",
-  "updated_at": "2026-11-27T17:55:42+00:00",
+  "updated_at": "2026-11-27T18:08:19+00:00",
   "edition": "Global",
   "version": "2.2.8",
   "payload": "Source package, current binaries, legacy bootstrap, fresh-install and software-update tools; no vendor firmware, navigation packs or companion website",
@@ -1268,7 +1268,7 @@
     "bootstrap-SHA256.json": "eeb823e2486a0da11d8dca6be834d03ceacd342cbbd24ac070cf40b95ee27bb5",
     "docs/source-status.md": "a0ea6ad82b7f3db1a7699b442f766063fb1def68d991f27f2074fafd17963cef",
     "docs/camera-support.md": "d5432be02ce0ec0867b6db310f31f41b3a448d5002496f45c1bcdc713b4284ed",
-    "docs/repository-readme.md": "b2c1e73049ca227021191b97ca7145dbfd268d97af3885338dd379c550662774",
+    "docs/repository-readme.md": "169fae879ead8d41e7434869826a58ee8cb9d72ed5c1e505e9ccdc43a98545ea",
     "docs/changelog.md": "84bb83e4670e7c142ff7792d9c5e8ffd9379924da9170196466a2d3e16a5b96d",
     "docs/updating.md": "fbff8fb6d065c769715dd801655e4aabf1754bb8117ad2ed402c7647637bfc48",
     "docs/intelligent-navigation.md": "bdddc438b3cb2c1e03cf14959afbff42fe8da61fdf3206ffb9cba19b3f455100",
@@ -1340,7 +1340,7 @@
     "Install.cmd": "b504a77b6d13c036d2e027a9759f06fa8a30c677144f1ee286f56953d2020fa6",
     "Install.command": "5a3df10333b2db1c445eccf5c2875f9d1051c90b9b86ffacc4da1b1e4d1e3d9a",
     "LICENSE": "b04ac8d0e455fe1b4c2f8b0e42531cd7b67add31f3b06c05d58e600feda6f464",
-    "README.md": "f51a8ad8dd8707f8810c035967dd3b03d6427fb45a0a6fd58cdc903f1e6ba171",
+    "README.md": "8648cd41cd4ed74cf2dfd1267d92da41bf8321df26dea9d7be7c3e2634b1c71e",
     "SOURCE_STATUS.md": "a0ea6ad82b7f3db1a7699b442f766063fb1def68d991f27f2074fafd17963cef",
     "THIRD_PARTY_NOTICES.md": "b2c9845c83575f1fd185ef796cf8ae020168118fb2aef3d01ddd7362fbd631d9",
     "WINDOWS.md": "a15064ed84d76e09513578ab053f5be041c0cbd4ef0961eba01e3dd4498b6645",
@@ -2433,7 +2433,7 @@
     "src/docs/demo/v227-camera-alerts.gif": "fc33d15e80fbd68b714ebe7b5d159627ef3b8159d29baf26b7cb911d353fd906",
     "src/docs/intelligent-navigation.md": "bdddc438b3cb2c1e03cf14959afbff42fe8da61fdf3206ffb9cba19b3f455100",
     "src/docs/release-workflow.md": "7f10d940cb3048e5c223559bea9822dd1f4a1fb54cc9fce4ea60d9bdb24a323e",
-    "src/docs/repository-readme.md": "b2c1e73049ca227021191b97ca7145dbfd268d97af3885338dd379c550662774",
+    "src/docs/repository-readme.md": "169fae879ead8d41e7434869826a58ee8cb9d72ed5c1e505e9ccdc43a98545ea",
     "src/docs/scenic-iii-hardware.md": "57fac2b054701f5b7a5da0f133a9dba838638aeebee3bd50937f803ff63c4a9f",
     "src/docs/source-status.md": "a0ea6ad82b7f3db1a7699b442f766063fb1def68d991f27f2074fafd17963cef",
     "src/docs/updating.md": "fbff8fb6d065c769715dd801655e4aabf1754bb8117ad2ed402c7647637bfc48",
@@ -2661,7 +2661,7 @@
     "src/tools/verify_splash.py": "b4070f1f9dde63797bdaeb8f250bfddcfad8880fc11b2fa7f28736e52e1a2a5a",
     "src/tools/verify_text_cache.py": "aa5cad2c209ae1e03e8cf28b60e4b2d5888a484b6a25475d2c2efd4d90b1f80a",
     "src/tools/verify_unicode.py": "ee9416a59d936efa7a266a46b79622d1950a198fe4f7afb8ef922430159fda52",
-    "SHA256SUMS": "afa81f60f446c6adc624b2110e72a6c587b251137a7a1a70b9fab60a973ae49d"
+    "SHA256SUMS": "556bc4b1783cacf08df860a019873554549a2eb291b0dd971a0510f5996c007b"
   },
   "checks": {
     "publication": {
