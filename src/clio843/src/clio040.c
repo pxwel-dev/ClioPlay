@@ -191,6 +191,9 @@ static int control_poll(struct ControlPoll*p,unsigned n){
 #define FOCUS_LOG "./clio843/focus.log"
 #define BT_LOG "./clio843/bt.log"
 #define DEBUG_STATE_PATH "/tmp/cldebug"
+#define SHUTDOWN_PATH "/tmp/clshutdown"
+#define BT_INIT_LOCK_PATH "/tmp/clbtinit"
+#define VEHICLE_INIT_LOCK_PATH "/tmp/clvinit"
 #define BT_ACTIVE_PATH "/tmp/clbt"
 #define CAMERA_ALERT_PATH "/tmp/clalert"
 #define CAMERA_ALERT_TMP "/tmp/clalert.new"
@@ -239,6 +242,9 @@ static int control_poll(struct ControlPoll*p,unsigned n){
 #define FOCUS_LOG CLIO_HOST_ROOT "clio040_focus.log"
 #define BT_LOG CLIO_HOST_ROOT "clio040_bt.log"
 #define DEBUG_STATE_PATH CLIO_HOST_ROOT "cldebug_test"
+#define SHUTDOWN_PATH CLIO_HOST_ROOT "clshutdown_test"
+#define BT_INIT_LOCK_PATH CLIO_HOST_ROOT "clbtinit_test"
+#define VEHICLE_INIT_LOCK_PATH CLIO_HOST_ROOT "clvinit_test"
 #define BT_ACTIVE_PATH CLIO_HOST_ROOT "clbt_test"
 #define BT_STATUS_PATH CLIO_HOST_ROOT "clbtstat_test"
 #define BT_META_PATH CLIO_HOST_ROOT "clbtmeta_test"
@@ -275,17 +281,26 @@ static u16 C_HEADER=0x08c3,C_ACTIVE=0x1a2b,C_ACTIVE_TEXT=0xf7ff,C_ACCENT=0x46b9,
 static u16 C_CAR=0xf4e8; /* Vehicle body follows the map theme. */
 static u16 C_ROUTE_SKIPPED=0xf64b,C_ROUTE_DIVERSION=0x66d8;
 static u16 C_ROUTE=0xfb36; /* Day raspberry / night bright pink; separate from roads and vehicle. */
+static u16 C_ROUTE_CASING=0x8848,C_ROUTE_SKIPPED_CASING=0x8320,C_ROUTE_DIVERSION_CASING=0x136c;
 /* Map road colours are independent of text, focus and HUD accent colours.
  * Low-to-high coverage slots preserve the existing six-plane junction blend. */
 #define ROAD_RGB(r,g,b) (((r)>>3)<<11|((g)>>2)<<5|((b)>>3))
 static const u16 road_palette[2][6]={
- {ROAD_RGB(240,246,250),ROAD_RGB(231,241,247),ROAD_RGB(244,249,252),
-  ROAD_RGB(255,255,255),ROAD_RGB(116,169,181),ROAD_RGB(78,144,193)},
- {ROAD_RGB(49,77,96),ROAD_RGB(73,103,123),ROAD_RGB(106,135,153),
-  ROAD_RGB(158,181,197),ROAD_RGB(78,123,141),ROAD_RGB(85,141,190)}
+ {ROAD_RGB(238,244,248),ROAD_RGB(246,250,252),ROAD_RGB(252,254,255),
+  ROAD_RGB(255,255,255),ROAD_RGB(102,168,180),ROAD_RGB(72,140,196)},
+ {ROAD_RGB(44,70,88),ROAD_RGB(64,93,114),ROAD_RGB(90,120,141),
+  ROAD_RGB(128,158,178),ROAD_RGB(68,126,144),ROAD_RGB(76,136,188)}
 };
-static u16 road_colours[6]={ROAD_RGB(49,77,96),ROAD_RGB(73,103,123),ROAD_RGB(106,135,153),
- ROAD_RGB(158,181,197),ROAD_RGB(78,123,141),ROAD_RGB(85,141,190)};
+static const u16 road_casing_palette[2][6]={
+ {ROAD_RGB(186,200,210),ROAD_RGB(180,195,206),ROAD_RGB(172,188,200),
+  ROAD_RGB(158,176,190),ROAD_RGB(72,126,138),ROAD_RGB(48,102,150)},
+ {ROAD_RGB(4,10,16),ROAD_RGB(4,10,16),ROAD_RGB(4,10,16),
+  ROAD_RGB(4,10,16),ROAD_RGB(28,64,78),ROAD_RGB(30,68,104)}
+};
+static u16 road_colours[6]={ROAD_RGB(44,70,88),ROAD_RGB(64,93,114),ROAD_RGB(90,120,141),
+ ROAD_RGB(128,158,178),ROAD_RGB(68,126,144),ROAD_RGB(76,136,188)};
+static u16 road_casing_colours[6]={ROAD_RGB(4,10,16),ROAD_RGB(4,10,16),ROAD_RGB(4,10,16),
+ ROAD_RGB(4,10,16),ROAD_RGB(28,64,78),ROAD_RGB(30,68,104)};
 static const u16 map_canvas[2]={ROAD_RGB(213,224,230),ROAD_RGB(9,20,29)};
 static u16 C_MAP_BG=ROAD_RGB(9,20,29);
 #undef ROAD_RGB
@@ -295,6 +310,7 @@ static void apply_palette(int night){
   int next=night?1:0,changed=(next!=theme_resolved);theme_resolved=next;
   if(night){
     C_CAR=0xf4e8;C_ROUTE=0xfb36;C_ROUTE_SKIPPED=0xf64b;C_ROUTE_DIVERSION=0x66d8;
+    C_ROUTE_CASING=0x8848;C_ROUTE_SKIPPED_CASING=0x8320;C_ROUTE_DIVERSION_CASING=0x136c;
     /* NIGHT: deep charcoal-blue surfaces with a restrained teal focus colour. */
     C_BG=0x0082; C_PANEL=0x1105; C_PANEL2=0x1146; C_BORDER=0x2a09;
     C_CYAN=0x46b9; C_WHITE=0xf7bf; C_BLUE=0x3c97; C_MUTED=0x9d76;
@@ -302,13 +318,14 @@ static void apply_palette(int night){
     C_HEADER=0x08c3; C_PANEL=0x10e4; C_PANEL2=0x1926; C_BORDER=0x39e9; C_CYAN=0x64ff; C_ACTIVE=0x1a2b; C_ACTIVE_TEXT=0xffff; C_ACCENT=0x64ff; C_SHADOW=0x0041; C_HILITE=0x21a7;
   }else{
     C_CAR=0xeb83;C_ROUTE=0xe150;C_ROUTE_SKIPPED=0xb4a0;C_ROUTE_DIVERSION=0x0bf0;
+    C_ROUTE_CASING=0x9028;C_ROUTE_SKIPPED_CASING=0x7300;C_ROUTE_DIVERSION_CASING=0x03e8;
     /* DAY: warm/cool automotive greys rather than plain white inversion. */
     C_BG=0xef7d; C_PANEL=0xf7be; C_PANEL2=0xdf3c; C_BORDER=0xb618;
     C_CYAN=0x03f1; C_WHITE=0x1146; C_BLUE=0x33f3; C_MUTED=0x534e;
     C_DIM=0x7c51; C_WARN=0xb340; C_ROAD=0xadb6; C_WATER=0xa6bc; C_GREEN=0x9e55;
     C_HEADER=0xe73c; C_PANEL=0xf7be; C_PANEL2=0xe71c; C_BORDER=0xb618; C_CYAN=0x039b; C_ACTIVE=0x039b; C_ACTIVE_TEXT=0xffff; C_ACCENT=0x039b; C_SHADOW=0xb618; C_HILITE=0xffff;
   }
-  for(int i=0;i<6;i++)road_colours[i]=road_palette[next][i];
+  for(int i=0;i<6;i++){road_colours[i]=road_palette[next][i];road_casing_colours[i]=road_casing_palette[next][i];}
   C_ROAD=road_colours[0];C_MAP_BG=map_canvas[next];
   if(changed)write_theme_state_raw(theme_resolved);
 }
@@ -1064,18 +1081,92 @@ static u32 square_distance(s32 x,s32 y){if(x>32767||x< -32767||y>32767||y< -3276
 static const s16 SIN36[36]={0,5690,11207,16384,21063,25080,28378,30791,32270,32767,32270,30791,28378,25080,21063,16384,11207,5690,0,-5690,-11207,-16384,-21063,-25080,-28378,-30791,-32270,-32767,-32270,-30791,-28378,-25080,-21063,-16384,-11207,-5690};
 static const s16 COS36[36]={32767,32270,30791,28378,25080,21063,16384,11207,5690,0,-5690,-11207,-16384,-21063,-25080,-28378,-30791,-32270,-32767,-32270,-30791,-28378,-25080,-21063,-16384,-11207,-5690,0,5690,11207,16384,21063,25080,28378,30791,32270};
 static u32 udiv32(u32 n,u32 d){u32 q=0,r=0;if(!d)return 0;for(int i=31;i>=0;i--){r=(r<<1)|((n>>i)&1u);if(r>=d){r-=d;q|=(1u<<i);}}return q;}
+static void trig_for_angle(int angle,int*ss,int*c){
+ while(angle<0)angle+=360;angle%=360;
+ int k=angle/10,f=angle%10,n=(k+1)%36;
+ int sine=(SIN36[k]*(10-f)+SIN36[n]*f)/10;
+ int cosine=(COS36[k]*(10-f)+COS36[n]*f)/10;
+ int norm=(sine*sine+cosine*cosine)>>15,scale=(98304-norm)/2;
+ sine=(sine*scale+16384)>>15;cosine=(cosine*scale+16384)>>15;
+ if(sine>32767)sine=32767;if(cosine>32767)cosine=32767;
+ if(sine< -32767)sine=-32767;if(cosine< -32767)cosine=-32767;
+ *ss=sine;*c=cosine;
+}
+static s32 lon_delta4(s32 d){if(d>288000000)d-=576000000;if(d< -288000000)d+=576000000;return d;}
+static s32 q4_to_unit_round(s32 v){return v>=0?(v+8)/16:(v-8)/16;}
 
-/* Smooth locked-camera position. GPS commonly updates at 1 Hz; the UI draws at
- * 5 Hz. Easing both the camera and marker avoids one-second map jumps. */
+/* Smooth locked-camera position in 1/16 world units (Q4) with bounded inter-fix
+ * dead-reckoning for 1 Hz GPS and post-stop settling so close zooms (Z7-Z9)
+ * neither lag far behind moving junctions nor freeze short when stopping. */
 static s32 track_lat=0,track_lon=0;static int track_valid=0,track_course=-1;
+static s32 track_lat4=0,track_lon4=0,track_sync_lat=0,track_sync_lon=0;
+static int track_q4_valid=0,track_was_moving=0,track_settling=0;
+static u32 track_stop_ms=0;
 /* UI1: map/car orientation has its own latch. It updates only while the car is
  * moving fast enough for GPS course to be trustworthy, then remains frozen
  * through crawling/stationary periods. This avoids the old <2 mph snap to
  * north-up and is intentionally independent of whether a route is active. */
 static int display_course=-1,display_course_valid=0;
-static void seed_boot_map_view(void){if(lastfix_valid){track_lat=lastfix_lat;track_lon=lastfix_lon;track_course=lastfix_course;track_valid=1;display_course=lastfix_course;display_course_valid=1;return;}if(mapok){track_lat=mh.minlat+(mh.maxlat-mh.minlat)/2;track_lon=mh.minlon+(mh.maxlon-mh.minlon)/2;track_course=0;track_valid=1;}}
+static void seed_boot_map_view(void){track_q4_valid=0;track_was_moving=0;track_settling=0;if(lastfix_valid){track_lat=lastfix_lat;track_lon=lastfix_lon;track_course=lastfix_course;track_valid=1;display_course=lastfix_course;display_course_valid=1;return;}if(mapok){track_lat=mh.minlat+(mh.maxlat-mh.minlat)/2;track_lon=mh.minlon+(mh.maxlon-mh.minlon)/2;track_course=0;track_valid=1;}}
 static int iabs32(s32 v){return v<0?-v:v;}
-static void update_smooth_track(void){if(!gps.fix)return;if(!track_valid||iabs32(gps.lat-track_lat)>5000||iabs32(gps.lon-track_lon)>5000){track_lat=gps.lat;track_lon=gps.lon;track_course=gps.course;track_valid=1;return;}s32 dl=gps.lat-track_lat,do_=gps.lon-track_lon;if(dl){s32 q=dl/4;if(!q)q=dl>0?1:-1;track_lat+=q;}if(do_){s32 q=do_/4;if(!q)q=do_>0?1:-1;track_lon+=q;}if(track_course<0)track_course=gps.course;else{int d=gps.course-track_course;if(d>180)d-=360;if(d<-180)d+=360;int q=d/4;if(!q&&d)q=d>0?1:-1;track_course+=q;if(track_course<0)track_course+=360;if(track_course>=360)track_course-=360;}}
+static void update_smooth_track(void){
+ if(!gps.fix){track_was_moving=0;track_settling=0;return;}
+ u32 now=hud_now_ms();
+ int is_moving=gps.mph10>=5;
+ if(is_moving){track_was_moving=1;track_stop_ms=now;}
+ if(!track_valid||iabs32(gps.lat-track_lat)>5000||iabs32(lon_delta(gps.lon-track_lon))>5000){
+  track_lat=gps.lat;track_lon=gps.lon;track_lat4=gps.lat*16;track_lon4=gps.lon*16;
+  track_sync_lat=track_lat;track_sync_lon=track_lon;track_q4_valid=1;
+  track_course=gps.course;track_valid=1;track_settling=0;return;
+ }
+ if(!track_q4_valid||track_lat!=track_sync_lat||track_lon!=track_sync_lon){
+  track_lat4=track_lat*16;track_lon4=track_lon*16;
+  track_sync_lat=track_lat;track_sync_lon=track_lon;track_q4_valid=1;
+ }
+ s32 lead_lat4=0,lead_lon4=0;
+ if(gps_fix_ms&&gps.mph10>=25&&gps.course>=0&&gps.course<360&&(s32)(now-gps_fix_ms)>=0){
+  u32 age=now-gps_fix_ms,lead_ms=0;
+  if(age<=1200u){lead_ms=(age*3u)/4u+150u;if(lead_ms>850u)lead_ms=850u;}
+  else if(age<2000u)lead_ms=(850u*(2000u-age))/800u;
+  if(lead_ms&&track_course>=0){
+   int turn=iabs32(gps.course-track_course);if(turn>180)turn=360-turn;
+   if(turn>45)lead_ms=0;else if(turn>20)lead_ms>>=1;
+  }
+  if(lead_ms&&gps.mph10<60)lead_ms=(lead_ms*(u32)(gps.mph10-25))/35u;
+  if(lead_ms){
+   u32 spd=(u32)(gps.mph10>1500?1500:gps.mph10);
+   u32 dist_q4=udiv32(spd*643u*lead_ms+500000u,1000000u);
+   if(dist_q4>160u)dist_q4=160u;
+   int ss,c;trig_for_angle(gps.course,&ss,&c);
+   lead_lat4=(s32)(((long long)dist_q4*c)>>15);
+   s32 deast4=(s32)(((long long)dist_q4*ss)>>15);
+   int cq=coslat_q15(gps.lat);if(cq<1024)cq=1024;
+   u32 ad=(u32)(deast4<0?-deast4:deast4);
+   s32 dlon=(s32)udiv32((ad<<15)+(u32)(cq/2),(u32)cq);
+   lead_lon4=deast4<0?-dlon:dlon;
+  }
+ }
+ s32 tgt_lat4=gps.lat*16+lead_lat4,tgt_lon4=lon_delta4(gps.lon*16+lead_lon4);
+ s32 dl4=tgt_lat4-track_lat4,do4=lon_delta4(tgt_lon4-track_lon4);
+ int active=is_moving||track_was_moving;
+ int div=active?2:4,stepped=0;
+ if(dl4){s32 q=dl4/div;if(!q)q=dl4>0?1:-1;track_lat4+=q;stepped=1;}
+ if(do4){s32 q=do4/div;if(!q)q=do4>0?1:-1;track_lon4=lon_delta4(track_lon4+q);stepped=1;}
+ track_lat=q4_to_unit_round(track_lat4);track_lon=lon_delta(q4_to_unit_round(track_lon4));
+ track_sync_lat=track_lat;track_sync_lon=track_lon;track_q4_valid=1;
+ if(is_moving)track_settling=0;
+ else if(track_was_moving){
+  int remaining=track_lat4!=tgt_lat4||track_lon4!=tgt_lon4;
+  track_settling=stepped||remaining;
+  if(!track_settling&&now-track_stop_ms>=2500u)track_was_moving=0;
+ }else track_settling=0;
+ if(track_course<0)track_course=gps.course;
+ else{
+  int d=gps.course-track_course;if(d>180)d-=360;if(d<-180)d+=360;
+  int q=d/3;if(!q&&d)q=d>0?1:-1;track_course+=q;
+  if(track_course<0)track_course+=360;if(track_course>=360)track_course-=360;
+ }
+}
 static int shown_course(void){return track_course>=0?track_course:gps.course;}
 static void update_display_course(void){if(!gps.fix)return;int c=shown_course();if(c<0||c>=360)return;if(!display_course_valid){/* A persisted heading is preferred, but on a first-ever boot this gives us a usable orientation until movement confirms it. */display_course=c;display_course_valid=1;return;}/* track_course is already smoothed; while moving, mirror it exactly so UI1 adds no extra steering lag. Below the threshold, deliberately do nothing and freeze. */if(gps.mph10>=DISPLAY_COURSE_UPDATE_MPH10)display_course=c;}
 static int map_course(void){if(display_course_valid)return display_course;return shown_course();}
@@ -1123,6 +1214,9 @@ static int speed_auto_zoom(void){
 static int active_zoom(void){int z;if(freecam){int lo=mapok?(int)mh.minlvl:0;z=freecam_zoom;if(z<lo)z=lo;if(z>MAX_EXPLORE_ZOOM)z=MAX_EXPLORE_ZOOM;return z;}if(pref.autozoom)z=zoom_override>=0?zoom_override:speed_auto_zoom();else z=manual_zoom;return clamp_view_zoom(z);}
 static int span_for_view_zoom(int z){if(z<=6)return span_for_level(z);if(z>MAX_EXPLORE_ZOOM)z=MAX_EXPLORE_ZOOM;return 256>>(z-6);}
 static s32 car_lat(void){return track_valid?track_lat:gps.lat;}static s32 car_lon(void){return track_valid?track_lon:gps.lon;}
+static int track_q4_synced(void){return track_q4_valid&&track_valid&&track_lat==track_sync_lat&&track_lon==track_sync_lon;}
+static s32 car_lat4(void){return track_q4_synced()?track_lat4:car_lat()*16;}
+static s32 car_lon4(void){return track_q4_synced()?track_lon4:car_lon()*16;}
 static s32 view_lat(void){return freecam?cam_lat:car_lat();}static s32 view_lon(void){return freecam?cam_lon:car_lon();}
 /* Display-only visual road alignment in 1/16 world units (Q4, matching Z6
  * sub-unit road vertices). Keeps raw GPS, routing, roadctx and ML untouched
@@ -1132,7 +1226,7 @@ struct VisualRoadSnap {
  s32 dlat4,dlon4,target_dlat4,target_dlon4;
  s32 raw_lat,raw_lon;
  int synced_valid,synced_z6,synced_course,synced_route_status,synced_route_head;
- s32 synced_lat,synced_lon;
+ s32 synced_lat4,synced_lon4;
  int lock_valid;
  s32 lock_tx,lock_ty;
  u16 lock_gi;
@@ -1140,13 +1234,11 @@ struct VisualRoadSnap {
 };
 static struct VisualRoadSnap visual_snap;
 static int visual_snap_frozen=0;
-static s32 lon_delta4(s32 d){if(d>288000000)d-=576000000;if(d< -288000000)d+=576000000;return d;}
 static void visual_snap_reset(void){memzero(&visual_snap,sizeof(visual_snap));}
-static s32 display_car_lat4(void){return car_lat()*16+visual_snap.dlat4;}
-static s32 display_car_lon4(void){return lon_delta4(car_lon()*16+visual_snap.dlon4);}
+static s32 display_car_lat4(void){return car_lat4()+visual_snap.dlat4;}
+static s32 display_car_lon4(void){return lon_delta4(car_lon4()+visual_snap.dlon4);}
 static s32 display_view_lat4(void){return freecam?cam_lat*16:display_car_lat4();}
 static s32 display_view_lon4(void){return freecam?cam_lon*16:display_car_lon4();}
-static s32 q4_to_unit_round(s32 v){return v>=0?(v+8)/16:(v-8)/16;}
 static int view_course_valid(void){if(freecam_anim_mode==FC_ANIM_TO_CAR)return freecam_course_valid;return freecam?freecam_course_valid:display_course_valid;}
 static int view_course(void){if(freecam_anim_mode==FC_ANIM_TO_CAR&&freecam_course_valid)return freecam_course;return freecam&&freecam_course_valid?freecam_course:map_course();}
 static int view_rotates(void){return view_course_valid();}
@@ -1158,14 +1250,7 @@ static void view_trig(int*ss,int*c){
  /* The camera angle is constant for a whole geometry pass. Check its raw
   * value before normalizing, avoiding a software modulo at every vertex. */
  if(!initialized||input!=previous){
-  int angle=input;while(angle<0)angle+=360;angle%=360;
-  int k=angle/10,f=angle%10,n=(k+1)%36;
-  sine=(SIN36[k]*(10-f)+SIN36[n]*f)/10;
-  cosine=(COS36[k]*(10-f)+COS36[n]*f)/10;
-  int norm=(sine*sine+cosine*cosine)>>15,scale=(98304-norm)/2;
-  sine=(sine*scale+16384)>>15;cosine=(cosine*scale+16384)>>15;
-  if(sine>32767)sine=32767;if(cosine>32767)cosine=32767;
-  if(sine< -32767)sine=-32767;if(cosine< -32767)cosine=-32767;
+  trig_for_angle(input,&sine,&cosine);
   previous=input;initialized=1;
  }
  *ss=sine;*c=cosine;
@@ -1290,18 +1375,45 @@ static int map_view_covered(s32 lat,s32 lon){
   if(atlas_ready)return atlas_owner(lat,lon)>=0;
   return lat>=mh.minlat-2&&lat<=mh.maxlat+2&&lon>=mh.minlon-2&&lon<=mh.maxlon+2;
 }
-static void road_style(int cls,int zoom,u16*col,int*wid){
- /* Zoom increases towards street detail. Service roads stay narrow even
-  * when residential roads widen. No extra outlines or geometry passes. */
- static const u8 widths[4][6]={{1,1,2,2,3,4},{1,2,2,3,3,4},
-  {1,2,3,3,4,5},{2,2,3,4,4,5}};
+/* Continuous Q4 (1/16 px) carriageway fill widths and kerb casing margins across
+ * Z0-Z9, indexed by [tier][cls_slot] where cls_slot 0=service, 1=local,
+ * 2=tertiary, 3=secondary, 4=primary, 5=trunk, 6=motorway. */
+static void road_style_q4(int cls,int zoom,u16*col,int*wid_q4,int*cas_q4){
+ static const u16 fills[8][7]={
+  /* Z0-Z2 */ {16, 16, 20, 26, 34, 44, 54},
+  /* Z3    */ {16, 16, 22, 30, 38, 48, 60},
+  /* Z4    */ {16, 18, 26, 34, 44, 56, 68},
+  /* Z5    */ {16, 26, 36, 46, 58, 72, 84},
+  /* Z6    */ {24, 42, 56, 72, 88,106,124},
+  /* Z7    */ {44, 84,106,130,156,184,210},
+  /* Z8    */ {84,156,194,234,276,320,360},
+  /* Z9    */ {144,264,324,384,448,512,568}
+ };
+ static const u8 casings[8][7]={
+  /* Z0-Z2 */ { 0,  0,  0,  0,  0,  0, 10},
+  /* Z3    */ { 0,  0,  0,  0,  0, 10, 12},
+  /* Z4    */ { 0,  0,  0, 10, 10, 12, 12},
+  /* Z5    */ { 0,  0, 10, 10, 12, 12, 14},
+  /* Z6    */ {10, 12, 14, 14, 16, 16, 18},
+  /* Z7    */ {14, 16, 18, 18, 20, 20, 22},
+  /* Z8    */ {16, 20, 22, 22, 24, 24, 26},
+  /* Z9    */ {20, 24, 26, 26, 28, 28, 30}
+ };
  int slot=cls>=1&&cls<=5?6-cls:0;
- int detail=zoom<=3?0:zoom==4?1:zoom==5?2:3;
- *col=road_colours[slot];*wid=cls>=7?1:widths[detail][slot];
+ int idx=cls>=1&&cls<=6?7-cls:0;
+ int tier=zoom<=2?0:(zoom>=9?7:zoom-2);
+ *col=road_colours[slot];
+ *wid_q4=(int)fills[tier][idx];
+ *cas_q4=(int)casings[tier][idx];
+}
+static void road_style(int cls,int zoom,u16*col,int*wid){
+ int w4,c4;road_style_q4(cls,zoom,col,&w4,&c4);
+ *wid=(w4+8)>>4;if(*wid<1)*wid=1;
 }
 static void geom_style(int layer,int style,int zoom,u16*col,int*wid){if(layer==0){road_style(style,zoom,col,wid);return;}if(layer==1){*col=C_WATER;*wid=style==1?2:1;return;}if(layer==2){*col=C_GREEN;*wid=1;return;}*col=C_BLUE;*wid=1;}
 
 #include "map_raster.h"
+#include "road_layout.h"
 /* Keep road/route vertices below pixel precision until rasterization. The
  * driving camera and route engine are unchanged; only drawing gains precision. */
 static void map_project_delta_q8(s32 dy,s32 dx,int z,int frac,int*ox,int*oy){
@@ -1417,7 +1529,11 @@ static void draw_path(struct Tile*t,int span,int layer,int style,int np,const u8
    map_project_q8(py,px,viewz,&x[i],&y[i]);
   }
  }
- map_stroke_polyline(x,y,np,col,wid);
+ if(layer==0&&road_pass_active){
+  road_pass_add(x,y,np,style);
+ }else{
+  map_stroke_polyline(x,y,np,col,wid);
+ }
  if(meta)crop_label_from_path(x,y,np,style,meta);
  *pp=p;
 }
@@ -2441,43 +2557,80 @@ static void route_draw_window(int*ps,int*pe){int first=route_head+1,last=route_n
 /* Segment i runs from vertex i-1 to i. Highlight only the bypassed interval
  * for traffic diversions; usual-route proposals keep the active route normal. */
 static int route_overlay_slot(int i,int offered){return offered&&ml_offer_kind==0&&i>traffic_begin_idx&&i<=traffic_join_idx&&!traffic_main_shared(i)?1:0;}
+static int route_width_q4(int z){
+ if(z<=5)return 48;  /* 3.0 px */
+ if(z==6)return 60;  /* 3.75 px */
+ if(z==7)return 84;  /* 5.25 px */
+ if(z==8)return 116; /* 7.25 px */
+ return 152;         /* 9.5 px at Z9 (nested cleanly inside 16-36 px roads) */
+}
+static void route_stroke_w4(const int*x,const int*y,int n,u16 col,int wid_q4,int z){
+ int pad=(wid_q4>>4)+20,m=pad*256;
+ for(int i=1;i<n;i++){
+  if(!(i&7))render_checkpoint();
+  s32 ax=x[i-1],ay=y[i-1],bx=x[i],by=y[i];
+  if(!road_clip_q8(&ax,&ay,&bx,&by,-m,(MAP_TOP-pad)*256,(W+pad)*256,(MAP_BOTTOM+pad)*256))continue;
+  int my=((ay+by)>>9);
+  int p=road_persp_q8(my,z);
+  int w=(wid_q4*p+128)>>8;if(w<32)w=32;
+  map_line_q8_w4(ax,ay,bx,by,col,w);
+ }
+}
 static void draw_route_overlay(int z){
  if(route_status!=R_READY||route_n-route_head<2)return;
  int s,e;route_draw_window(&s,&e);if(s>e)return;
- int offered=traffic_offer_valid(),slot=route_overlay_slot(s,offered);
- int x[255],y[255],n=1;
- if(s==route_head+1)map_project_q8_4(display_car_lat4(),display_car_lon4(),z,&x[0],&y[0]);
- else map_project_q8(route_lat[s-1],route_lon[s-1],z,&x[0],&y[0]);
- map_mask_begin(2);map_mask_select(slot);
- for(int i=s;i<=e;i++){
-  if(!(i&31))render_checkpoint();
-  int next=route_overlay_slot(i,offered);
-  if(next!=slot){
-   if(n>1)map_stroke_polyline(x,y,n,slot?C_ROUTE_SKIPPED:C_ROUTE,3);
-   x[0]=x[n-1];y[0]=y[n-1];n=1;slot=next;map_mask_select(slot);
+ int offered=traffic_offer_valid();
+ int rw4=route_width_q4(z),rcas4=z>=6?18:12;
+ int passes=z>=5?2:1;
+ for(int pass=0;pass<passes;pass++){
+  int is_cas=(passes==2&&pass==0);
+  int slot=route_overlay_slot(s,offered);
+  int x[255],y[255],n=1;
+  if(s==route_head+1)map_project_q8_4(display_car_lat4(),display_car_lon4(),z,&x[0],&y[0]);
+  else map_project_q8(route_lat[s-1],route_lon[s-1],z,&x[0],&y[0]);
+  map_mask_begin(is_cas?MAP_MASK_ROUTE_CASING:2);map_mask_select(slot);
+  for(int i=s;i<=e;i++){
+   if(!(i&31))render_checkpoint();
+   int next=route_overlay_slot(i,offered);
+   if(next!=slot){
+    if(n>1){
+     u16 c=is_cas?(slot?C_ROUTE_SKIPPED_CASING:C_ROUTE_CASING):(slot?C_ROUTE_SKIPPED:C_ROUTE);
+     route_stroke_w4(x,y,n,c,is_cas?rw4+rcas4*2:rw4,z);
+    }
+    x[0]=x[n-1];y[0]=y[n-1];n=1;slot=next;map_mask_select(slot);
+   }
+   map_project_q8(route_lat[i],route_lon[i],z,&x[n],&y[n]);
+   if(!is_cas){
+    int visible=!((x[n-1]<-20*256&&x[n]<-20*256)||(x[n-1]>(W+20)*256&&x[n]>(W+20)*256)||(y[n-1]<(MAP_TOP-3)*256&&y[n]<(MAP_TOP-3)*256)||(y[n-1]>(MAP_BOTTOM+3)*256&&y[n]>(MAP_BOTTOM+3)*256));
+    int label_route=z>6||(!freecam&&
+     x[n-1]>-2048*256&&x[n-1]<2048*256&&y[n-1]>-2048*256&&y[n-1]<2048*256&&
+     x[n]>-2048*256&&x[n]<2048*256&&y[n]>-2048*256&&y[n]<2048*256);
+    if(visible&&label_route&&ndrive_route_segs<DRIVE_ROUTE_SEGS){
+     struct DriveRouteSeg*r=&drive_route_segs[ndrive_route_segs++];r->x0=(s16)(x[n-1]>>8);r->y0=(s16)(y[n-1]>>8);r->x1=(s16)(x[n]>>8);r->y1=(s16)(y[n]>>8);
+    }
+   }
+   n++;if(n==255){
+    u16 c=is_cas?(slot?C_ROUTE_SKIPPED_CASING:C_ROUTE_CASING):(slot?C_ROUTE_SKIPPED:C_ROUTE);
+    route_stroke_w4(x,y,n,c,is_cas?rw4+rcas4*2:rw4,z);
+    x[0]=x[n-1];y[0]=y[n-1];n=1;
+   }
   }
-  map_project_q8(route_lat[i],route_lon[i],z,&x[n],&y[n]);
-  int visible=!((x[n-1]<-20*256&&x[n]<-20*256)||(x[n-1]>(W+20)*256&&x[n]>(W+20)*256)||(y[n-1]<(MAP_TOP-3)*256&&y[n]<(MAP_TOP-3)*256)||(y[n-1]>(MAP_BOTTOM+3)*256&&y[n]>(MAP_BOTTOM+3)*256));
-  int label_route=z>6||(!freecam&&
-   x[n-1]>-2048*256&&x[n-1]<2048*256&&y[n-1]>-2048*256&&y[n-1]<2048*256&&
-   x[n]>-2048*256&&x[n]<2048*256&&y[n]>-2048*256&&y[n]<2048*256);
-  if(visible&&label_route&&ndrive_route_segs<DRIVE_ROUTE_SEGS){
-   struct DriveRouteSeg*r=&drive_route_segs[ndrive_route_segs++];r->x0=(s16)(x[n-1]>>8);r->y0=(s16)(y[n-1]>>8);r->x1=(s16)(x[n]>>8);r->y1=(s16)(y[n]>>8);
+  if(n>1){
+   u16 c=is_cas?(slot?C_ROUTE_SKIPPED_CASING:C_ROUTE_CASING):(slot?C_ROUTE_SKIPPED:C_ROUTE);
+   route_stroke_w4(x,y,n,c,is_cas?rw4+rcas4*2:rw4,z);
   }
-  n++;if(n==255){map_stroke_polyline(x,y,n,slot?C_ROUTE_SKIPPED:C_ROUTE,3);x[0]=x[n-1];y[0]=y[n-1];n=1;}
+  if(!is_cas&&offered){
+   int phase=0,px,py;map_mask_select(2);
+   map_project_q8(traffic_path[0].lat,traffic_path[0].lon,z,&px,&py);
+   for(int i=1;i<traffic_offer_n;i++){
+    if(!(i&31))render_checkpoint();int nx,ny;
+    map_project_q8(traffic_path[i].lat,traffic_path[i].lon,z,&nx,&ny);
+    if(!traffic_shared_alt[i])map_dash_segment(px,py,nx,ny,C_ROUTE_DIVERSION,&phase);else phase=0;
+    px=nx;py=ny;
+   }
+  }
+  map_mask_end();
  }
- if(n>1)map_stroke_polyline(x,y,n,slot?C_ROUTE_SKIPPED:C_ROUTE,3);
- if(offered){
-  int phase=0,px,py;map_mask_select(2);
-  map_project_q8(traffic_path[0].lat,traffic_path[0].lon,z,&px,&py);
-  for(int i=1;i<traffic_offer_n;i++){
-   if(!(i&31))render_checkpoint();int nx,ny;
-   map_project_q8(traffic_path[i].lat,traffic_path[i].lon,z,&nx,&ny);
-   if(!traffic_shared_alt[i])map_dash_segment(px,py,nx,ny,C_ROUTE_DIVERSION,&phase);else phase=0;
-   px=nx;py=ny;
-  }
- }
- map_mask_end();
 }
 /* Labels remain a *screen-space overlay* over the perspective road drawing;
  * unlike map geometry the bitmap font is never stretched or rotated. */
@@ -2596,13 +2749,15 @@ static int crop_label_repeats_hud(const char*name);
 static int crop_label_covers_point(int x0,int y0,int x1,int y1,int x,int y){
   return x1>=x-16&&x0<=x+16&&y1>=y-16&&y0<=y+16;
 }
-static int crop_label_draw(const struct DriveLabel*d){
+static int crop_label_draw(const struct DriveLabel*d,int z){
   if(crop_label_repeats_hud(d->name))return 0;
   int w=textw(d->name,1);
+  int xpad=z>=9?18:(z==8?14:10);
+  int ypad=z>=9?18:(z==8?15:13);
   for(int side=-1;side<=1;side+=2){
-    int x0=d->x-w/2+(d->vertical?side*(w/2+10):0);
+    int x0=d->x-w/2+(d->vertical?side*(w/2+xpad):0);
     if(!d->vertical){if(x0<7)x0=7;if(x0+w>W-7)x0=W-7-w;}
-    int y0=d->y-6+(d->vertical?0:side*13),x1=x0+w,y1=y0+13;
+    int y0=d->y-6+(d->vertical?0:side*ypad),x1=x0+w,y1=y0+13;
     if(crop_car_valid&&crop_label_covers_point(x0,y0,x1,y1,crop_car_x,crop_car_y))continue;
     if(freecam&&crop_label_covers_point(x0,y0,x1,y1,MAP_ANCHOR_X,FREECAM_ANCHOR_Y))continue;
     if(crop_label_hits_hud(x0,y0,x1,y1)||drive_label_hits_route(x0,y0,x1,y1,1))continue;
@@ -2633,7 +2788,7 @@ static void drive_label_render(int z){
       struct DriveLabel*d=&drive_labels[order[k]];
       if(label_text_seen(d->name))continue;
       if(cropped){
-        if(crop_label_draw(d)){label_text_add(d->name);road_count++;}
+        if(crop_label_draw(d,z)){label_text_add(d->name);road_count++;}
         continue;
       }
       if(drive_label_primary(d)!=(pass==0))continue;
@@ -2926,11 +3081,12 @@ static void visual_snap_ease(int immediate){
 }
 static void update_visual_snap(int z,int immediate){
  if(visual_snap_frozen)return;
- if(!gps.fix||!mapok||mh.maxlvl<6||!map_view_covered(car_lat(),car_lon())){
+ s32 rawlat4=car_lat4(),rawlon4=car_lon4();
+ s32 rlat=q4_to_unit_round(rawlat4),rlon=lon_delta(q4_to_unit_round(rawlon4));
+ if(!gps.fix||!mapok||mh.maxlvl<6||!map_view_covered(rlat,rlon)){
   if(visual_snap.init)visual_snap_reset();
   return;
  }
- s32 rlat=car_lat(),rlon=car_lon();
  int course=map_course();
  int want_z6=z>=6;
  int jumped=!visual_snap.init||iabs32(rlat-visual_snap.raw_lat)>100||iabs32(lon_delta(rlon-visual_snap.raw_lon))>100;
@@ -2940,13 +3096,13 @@ static void update_visual_snap(int z,int immediate){
   visual_snap.active_z6=0;visual_snap.target_dlat4=0;visual_snap.target_dlon4=0;
   visual_snap_ease(immediate||gps.mph10<5);
   visual_snap.init=1;visual_snap.raw_lat=rlat;visual_snap.raw_lon=rlon;
-  visual_snap.synced_valid=1;visual_snap.synced_z6=0;visual_snap.synced_lat=rlat;visual_snap.synced_lon=rlon;
+  visual_snap.synced_valid=1;visual_snap.synced_z6=0;visual_snap.synced_lat4=rawlat4;visual_snap.synced_lon4=rawlon4;
   visual_snap.synced_course=course;visual_snap.synced_route_status=route_status;visual_snap.synced_route_head=route_head;
   return;
  }
  if(!visual_snap.active_z6&&gps.mph10<5)immediate=1;
  if(!jumped&&visual_snap.synced_valid&&visual_snap.synced_z6&&
-    visual_snap.synced_lat==rlat&&visual_snap.synced_lon==rlon&&
+    visual_snap.synced_lat4==rawlat4&&visual_snap.synced_lon4==rawlon4&&
     visual_snap.synced_course==course&&
     visual_snap.synced_route_status==route_status&&
     visual_snap.synced_route_head==route_head){
@@ -2955,7 +3111,6 @@ static void update_visual_snap(int z,int immediate){
   visual_snap_ease(immediate);
   return;
  }
- s32 rawlat4=rlat*16,rawlon4=rlon*16;
  int cq=coslat_q15(rlat);if(cq<1)cq=1;
  int lon_r=(int)udiv32((u32)MAP_SNAP_RETAIN_Q4*32768u,(u32)cq)+2;
  int lat_pad=19,lon_pad=(int)udiv32(19u*32768u,(u32)cq)+2;
@@ -2999,7 +3154,7 @@ static void update_visual_snap(int z,int immediate){
  }else visual_snap_miss(immediate);
  visual_snap_ease(immediate);
  visual_snap.init=1;visual_snap.active_z6=1;visual_snap.raw_lat=rlat;visual_snap.raw_lon=rlon;
- visual_snap.synced_valid=1;visual_snap.synced_z6=1;visual_snap.synced_lat=rlat;visual_snap.synced_lon=rlon;
+ visual_snap.synced_valid=1;visual_snap.synced_z6=1;visual_snap.synced_lat4=rawlat4;visual_snap.synced_lon4=rawlon4;
  visual_snap.synced_course=course;visual_snap.synced_route_status=route_status;visual_snap.synced_route_head=route_head;
 }
 static void visual_snap_for_draw(int z){
@@ -3007,7 +3162,7 @@ static void visual_snap_for_draw(int z){
  if(!gps.fix||!mapok||mh.maxlvl<6){if(visual_snap.init)visual_snap_reset();return;}
  int want_z6=z>=6;
  if(visual_snap.synced_valid&&visual_snap.synced_z6==want_z6&&
-    visual_snap.synced_lat==car_lat()&&visual_snap.synced_lon==car_lon()&&
+    visual_snap.synced_lat4==car_lat4()&&visual_snap.synced_lon4==car_lon4()&&
     visual_snap.synced_course==map_course()&&
     visual_snap.synced_route_status==route_status&&
     visual_snap.synced_route_head==route_head)return;
@@ -3045,11 +3200,13 @@ static void draw_map_geometry(int z){npoi=poi_visible=0;nlbox=nltxt=0;fill(0,MAP
    * tile's water stroke must never paint over an earlier tile's bridge. */
   int first=MAP_AREA_FILLS?0:1;
   for(int phase=first;phase<3;phase++){
-    if(phase)map_mask_begin(phase==1?0:1);
+    if(phase==1)map_mask_begin(0);
+    else if(phase==2)road_pass_begin(z);
     for(int ty=ty0;ty<=ty1;ty++)for(int tx=tx0;tx<=tx1;tx++)
       if(map_tile_in_pack(sourcez,tx,ty))draw_tile_geometry(get_tile((u8)sourcez,tx,ty),z,
         phase==0?MAP_DRAW_AREAS:(phase==1?MAP_DRAW_CONTEXT:MAP_DRAW_ROADS));
-    if(phase)map_mask_end();
+    if(phase==1)map_mask_end();
+    else if(phase==2)road_pass_end();
   }
   {
     for(int ty=ty0;ty<=ty1;ty++)for(int tx=tx0;tx<=tx1;tx++)
@@ -4179,6 +4336,14 @@ static void vehicle_close(void){
 #include "frame_renderer.h"
 
 static int power_requested(void){char b[24];long fd=s_open(POWER_PATH,O_RDWR_,0);if(fd<0)return 0;long n=s_read((int)fd,b,sizeof(b)-1);if(n<=0){s_close((int)fd);return 0;}b[n]=0;int v=atoi0(b),r=0;if(v&1){s_lseek((int)fd,0,SEEK_SET_);s_write((int)fd,"0",1);r=1;}s_close((int)fd);return r;}
+static int path_exists(const char*path){long fd=s_open(path,O_RDONLY_,0);if(fd<0)return 0;s_close((int)fd);return 1;}
+static void shutdown_wait_boot_locks(int wdfd){
+ for(int i=0;i<50;i++){
+  if(!path_exists(BT_INIT_LOCK_PATH)&&!path_exists(VEHICLE_INIT_LOCK_PATH))break;
+  if(wdfd>=0&&(i%10)==0)s_write(wdfd,"W",1);
+  s_nanosleep(0,50000000);
+ }
+}
 
 #ifndef HOST_TEST
 static void run(void){
@@ -4199,11 +4364,11 @@ static void run(void){
   int wdfd=(int)s_open(WD_PATH,O_WRONLY_,0);debug_log(STATE_LOG,"CLIOPLAY GLOBAL " CLIOPLAY_VERSION " START");debug_log(STATE_LOG,qadjmode==7?(qadj_map_ok?"QAD7 PACKET+MMAP QUERY ENABLED":"QAD7 PAGED QUERY ENABLED"):"QADJ FAST QUERY FALLBACK CPR2");{char mb[96];mb[0]=0;appendstr(mb,sizeof(mb),"MMAP QAD=");append_int(mb,sizeof(mb),qadj_map_ok);appendstr(mb,sizeof(mb)," GEOM=");append_int(mb,sizeof(mb),route_geom_map_ok);debug_log(STATE_LOG,mb);}u32 tick=0,next_model=s_now_ms(),next_input=next_model;render_runtime_reset(next_model);
   for(;;){
     u32 now=s_now_ms();int model_due=frame_due(now,next_model);
-    if(power_requested()){boot_fade_cancel();debug_log(STATE_LOG,"POWER REQUEST");bt_write_small(BT_ACTIVE_PATH,"0\n");if(pref.learn_history){ml_poll_zoom_override(s_now_ms());(void)mob_finish(s_now_ms());if(ml_dirty)(void)ml_save();}if(prefs_dirty)save_prefs();save_last_audio();if(gps.fix)remember_live_fix();save_last_fix();save_trip();render_background_dirty=1;render_runtime_step(hud_now_ms(),1);s_sync();s_nanosleep(0,400000000);vehicle_close();if(wdfd>=0)s_close(wdfd);for(int i=0;i<INPUT_MAX;i++)if(infd[i]>=0)s_close(infd[i]);if(gpsfd>=0)s_close(gpsfd);if(audiofd>=0)s_close(audiofd);if(mapfd>=0)s_close(mapfd);if(qadjfd>=0)s_close(qadjfd);if(routefd>=0)s_close(routefd);return;}
+    if(power_requested()){boot_fade_cancel();debug_log(STATE_LOG,"POWER REQUEST");bt_write_small(SHUTDOWN_PATH,"1\n");bt_write_small(BT_ACTIVE_PATH,"0\n");shutdown_wait_boot_locks(wdfd);if(pref.learn_history){ml_poll_zoom_override(s_now_ms());(void)mob_finish(s_now_ms());if(ml_dirty)(void)ml_save();}if(prefs_dirty)save_prefs();save_last_audio();if(gps.fix)remember_live_fix();save_last_fix();save_trip();s_sync();s_nanosleep(0,400000000);vehicle_close();if(frame_fb_fd>=0){s_close(frame_fb_fd);frame_fb_fd=-1;}if(wdfd>=0)s_close(wdfd);for(int i=0;i<INPUT_MAX;i++)if(infd[i]>=0)s_close(infd[i]);if(gpsfd>=0)s_close(gpsfd);if(audiofd>=0)s_close(audiofd);if(mapfd>=0)s_close(mapfd);if(qadjfd>=0)s_close(qadjfd);if(routefd>=0)s_close(routefd);return;}
     if(frame_due(now,next_input)){poll_csw();poll_keys();next_input=frame_after(next_input,now,33u);}
     if(model_due){
       next_model=frame_after(next_model,now,FRAME_MODEL_MS);
-      if((tick%5)==0)scan_inputs();int had_fix=gps.fix;poll_gps();if(gps.fix){if(!had_fix){track_valid=0;track_course=-1;visual_snap_reset();}remember_live_fix();}
+      if((tick%5)==0)scan_inputs();int had_fix=gps.fix;poll_gps();if(gps.fix){if(!had_fix){track_valid=0;track_q4_valid=0;track_was_moving=0;track_settling=0;track_course=-1;visual_snap_reset();}remember_live_fix();}
       update_smooth_track();update_display_course();update_visual_snap(active_zoom(),0);
       if((tick%2)==0){poll_audio();poll_car();poll_vehicle();bt_source_service();}
       if((tick%5)==0){bt_poll_status();poll_phone_destination();}
@@ -4226,7 +4391,7 @@ static void run(void){
     }
     if(model_due&&route_status==R_READY)route_service_until(now);
     render_profile_service(s_now_ms());
-    now=s_now_ms();if(!frame_due(now,wake)){u32 wait=wake-now;s_nanosleep((long)(wait/1000u),(long)(wait%1000u)*1000000L);}
+    now=s_now_ms();if(!frame_due(now,wake)){u32 wait=wake-now;if(wait>FRAME_MODEL_MS)wait=FRAME_MODEL_MS;s_nanosleep((long)(wait/1000u),(long)(wait%1000u)*1000000L);}
   }
 }
 __attribute__((noreturn))void _start(void){run();s_exit(0);}

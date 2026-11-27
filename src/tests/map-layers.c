@@ -23,13 +23,15 @@ static void lines_only(struct Tile*t,int z,int roads){
 }
 static void visible_lines(int z,int roads){
 #ifdef CLIO_MAP_RASTER_H
-  map_mask_begin(roads?1:0);
+  if(roads)road_pass_begin(z);
+  else map_mask_begin(0);
 #endif
   int a,b,c,d;map_visible_tile_bounds(z,z,&a,&b,&c,&d);
   for(int ty=c;ty<=d;ty++)for(int tx=a;tx<=b;tx++)
     if(map_tile_in_pack(z,tx,ty))lines_only(get_tile(z,tx,ty),z,roads);
 #ifdef CLIO_MAP_RASTER_H
-  map_mask_end();
+  if(roads)road_pass_end();
+  else map_mask_end();
 #endif
 }
 static void scene(s32 lat,s32 lon,int z,int night,int driving,int heading){
@@ -87,9 +89,9 @@ static void cropped_labels(void){
     perspective_scale_update();
     drive_label_prepare(9);
     fill(0,0,W,H,C_MAP_BG);
-    map_mask_begin(1);
+    road_pass_begin(9);
     draw_tile_geometry(&tile,9,MAP_DRAW_ROADS);
-    map_mask_end();
+    road_pass_end();
     assert(ndrive_labels==1&&streq(drive_labels[0].name,visible));
     assert(drive_labels[0].x>200&&drive_labels[0].x<280);
     nltxt=nlbox=0;
@@ -125,19 +127,96 @@ static unsigned synthetic(void){
   printf("adjacent-tile road/water-stroke overlap: hidden=%u water_overlap=%u\n",hidden,w);
   assert(w>0);fclose(f);mapfd=-1;return hidden;
 }
+static void parallel_road_expansion(void){
+  /* Wide Q4 strokes are endpoint-order symmetric across thin, medium and wide widths. */
+  static u16 ref_fb[FB_PIX];
+  const int widths_q4[]={24,96,296,568};
+  for(unsigned k=0;k<sizeof(widths_q4)/sizeof(widths_q4[0]);k++){
+    apply_palette(0);fill(0,0,W,H,C_MAP_BG);
+    map_mask_begin(1);map_mask_select(3);
+    map_line_q8_w4(70*256+43,60*256+19,210*256+111,170*256+203,road_colours[3],widths_q4[k]);
+    map_mask_end();memcpy(ref_fb,fb,sizeof(fb));
+    fill(0,0,W,H,C_MAP_BG);
+    map_mask_begin(1);map_mask_select(3);
+    map_line_q8_w4(210*256+111,170*256+203,70*256+43,60*256+19,road_colours[3],widths_q4[k]);
+    map_mask_end();
+    assert(!memcmp(ref_fb,fb,sizeof(fb)));
+  }
+
+  /* Priority expansion & outward displacement: a minor road tightly parallel
+   * to a main trunk road must stay distinct (canvas gap between outer kerbs)
+   * while expanding outwards on its open side to retain generous width. */
+  for(int night=0;night<2;night++)for(int z=7;z<=9;z++){
+    scene(128,65,z,night,0,0);
+    fill(0,0,W,H,C_MAP_BG);
+    int ys[2]={20*256,250*256};
+    int xm[2]={180*256,180*256},xr[2]={192*256,192*256};
+    int cx[2]={80*256,300*256},cy[2]={135*256,135*256};
+    road_pass_begin(z);
+    road_pass_add(xm,ys,2,2); /* Trunk */
+    road_pass_add(xr,ys,2,6); /* Parallel minor road 12 px east */
+    road_pass_add(cx,cy,2,4); /* Perpendicular secondary cross-street */
+    road_pass_end();
+    assert(road_npolys==3);
+    /* Pick mid-polyline vertex away from cross-street (row y=70). */
+    const struct RoadVert*vm=&road_verts[road_polys[0].first+road_polys[0].count/2];
+    const struct RoadVert*vr=&road_verts[road_polys[1].first+road_polys[1].count/2];
+    const struct RoadVert*vc=&road_verts[road_polys[2].first+road_polys[2].count/2];
+    /* Main road expands wider than minor road; minor road shifts outwards (+X). */
+    assert(vm->eff_w4>=vr->eff_w4);
+    if(z>=8)assert(vr->draw_x>vr->x);
+    /* Minor road retains substantial width via outward expansion instead of collapsing. */
+    assert(vr->eff_w4>=vr->want_h4);
+    /* Perpendicular cross-street is not displaced vertically. */
+    assert(vc->draw_y==vc->y);
+    /* Verify pixel-level separation at y=70: trunk fill -> canvas gap -> minor fill. */
+    int main_x=vm->draw_x>>8,minor_x=vr->draw_x>>8;
+    assert(main_x<minor_x);
+    assert(fb[70*W+main_x]==road_colours[4]);
+    assert(fb[70*W+minor_x]==road_colours[0]);
+    int saw_gap=0;
+    for(int x=main_x+1;x<minor_x;x++)if(fb[70*W+x]==C_MAP_BG){saw_gap=1;break;}
+    assert(saw_gap);
+  }
+
+  /* Equal-priority dual carriageway (two parallel Primary roads 16 px apart at Z8)
+   * splits symmetrically and preserves a clean central median. */
+  scene(128,65,8,0,0,0);
+  fill(0,0,W,H,C_MAP_BG);
+  int ys[2]={20*256,250*256},xa[2]={200*256,200*256},xb[2]={216*256,216*256};
+  road_pass_begin(8);
+  road_pass_add(xa,ys,2,3);
+  road_pass_add(xb,ys,2,3);
+  road_pass_end();
+  assert(fb[100*W+208]==C_MAP_BG);
+  assert(fb[100*W+(road_verts[road_polys[0].first].draw_x>>8)]==road_colours[3]);
+  assert(fb[100*W+(road_verts[road_polys[1].first].draw_x>>8)]==road_colours[3]);
+  puts("Cartographic road layout: wide Q4 symmetry, priority main-first expansion, outward minor-road displacement, cross-street neutrality and dual-carriageway medians passed.");
+}
 int main(int argc,char**argv){
   /* Style lookup and packed coverage must agree in both palettes at all zooms.
-   * This also covers service roads sharing the local colour plane. */
-  for(int night=0;night<2;night++)for(int z=0;z<=9;z++){
-    apply_palette(night);map_mask_begin(1);
-    int previous=0;
-    for(int cls=7;cls>=1;cls--){
-      u16 colour;int width;road_style(cls,z,&colour,&width);
-      assert(colour==map_coverage_cols[cls<=5?6-cls:0]);
-      assert(width>=previous&&width<=5);previous=width;
+   * Widths increase monotonically across road classes and zoom tiers. */
+  for(int night=0;night<2;night++){
+    int prev_zoom_w4[8]={0};
+    for(int z=0;z<=9;z++){
+      apply_palette(night);map_mask_begin(1);
+      int previous=0,prev_q4=0;
+      for(int cls=7;cls>=1;cls--){
+        u16 colour;int width,w4,c4;
+        road_style(cls,z,&colour,&width);
+        road_style_q4(cls,z,&colour,&w4,&c4);
+        assert(colour==map_coverage_cols[cls<=5?6-cls:0]);
+        assert(width>=previous&&width<=36);
+        assert(w4>=prev_q4&&w4>=prev_zoom_w4[cls]);
+        previous=width;prev_q4=w4;prev_zoom_w4[cls]=w4;
+      }
+      map_mask_end();
+      map_mask_begin(MAP_MASK_CASING);
+      for(int slot=0;slot<6;slot++)assert(map_coverage_cols[slot]==road_casing_colours[slot]);
+      map_mask_end();
     }
-    map_mask_end();
   }
+  parallel_road_expansion();
   cropped_labels();
   unsigned failures=synthetic();
   if(argc>1){

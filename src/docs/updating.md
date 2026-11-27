@@ -94,7 +94,7 @@ The update backup contains its own checksums and version information.
 ## 4. Compatibility
 
 File preservation and format compatibility are different things. The updater
-does not migrate old data. ClioPlay 2.2.7 uses CTR4 trips, CLP2
+does not migrate old data. ClioPlay 2.2.8 uses CTR4 trips, CLP2
 saved places, CPM5 display maps, CPR2 v5 routing and optional QAD7, with
 version-2 navigation bundle manifests, plus the optional companion
 `mobility-ml.dat` (`MML1`) learning file alongside unchanged `mobility.dat`

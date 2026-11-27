@@ -315,6 +315,7 @@ static void sbc_pcm_interleave(u32*out,const struct SbcFrame*f){
 #define BT_PIN_PATH "/tmp/clbtpin"
 #define BT_LOCAL_PATH "/tmp/clbtlocal"
 #define BT_BOOT_READY_PATH "/tmp/clbtrdy"
+#define SHUTDOWN_PATH "/tmp/clshutdown"
 #define BT_BONDS_PATH "./clio843/btbonds.dat"
 #define BT_NAMES_PATH "./clio843/btnames.dat"
 #define BT_DEVLIST_PATH "/tmp/clbtdevices"
@@ -858,6 +859,14 @@ static void auto_boot_service(u32 tick){
   hci_log(auto_attempts==1?"AUTO RECONNECT PROFILE-FIRST":"AUTO RECONNECT SECOND TRY",saved_peer,-1);
 }
 static void session_close(int keep_status){snd_close();avrcp_close();avrcp_delay_ticks=-1;reconnect_profile_ticks=-1;reconnect_wait_ticks=-1;if(mediafd>=0)s_close(mediafd);if(sigfd>=0)s_close(sigfd);mediafd=sigfd=-1;av_reset_stream();live_peer_valid=0;meta_connected=0;meta_playing=0;if(saved_peer_valid)meta_device_set_addr(saved_peer);else meta_device_addr[0]=meta_device[0]=0;meta_dirty=1;if(!keep_status)status_set("BT WAIT PHONE");}
+static int shutdown_requested(void){return auto_path_exists(SHUTDOWN_PATH);}
+static void audio_shutdown_cleanup(void){
+ session_close(1);
+ if(avr_sdpfd>=0){s_close(avr_sdpfd);avr_sdpfd=-1;}
+ if(ctrllistenfd>=0){s_close(ctrllistenfd);ctrllistenfd=-1;}
+ if(listenfd>=0){s_close(listenfd);listenfd=-1;}
+ if(hcifd>=0){s_close(hcifd);hcifd=-1;}
+}
 
 /* clio040 command file is a single latest-command record; sequence prevents repeats. */
 static void process_command(void){char b[96]={0};long fd=s_open(BT_CMD_PATH,O_RDONLY_,0);if(fd<0)return;long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n<=0)return;b[n]=0;u32 seq=0;if(!parse_uint0(b,&seq)||seq==command_seq_seen)return;command_seq_seen=seq;char*p=b;while(*p>='0'&&*p<='9')p++;while(*p==' '||*p=='\t')p++;
@@ -908,6 +917,7 @@ static void audio_profile_service(u32 now){
 static void serve(void){long prio=s_audio_priority();bt_log_append("CLIOPLAY " CLIOPLAY_VERSION " BLUETOOTH AUDIO START\n");peer_load();local_bdaddr_load();meta_write();status_set("BT WAIT PHONE");hcifd=hci_raw_open();if(hcifd<0)hci_log("HCI MONITOR OPEN FAIL",0,-1);if(saved_peer_valid)bond_restore_hcid(saved_peer);device_list_write();hci_log("AVRCP SDP / MULTI-DEVICE BONDS / BUFFERED AUDIO / EARLY PHONE RECONNECT",0,-1);hci_log(prio<0?"AUDIO PRIORITY 0 REQUEST DENIED":"AUDIO PRIORITY 0 SET",0,-1);u32 tick=0;struct AudioPeriodic maintenance={0},status_poll={0},metadata_poll={0};for(;;){
     u32 now=alert_now_ms(),steps=audio_periodic(&maintenance,now,100u);
     if(steps){
+    if(shutdown_requested()){bt_log_append("BT SHUTDOWN REQUESTED\n");audio_shutdown_cleanup();return;}
     tick+=steps;audio_maintenance_runs++;
     audio_profile_service(now);
     if(listenfd<0){listenfd=make_listener_psm(PSM_AVDTP);if(listenfd<0){status_set("BT L2CAP ERR");s_nanosleep(1,0);continue;}}

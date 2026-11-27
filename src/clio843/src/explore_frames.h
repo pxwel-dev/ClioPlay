@@ -3,8 +3,8 @@
 
 struct ExploreView {
  struct FreecamPose pose;
- s32 track_lat,track_lon,snap_dlat4,snap_dlon4;
- int track_valid,track_course,display_course,display_course_valid;
+ s32 track_lat,track_lon,track_lat4,track_lon4,track_sync_lat,track_sync_lon,snap_dlat4,snap_dlon4;
+ int track_valid,track_q4_valid,track_course,display_course,display_course_valid;
  int card_x,card_y,card_w,card_h;
 };
 static struct {
@@ -22,15 +22,18 @@ static const struct ExploreView *explore_live;
 
 static struct ExploreView explore_view(void){
  return (struct ExploreView){
-  freecam_current_pose(),track_lat,track_lon,visual_snap.dlat4,visual_snap.dlon4,
-  track_valid,track_course,display_course,display_course_valid,
+  freecam_current_pose(),track_lat,track_lon,track_lat4,track_lon4,track_sync_lat,track_sync_lon,
+  visual_snap.dlat4,visual_snap.dlon4,
+  track_valid,track_q4_valid,track_course,display_course,display_course_valid,
   nav_card_x,nav_card_y,nav_card_w,nav_card_h
  };
 }
 static void explore_set_view(struct ExploreView v){
  freecam_set_pose(v.pose);
- track_lat=v.track_lat;track_lon=v.track_lon;visual_snap.dlat4=v.snap_dlat4;visual_snap.dlon4=v.snap_dlon4;
- track_valid=v.track_valid;track_course=v.track_course;
+ track_lat=v.track_lat;track_lon=v.track_lon;track_lat4=v.track_lat4;track_lon4=v.track_lon4;
+ track_sync_lat=v.track_sync_lat;track_sync_lon=v.track_sync_lon;
+ visual_snap.dlat4=v.snap_dlat4;visual_snap.dlon4=v.snap_dlon4;
+ track_valid=v.track_valid;track_q4_valid=v.track_q4_valid;track_course=v.track_course;
  display_course=v.display_course;display_course_valid=v.display_course_valid;
  nav_card_x=v.card_x;nav_card_y=v.card_y;nav_card_w=v.card_w;nav_card_h=v.card_h;
 }
@@ -64,6 +67,9 @@ static int explore_sync(u32 now,int calculating,const struct RenderMapScene*scen
  explore.built=explore.shown=0;explore.at=now;freecam_buffered=1;renderer.camera_pending=0;
  if(gps.fix){
   explore.view.track_lat=car_lat();explore.view.track_lon=car_lon();explore.view.track_valid=1;
+  explore.view.track_lat4=car_lat4();explore.view.track_lon4=car_lon4();
+  explore.view.track_sync_lat=explore.view.track_lat;explore.view.track_sync_lon=explore.view.track_lon;
+  explore.view.track_q4_valid=1;
   explore.view.track_course=shown_course();
  }
  return 1;

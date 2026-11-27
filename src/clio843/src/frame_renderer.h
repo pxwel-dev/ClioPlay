@@ -291,11 +291,12 @@ static void render_runtime_step(u32 now,int model_changed){
  }
  int ui_due=frame_due(now,renderer.ui.next);
  int moving=gps.fix&&gps.mph10>=5; /* Under half a mile per hour, hold the parked view. */
+ int track_live=!freecam&&gps.fix&&track_settling;
  int snap_settling=!freecam&&active_zoom()>=6&&visual_snap_settling();
  int invalid=!renderer.valid||renderer.theme!=theme_resolved;
  int camera_due=renderer.camera_pending&&ui_due;
  int scene_changed=!render_same_scene(&renderer.scene,&scene)||renderer.moving!=moving;
- int live_map_due=(moving||snap_settling)&&(map_due||render_background_dirty);
+ int live_map_due=(moving||track_live||snap_settling)&&(map_due||render_background_dirty);
  int showing_queued=queued&&!explore_preparing()&&ui_due;
  if(showing_queued){
   explore_show_frame();
@@ -305,7 +306,7 @@ static void render_runtime_step(u32 now,int model_changed){
   render_background();
   renderer.scene=render_map_scene();renderer.moving=moving;
   if(camera_due)render_stats.rotations++;else render_stats.maps++;
- }else if(!queued&&!renderer.camera_pending&&!moving&&!snap_settling)render_background_dirty=0;
+ }else if(!queued&&!renderer.camera_pending&&!moving&&!track_live&&!snap_settling)render_background_dirty=0;
  if(map_due)renderer.map_at=frame_after(renderer.map_at,now,period);
  now=hud_now_ms();
  if(overlay_batch_step(now,route_changed||batch_interrupted))return;

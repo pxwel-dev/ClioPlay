@@ -1,6 +1,6 @@
 #!/bin/sh
 # ClioPlay bootstrap.
-CLIOPLAY_VERSION=2.2.7
+CLIOPLAY_VERSION=2.2.8
 # Persistent logs exist only when prefs.ini has debug=1.
 # Resolve the actual card before any executable, preference or log lookup.
 find_card(){
@@ -58,7 +58,7 @@ log(){
 log "CLIOPLAY $CLIOPLAY_VERSION START"
 
 # Clear volatile state from any previous runtime without touching audlast.dat.
-rm -f /tmp/cfready /tmp/cfstate /tmp/cfbus /tmp/cpaudio /tmp/cfout /tmp/clvd /tmp/clbt >/dev/null 2>&1
+rm -f /tmp/cfready /tmp/cfstate /tmp/cfbus /tmp/cpaudio /tmp/cfout /tmp/clvd /tmp/clbt /tmp/clshutdown /tmp/clbtinit /tmp/clvinit >/dev/null 2>&1
 
 # 1) Initialize physical AUX with the complete working 03 sequence.
 # Native ioctls run once in the foreground; no navigation prime or timed wait.
@@ -146,12 +146,30 @@ if [ -x "$SD"/clio843/cliospl ]; then
   log "CLIOPLAY SPLASH DRAWN"
 fi
 
+# Read-only shutdown check: never write /proc/barcelona/onoff here so clio040
+# can still acknowledge the power request cleanly on exit.
+boot_shutting_down(){
+  if [ -e /tmp/clshutdown ]; then return 0; fi
+  if [ -r /proc/barcelona/onoff ]; then
+    read ONOFF REST < /proc/barcelona/onoff 2>/dev/null
+    case "$ONOFF" in
+      *[13579]) return 0 ;;
+    esac
+  fi
+  return 1
+}
+
+if boot_shutting_down; then
+  log "EARLY SHUTDOWN DETECTED BEFORE BT/FOCUS; SKIPPING BACKGROUND SERVICES"
+  exec "$SD"/clio843/clio040
+fi
+
 # 2) Start Bluetooth immediately after AUX initialization. This is
 # intentionally BEFORE Focus/vehicle/GPS readiness so HCI/HID/A2DP setup and
 # saved-phone reconnect can proceed in parallel with vehicle/GPS acquisition.
 # btstart launches the Renault HID listener without waiting for the remote to
 # wake, and publishes /tmp/clbtrdy once the Bluetooth core is ready to reconnect.
-CLIO_DEBUG=$DEBUG /bin/sh "$SD"/clio843/btstart.sh >/dev/null 2>&1 &
+CLIO_DEBUG=$DEBUG /bin/sh "$SD"/clio843/btstart.sh </dev/null >/dev/null 2>&1 &
 log "BT START REQUESTED EARLY (GPS-INDEPENDENT)"
 
 # The physical console producer requires its consumer FIFO to exist first.
@@ -160,11 +178,26 @@ setup_console_fifo /dev/input/CswEvent0 >/dev/null 2>&1
 # 3) Replace the Focus endpoint, then reconnect the stock vehicle daemon.
 # focusd publishes /tmp/cfstate plus a volatile /tmp/cfbus event stream.
 killall focusd >/dev/null 2>&1
-"$SD"/clio843/focusd >/dev/null 2>&1 &
+"$SD"/clio843/focusd </dev/null >/dev/null 2>&1 &
 log "FOCUS START REQUESTED"
 start_vehicle(){
+vehicle_shutting_down(){
+  if [ -e /tmp/clshutdown ]; then return 0; fi
+  if [ -r /proc/barcelona/onoff ]; then
+    read ONOFF REST < /proc/barcelona/onoff 2>/dev/null
+    case "$ONOFF" in
+      *[13579]) return 0 ;;
+    esac
+  fi
+  return 1
+}
+cd / >/dev/null 2>&1
 N=0
 while [ $N -lt 8 ]; do
+  if vehicle_shutting_down; then
+    log "VEHICLEDAEMON SKIPPED (SHUTDOWN)"
+    return 0
+  fi
   if [ -e /tmp/cfready ]; then
     log "FOCUS READY"
     break
@@ -172,15 +205,27 @@ while [ $N -lt 8 ]; do
   sleep 1
   N=`expr $N + 1`
 done
+if vehicle_shutting_down; then
+  log "VEHICLEDAEMON SKIPPED (SHUTDOWN)"
+  return 0
+fi
 if [ ! -e /tmp/cfready ]; then log "FOCUS READY TIMEOUT"; fi
+trap 'rm -f /tmp/clvinit >/dev/null 2>&1' 0
+: > /tmp/clvinit 2>/dev/null
 killall -TERM vehicledaemon >/dev/null 2>&1
-/bin/vehicledaemon >/dev/null 2>&1 &
+if vehicle_shutting_down; then
+  rm -f /tmp/clvinit >/dev/null 2>&1
+  log "VEHICLEDAEMON RESPAWN SKIPPED (SHUTDOWN)"
+  return 0
+fi
+/bin/vehicledaemon </dev/null >/dev/null 2>&1 &
+rm -f /tmp/clvinit >/dev/null 2>&1
 log "VEHICLEDAEMON RESTARTED"
 }
 # Only vehicledaemon depends on the Focus socket. The UI already tolerates
 # missing /tmp/cfstate and /tmp/cfbus and polls them again as they appear.
 # Keep the existing readiness barrier/timeout, but overlap it with UI loading.
-start_vehicle &
+start_vehicle </dev/null >/dev/null 2>&1 &
 
 # 4) Foreground UI. Bluetooth may already be connected by this point.  clio040
 # owns audlast.dat persistence and later publishes /tmp/clbt solely as the

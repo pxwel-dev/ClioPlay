@@ -1,6 +1,6 @@
 #!/bin/sh
 # ClioPlay Bluetooth bootstrap.
-CLIOPLAY_VERSION=2.2.7
+CLIOPLAY_VERSION=2.2.8
 # Launch the Renault HID listener, then start phone setup immediately. The
 # remote can connect whenever a button wakes it. Phone pairing uses TomTom's
 # factory blueserver/hcid runtime pairing gate; hcid/hidd are never restarted for pairing.
@@ -13,7 +13,21 @@ DEBUG=${CLIO_DEBUG:-0}
 HREQ=/tmp/clbthci
 # Volatile boot barrier: never accept a marker left by an earlier launch.
 BOOT_READY=/tmp/clbtrdy
-rm -f "$BOOT_READY" >/dev/null 2>&1
+BT_INIT_LOCK=/tmp/clbtinit
+SHUTDOWN=/tmp/clshutdown
+rm -f "$BOOT_READY" "$BT_INIT_LOCK" >/dev/null 2>&1
+trap 'rm -f "$BT_INIT_LOCK" >/dev/null 2>&1' 0
+
+shutting_down(){
+  if [ -e "$SHUTDOWN" ]; then return 0; fi
+  if [ -r /proc/barcelona/onoff ]; then
+    read ONOFF REST < /proc/barcelona/onoff 2>/dev/null
+    case "$ONOFF" in
+      *[13579]) return 0 ;;
+    esac
+  fi
+  return 1
+}
 
 # clio040 mirrors the live Settings > Debug state here once the UI starts.
 # Before then, keep using the boot-time CLIO_DEBUG value supplied by ttn.
@@ -44,6 +58,10 @@ log(){
 }
 
 log "CLIOPLAY $CLIOPLAY_VERSION BT START"
+if shutting_down; then
+  log "BT START ABORTED (SHUTDOWN)"
+  exit 0
+fi
 
 if [ -r /proc/barcelona/export_hw_var ]; then
   . /proc/barcelona/export_hw_var
@@ -53,6 +71,10 @@ fi
 READY=0
 N=0
 while [ $N -lt 3 ]; do
+  if shutting_down; then
+    log "BT START ABORTED (SHUTDOWN)"
+    exit 0
+  fi
   if hciconfig hci0 2>/dev/null | grep -q "UP"; then
     READY=1
     break
@@ -61,13 +83,24 @@ while [ $N -lt 3 ]; do
   N=`expr $N + 1`
 done
 
+if shutting_down; then
+  log "BT START ABORTED (SHUTDOWN)"
+  exit 0
+fi
+
 if [ "$READY" != "1" ]; then
   log "BT FULL INIT"
+  : > "$BT_INIT_LOCK" 2>/dev/null
   killall hidd >/dev/null 2>&1
   killall hciattach >/dev/null 2>&1
   killall sdpd >/dev/null 2>&1
   killall hcid >/dev/null 2>&1
   sleep 1
+  if shutting_down; then
+    rm -f "$BT_INIT_LOCK" >/dev/null 2>&1
+    log "BT FULL INIT ABORTED (SHUTDOWN)"
+    exit 0
+  fi
 
   sed "s/@DEVNAME@/${hw_btname}/;s/@DEVCLASS@/${hw_btclass}/" \
     /etc/bluetooth/hcid.conf.template > /etc/bluetooth/hcid.conf
@@ -87,10 +120,15 @@ if [ "$READY" != "1" ]; then
       csrinit bcsp /dev/bt ${hw_btspeed} ${hw_btclock} >> "$OUT" 2>&1
   fi
   hciconfig hci0 up >> "$OUT" 2>&1 || log "HCIUP FAIL"
+  rm -f "$BT_INIT_LOCK" >/dev/null 2>&1
 else
   log "BT REUSE HCI0"
 fi
 log "HCI SETUP COMPLETE"
+if shutting_down; then
+  log "BT START ABORTED AFTER HCI (SHUTDOWN)"
+  exit 0
+fi
 
 # This is the critical remote path from the original working CLIOPLAY script.
 if ! pidof hidd >/dev/null 2>&1; then
@@ -108,12 +146,20 @@ fi
 hciconfig hci0 class 0x240420 >> "$OUT" 2>&1 && log "BT CLASS CAR-AUDIO 0x240420" || log "BT CLASS SET WARN"
 # Stock rc.bluetooth normally already owns hcid+sdpd.  If sdpd alone is absent,
 # starting it here is profile-discovery only and does not touch the controller.
+if shutting_down; then
+  log "BT START ABORTED BEFORE SDPD (SHUTDOWN)"
+  exit 0
+fi
 if ! pidof sdpd >/dev/null 2>&1; then
   sdpd >> "$OUT" 2>&1 &
   sleep 1
   log "SDPD STARTED LATE"
 fi
 
+if shutting_down; then
+  log "BT START ABORTED BEFORE BLUESERVER (SHUTDOWN)"
+  exit 0
+fi
 # Ensure TomTom's own Bluetooth policy server is available.  The stock UI uses
 # /var/run/bluesock to toggle hcid pairing acceptance with PAIRING ENABLE/DISABLE.
 # Starting this does not reset hci0 or touch hidd.
@@ -126,6 +172,10 @@ else
   log "BLUESERVER READY"
 fi
 
+if shutting_down; then
+  log "BT START ABORTED BEFORE A2DP (SHUTDOWN)"
+  exit 0
+fi
 # Advertise the phone-audio sink while the HID listener remains available.
 sdptool add A2SNK >> "$OUT" 2>&1 || log "A2SNK SDP ADD WARN"
 log "A2DP SBC CAPS 44K1 STEREO+JOINT BITPOOL2-53"
@@ -141,21 +191,30 @@ fi
 hciconfig hci0 2>/dev/null | sed -n 's/.*BD Address: \([0-9A-Fa-f:]*\).*/\1/p' > /tmp/clbtlocal
 if [ -s /tmp/clbtlocal ]; then log "BT LOCAL BDADDR `cat /tmp/clbtlocal`"; fi
 
+if shutting_down; then
+  log "BT START ABORTED BEFORE CLIOA2DP (SHUTDOWN)"
+  exit 0
+fi
 rm -f /tmp/clbtstat /tmp/clbtmeta /tmp/clbtdevices /tmp/clbtcmd "$HREQ" >/dev/null 2>&1
 if ! pidof clioa2dp >/dev/null 2>&1; then
-  "$SD/clioa2dp" >> "$OUT" 2>&1 &
+  "$SD/clioa2dp" </dev/null >> "$OUT" 2>&1 &
   sleep 1
   log "CLIOA2DP STARTED"
 else
   log "CLIOA2DP ALREADY"
 fi
 
+if shutting_down; then
+  log "BT START ABORTED BEFORE HELPER (SHUTDOWN)"
+  exit 0
+fi
 # Address-specific phone helper.  Normal PAIR only changes scan mode because
 # clioa2dp has already sent TomTom's factory PAIRING ENABLE|<fixed PIN 0000> command over
 # /var/run/bluesock.  *_FALLBACK reproduces blueserver's SIGUSR/client_pin
 # actions only if that factory socket is unavailable.
 (
   while pidof clioa2dp >/dev/null 2>&1; do
+    if shutting_down; then break; fi
     if [ -s "$HREQ" ]; then
       LINE=`cat "$HREQ" 2>/dev/null`
       rm -f "$HREQ" >/dev/null 2>&1
@@ -221,7 +280,7 @@ fi
     fi
     sleep 1
   done
-) &
+) </dev/null >/dev/null 2>&1 &
 
 # HID/remote startup, hcid, sdpd, A2DP registration and command helper
 # have all been launched by this point. The daemon separately waits only for

@@ -33,6 +33,7 @@ static void reset_world(s32 ty,s32 tx,s32 lat,s32 lon,int course,int mph10){
  atlas_ready=0;mapok=1;mapfmt=5;mapfd=-1;
  gps.fix=track_valid=1;
  gps.lat=track_lat=lat;gps.lon=track_lon=lon;
+ track_q4_valid=0;track_was_moving=0;track_settling=0;track_stop_ms=0;gps_fix_ms=0;
  gps.course=track_course=display_course=course;
  display_course_valid=course>=0;
  gps.mph10=mph10;
@@ -317,6 +318,98 @@ static void test_parked_offroad_releases_snap(void){
  hud_capture_clock=0;
 }
 
+static void test_junction_tracking_and_stop_settling(void){
+ const s32 ty=21000,tx=-625;
+ const s32 start_lat=ty*256+100,lon=tx*256+128;
+ const u16 ns_road[2][2]={{2048,128},{2048,3968}};
+ reset_world(ty,tx,start_lat,lon,0,200);
+ tile_begin(&tc[0],tx,ty);
+ tile_add_road(&tc[0],6,ns_road,2);
+ pref.autozoom=0;manual_zoom=9;zoom_override=-1;screen=SCR_MAP;
+ hud_capture_clock=1;hud_capture_ms=20000u;gps_fix_ms=hud_capture_ms;
+ render_runtime_reset(hud_capture_ms);
+ update_smooth_track();update_visual_snap(9,1);
+ render_runtime_step(hud_capture_ms,1);
+
+ /* 1. Moving North at 20 mph (1 Hz GPS): bounded Q4 dead-reckoning advances
+  *    smoothly between 1 Hz fixes instead of lagging metres behind junctions. */
+ s32 prev_lat4=car_lat4();
+ for(int tick=1;tick<=8;tick++){
+  hud_capture_ms+=FRAME_MAP_MS;
+  update_smooth_track();
+  update_visual_snap(9,0);
+  render_runtime_step(hud_capture_ms,1);
+  assert(car_lat4()>prev_lat4);
+  prev_lat4=car_lat4();
+ }
+ /* Lead stays strictly bounded (<= 10 world units = 160 Q4) and ahead of raw fix. */
+ assert(car_lat4()>start_lat*16+60&&car_lat4()<=start_lat*16+160);
+ assert(iabs32(display_car_lon4()-lon*16)<=2);
+
+ /* 2. Sharp turn (> 45 deg) suppresses forward lead immediately so we do not
+  *    overshoot straight through a turn. */
+ gps.course=90;track_course=0;
+ s32 before_turn=car_lat4();
+ hud_capture_ms+=FRAME_MAP_MS;
+ update_smooth_track();
+ assert(car_lat4()<before_turn);
+ gps.course=track_course=display_course=0;
+
+ /* 3. Stale GPS (> 2000 ms without a fix) smoothly decays lead back to fix. */
+ gps_fix_ms=hud_capture_ms-2100u;
+ for(int tick=0;tick<16;tick++){
+  hud_capture_ms+=FRAME_MAP_MS;
+  update_smooth_track();
+ }
+ assert(car_lat4()==start_lat*16);
+
+ /* 4. Braking hard to a stop right at a junction: track_settling keeps the
+  *    renderer redrawing even though gps.mph10 == 0 until the vehicle settles
+  *    100% onto the stopped GPS fix (never frozen metres back). */
+ gps.mph10=180;gps_fix_ms=hud_capture_ms;
+ update_smooth_track();
+ gps.lat=start_lat+14;gps.mph10=0;gps_fix_ms=hud_capture_ms;
+ u32 maps_before_stop=render_stats.maps;
+ int settled_ticks=0;
+ for(int tick=1;tick<=25;tick++){
+  hud_capture_ms+=FRAME_MAP_MS;
+  update_smooth_track();
+  update_visual_snap(9,0);
+  render_runtime_step(hud_capture_ms,1);
+  if(track_settling)settled_ticks++;
+ }
+ assert(settled_ticks>=4);
+ assert(!track_settling&&car_lat4()==(start_lat+14)*16&&car_lat()==start_lat+14);
+ assert(display_car_lat4()==(start_lat+14)*16);
+ assert(render_stats.maps>=maps_before_stop+4u);
+
+ /* 5. A final GNSS settlement tweak within 2.5 s of stopping still converges. */
+ gps.lat=start_lat+16;
+ for(int tick=1;tick<=15;tick++){
+  hud_capture_ms+=FRAME_MAP_MS;
+  update_smooth_track();
+  update_visual_snap(9,0);
+  render_runtime_step(hud_capture_ms,1);
+ }
+ assert(!track_settling&&car_lat4()==(start_lat+16)*16);
+
+ /* 6. Once the 2.5 s post-stop window elapses, parked GPS jitter no longer
+  *    wakes up track_settling or map redraws. */
+ hud_capture_ms+=3000u;
+ update_smooth_track();
+ assert(!track_was_moving&&!track_settling);
+ u32 parked_maps=render_stats.maps;
+ gps.lat=start_lat+17;
+ for(int tick=1;tick<=10;tick++){
+  hud_capture_ms+=FRAME_MAP_MS;
+  update_smooth_track();
+  update_visual_snap(9,0);
+  render_runtime_step(hud_capture_ms,1);
+ }
+ assert(!track_settling&&render_stats.maps==parked_maps);
+ hud_capture_clock=0;
+}
+
 int main(void){
  test_close_zoom_camera_alignment();
  test_heading_blocks_cross_street();
@@ -325,6 +418,7 @@ int main(void){
  test_hysteresis_and_tile_seam();
  test_easing_offroad_and_explore();
  test_parked_offroad_releases_snap();
- puts("Z6-reference visual road snap: camera-coupled Z6-Z9 alignment, heading/cross-street filter, service penalty, active-route corridor, hysteresis/tile-seam, moving and parked off-road release, Explore parity and no-GPS safety passed.");
+ test_junction_tracking_and_stop_settling();
+ puts("Z6-reference visual road snap: camera-coupled Z6-Z9 alignment, heading/cross-street filter, service penalty, active-route corridor, hysteresis/tile-seam, moving and parked off-road release, junction Q4 tracking/stop settling, Explore parity and no-GPS safety passed.");
  return 0;
 }

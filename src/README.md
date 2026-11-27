@@ -1,30 +1,29 @@
-# ClioPlay version 2.2.7
+# ClioPlay version 2.2.8
 
-Version 2.2.7 is a software-only camera warning overhaul. It is **100%
-compatible with existing `2.1.8–2.2.6.4` maps (`CPM5`, `CPR2 v5`, `QAD7`,
-`CPC1`)** and saved user data (no map rebuild is needed):
+Version 2.2.8 is a software-only cartographic road overhaul plus close-zoom
+tracking and early-shutdown reliability release. It is **100% compatible with
+existing `2.1.8–2.2.7` maps (`CPM5`, `CPR2 v5`, `QAD7`, `CPC1`)** and saved
+user data (no map rebuild is needed):
 
-- **Matching upcoming-camera map markers:** Distinct `8×8`-supersampled icons
-  (**Speed**, **Red-light** with red top lamp, and twin-camera **Average-speed**)
-  appear strictly for the active upcoming camera (or average-zone exit) straight
-  from RAM with zero per-frame SD reads, following 3D tilt and `Z6–Z9` road snap
-  and turning red when over the limit.
-- **Sleek flush `43 px` frosted-glass camera pill:** Aligned top-and-bottom with
-  the Speed and Turn pills and dedicated cleanly to the active camera, featuring
-  matching twin icons, clean typography (`Limit XX` only when relevant), a
-  BT-CTRL-style 3 px antialiased capsule progress bar (draining on approach,
-  filling across average-speed zones), a synced pulsing red overspeed rim and
-  full RTL mirroring.
-- **Smarter detection & reliability:** Speed-scaled warning and chime horizons
-  (~14–22 s lookahead with hysteresis), curved-road unguided corridor matching,
-  high-speed 1 Hz segment-crossing average-speed entry, along-route zone
-  distance with slip-road auto-clear, and exact overspeed parity with the Speed
-  pill.
-- **Two-tier audio & `Overspeed audio` mode:** Distinct approach vs overspeed
-  chimes over Bluetooth audio, plus an **Overspeed audio** option in
-  **Settings → Navigation → Camera alerts** (quiet when compliant on
-  speed/average cameras; soft approach cue only for red-light cameras), keeping
-  the strict fail-closed 19-country policy across all 18 languages.
+- **Cartographic road rendering across all zooms (`Z0–Z9`):** Continuous
+  sub-pixel (`Q4`) carriageway widths scaling smoothly across overview and
+  close-up zooms, true-3D perspective tapering in driving view, zero-blob Day
+  and Night kerb casings, elevated motorway flyovers, and scaled cased route
+  overlays.
+- **Priority-ordered non-overlapping road expansion:** Main roads expand first
+  without encroaching on parallel neighbours, dual carriageways keep crisp
+  central reservations, and adjacent minor/service roads expand **outwards** on
+  their open side so every road stays wide and visually distinct while
+  junctions remain seamless.
+- **Accurate close-zoom (`Z7–Z9`) junction positioning:** Paired proportional
+  street widths with `Q4` track smoothing, bounded 1 Hz inter-fix
+  dead-reckoning and post-stop settling so stopping at junctions lands cleanly
+  at the real stop line.
+- **Reliable early ignition-off shutdown:** Cooperative `/tmp/clshutdown`
+  signalling and hardware-init locks across `ttn`, `btstart.sh`, `clio040` and
+  `clioa2dp` abort pending background Bluetooth and vehicle-daemon startup
+  cleanly if the car is turned off right after boot (e.g. during
+  `"Acquiring GPS"`).
 
 See the [changelog](docs/changelog.md) for all prior releases and
 [intelligent navigation](docs/intelligent-navigation.md) for local ML behaviour
@@ -426,9 +425,12 @@ The release version is shown at the bottom of Settings.
 
 ## UI previews
 
-The [main README](../README.md#ui-previews) embeds short native framebuffer GIFs
-of driving, menus, Bluetooth playback and receiving a destination. See the
-[preview notes](docs/demo/README.md) for the sample inputs and regeneration steps.
+The [main README](../README.md#ui-previews) embeds curated native framebuffer GIFs
+highlighting ClioPlay's offline intelligence (local traffic diversions, usual routes,
+slowdown alerts, parking/Nearby POIs, destination prediction and adaptive Day/Night HUD),
+Bluetooth phone handoff and audio, offline cameras and live GPS telemetry, offline
+map/coordinate routing, and frosted-glass menus/HUD customisation. See the
+[preview notes and full capture index](docs/demo/README.md) for the sample inputs and regeneration steps.
 
 ## Contents and validation
 

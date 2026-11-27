@@ -1,6 +1,6 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
-<h1 align="center">ClioPlay 2.2.7</h1>
+<h1 align="center">ClioPlay 2.2.8</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
 <p align="center">
   Created and maintained by <a href="https://github.com/pxwel-dev">Pawel (pxwel-dev)</a>.
@@ -9,60 +9,48 @@
 
 <p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
 
-## Version 2.2.7
+## Version 2.2.8
 
-Version **2.2.7** is a software-only camera warning overhaul (**100% compatible with existing `2.1.8–2.2.6.4` maps** and saved user data; no map rebuild required):
+Version **2.2.8** is a software-only cartographic road overhaul plus close-zoom tracking and early-shutdown reliability release (**100% compatible with existing `2.1.8–2.2.7` maps** and saved user data; no map rebuild required):
 
-- **Matching upcoming-camera map markers:** Distinct `8×8`-supersampled icons for **Speed**, **Red-light** (with red top lamp) and **Average-speed** (twin-camera) alerts appear strictly for the active upcoming camera (or average-speed exit) straight from RAM with zero per-frame SD reads, following 3D tilt and `Z6–Z9` road snap and turning red when over the limit.
-- **Sleek flush `43 px` frosted-glass camera card:** Aligned top-and-bottom with the Speed and Turn pills and dedicated cleanly to the active camera, featuring matching twin icons, clean typography (`Limit XX` only when relevant), a BT-CTRL-style 3 px antialiased capsule progress bar (draining on approach, filling across average-speed zones), synced pulsing red overspeed rim and full RTL mirroring.
-- **Smarter detection & reliability:** Speed-scaled warning and chime horizons (~14–22 s lookahead with hysteresis), curved-road unguided corridor matching, high-speed 1 Hz segment-crossing average-speed entry, along-route remaining zone distance with slip-road auto-clear, and exact overspeed parity with the Speed pill.
-- **Two-tier audio & `Overspeed audio` mode:** Distinct soft approach vs brisk overspeed chimes over Bluetooth audio, plus a new **Overspeed audio** setting in **Settings → Navigation → Camera alerts** (quiet when compliant on speed/average cameras; soft approach cue only for red-light cameras), keeping the strict fail-closed 19-country policy across all 18 languages.
+- **Cartographic road rendering across all zooms (`Z0–Z9`):** Continuous sub-pixel (`Q4`) carriageway widths scaling proportionally up to `Z9`, true-3D perspective tapering in driving view, zero-blob Day & Night kerb casings, elevated motorway flyovers, and scaled cased route overlays.
+- **Non-overlapping priority road expansion:** When roads run closely alongside one another, main carriageways expand first without encroaching on parallel neighbours, dual carriageways preserve crisp central reservations, and adjacent minor/service roads expand **outwards** on their open side so every road stays wide and visually distinct while junctions merge seamlessly.
+- **Accurate close-zoom (`Z7–Z9`) junction positioning:** Paired proportional street widths with `Q4` track smoothing, bounded 1 Hz inter-fix dead-reckoning and post-stop settling so stopping at junctions converges cleanly onto the stop line instead of lagging behind.
+- **Reliable early ignition-off shutdown:** Cooperative `/tmp/clshutdown` signalling and hardware-init locks across `ttn`, `btstart.sh`, `clio040` and `clioa2dp` abort pending background startup cleanly when the ignition is turned off immediately after boot (such as during `"Acquiring GPS"`).
 
 See [CHANGELOG.md](CHANGELOG.md) for all prior releases, [intelligent navigation](src/docs/intelligent-navigation.md) for local ML behaviour and privacy, and the [zoom & controls guide](src/README.md#auto-zoom-and-close-up-street-names).
 
 ## UI previews
 
-All previews below are freshly rendered across real UK map regions (**Manchester**, **Central London**, **Milton Keynes**, **Bristol**, **Liverpool**, **Leeds**, **Edinburgh** and **Newcastle**). See the [full preview index](src/docs/demo/README.md) for all animations.
+All previews below are captured from ClioPlay's native `480 × 272` renderer across real offline UK map regions (**Central London**, **Liverpool**, **Leeds**, **Edinburgh**, **Newcastle** and **Manchester**), arranged around what makes a **100% offline** head unit stand out — local on-device learning, zero-SIM phone integration, offline camera/GPS telemetry, and standalone routing. See the [preview notes and full capture index](src/docs/demo/README.md) for methodology and regression archives.
 
-| Upgraded camera warnings & map markers | Live expandable GPS HUD |
+| Offline traffic diversions & Explore preview | Learned usual routes & calibrated ETA ranges |
 | --- | --- |
-| ![Upgraded v2.2.7 camera warnings on Central London Victoria Embankment showing matching supersampled on-map badges, flush 43 px frosted-glass card, capsule progress bar, synced red overspeed rim, red-light alert and average-speed zone progress](src/docs/demo/v227-camera-alerts.gif) | ![Double-OK expands the clock pill into a live driving GPS HUD on the Liverpool waterfront with seconds, compass dial, heading, accuracy, satellites, altitude and coordinates, adapting cleanly to popups and menus](src/docs/demo/v225-gps-panel.gif) |
+| ![Preview a proposed real-map Central London diversion learned purely from local driving history, inspect the junction in Explore, return via MAP and accept](src/docs/demo/v223-view-diversion.gif) | ![Clear-road Central London Mayfair route showing calibrated ETA reliability range, Usual route available with normal active route colour plus dashed teal parallel Park Street alternative bypassing the Oxford Street dogleg, and Use usual route? confirmation](src/docs/demo/v224-ml-eta-and-habits.gif) |
 
-| Dynamically-resizing, animated frosted-glass menu | Expandable secondary manoeuvre cue |
+| Offline slowdown & cold-weather hazard alerts | Usual parking, recurring stops & offline Nearby POIs |
 | --- | --- |
-| ![Animated on-map menus, Itinerary, Recents, Favourites, Bluetooth actions and Settings over Manchester](src/docs/demo/menus.gif) | ![Secondary Then pill expanding for chained Milton Keynes roundabouts with exit number visible and returning compact for normal turns](src/docs/demo/v223-secondary-manoeuvre.gif) |
+| ![Real Liverpool Lime Street to Sefton Park route showing warm Frequent slowdown ahead alert, deduplication, silence on a cold-only spot at 18 C, Cold-weather slowdown ahead at 1 C and winter-calibrated ETA](src/docs/demo/v224-ml-slowdowns.gif) | ![Usual parking review for Q-Park The Light with route-coloured Parking POI highlight, recurring intermediate stop ring and offline Nearby Fuel list ranked with preferred POI stars in Leeds](src/docs/demo/v224-ml-parking-and-pois.gif) |
 
-| Send a destination with [ClioPlay Send](https://pxwel-dev.github.io/ClioPlay-Send/) | Bluetooth playback and volume |
+| On-device destination prediction | Day/Night themes, learned brightness & adaptive Auto-zoom |
+| --- | --- |
+| ![Offline destination prediction in the driving HUD and BT CTRL from local journey history with explicit Yes/No confirmation](src/docs/demo/v220-destination-prediction.gif) | ![Day theme driving in Edinburgh showing learned Auto-zoom speed-band preferences and automatic Day-to-Night transition applying learned per-theme brightness](src/docs/demo/v224-ml-adaptive-hud.gif) |
+
+| Send destinations over Bluetooth ([ClioPlay Send](https://pxwel-dev.github.io/ClioPlay-Send/)) | Bluetooth A2DP phone audio & playback controls |
 | --- | --- |
 | <img src="src/docs/demo/phone-destination.gif" width="391"> | <img src="src/docs/demo/bluetooth.gif" width="391"> |
 
-| Usual route & calibrated ETA ranges | Frequent & cold-weather slowdown alerts |
+| Offline camera warnings, map badges & overspeed alerts | Live expandable GPS telemetry HUD |
 | --- | --- |
-| ![Clear-road Central London Mayfair route showing calibrated ETA reliability range, Usual route available with normal active route colour plus dashed teal parallel Park Street alternative bypassing the Oxford Street dogleg, and Use usual route? confirmation](src/docs/demo/v224-ml-eta-and-habits.gif) | ![Real Liverpool Lime Street to Sefton Park route showing warm Frequent slowdown ahead alert, deduplication, silence on a cold-only spot at 18 C, Cold-weather slowdown ahead at 1 C and winter-calibrated ETA](src/docs/demo/v224-ml-slowdowns.gif) |
+| ![Offline country-aware camera warnings on Central London Victoria Embankment showing matching supersampled on-map badges, flush 43 px frosted-glass card, capsule progress bar, synced red overspeed speed pill and rim, red-light alert and average-speed zone progress](src/docs/demo/v227-camera-alerts.gif) | ![Double-OK expands the clock pill into a live driving GPS HUD on the Liverpool waterfront with seconds, compass dial, heading, accuracy, satellites, altitude and coordinates, adapting cleanly to popups and menus](src/docs/demo/v225-gps-panel.gif) |
 
-| Usual parking, recurring stops & preferred POIs | Offline Nearby POIs |
+| Explore the map & route to any point offline | Offline coordinate entry & on-device routing |
 | --- | --- |
-| ![Usual parking review for Q-Park The Light with route-coloured Parking POI highlight, recurring intermediate stop ring and preferred Fuel POI star ranking in Leeds](src/docs/demo/v224-ml-parking-and-pois.gif) | ![Browse nearby hospitals and fuel stations offline in Bristol from The Haymarket and add a stop to the itinerary](src/docs/demo/v223-nearby-pois.gif) |
+| ![Enter top-down Explore, pan the crosshair across the offline map, press OK and calculate a street route directly on the head unit](src/docs/demo/map-point-route.gif) | ![Enter decimal latitude and longitude directly on the head unit, name the destination on the keyboard, calculate the route offline and save it to Recents](src/docs/demo/coordinate-route.gif) |
 
-| Destination prediction | Frequent-place suggestion |
+| Animated frosted-glass menus & phone management | Customisable HUD layout (LHD & RHD) |
 | --- | --- |
-| ![Learned destination in the driving HUD with explicit review](src/docs/demo/v220-destination-prediction.gif) | ![Stationary startup frequent-place suggestion opening the editable favourite keyboard](src/docs/demo/v220-frequent-place.gif) |
-
-| Speeding warning | View and take a diversion |
-| --- | --- |
-| ![The speed pill pulses red above a confirmed limit and settles when speed drops](src/docs/demo/speed-warning.gif) | ![Preview a proposed real-map Central London diversion tightly framed in Explore on a fewer-turns route, inspect the junction, return via MAP and accept](src/docs/demo/v223-view-diversion.gif) |
-
-| HUD customisability | Browse and zoom the map |
-| --- | --- |
-| ![Change top and bottom bar pill positions in settings](src/docs/demo/v216-hud-settings.gif) | ![Switching to map browsing, panning, zooming and returning to guidance](src/docs/demo/map-browsing.gif) |
-
-| Route to a point on the map | Manual coordinate route |
-| --- | --- |
-| ![Enter Explore, pan the crosshair, press OK and confirm a route to the selected point](src/docs/demo/map-point-route.gif) | ![Enter latitude and longitude, name the destination, calculate the route and find it in Recents](src/docs/demo/coordinate-route.gif) |
-
-| Song and radio updates | Shared status notifications |
-| --- | --- |
-| ![A new song appears, updates inside Bluetooth control, then radio tuning changes the frequency](src/docs/demo/metadata-updates.gif) | ![GPS acquisition and recovery, phone connection, volume and no-active-route notices share one animated pill](src/docs/demo/status-notifications.gif) |
+| ![Dynamically-resizing frosted-glass menus, Recents, Favourites, Bluetooth paired-device management and Settings over Manchester](src/docs/demo/menus.gif) | ![Swap top and bottom HUD pill positions live in Settings for left- or right-hand-drive dashboards](src/docs/demo/v216-hud-settings.gif) |
 
 ## Compatibility
 
@@ -217,4 +205,4 @@ Original ClioPlay development includes:
 
 Third-party software and dependencies retain their respective licences and attribution notices, as documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-<sub>Release files refreshed 26 November 2026 (Europe/London).</sub>
+<sub>Release files refreshed 27 November 2026 (Europe/London).</sub>

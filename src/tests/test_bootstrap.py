@@ -25,6 +25,9 @@ class BootstrapTest(unittest.TestCase):
             section = source.split('# 3) Replace the Focus endpoint,', 1)[1]
             section = '# 3) Replace the Focus endpoint,' + section
             section = section.replace('/tmp/cfready', str(work/'ready'))
+            section = section.replace('/tmp/clshutdown', str(work/'shutdown'))
+            section = section.replace('/tmp/clvinit', str(work/'vinit'))
+            section = section.replace('/proc/barcelona/onoff', str(work/'onoff'))
             section = section.replace('/bin/vehicledaemon', str(work/'vehicle'))
             executable(work/'killall', 'exit 0\n')
             # Each sleep in ttn represents one second on the head unit.
@@ -159,6 +162,88 @@ setup_console_fifo "$TEST_FIFO"
         self.assertLess(source.index('setup_console_fifo /dev/input/CswEvent0'),source.index('killall focusd'))
         self.assertIn('cd "$SD" || exit 1',source)
         self.assertIn('exec "$SD"/clio843/clio040',source)
+        self.assertIn('start_vehicle </dev/null >/dev/null 2>&1 &',source)
+        self.assertIn('cd / >/dev/null 2>&1',source)
+
+    def test_vehicle_restart_aborts_cleanly_on_early_shutdown(self):
+        source = (ROOT/'card-template/ttn').read_text()
+        section = '# 3) Replace the Focus endpoint,' + source.split('# 3) Replace the Focus endpoint,', 1)[1]
+        for trigger in ('sentinel', 'onoff'):
+            with self.subTest(trigger=trigger), tempfile.TemporaryDirectory(prefix='clioplay-boot-shut-') as folder:
+                work = Path(folder)
+                card = work/'clio843'
+                card.mkdir()
+                patched = (
+                    section
+                    .replace('/tmp/cfready', str(work/'ready'))
+                    .replace('/tmp/clshutdown', str(work/'shutdown'))
+                    .replace('/tmp/clvinit', str(work/'vinit'))
+                    .replace('/proc/barcelona/onoff', str(work/'onoff'))
+                    .replace('/bin/vehicledaemon', str(work/'vehicle'))
+                )
+                if trigger == 'sentinel':
+                    (work/'shutdown').write_text('1\n')
+                    (work/'onoff').write_text('0\n')
+                else:
+                    (work/'onoff').write_text('1\n')
+                executable(work/'killall', 'echo "KILLALL $*" >> "$TEST_WORK/events"\nexit 0\n')
+                executable(work/'sleep', 'exec /bin/sleep 0.05\n')
+                executable(card/'focusd', 'exit 0\n')
+                executable(work/'vehicle', 'echo VEHICLE >> "$TEST_WORK/events"\n')
+                executable(card/'clio040', '''
+echo UI >> "$TEST_WORK/events"
+for n in $(seq 1 100); do
+  grep -q "VEHICLEDAEMON SKIPPED" "$TEST_WORK/events" && exit 0
+  /bin/sleep 0.01
+done
+exit 1
+''')
+                script = work/'ttn'
+                script.write_text('SD="$TEST_WORK"\nlog(){ echo "$1" >> "$TEST_WORK/events"; }\n' + patched)
+                subprocess.run(['/bin/sh', str(script)], check=True, timeout=5,
+                               env={**os.environ, 'TEST_WORK':str(work),
+                                    'PATH':str(work)+os.pathsep+os.environ['PATH']})
+                events = (work/'events').read_text().splitlines()
+                self.assertIn('VEHICLEDAEMON SKIPPED (SHUTDOWN)', events)
+                self.assertNotIn('VEHICLE', events)
+                self.assertFalse(any('vehicledaemon' in e for e in events))
+                self.assertFalse((work/'vinit').exists())
+                # Shell scripts must only read onoff, leaving acknowledgement to clio040.
+                self.assertEqual((work/'onoff').read_text(), '0\n' if trigger == 'sentinel' else '1\n')
+
+    def test_btstart_aborts_cleanly_on_early_shutdown(self):
+        source = (ROOT/'card-template/clio843/btstart.sh').read_text()
+        self.assertIn('BT_INIT_LOCK=/tmp/clbtinit', source)
+        self.assertIn('SHUTDOWN=/tmp/clshutdown', source)
+        for trigger in ('sentinel', 'onoff'):
+            with self.subTest(trigger=trigger), tempfile.TemporaryDirectory(prefix='clioplay-bt-shut-') as folder:
+                work = Path(folder)
+                card = work/'clio843'
+                card.mkdir()
+                patched = (
+                    source
+                    .replace('/tmp/clshutdown', str(work/'shutdown'))
+                    .replace('/tmp/clbtinit', str(work/'btinit'))
+                    .replace('/tmp/clbtrdy', str(work/'btrdy'))
+                    .replace('/proc/barcelona/onoff', str(work/'onoff'))
+                    .replace('/proc/barcelona/export_hw_var', str(work/'no-hw-var'))
+                )
+                if trigger == 'sentinel':
+                    (work/'shutdown').write_text('1\n')
+                    (work/'onoff').write_text('0\n')
+                else:
+                    (work/'onoff').write_text('3\n')
+                for tool in ('hciconfig', 'killall', 'pidof', 'sdptool'):
+                    executable(work/tool, f'echo UNEXPECTED_{tool.upper()} >> "$TEST_WORK/events"\nexit 0\n')
+                script = card/'btstart.sh'
+                script.write_text(patched)
+                subprocess.run(['/bin/sh', str(script)], check=True, timeout=5,
+                               env={**os.environ, 'TEST_WORK':str(work), 'CLIO_DEBUG':'0',
+                                    'PATH':str(work)+os.pathsep+os.environ['PATH']})
+                self.assertFalse((work/'events').exists())
+                self.assertFalse((work/'btinit').exists())
+                self.assertFalse((work/'btrdy').exists())
+                self.assertEqual((work/'onoff').read_text(), '0\n' if trigger == 'sentinel' else '3\n')
 
     def test_runtime_card_paths_do_not_require_mount_aliases(self):
         for name in ('clio040.c','cliospl.c','clioa2dp.c','global_regions.h','atlas_catalog.h','global_clock.h'):

@@ -7,7 +7,7 @@
 #include <stdint.h>
 static unsigned mock_now=10000,mock_rate_cap=44100,mock_rate,mock_chunk,mock_chunks;
 static unsigned mock_cursor_at,mock_starts,mock_pauses,mock_formats,mock_closes,mock_logs;
-static int mock_running,mock_source=1,mock_debug=0,mock_alert=0;
+static int mock_running,mock_source=1,mock_debug=0,mock_alert=0,mock_shutdown=0;
 static unsigned mock_alert_words[4];
 static unsigned char mock_ring[65536] __attribute__((aligned(4)));
 static char mock_nav[512];
@@ -31,6 +31,7 @@ static long s_open(const char*p,int flags,int mode){
  if(!strcmp(p,"/tmp/clbt"))return 4;
  if(!strcmp(p,"/tmp/cldebug"))return 5;
  if(!strcmp(p,"/tmp/clalert"))return mock_alert?6:-2;
+ if(!strcmp(p,"/tmp/clshutdown"))return mock_shutdown?7:-2;
  if(flags&64)return !strcmp(p,"/media/sdcard/clio843/bt.log")?11:!strcmp(p,"/tmp/clnav.tmp")?9:8;
  return -2;
 }
@@ -239,4 +240,16 @@ static void avrcp_notify_checks(void){
  avrcp_close();
  assert(avrcp_notify_state[AVRCP_EVT_PLAYBACK]==0&&avrcp_notify_state[AVRCP_EVT_TRACK]==0);
 }
-int main(void){bluetooth_identity_checks();avrcp_notify_checks();rate_checks();source_checks();idle_checks();cue_checks();copy_checks();snd_close();puts("Playback: three rates, gated decode/fresh resume, AVRCP notifications/destination handoff, bounded idle drain, transport suspend, paused cues and PCM copies passed.");return 0;}
+static void shutdown_checks(void){
+ reset(44100);mock_shutdown=0;assert(!shutdown_requested());
+ u8 p[2048];int n=packet(p,5);pump(p,n,16,0);
+ assert(sndfd>=0&&mock_running);
+ listenfd=40;ctrllistenfd=41;avr_sdpfd=42;hcifd=43;sigfd=44;mediafd=45;avrcpfd=46;
+ mock_shutdown=1;assert(shutdown_requested());
+ unsigned closes_before=mock_closes;
+ audio_shutdown_cleanup();
+ assert(sndfd<0&&!mock_running&&mock_closes==closes_before+1);
+ assert(listenfd<0&&ctrllistenfd<0&&avr_sdpfd<0&&hcifd<0&&sigfd<0&&mediafd<0&&avrcpfd<0);
+ mock_shutdown=0;
+}
+int main(void){bluetooth_identity_checks();avrcp_notify_checks();rate_checks();source_checks();idle_checks();cue_checks();copy_checks();shutdown_checks();snd_close();puts("Playback: three rates, gated decode/fresh resume, AVRCP notifications/destination handoff, bounded idle drain, transport suspend, paused cues, cooperative shutdown cleanup and PCM copies passed.");return 0;}
