@@ -7,17 +7,16 @@
 </p>
 
 
-<p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
+<p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Link companion app</a></p>
 
 ## Version @@VERSION@@
 
-Version **2.2.8** is a software-only cartographic road overhaul plus close-zoom tracking and early-shutdown reliability release (**100% compatible with existing `2.1.8–2.2.7` maps** and saved user data; no map rebuild required):
+Version **3.0.0** unifies ClioPlay on Carminat TomTom with the redesigned **ClioPlay Link** companion web app while keeping **100% compatibility with existing `2.1.8–2.2.8` maps (`CPM5`, `CPR2 v5`, `QAD7`, `CPC1`)** and saved user data (no map rebuild required):
 
-- **Cartographic road rendering across all zooms (`Z0–Z9`):** Continuous sub-pixel (`Q4`) carriageway widths scaling proportionally up to `Z9`, true tapered capsules for 3D perspective driving view, zero-blob Day & Night kerb casings, elevated motorway flyovers, and scaled cased route overlays.
-- **Non-overlapping priority road expansion & seamless end-to-end transitions:** When roads run closely alongside one another, main carriageways expand first without encroaching on parallel neighbours, dual carriageways preserve crisp central reservations, and adjacent minor/service roads expand **outwards** on their open side so every road stays wide and visually distinct — while wide main roads joining narrower roads end-to-end glide smoothly down in both width and colour via a tangent-continuous S-curve funnel with zero abrupt step or bulbous end-cap.
-- **Stable, road-anchored street names:** Active road labels lock to a fixed world coordinate on the road with competition hysteresis, re-entry debounce, orientation/side deadbands and Schmitt-trigger spacing margins so street names glide calmly with the tarmac instead of flickering between competing roads or jumping along the same street while driving.
-- **Accurate close-zoom (`Z7–Z9`) junction positioning:** Paired proportional street widths with `Q4` track smoothing, bounded 1 Hz inter-fix dead-reckoning and post-stop settling so stopping at junctions converges cleanly onto the stop line instead of lagging behind.
-- **Reliable early ignition-off shutdown:** Cooperative `/tmp/clshutdown` signalling and hardware-init locks across `ttn`, `btstart.sh`, `clio040` and `clioa2dp` abort pending background startup cleanly when the ignition is turned off immediately after boot (such as during `"Acquiring GPS"`).
+- **Instant bidirectional `CLP3` Bluetooth Link:** ~0.3 s confirmed destination, atomic multi-stop trip, favourites, 18-field car settings (`prefs.ini`), remote Cancel/Skip and Clock/TZ sync over AVRCP `ACK`/`NACK`, with automatic Smart Music Resume, warm Link/Turn/Arrival navigation chimes, non-disruptive incoming route handoff (`OK: Add stop / BACK: Undo`), and automatic fallback for legacy `CLP2` senders.
+- **All-legs multi-stop CH routing & `Z7–Z9` on-road turn chevrons:** Cooperatively calculates every remaining leg of a multi-stop itinerary reusing the idle CH search arena, rendering active Leg 0 in magenta and future legs in soft lavender, with **Next + Total** ETAs in **Trip** and crisp perspective-scaled white directional chevrons on the carriageway at `Z7–Z9`.
+- **Zero-menu optical QR sync & Driving Insights:** Tapping **Sync from Car** in ClioPlay Link pops up a floating frosted-glass QR pill on ClioPlay's map screen to transfer favourites, active trip, recents, car settings, map coverage and opt-in `mobility.h` Driving Insights in ~2 seconds via closed-loop BT-ACK stepping — plus built-in Connect QRs right inside **Bluetooth → Pair new phone** and connected phone cards.
+- **18 languages & ARMv4T polish:** Complete 18-language parity across both ClioPlay and ClioPlay Link (including RTL Arabic and Hebrew) and 32-bit `Q12` road-layout hot-path optimisation.
 
 See [CHANGELOG.md](CHANGELOG.md) for all prior releases, [intelligent navigation](src/docs/intelligent-navigation.md) for local ML behaviour and privacy, and the [zoom & controls guide](src/README.md#auto-zoom-and-close-up-street-names).
 

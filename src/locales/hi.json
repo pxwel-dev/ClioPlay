@@ -258,5 +258,22 @@
   "Usual route selected": "सामान्य मार्ग चुना गया",
   "Route unavailable": "मार्ग उपलब्ध नहीं",
   "Limit ": "सीमा ",
-  "Overspeed audio": "अधिक गति ऑडियो"
+  "Overspeed audio": "अधिक गति ऑडियो",
+  "Browse Recents/Favourites, use ClioPlay Link": "हाल के/पसंदीदा, ClioPlay Link",
+  "Navigation chimes": "नेविगेशन ध्वनि",
+  "Link only": "केवल लिंक",
+  "All cues": "सभी संकेत",
+  "Previous route restored": "पिछला मार्ग बहाल हुआ",
+  "Settings updated": "सेटिंग्स अपडेट हुईं",
+  "Trip ready": "यात्रा तैयार",
+  "Stop skipped": "स्टॉप छोड़ा गया",
+  "Queued - waiting for GPS": "कतार में - GPS की प्रतीक्षा",
+  "Receiving trip": "यात्रा प्राप्त हो रही है",
+  "Route replaced": "मार्ग बदला गया",
+  "OK: Add stop / BACK: Undo": "OK: स्टॉप जोड़ें / BACK: पूर्ववत",
+  "BACK: Undo": "BACK: पूर्ववत",
+  "Scan for ClioPlay Link": "ClioPlay Link के लिए स्कैन",
+  "Total: ": "कुल: ",
+  "Sync to phone": "फ़ोन से सिंक करें",
+  "Synced": "सिंक हो गया"
 }

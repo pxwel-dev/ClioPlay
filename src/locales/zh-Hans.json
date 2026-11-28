@@ -258,5 +258,22 @@
   "Usual route selected": "已选择常用路线",
   "Route unavailable": "路线不可用",
   "Limit ": "限速 ",
-  "Overspeed audio": "超速音频"
+  "Overspeed audio": "超速音频",
+  "Browse Recents/Favourites, use ClioPlay Link": "浏览最近/收藏，使用 ClioPlay Link",
+  "Navigation chimes": "导航提示音",
+  "Link only": "仅连接",
+  "All cues": "全部提示",
+  "Previous route restored": "已恢复上一路线",
+  "Settings updated": "设置已更新",
+  "Trip ready": "行程就绪",
+  "Stop skipped": "已跳过途经点",
+  "Queued - waiting for GPS": "已排队 - 等待 GPS",
+  "Receiving trip": "正在接收行程",
+  "Route replaced": "路线已替换",
+  "OK: Add stop / BACK: Undo": "确定：加途经点 / 返回：撤销",
+  "BACK: Undo": "返回：撤销",
+  "Scan for ClioPlay Link": "扫码连接 ClioPlay Link",
+  "Total: ": "全程： ",
+  "Sync to phone": "同步到手机",
+  "Synced": "已同步"
 }

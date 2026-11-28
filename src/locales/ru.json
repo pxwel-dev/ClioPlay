@@ -258,5 +258,22 @@
   "Usual route selected": "Привычный путь выбран",
   "Route unavailable": "Маршрут недоступен",
   "Limit ": "Лимит ",
-  "Overspeed audio": "При превышении"
+  "Overspeed audio": "При превышении",
+  "Browse Recents/Favourites, use ClioPlay Link": "Недавние/Избранное, ClioPlay Link",
+  "Navigation chimes": "Звуки навигации",
+  "Link only": "Только Link",
+  "All cues": "Все сигналы",
+  "Previous route restored": "Предыдущий маршрут восстановлен",
+  "Settings updated": "Настройки обновлены",
+  "Trip ready": "Поездка готова",
+  "Stop skipped": "Остановка пропущена",
+  "Queued - waiting for GPS": "В очереди - ожидание GPS",
+  "Receiving trip": "Получение поездки",
+  "Route replaced": "Маршрут заменён",
+  "OK: Add stop / BACK: Undo": "OK: Остановка / НАЗАД: Отм.",
+  "BACK: Undo": "НАЗАД: Отменить",
+  "Scan for ClioPlay Link": "Сканировать для ClioPlay Link",
+  "Total: ": "Всего: ",
+  "Sync to phone": "Синхр. с телефоном",
+  "Synced": "Синхронизировано"
 }

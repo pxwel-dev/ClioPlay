@@ -1059,6 +1059,74 @@
     "Overspeed audio": [
       "Audio excès",
       "Audio exceso"
+    ],
+    "Browse Recents/Favourites, use ClioPlay Link": [
+      "Récents/Favoris, ClioPlay Link",
+      "Recientes/Favoritos, ClioPlay Link"
+    ],
+    "Navigation chimes": [
+      "Sons de navigation",
+      "Tonos de navegación"
+    ],
+    "Link only": [
+      "Lien seul",
+      "Solo enlace"
+    ],
+    "All cues": [
+      "Tous les signaux",
+      "Todos los avisos"
+    ],
+    "Previous route restored": [
+      "Itinéraire précédent rétabli",
+      "Ruta anterior restaurada"
+    ],
+    "Settings updated": [
+      "Réglages mis à jour",
+      "Ajustes actualizados"
+    ],
+    "Trip ready": [
+      "Trajet prêt",
+      "Viaje listo"
+    ],
+    "Stop skipped": [
+      "Étape ignorée",
+      "Parada omitida"
+    ],
+    "Queued - waiting for GPS": [
+      "En file - attente GPS",
+      "En cola - esperando GPS"
+    ],
+    "Receiving trip": [
+      "Réception du trajet",
+      "Recibiendo viaje"
+    ],
+    "Route replaced": [
+      "Itinéraire remplacé",
+      "Ruta reemplazada"
+    ],
+    "OK: Add stop / BACK: Undo": [
+      "OK : Étape / RETOUR : Annuler",
+      "OK: Parada / ATRÁS: Deshacer"
+    ],
+    "BACK: Undo": [
+      "RETOUR : Annuler",
+      "ATRÁS: Deshacer"
+    ],
+    "Scan for ClioPlay Link": [
+      "Scanner pour ClioPlay Link",
+      "Escanear para ClioPlay Link"
+    ],
+    "Total: ": [
+      "Total : ",
+      "Total: "
+    ],
+    "Sync to phone": [
+      "Sync. vers téléphone",
+      "Sincr. con móvil"
+    ],
+    "Synced": [
+      "Synchronisé",
+      "Sincronizado"
     ]
   },
   "language_names": {

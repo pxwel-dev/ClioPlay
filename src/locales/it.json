@@ -258,5 +258,22 @@
   "Usual route selected": "Percorso abituale scelto",
   "Route unavailable": "Percorso non disponibile",
   "Limit ": "Limite ",
-  "Overspeed audio": "Audio eccesso"
+  "Overspeed audio": "Audio eccesso",
+  "Browse Recents/Favourites, use ClioPlay Link": "Recenti/Preferiti, ClioPlay Link",
+  "Navigation chimes": "Suoni navigazione",
+  "Link only": "Solo Link",
+  "All cues": "Tutti gli avvisi",
+  "Previous route restored": "Percorso precedente ripristinato",
+  "Settings updated": "Impostazioni aggiornate",
+  "Trip ready": "Viaggio pronto",
+  "Stop skipped": "Tappa saltata",
+  "Queued - waiting for GPS": "In coda - attesa GPS",
+  "Receiving trip": "Ricezione viaggio",
+  "Route replaced": "Percorso sostituito",
+  "OK: Add stop / BACK: Undo": "OK: Tappa / INDIETRO: Annulla",
+  "BACK: Undo": "INDIETRO: Annulla",
+  "Scan for ClioPlay Link": "Scansiona per ClioPlay Link",
+  "Total: ": "Totale: ",
+  "Sync to phone": "Sincr. con telefono",
+  "Synced": "Sincronizzato"
 }

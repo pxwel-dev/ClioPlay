@@ -258,5 +258,22 @@
   "Usual route selected": "자주 가는 경로 선택됨",
   "Route unavailable": "경로 이용 불가",
   "Limit ": "제한 ",
-  "Overspeed audio": "과속 시 음성"
+  "Overspeed audio": "과속 시 음성",
+  "Browse Recents/Favourites, use ClioPlay Link": "최근/즐겨찾기, ClioPlay Link",
+  "Navigation chimes": "내비게이션 알림음",
+  "Link only": "연결만",
+  "All cues": "모든 알림",
+  "Previous route restored": "이전 경로 복원됨",
+  "Settings updated": "설정 업데이트됨",
+  "Trip ready": "여정 준비됨",
+  "Stop skipped": "경유지 건너뜀",
+  "Queued - waiting for GPS": "대기 중 - GPS 수신 중",
+  "Receiving trip": "여정 수신 중",
+  "Route replaced": "경로 변경됨",
+  "OK: Add stop / BACK: Undo": "확인: 경유 추가 / 뒤로: 실행 취소",
+  "BACK: Undo": "뒤로: 실행 취소",
+  "Scan for ClioPlay Link": "ClioPlay Link 스캔",
+  "Total: ": "전체: ",
+  "Sync to phone": "휴대폰과 동기화",
+  "Synced": "동기화됨"
 }

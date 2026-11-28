@@ -509,10 +509,23 @@ static int road_poly_is_loop(int p){
  return iabs32(a->x-b->x)<=384&&iabs32(a->y-b->y)<=384;
 }
 
+static int road_frac_q12(int num,int den){
+ if(num<=0||den<=0)return 0;
+ if(num>=den)return 4096;
+ u32 n=(u32)num,d=(u32)den;
+ while(n>0x0007ffffu){n>>=1;d>>=1;}
+ if(!d)return 4096;
+ int q=(int)udiv32((n<<12)+(d>>1),d);
+ return q>4096?4096:q;
+}
+
 static int road_smoothstep_q8(int num,int den){
  if(num<=0||den<=0)return 0;
  if(num>=den)return 256;
- int t=(int)(((long long)num*256+(den>>1))/den);
+ u32 n=(u32)num,d=(u32)den;
+ while(n>0x007fffffu){n>>=1;d>>=1;}
+ int t=d?(int)udiv32((n<<8)+(d>>1),d):256;
+ if(t>256)t=256;
  int t2=(t*t)>>8;
  int s=3*t2-((2*t2*t)>>8);
  if(s<0)s=0;if(s>256)s=256;
@@ -530,6 +543,7 @@ static void road_solve_transitions(void){
  int max_len=z>=9?64:(z==8?48:(z==7?36:24));
 
  for(int p=0;p<road_npolys;p++){
+  if(!(p&15))render_checkpoint();
   struct RoadPoly*rp=&road_polys[p];
   if(rp->count<2||road_poly_is_loop(p))continue;
   for(int end=0;end<2;end++){
@@ -538,8 +552,8 @@ static void road_solve_transitions(void){
    if(v->x<-16*256||v->x>(W+16)*256||v->y<(MAP_TOP-16)*256||v->y>(MAP_BOTTOM+16)*256)continue;
 
    int vx_px=v->x>>8,vy_px=v->y>>8;
-   int c0=(vx_px-3)/32,c1=(vx_px+3)/32;
-   int r0=(vy_px-3-MAP_TOP)/32,r1=(vy_px+3-MAP_TOP)/32;
+   int c0=(vx_px-3)>>5,c1=(vx_px+3)>>5;
+   int r0=(vy_px-3-MAP_TOP)>>5,r1=(vy_px+3-MAP_TOP)>>5;
    if(c0<0)c0=0;if(c1>=ROAD_GRID_COLS)c1=ROAD_GRID_COLS-1;
    if(r0<0)r0=0;if(r1>=ROAD_GRID_ROWS)r1=ROAD_GRID_ROWS-1;
    s32 vx4=v->x>>4,vy4=v->y>>4;
@@ -563,7 +577,10 @@ static void road_solve_transitions(void){
       long long dot=(long long)(vx4-ax4)*sx4+(long long)(vy4-ay4)*sy4;
       if(dot>=len2){t_q12=4096;qx=b->x;qy=b->y;}
       else if(dot>0){
-       t_q12=(int)((dot*4096)/len2);
+       long long dn=dot,dd=len2;
+       while(dd>0x0007ffffLL){dn>>=1;dd>>=1;}
+       t_q12=dd?(int)udiv32((u32)dn<<12,(u32)dd):4096;
+       if(t_q12>4096)t_q12=4096;
        qx=a->x+(s32)(((long long)(b->x-a->x)*t_q12)>>12);
        qy=a->y+(s32)(((long long)(b->y-a->y)*t_q12)>>12);
       }
@@ -741,13 +758,15 @@ static void road_draw_taper_span(const struct RoadVert*a,const struct RoadVert*b
  int tgt_slot=(int)tp->tgt_slot,cross_grp=(tp->flags&1);
 
  int px=0,py=0,pw=0,pcas=0,pfa=32,pd=0;
+ s32 d_x=b->draw_x-a->draw_x,d_y=b->draw_y-a->draw_y;
+ int d_w=(int)b->eff_w4-(int)a->eff_w4,d_c=(int)b->eff_cas4-(int)a->eff_cas4;
  for(int k=0;k<=steps;k++){
-  int t=k==steps?ib:(ia+(int)(((long long)span_q8*k)/steps));
-  int rel=t-s0_q8;
-  int bx=a->draw_x+(int)(((long long)(b->draw_x-a->draw_x)*rel)/seg_q8);
-  int by=a->draw_y+(int)(((long long)(b->draw_y-a->draw_y)*rel)/seg_q8);
-  int bw=(int)a->eff_w4+(int)(((long long)((int)b->eff_w4-(int)a->eff_w4)*rel)/seg_q8);
-  int bc=(int)a->eff_cas4+(int)(((long long)((int)b->eff_cas4-(int)a->eff_cas4)*rel)/seg_q8);
+  int t=k==steps?ib:(ia+(int)udiv32((u32)span_q8*(u32)k,(u32)steps));
+  int q12=road_frac_q12(t-s0_q8,seg_q8);
+  int bx=a->draw_x+(int)(((long long)d_x*q12)>>12);
+  int by=a->draw_y+(int)(((long long)d_y*q12)>>12);
+  int bw=(int)a->eff_w4+((d_w*q12)>>12);
+  int bc=(int)a->eff_cas4+((d_c*q12)>>12);
   int d_q8=end_idx==0?(off_q8+t):(off_q8+(total_q8-t));
   int S=road_smoothstep_q8(d_q8,len_q8);
   int w4=tgt_w4+(((bw-tgt_w4)*S+128)>>8);
@@ -827,14 +846,17 @@ static void road_draw_poly_pass(const struct RoadPoly*rp,int is_casing){
   int ma=s0>b0?s0:b0,mb=s1<b1?s1:b1;
   if(ma<mb){
    int ra=ma-s0,rb=mb-s0;
-   int x0=ra==0?a->draw_x:a->draw_x+(int)(((long long)(b->draw_x-a->draw_x)*ra)/seg_q8);
-   int y0=ra==0?a->draw_y:a->draw_y+(int)(((long long)(b->draw_y-a->draw_y)*ra)/seg_q8);
-   int x1=rb==seg_q8?b->draw_x:a->draw_x+(int)(((long long)(b->draw_x-a->draw_x)*rb)/seg_q8);
-   int y1=rb==seg_q8?b->draw_y:a->draw_y+(int)(((long long)(b->draw_y-a->draw_y)*rb)/seg_q8);
-   int w0=(int)a->eff_w4+(int)(((long long)((int)b->eff_w4-(int)a->eff_w4)*ra)/seg_q8);
-   int w1=(int)a->eff_w4+(int)(((long long)((int)b->eff_w4-(int)a->eff_w4)*rb)/seg_q8);
-   int c0=(int)a->eff_cas4+(int)(((long long)((int)b->eff_cas4-(int)a->eff_cas4)*ra)/seg_q8);
-   int c1=(int)a->eff_cas4+(int)(((long long)((int)b->eff_cas4-(int)a->eff_cas4)*rb)/seg_q8);
+   int qa=road_frac_q12(ra,seg_q8),qb=road_frac_q12(rb,seg_q8);
+   s32 dx=b->draw_x-a->draw_x,dy=b->draw_y-a->draw_y;
+   int dw=(int)b->eff_w4-(int)a->eff_w4,dc=(int)b->eff_cas4-(int)a->eff_cas4;
+   int x0=ra==0?a->draw_x:a->draw_x+(int)(((long long)dx*qa)>>12);
+   int y0=ra==0?a->draw_y:a->draw_y+(int)(((long long)dy*qa)>>12);
+   int x1=rb==seg_q8?b->draw_x:a->draw_x+(int)(((long long)dx*qb)>>12);
+   int y1=rb==seg_q8?b->draw_y:a->draw_y+(int)(((long long)dy*qb)>>12);
+   int w0=(int)a->eff_w4+((dw*qa)>>12);
+   int w1=(int)a->eff_w4+((dw*qb)>>12);
+   int c0=(int)a->eff_cas4+((dc*qa)>>12);
+   int c1=(int)a->eff_cas4+((dc*qb)>>12);
    int mid_caps=3;
    if(fade0&&ma==b0)mid_caps=(mid_caps&~1)|4;
    if(fade1&&mb==b1)mid_caps=(mid_caps&~2)|8;

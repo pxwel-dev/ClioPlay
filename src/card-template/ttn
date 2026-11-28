@@ -1,6 +1,6 @@
 #!/bin/sh
 # ClioPlay bootstrap.
-CLIOPLAY_VERSION=2.2.8
+CLIOPLAY_VERSION=3.0.0
 # Persistent logs exist only when prefs.ini has debug=1.
 # Resolve the actual card before any executable, preference or log lookup.
 find_card(){

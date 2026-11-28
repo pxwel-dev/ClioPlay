@@ -1,13 +1,27 @@
 /* Bounded integer PCM cue, shared by the real receiver and native verification.
- * Kind 1: two soft tones (approach); Kind 2: three brisk tones (overspeed).
+ * Kind 1: two soft tones (camera approach); Kind 2: three brisk tones (overspeed);
+ * Kind 3: warm ascending double-tone (link/sync confirmed);
+ * Kind 4: subtle two-note nudge (upcoming manoeuvre);
+ * Kind 5: pleasant resolving triad (stop/destination arrived).
  * 15 ms envelopes and gradual music duck/release across 11/22/44 kHz. */
-struct AudioChime {unsigned rate,pos,total,phase,inc1,inc2,ramp,kind;};
+struct AudioChime {unsigned rate,pos,total,phase,inc1,inc2,inc3,ramp,kind;};
 static void chime_start_kind(struct AudioChime*c,unsigned rate,unsigned kind){
- c->rate=rate;c->pos=0;c->phase=0;c->kind=kind==2u?2u:1u;
- c->total=c->kind==2u?(rate*3u)/5u:rate/2u;
+ c->rate=rate;c->pos=0;c->phase=0;c->inc3=0;
+ c->kind=(kind>=1u&&kind<=5u)?kind:1u;
  if(c->kind==2u){
+  c->total=(rate*3u)/5u;
   c->inc1=udiv32(988u*65536u,rate);c->inc2=udiv32(1244u*65536u,rate);
+ }else if(c->kind==3u){
+  c->total=(rate*34u)/100u;
+  c->inc1=udiv32(523u*65536u,rate);c->inc2=udiv32(784u*65536u,rate);
+ }else if(c->kind==4u){
+  c->total=(rate*28u)/100u;
+  c->inc1=udiv32(659u*65536u,rate);c->inc2=udiv32(880u*65536u,rate);
+ }else if(c->kind==5u){
+  c->total=(rate*48u)/100u;
+  c->inc1=udiv32(523u*65536u,rate);c->inc2=udiv32(659u*65536u,rate);c->inc3=udiv32(784u*65536u,rate);
  }else{
+  c->total=rate/2u;
   c->inc1=udiv32(880u*65536u,rate);c->inc2=udiv32(1174u*65536u,rate);
  }
  c->ramp=rate/64u;if(!c->ramp)c->ramp=1;
@@ -20,12 +34,23 @@ static int chime_sample(struct AudioChime*c,int*gain){
  unsigned p=c->pos++,r=c->rate,env=256;
  if(p<c->ramp)env=udiv32(p*256u,c->ramp);
  if(c->total-p<c->ramp)env=udiv32((c->total-p)*256u,c->ramp);
- *gain=256-(int)((env*176u)>>8);
+ unsigned duck=c->kind>=3u?128u:176u;
+ *gain=256-(int)((env*duck)>>8);
  unsigned begin=0,end=0,inc=c->inc1;int tone=0;
  if(c->kind==2u){
   if(p<r*13u/100u){begin=0;end=r*13u/100u;inc=c->inc1;tone=1;}
   else if(p>=r*20u/100u&&p<r*33u/100u){begin=r*20u/100u;end=r*33u/100u;inc=c->inc2;tone=1;}
   else if(p>=r*40u/100u&&p<r*56u/100u){begin=r*40u/100u;end=r*56u/100u;inc=c->inc1;tone=1;}
+ }else if(c->kind==3u){
+  if(p<r*11u/100u){begin=0;end=r*11u/100u;inc=c->inc1;tone=1;}
+  else if(p>=r*14u/100u&&p<r*32u/100u){begin=r*14u/100u;end=r*32u/100u;inc=c->inc2;tone=1;}
+ }else if(c->kind==4u){
+  if(p<r*9u/100u){begin=0;end=r*9u/100u;inc=c->inc1;tone=1;}
+  else if(p>=r*12u/100u&&p<r*26u/100u){begin=r*12u/100u;end=r*26u/100u;inc=c->inc2;tone=1;}
+ }else if(c->kind==5u){
+  if(p<r*11u/100u){begin=0;end=r*11u/100u;inc=c->inc1;tone=1;}
+  else if(p>=r*14u/100u&&p<r*25u/100u){begin=r*14u/100u;end=r*25u/100u;inc=c->inc2;tone=1;}
+  else if(p>=r*28u/100u&&p<r*46u/100u){begin=r*28u/100u;end=r*46u/100u;inc=c->inc3;tone=1;}
  }else{
   if(p<r*14u/100u){begin=0;end=r*14u/100u;inc=c->inc1;tone=1;}
   else if(p>=r*22u/100u&&p<r*42u/100u){begin=r*22u/100u;end=r*42u/100u;inc=c->inc2;tone=1;}
@@ -37,6 +62,8 @@ static int chime_sample(struct AudioChime*c,int*gain){
  c->phase+=inc;
  unsigned i=(c->phase>>11)&31u,f=c->phase&2047u;
  int wave=sine[i]+((sine[(i+1u)&31u]-sine[i])*(int)f)/2048;
- return (wave*(int)env)>>11;
+ int s=(wave*(int)env)>>11;
+ if(c->kind>=3u)s=(s*3)/4;
+ return s;
 }
 static int chime_mix(int sample,int gain,int tone){int v=(sample*gain)/256+tone;return v>32767?32767:v< -32768?-32768:v;}

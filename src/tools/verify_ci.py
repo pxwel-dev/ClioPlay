@@ -38,7 +38,7 @@ def main():
         run(sys.executable, '-m', 'unittest', 'discover', '-s', ROOT/'tests', '-p', name)
     with tempfile.TemporaryDirectory(prefix='clioplay-ci-') as temp:
         (Path(temp)/'clio843').mkdir()
-        for name in ('mobility', 'current-formats', 'map-antialias', 'map-areas', 'map-layers', 'map-pois', 'map-car-snap', 'vehicle-marker', 'vehicle-input', 'roundabout', 'ui-labels-alerts', 'glass-outline', 'hud-status', 'hud-customization', 'hud-metadata', 'bluetooth-sources', 'coordinates', 'menu-sheet', 'hud-playback', 'hud-pages', 'hud-zoom', 'popups', 'frame-renderer', 'render-fast-paths', 'audio-chime', 'audio-decoder', 'audio-runtime', 'auto-theme', 'splash', 'boot-transition'):
+        for name in ('mobility', 'current-formats', 'map-antialias', 'map-areas', 'map-layers', 'map-pois', 'map-car-snap', 'vehicle-marker', 'vehicle-input', 'roundabout', 'ui-labels-alerts', 'glass-outline', 'hud-status', 'hud-customization', 'hud-metadata', 'bluetooth-sources', 'coordinates', 'menu-sheet', 'hud-playback', 'hud-pages', 'hud-zoom', 'popups', 'frame-renderer', 'render-fast-paths', 'audio-chime', 'audio-decoder', 'audio-runtime', 'auto-theme', 'splash', 'boot-transition', 'clp3-link', 'trip-multileg', 'qr-sync'):
             exe = Path(temp)/name
             run('cc', '-O1', '-g', '-fsanitize=undefined',
                 '-fno-sanitize-recover=all', '-DCLIO_HOST_ROOT="'+temp+'/"', ROOT/'tests'/f'{name}.c', '-lm', '-o', exe)
@@ -47,6 +47,8 @@ def main():
                 args.append(Path(temp)/'cue.pcm')
             if name == 'splash':
                 args.append(temp)
+            if name == 'trip-multileg' and (ROOT/'build/atlas-chain/reference.cpr').is_file():
+                args.append(ROOT/'build/atlas-chain/reference.cpr')
             run(*args)
         # Repeat complete workflows using physical records rather than key injection.
         for name in ('coordinates', 'menu-sheet', 'hud-zoom', 'bluetooth-sources', 'auto-theme'):

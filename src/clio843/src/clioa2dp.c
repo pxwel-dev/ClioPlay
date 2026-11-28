@@ -302,13 +302,15 @@ static void sbc_pcm_interleave(u32*out,const struct SbcFrame*f){
  *   /tmp/clbt       selected Bluetooth PCM output (CD or no readable radio source), 0/1
  *   /tmp/clbtstat   one-line status
  *   /tmp/clbtmeta   DEVICE/TITLE/ARTIST/ALBUM/PAIRED/CONNECTED/PLAYING/POS/DUR
- *   /tmp/clnav      validated CLP2 phone destination for clio040
+ *   /tmp/clnav      validated CLP2/CLP3 phone packet for clio040
+ *   /tmp/clnav_ack  clio040 ACK/NACK response for CLP3 instant AVRCP feedback
  *   /tmp/clbtcmd    monotonically sequenced commands from clio040
  * ------------------------------------------------------------------------- */
 #define BT_META_PATH "/tmp/clbtmeta"
 #define BT_META_TMP_PATH "/tmp/clbtmeta.tmp"
 #define BT_NAV_PATH "/tmp/clnav"
 #define BT_NAV_TMP_PATH "/tmp/clnav.tmp"
+#define BT_NAV_ACK_PATH "/tmp/clnav_ack"
 #define BT_CMD_PATH "/tmp/clbtcmd"
 #define BT_HCI_PATH "/tmp/clbthci"
 #define BT_PHONE_PATH "./clio843/btphone.dat"
@@ -337,13 +339,150 @@ static void append_uint(char*b,u32 cap,u32 v){char t[12];int n=0;if(!v){append_c
 static void append_sint(char*b,u32 cap,s32 v){if(v<0){append_char(b,cap,'-');append_uint(b,cap,(u32)(-(v+1))+1u);}else append_uint(b,cap,(u32)v);}
 static int hexval0(char c){if(c>='0'&&c<='9')return c-'0';if(c>='A'&&c<='F')return c-'A'+10;if(c>='a'&&c<='f')return c-'a'+10;return-1;}
 static int parse_dec_span(const char*s,const char*e,s32*out){int neg=0;u32 v=0;if(s<e&&*s=='-'){neg=1;s++;}if(s>=e)return 0;for(;s<e;s++){if(*s<'0'||*s>'9')return 0;v=v*10u+(u32)(*s-'0');if(v>200000000u)return 0;}*out=neg?-(s32)v:(s32)v;return 1;}
+static int parse_u32_span(const char*s,const char*e,u32*out){u32 v=0;if(s>=e)return 0;for(;s<e;s++){if(*s<'0'||*s>'9')return 0;u32 d=(u32)(*s-'0');if(v>(0xffffffffu-d)/10u)return 0;v=v*10u+d;}*out=v;return 1;}
 static int parse_hex16_span(const char*s,const char*e,u16*out){u32 v=0;if(e-s!=4)return 0;for(;s<e;s++){int h=hexval0(*s);if(h<0)return 0;v=(v<<4)|(u32)h;}*out=(u16)v;return 1;}
+static int parse_hex32_span(const char*s,const char*e,int min_len,int max_len,u32*out){int ln=(int)(e-s);if(ln<min_len||ln>max_len)return 0;u32 v=0;for(;s<e;s++){int h=hexval0(*s);if(h<0)return 0;v=(v<<4)|(u32)h;}*out=v;return 1;}
 static u16 crc16_ccitt_text(const char*s,u32 n){u16 crc=0xffffu;for(u32 i=0;i<n;i++){crc^=(u16)((u8)s[i]<<8);for(int bit=0;bit<8;bit++)crc=(u16)((crc&0x8000u)?((crc<<1)^0x1021u):(crc<<1));}return crc;}
-static int nav_packet_parse(const char*t,char*action,s32*lat,s32*lon,u16*seq){if(!t||t[0]!='C'||t[1]!='L'||t[2]!='P'||t[3]!='2'||t[4]!=':'||(t[5]!='N'&&t[5]!='S')||t[6]!=':')return 0;const char*c1=t+6,*c2=0,*c3=0,*c4=0;for(const char*p=c1+1;*p;p++){if(*p==':'){if(!c2)c2=p;else if(!c3)c3=p;else if(!c4)c4=p;else return 0;}}if(!c2||!c3||!c4||!c4[1])return 0;s32 la=0,lo=0;u16 sq=0,want=0;if(!parse_dec_span(c1+1,c2,&la)||!parse_dec_span(c2+1,c3,&lo)||!parse_hex16_span(c3+1,c4,&sq)||!parse_hex16_span(c4+1,t+slen(t),&want))return 0;if(la<-9000000||la>9000000||lo<-18000000||lo>18000000)return 0;u16 got=crc16_ccitt_text(t,(u32)(c4-t));if(got!=want)return 0;*action=t[5];*lat=la;*lon=lo;*seq=sq;return 1;}
+struct NavPacket {
+ u8 ver;
+ char action,sub;
+ u16 seq;
+ s32 lat,lon,b;
+ u32 a,c;
+ char hex[25];
+};
+static int nav_packet_parse_ex(const char*t,struct NavPacket*out){
+ if(!t||!out)return 0;memzero(out,sizeof(*out));
+ const char*fs[10],*fe[10];int nf=0;
+ const char*p=t,*start=t;
+ for(;;p++){
+  if(*p==':'||*p==0){
+   if(nf>=10)return 0;
+   fs[nf]=start;fe[nf]=p;nf++;
+   if(!*p)break;
+   start=p+1;
+  }
+ }
+ if(nf<4)return 0;
+ u16 sq=0,want=0;
+ if(!parse_hex16_span(fs[nf-2],fe[nf-2],&sq)||!parse_hex16_span(fs[nf-1],fe[nf-1],&want))return 0;
+ const char*crc_sep=fs[nf-1]-1;
+ if(crc16_ccitt_text(t,(u32)(crc_sep-t))!=want)return 0;
+ if(fe[0]-fs[0]!=4||fs[0][0]!='C'||fs[0][1]!='L'||fs[0][2]!='P')return 0;
+ u8 ver=0;if(fs[0][3]=='2')ver=2;else if(fs[0][3]=='3')ver=3;else return 0;
+ if(fe[1]-fs[1]!=1)return 0;
+ char act=fs[1][0];
+ out->ver=ver;out->action=act;out->seq=sq;
+ if(act=='N'||act=='S'){
+  if(nf!=6)return 0;
+  s32 la=0,lo=0;
+  if(!parse_dec_span(fs[2],fe[2],&la)||!parse_dec_span(fs[3],fe[3],&lo))return 0;
+  if(la<-9000000||la>9000000||lo<-18000000||lo>18000000)return 0;
+  out->lat=la;out->lon=lo;return 1;
+ }
+ if(ver<3)return 0;
+ if(act=='T'){
+  if(nf!=9)return 0;
+  u32 idx=0,tot=0,batch=0;s32 la=0,lo=0;
+  if(!parse_u32_span(fs[2],fe[2],&idx)||!parse_u32_span(fs[3],fe[3],&tot)||!parse_hex32_span(fs[4],fe[4],1,2,&batch))return 0;
+  if(tot<1||tot>10||idx>=tot)return 0;
+  if(!parse_dec_span(fs[5],fe[5],&la)||!parse_dec_span(fs[6],fe[6],&lo))return 0;
+  if(la<-9000000||la>9000000||lo<-18000000||lo>18000000)return 0;
+  out->a=idx;out->b=(s32)tot;out->c=batch;out->lat=la;out->lon=lo;return 1;
+ }
+ if(act=='F'){
+  if(nf!=7)return 0;
+  u32 op=0;s32 la=0,lo=0;
+  if(!parse_u32_span(fs[2],fe[2],&op)||op>4u)return 0;
+  if(!parse_dec_span(fs[3],fe[3],&la)||!parse_dec_span(fs[4],fe[4],&lo))return 0;
+  if(la<-9000000||la>9000000||lo<-18000000||lo>18000000)return 0;
+  out->a=op;out->lat=la;out->lon=lo;return 1;
+ }
+ if(act=='P'){
+  if(nf!=5||fe[2]-fs[2]!=24)return 0;
+  for(int i=0;i<24;i++){
+   int h=hexval0(fs[2][i]);if(h<0)return 0;
+   out->hex[i]=(char)(h<10?'0'+h:'A'+h-10);
+  }
+  out->hex[24]=0;return 1;
+ }
+ if(act=='C'){
+  if(fe[2]-fs[2]!=1)return 0;
+  char sub=fs[2][0];out->sub=sub;
+  if(sub=='X'||sub=='K')return nf==5;
+  if(sub=='T'){
+   if(nf!=7)return 0;
+   u32 utc=0;s32 tz=0;
+   if(!parse_hex32_span(fs[3],fe[3],1,8,&utc)||!parse_dec_span(fs[4],fe[4],&tz))return 0;
+   if(tz<-720||tz>840)return 0;
+   out->a=utc;out->b=tz;return 1;
+  }
+  return 0;
+ }
+ if(act=='Q'){
+  if(fe[2]-fs[2]!=1)return 0;
+  char sub=fs[2][0];out->sub=sub;
+  if(sub=='S'||sub=='D')return nf==5;
+  if(sub=='A'){
+   if(nf!=6)return 0;
+   u32 idx=0;if(!parse_u32_span(fs[3],fe[3],&idx)||idx>63u)return 0;
+   out->a=idx;return 1;
+  }
+  return 0;
+ }
+ if(act=='H'){
+  if(nf!=5)return 0;
+  u32 proto=0;if(!parse_u32_span(fs[2],fe[2],&proto)||proto<1u||proto>99u)return 0;
+  out->a=proto;return 1;
+ }
+ return 0;
+}
+static int nav_packet_parse(const char*t,char*action,s32*lat,s32*lon,u16*seq){
+ struct NavPacket p;if(!nav_packet_parse_ex(t,&p)||(p.action!='N'&&p.action!='S'))return 0;
+ *action=p.action;*lat=p.lat;*lon=p.lon;*seq=p.seq;return 1;
+}
 static void file_write(const char*path,const char*s);
 static void bt_log_append(const char*s);
-static u16 nav_last_seq=0;static int nav_last_seq_valid=0;
-static void nav_publish(char action,s32 lat,s32 lon,u16 seq,const char*name){if(nav_last_seq_valid&&nav_last_seq==seq)return;char b[384];b[0]=0;append_str(b,sizeof(b),"SEQ=");append_uint(b,sizeof(b),(u32)seq);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"ACTION=");append_char(b,sizeof(b),action);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"LAT=");append_sint(b,sizeof(b),lat);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"LON=");append_sint(b,sizeof(b),lon);append_char(b,sizeof(b),'\n');append_str(b,sizeof(b),"NAME=");append_str(b,sizeof(b),(name&&name[0])?name:"PHONE DESTINATION");append_char(b,sizeof(b),'\n');file_write(BT_NAV_TMP_PATH,b);if(s_rename(BT_NAV_TMP_PATH,BT_NAV_PATH)<0){file_write(BT_NAV_PATH,b);s_unlink(BT_NAV_TMP_PATH);}nav_last_seq=seq;nav_last_seq_valid=1;bt_log_append("NAV RX ACCEPTED\n");}
+static void avrcp_passthrough(u8 op);
+static u32 alert_now_ms(void);
+static u16 nav_last_seq=0,nav_ack_seq=0,nav_last_ack_seq=0;
+static int nav_last_seq_valid=0,nav_ack_pending=0,nav_last_ack_valid=0,nav_last_ack_ok=0;
+static u32 nav_ack_deadline=0,nav_last_activity_ms=0,real_media_playing_at=0;
+static int real_media_was_playing=0,nav_resume_music=0;
+static void nav_publish_ex(const struct NavPacket*p,const char*name){
+ u32 now=alert_now_ms();
+ if(nav_last_seq_valid&&nav_last_seq==p->seq){
+  if(p->ver>=3&&nav_last_ack_valid&&nav_last_ack_seq==p->seq){
+   avrcp_passthrough(nav_last_ack_ok?0x4b:0x4c);
+   bt_log_append(nav_last_ack_ok?"NAV TX ACK RETRY\n":"NAV TX NACK RETRY\n");
+  }
+  return;
+ }
+ char b[448];b[0]=0;
+ append_str(b,sizeof(b),"VER=");append_uint(b,sizeof(b),p->ver);append_char(b,sizeof(b),'\n');
+ append_str(b,sizeof(b),"SEQ=");append_uint(b,sizeof(b),(u32)p->seq);append_char(b,sizeof(b),'\n');
+ append_str(b,sizeof(b),"ACTION=");append_char(b,sizeof(b),p->action);append_char(b,sizeof(b),'\n');
+ if(p->sub){append_str(b,sizeof(b),"SUB=");append_char(b,sizeof(b),p->sub);append_char(b,sizeof(b),'\n');}
+ append_str(b,sizeof(b),"LAT=");append_sint(b,sizeof(b),p->lat);append_char(b,sizeof(b),'\n');
+ append_str(b,sizeof(b),"LON=");append_sint(b,sizeof(b),p->lon);append_char(b,sizeof(b),'\n');
+ append_str(b,sizeof(b),"A=");append_uint(b,sizeof(b),p->a);append_char(b,sizeof(b),'\n');
+ append_str(b,sizeof(b),"B=");append_sint(b,sizeof(b),p->b);append_char(b,sizeof(b),'\n');
+ append_str(b,sizeof(b),"C=");append_uint(b,sizeof(b),p->c);append_char(b,sizeof(b),'\n');
+ if(p->hex[0]){append_str(b,sizeof(b),"HEX=");append_str(b,sizeof(b),p->hex);append_char(b,sizeof(b),'\n');}
+ append_str(b,sizeof(b),"NAME=");append_str(b,sizeof(b),(name&&name[0])?name:"PHONE DESTINATION");append_char(b,sizeof(b),'\n');
+ file_write(BT_NAV_TMP_PATH,b);
+ if(s_rename(BT_NAV_TMP_PATH,BT_NAV_PATH)<0){file_write(BT_NAV_PATH,b);s_unlink(BT_NAV_TMP_PATH);}
+ nav_last_seq=p->seq;nav_last_seq_valid=1;nav_last_activity_ms=now;
+ if(p->ver>=3){
+  nav_ack_pending=1;nav_ack_seq=p->seq;nav_ack_deadline=now+1800u;
+  if(real_media_was_playing&&(u32)(now-real_media_playing_at)<=6000u)nav_resume_music=1;
+ }
+ bt_log_append(p->ver>=3?"NAV RX CLP3 ACCEPTED\n":"NAV RX ACCEPTED\n");
+}
+static void nav_publish(char action,s32 lat,s32 lon,u16 seq,const char*name){
+ struct NavPacket p;memzero(&p,sizeof(p));p.ver=2;p.action=action;p.lat=lat;p.lon=lon;p.seq=seq;
+ nav_publish_ex(&p,name);
+}
 static int parse_uint0(const char*s,u32*out){u32 v=0;int any=0;while(*s>='0'&&*s<='9'){any=1;v=v*10u+(u32)(*s-'0');s++;}if(out)*out=v;return any;}
 static int starts0(const char*s,const char*p){u32 i=0;while(p[i]){if(s[i]!=p[i])return 0;i++;}return 1;}
 static void file_write(const char*path,const char*s){long fd=s_open(path,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);if(fd>=0){s_write((int)fd,s,slen(s));s_close((int)fd);}}
@@ -363,7 +502,7 @@ static void meta_clear_track(void){meta_title[0]=meta_artist[0]=meta_album[0]=0;
 /* Mobile browsers can briefly expose the PWA/document title as AVRCP metadata
  * while the silent ClioPlay Send transport session is being activated.  That
  * title is transport plumbing, not user media, so never publish it to clio040. */
-static int nav_sender_fallback_meta(void){return streq(meta_title,"ClioPlay Send");}
+static int nav_sender_fallback_meta(void){return streq(meta_title,"ClioPlay Send")||streq(meta_title,"ClioPlay Link");}
 static void meta_hide_track(void){meta_title[0]=meta_artist[0]=meta_album[0]=0;meta_pos=meta_dur=0;meta_dirty=1;}
 /* Publish complete IPC snapshots, never partially rewritten records. */
 static int bt_publish_snapshot(const char*path,const char*tmp,const char*data){
@@ -711,7 +850,7 @@ static struct AudioChime camera_chime;
 static u32 alert_seq=0,alert_last_id=0,alert_last_kind=0,alert_idle_until=0,alert_last_media=0;
 static u32 alert_now_ms(void){struct {long sec,nsec;}t;if(sc2(263,1,(long)&t)>=0)return (u32)t.sec*1000u+(u32)(t.nsec/1000000L);return snd_now_ms();}
 static void alert_service(void){u32 now=alert_now_ms(),msg[4];snd_feed_now=now;long f=s_open(CAMERA_ALERT_PATH,O_RDONLY_,0);
- if(f>=0){long n=s_read((int)f,msg,sizeof(msg));s_close((int)f);if(n==sizeof(msg)&&msg[0]==0x4c414c43u&&(msg[2]!=alert_seq||msg[1]!=alert_last_id||msg[3]!=alert_last_kind)){alert_seq=msg[2];alert_last_id=msg[1];alert_last_kind=msg[3];if(!msg[3]){camera_chime.total=0;alert_idle_until=0;if(sndfd>=0&&now-alert_last_media>200)snd_close();}else if(source_active&&(s32)(msg[2]-now)>=0&&(s32)(msg[2]-now)<=1500&&snd_open()){unsigned kind=msg[3]==2u?2u:1u;chime_start_kind(&camera_chime,udiv32(44100u,(u32)snd_div),kind);alert_idle_until=now+(kind==2u?1200u:1100u);}}}
+ if(f>=0){long n=s_read((int)f,msg,sizeof(msg));s_close((int)f);if(n==sizeof(msg)&&msg[0]==0x4c414c43u&&(msg[2]!=alert_seq||msg[1]!=alert_last_id||msg[3]!=alert_last_kind)){alert_seq=msg[2];alert_last_id=msg[1];alert_last_kind=msg[3];if(!msg[3]){camera_chime.total=0;alert_idle_until=0;if(sndfd>=0&&now-alert_last_media>200)snd_close();}else if(source_active&&(s32)(msg[2]-now)>=0&&(s32)(msg[2]-now)<=1500&&snd_open()){unsigned kind=(msg[3]>=1u&&msg[3]<=5u)?msg[3]:1u;chime_start_kind(&camera_chime,udiv32(44100u,(u32)snd_div),kind);alert_idle_until=now+(kind==2u?1200u:kind>=3u?950u:1100u);}}}
  if(!source_active){camera_chime.total=0;alert_idle_until=0;return;}
  if(!alert_idle_until)return;
  if((s32)(now-alert_idle_until)>=0){alert_idle_until=0;if(now-alert_last_media>200&&sndfd>=0)snd_close();return;}
@@ -771,6 +910,55 @@ static int avrcp_duration_seconds(const u8*p,u16 n){
  }
  return (int)udiv32(ms,1000);
 }
+static void nav_note_real_playback(int playing,u32 now){
+ if(streq(meta_album,"CLIOPLAY-NAV")||nav_sender_fallback_meta())return;
+ if(playing){real_media_was_playing=1;real_media_playing_at=now;nav_resume_music=0;}
+ else if(!nav_ack_pending&&(!nav_last_activity_ms||(u32)(now-nav_last_activity_ms)>2500u)){real_media_was_playing=0;}
+}
+static void nav_ack_service(u32 now){
+ if(nav_ack_pending){
+  if((s32)(now-nav_ack_deadline)>=0){
+   nav_ack_pending=0;bt_log_append("NAV ACK TIMEOUT\n");
+  }else{
+   char b[128];long fd=s_open(BT_NAV_ACK_PATH,O_RDONLY_,0);
+   if(fd>=0){
+    long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);
+    if(n>0){
+     b[n]=0;u32 seq=0,chime=0;int have_seq=0,have_res=0,is_ok=0;
+     char*ln=b;
+     for(long i=0;i<=n;i++){
+      if(b[i]=='\r'||b[i]=='\n'||b[i]==0){
+       char save=b[i];b[i]=0;
+       if(starts0(ln,"SEQ=")){have_seq=parse_uint0(ln+4,&seq);}
+       else if(starts0(ln,"RES=")){
+        if(streq(ln+4,"OK")){have_res=1;is_ok=1;}
+        else if(streq(ln+4,"NACK")){have_res=1;is_ok=0;}
+       }else if(starts0(ln,"CHIME=")){(void)parse_uint0(ln+6,&chime);}
+       if(!save)break;
+       ln=b+i+1;
+      }
+     }
+     if(have_seq&&have_res&&seq==(u32)nav_ack_seq){
+      nav_ack_pending=0;nav_last_ack_valid=1;nav_last_ack_seq=nav_ack_seq;nav_last_ack_ok=is_ok;nav_last_activity_ms=now;
+      avrcp_passthrough(is_ok?0x4b:0x4c);
+      bt_log_append(is_ok?"NAV TX ACK\n":"NAV TX NACK\n");
+      if(chime>=1u&&chime<=5u&&source_active&&snd_open()){
+       chime_start_kind(&camera_chime,udiv32(44100u,(u32)snd_div),chime);
+       alert_idle_until=now+950u;
+      }
+     }
+    }
+   }
+  }
+ }
+ if(nav_resume_music&&!nav_ack_pending&&avrcp_state==2&&(u32)(now-nav_last_activity_ms)>=900u){
+  if(!av_started||!meta_playing){
+   avrcp_passthrough(0x44);
+   bt_log_append("NAV SMART MUSIC RESUME\n");
+  }
+  nav_resume_music=0;real_media_was_playing=0;
+ }
+}
 static void avrcp_parse(const u8*b,int n){if(n<6||b[1]!=0x11||b[2]!=0x0e)return;if((b[0]&2)==0)return;/* only AVCTP responses */if(b[5]==0x7c)return;if(b[5]!=0x00||n<13)return;if(b[6]!=0||b[7]!=0x19||b[8]!=0x58)return;u8 ctype=b[3]&0x0f,tl=(b[0]>>4)&0x0f,pdu=b[9],pkt=b[10];u16 plen=be16(b+11);if(13+(int)plen>n)plen=(u16)(n-13);if(pkt!=0)return;const u8*p=b+13;
   if(pdu==0x31){
     if(ctype==0x08||ctype==0x0a){
@@ -782,14 +970,14 @@ static void avrcp_parse(const u8*b,int n){if(n<6||b[1]!=0x11||b[2]!=0x0e)return;
     u8 ev=p[0];
     if(ctype==0x0f){
       if(ev>=1&&ev<=2)avrcp_notify_state[ev]=2;
-      if(ev==AVRCP_EVT_PLAYBACK&&plen>=2){meta_playing=p[1]==1;meta_dirty=1;}
+      if(ev==AVRCP_EVT_PLAYBACK&&plen>=2){meta_playing=p[1]==1;meta_dirty=1;nav_note_real_playback(meta_playing,alert_now_ms());}
       return;
     }
     if(ctype==0x0d){
       if(avrcp_notify_tl[tl]==ev)avrcp_notify_tl[tl]=0;
       if(ev>=1&&ev<=2)avrcp_notify_state[ev]=0;
       if(ev==AVRCP_EVT_PLAYBACK){
-        if(plen>=2){meta_playing=p[1]==1;meta_dirty=1;}
+        if(plen>=2){meta_playing=p[1]==1;meta_dirty=1;nav_note_real_playback(meta_playing,alert_now_ms());}
         avrcp_get_status();
         avrcp_register_notify(AVRCP_EVT_PLAYBACK);
       }else if(ev==AVRCP_EVT_TRACK){
@@ -801,8 +989,8 @@ static void avrcp_parse(const u8*b,int n){if(n<6||b[1]!=0x11||b[2]!=0x0e)return;
     return;
   }
   if(ctype==0x08||ctype==0x0a)return;
-  if(pdu==0x30&&plen>=9){u32 dur=be32(p),pos=be32(p+4);int play=p[8]==1;meta_dur=dur==0xffffffffu?0:(int)udiv32(dur,1000);meta_pos=(pos==0xffffffffu)?-1:(int)udiv32(pos,1000);meta_playing=play;meta_dirty=1;return;}
-  if(pdu==0x20&&plen>=1){char previous_title[sizeof(meta_title)];copystr(previous_title,sizeof(previous_title),meta_title);int has_duration=0;u32 off=1,count=p[0];meta_title[0]=meta_artist[0]=meta_album[0]=0;for(u32 k=0;k<count&&off+8<=plen;k++){u32 id=be32(p+off);u16 cs=be16(p+off+4),ln=be16(p+off+6);off+=8;if(off+ln>plen)break;if(cs==106){if(id==1)meta_text(meta_title,sizeof(meta_title),p+off,ln);else if(id==2)meta_text(meta_artist,sizeof(meta_artist),p+off,ln);else if(id==3)meta_text(meta_album,sizeof(meta_album),p+off,ln);else if(id==7){has_duration=1;meta_dur=avrcp_duration_seconds(p+off,ln);}}off+=ln;}if(streq(meta_album,"CLIOPLAY-NAV")){char action=0;s32 lat=0,lon=0;u16 seq=0;if(nav_packet_parse(meta_title,&action,&lat,&lon,&seq))nav_publish(action,lat,lon,seq,meta_artist);else bt_log_append("NAV RX REJECTED\n");meta_hide_track();return;}if(nav_sender_fallback_meta()){bt_log_append("NAV SENDER FALLBACK METADATA HIDDEN\n");meta_hide_track();return;}if(!streq(previous_title,meta_title)){meta_pos=-1;if(!has_duration)meta_dur=0;}meta_dirty=1;return;}
+  if(pdu==0x30&&plen>=9){u32 dur=be32(p),pos=be32(p+4);int play=p[8]==1;meta_dur=dur==0xffffffffu?0:(int)udiv32(dur,1000);meta_pos=(pos==0xffffffffu)?-1:(int)udiv32(pos,1000);meta_playing=play;meta_dirty=1;nav_note_real_playback(meta_playing,alert_now_ms());return;}
+  if(pdu==0x20&&plen>=1){char previous_title[sizeof(meta_title)];copystr(previous_title,sizeof(previous_title),meta_title);int has_duration=0;u32 off=1,count=p[0];meta_title[0]=meta_artist[0]=meta_album[0]=0;for(u32 k=0;k<count&&off+8<=plen;k++){u32 id=be32(p+off);u16 cs=be16(p+off+4),ln=be16(p+off+6);off+=8;if(off+ln>plen)break;if(cs==106){if(id==1)meta_text(meta_title,sizeof(meta_title),p+off,ln);else if(id==2)meta_text(meta_artist,sizeof(meta_artist),p+off,ln);else if(id==3)meta_text(meta_album,sizeof(meta_album),p+off,ln);else if(id==7){has_duration=1;meta_dur=avrcp_duration_seconds(p+off,ln);}}off+=ln;}if(streq(meta_album,"CLIOPLAY-NAV")){struct NavPacket np;if(nav_packet_parse_ex(meta_title,&np))nav_publish_ex(&np,meta_artist);else bt_log_append("NAV RX REJECTED\n");meta_hide_track();return;}if(nav_sender_fallback_meta()){bt_log_append("NAV SENDER FALLBACK METADATA HIDDEN\n");meta_hide_track();return;}nav_note_real_playback(meta_playing,alert_now_ms());if(!streq(previous_title,meta_title)){meta_pos=-1;if(!has_duration)meta_dur=0;}meta_dirty=1;return;}
 }
 
 /* The daemon shares no auto-connect command file with the UI.  That means
@@ -858,7 +1046,7 @@ static void auto_boot_service(u32 tick){
   status_set("BT RECONNECTING");
   hci_log(auto_attempts==1?"AUTO RECONNECT PROFILE-FIRST":"AUTO RECONNECT SECOND TRY",saved_peer,-1);
 }
-static void session_close(int keep_status){snd_close();avrcp_close();avrcp_delay_ticks=-1;reconnect_profile_ticks=-1;reconnect_wait_ticks=-1;if(mediafd>=0)s_close(mediafd);if(sigfd>=0)s_close(sigfd);mediafd=sigfd=-1;av_reset_stream();live_peer_valid=0;meta_connected=0;meta_playing=0;if(saved_peer_valid)meta_device_set_addr(saved_peer);else meta_device_addr[0]=meta_device[0]=0;meta_dirty=1;if(!keep_status)status_set("BT WAIT PHONE");}
+static void session_close(int keep_status){snd_close();avrcp_close();avrcp_delay_ticks=-1;reconnect_profile_ticks=-1;reconnect_wait_ticks=-1;if(mediafd>=0)s_close(mediafd);if(sigfd>=0)s_close(sigfd);mediafd=sigfd=-1;av_reset_stream();live_peer_valid=0;meta_connected=0;meta_playing=0;nav_ack_pending=0;nav_resume_music=0;real_media_was_playing=0;if(saved_peer_valid)meta_device_set_addr(saved_peer);else meta_device_addr[0]=meta_device[0]=0;meta_dirty=1;if(!keep_status)status_set("BT WAIT PHONE");}
 static int shutdown_requested(void){return auto_path_exists(SHUTDOWN_PATH);}
 static void audio_shutdown_cleanup(void){
  session_close(1);
@@ -870,7 +1058,7 @@ static void audio_shutdown_cleanup(void){
 
 /* clio040 command file is a single latest-command record; sequence prevents repeats. */
 static void process_command(void){char b[96]={0};long fd=s_open(BT_CMD_PATH,O_RDONLY_,0);if(fd<0)return;long n=s_read((int)fd,b,sizeof(b)-1);s_close((int)fd);if(n<=0)return;b[n]=0;u32 seq=0;if(!parse_uint0(b,&seq)||seq==command_seq_seen)return;command_seq_seen=seq;char*p=b;while(*p>='0'&&*p<='9')p++;while(*p==' '||*p=='\t')p++;
-  if(starts0(p,"PLAY")){avrcp_passthrough(0x44);return;}if(starts0(p,"PAUSE")){avrcp_passthrough(0x46);return;}if(starts0(p,"NEXT")){avrcp_passthrough(0x4b);return;}if(starts0(p,"PREV")){avrcp_passthrough(0x4c);return;}
+  if(starts0(p,"PLAY")){avrcp_passthrough(0x44);return;}if(starts0(p,"PAUSE")){nav_resume_music=0;real_media_was_playing=0;avrcp_passthrough(0x46);return;}if(starts0(p,"NEXT")){avrcp_passthrough(0x4b);return;}if(starts0(p,"PREV")){avrcp_passthrough(0x4c);return;}
   if(starts0(p,"PAIR")){auto_boot_preempt();if(hci_pair_armed){pair_pin_status();return;}manual_block=0;pair_pin_prepare();hci_pair_armed=1;hci_pair_ticks=600;hci_pin_peer_valid=0;{char l[40];l[0]=0;append_str(l,sizeof(l),"HCI PAIR ARMED 60S PIN ");append_str(l,sizeof(l),pair_pin);hci_log(l,0,-1);}if(pairing_policy_set(1)){hci_request("PAIR",0);}else{pair_policy_fallback=1;pair_policy_on=1;hci_request("PAIR_FALLBACK",0);}pair_pin_status();return;}
   if(starts0(p,"CONNECT")){auto_boot_preempt();u8 target[6];const u8*t=0;char*q=p+7;while(*q==' '||*q=='\t')q++;if(addr_parse(q,target))t=target;else if(saved_peer_valid)t=saved_peer;manual_block=0;if(!t){status_set("BT NO SAVED DEVICE");return;}if(hci_pair_armed){hci_pair_armed=0;hci_pair_ticks=0;pairing_policy_finish();}hci_pin_peer_valid=0;if(!bond_restore_hcid(t)){status_set("BT REPAIR REQUIRED");hci_log("PHONE RECONNECT NO SAVED KEY",t,-1);return;}if(live_peer_valid&&!addr_eq(t,live_peer)){hci_request("DISCONNECT",live_peer);session_close(1);}peer_save(t);hci_remote_name_request(t);avrcp_close();reconnect_profile_ticks=0;reconnect_wait_ticks=250;avrcp_retry_at=0;hci_log("PHONE RECONNECT PROFILE-FIRST+BOND",t,-1);status_set("BT RECONNECTING");return;}
   if(starts0(p,"DISCONNECT")){auto_boot_preempt();u8 target[6];const u8*t=live_peer_valid?live_peer:(saved_peer_valid?saved_peer:0);char*q=p+10;while(*q==' '||*q=='\t')q++;if(addr_parse(q,target))t=target;manual_block=1;if(hci_pair_armed){hci_pair_armed=0;hci_pair_ticks=0;pairing_policy_finish();}if(t)hci_request("DISCONNECT",t);if(!t||(live_peer_valid&&addr_eq(t,live_peer)))session_close(1);status_set("BT DISCONNECTED");device_list_write();return;}
@@ -916,6 +1104,7 @@ static void audio_profile_service(u32 now){
 }
 static void serve(void){long prio=s_audio_priority();bt_log_append("CLIOPLAY " CLIOPLAY_VERSION " BLUETOOTH AUDIO START\n");peer_load();local_bdaddr_load();meta_write();status_set("BT WAIT PHONE");hcifd=hci_raw_open();if(hcifd<0)hci_log("HCI MONITOR OPEN FAIL",0,-1);if(saved_peer_valid)bond_restore_hcid(saved_peer);device_list_write();hci_log("AVRCP SDP / MULTI-DEVICE BONDS / BUFFERED AUDIO / EARLY PHONE RECONNECT",0,-1);hci_log(prio<0?"AUDIO PRIORITY 0 REQUEST DENIED":"AUDIO PRIORITY 0 SET",0,-1);u32 tick=0;struct AudioPeriodic maintenance={0},status_poll={0},metadata_poll={0};for(;;){
     u32 now=alert_now_ms(),steps=audio_periodic(&maintenance,now,100u);
+    nav_ack_service(now);
     if(steps){
     if(shutdown_requested()){bt_log_append("BT SHUTDOWN REQUESTED\n");audio_shutdown_cleanup();return;}
     tick+=steps;audio_maintenance_runs++;
@@ -962,7 +1151,9 @@ static void serve(void){long prio=s_audio_priority();bt_log_append("CLIOPLAY " C
     if(avrcpfd>=0){ic=np;pf[np].fd=avrcpfd;pf[np].events=POLLIN|(avrcp_state==1?POLLOUT:0);pf[np].revents=0;np++;}
     /* A media packet may wake poll every few milliseconds. Only socket work
      * runs at that rate; maintenance remains on its 100 ms wall-clock schedule. */
-    long pr=s_poll(pf,(u32)np,audio_periodic_wait(&maintenance,alert_now_ms(),100u));
+    int poll_wait=audio_periodic_wait(&maintenance,alert_now_ms(),100u);
+    if(nav_ack_pending&&poll_wait>20)poll_wait=20;
+    long pr=s_poll(pf,(u32)np,poll_wait);
     if(pr<0){hci_log("POLL ERROR",0,(int)(-pr));s_nanosleep(0,50000000);continue;}if(pr==0)continue;
     if(ih>=0&&(pf[ih].revents&POLLIN))hci_event_service();
     if(il>=0&&(pf[il].revents&POLLIN))accept_avdtp();if(ir>=0&&ctrllistenfd>=0&&(pf[ir].revents&POLLIN))accept_avrcp();
@@ -978,7 +1169,7 @@ static void serve(void){long prio=s_audio_priority();bt_log_append("CLIOPLAY " C
   }}
 
 #ifndef HOST_TEST
-__attribute__((noreturn)) void _start(void){memzero(status_last,sizeof(status_last));s_unlink(CAMERA_ALERT_PATH);s_unlink(BT_STATUS_PATH);s_unlink(BT_META_PATH);s_unlink(BT_NAV_PATH);s_unlink(BT_NAV_TMP_PATH);s_unlink(BT_HCI_PATH);serve();s_exit(0);}
+__attribute__((noreturn)) void _start(void){memzero(status_last,sizeof(status_last));s_unlink(CAMERA_ALERT_PATH);s_unlink(BT_STATUS_PATH);s_unlink(BT_META_PATH);s_unlink(BT_NAV_PATH);s_unlink(BT_NAV_TMP_PATH);s_unlink(BT_NAV_ACK_PATH);s_unlink(BT_HCI_PATH);serve();s_exit(0);}
 #endif
 
 #else
