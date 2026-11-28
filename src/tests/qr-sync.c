@@ -144,7 +144,7 @@ int main(void){
  assert(phone_qr_command('S', 0) == 1);
  assert(qr_pill_active == 1);
  assert(qr_pill_total >= 4 && qr_pill_total <= QR_SYNC_MAX_FRAMES);
- assert(qr_pill_mat.version <= 7);
+ assert(qr_pill_mat.version <= 5);
 
  u8 reassembled[QR_SYNC_MAX_BYTES];
  int rlen = 0;
@@ -154,7 +154,7 @@ int main(void){
    assert(qr_pill_bt_ack == 1);
    assert(qr_pill_idx == f);
   }
-  assert(qr_pill_mat.version <= 7);
+  assert(qr_pill_mat.version <= 5);
   /* Verify header format CS1:<sid>:<idx>/<tot>:<b64> */
   const char* p = qr_pill_frame_text;
   assert(strncmp(p, "CS1:", 4) == 0);
@@ -243,12 +243,37 @@ int main(void){
  qr_pill_service(t0 + 950u);
  assert(qr_pill_active == 0);
 
- /* 5. Verify auto-cycle fallback when no BT ACK arrives + K_BACK dismiss. */
+ /* 5. Verify Frame 0 holds STILL before first BT ACK, steps after BT ACK, and clears active Turn HUD. */
  assert(phone_qr_command('S', 0) == 1);
  assert(qr_pill_idx == 0 && qr_pill_bt_ack == 0);
  u32 s0 = qr_pill_started_ms;
+ /* Must NEVER auto-advance before ClioPlay Link confirms Frame 0 via CLP3:Q:A! */
  qr_pill_service(s0 + 1600u);
+ assert(qr_pill_active == 1 && qr_pill_idx == 0);
+ qr_pill_service(s0 + 6000u);
+ assert(qr_pill_active == 1 && qr_pill_idx == 0);
+ /* Once ClioPlay Link confirms Frame 0 -> requests Frame 1, advance immediately and keep 2.2 s BT-drop fallback. */
+ assert(phone_qr_command('A', 1) == 1);
+ assert(qr_pill_bt_ack == 1 && qr_pill_idx == 1);
+ u32 f1 = qr_pill_frame_ms;
+ qr_pill_service(f1 + 1500u);
  assert(qr_pill_idx == 1);
+ qr_pill_service(f1 + 2250u);
+ assert(qr_pill_idx == (2 % qr_pill_total));
+ /* Verify floating QR pill never overlaps HC_TURN, HC_TURN_NEXT (even 43 px roundabout), or HC_SPEED! */
+ for(int swap = 0; swap <= 1; swap++){
+  pref.bottom_swap = swap;
+  struct HudBox qb = qr_pill_box(256);
+  int turn_x = swap ? HUD_BOTTOM_MARGIN : HUD_TURN_X;
+  int speed_x = swap ? HUD_TURN_X : HUD_BOTTOM_MARGIN;
+  /* Vertically clear above HUD_BOTTOM_Y (220) -> zero overlap with HC_TURN and HC_SPEED. */
+  assert(qb.y + qb.h <= HUD_BOTTOM_Y - 4);
+  /* Horizontally clear of HC_TURN and HC_TURN_NEXT stacked above it! */
+  assert(qb.x + qb.w <= turn_x || qb.x >= turn_x + HUD_SIDE_W);
+  /* Also clear of HC_SPEED vertically. */
+  assert(qb.y + qb.h < HUD_BOTTOM_Y && speed_x >= 0);
+ }
+ pref.bottom_swap = 0;
  key_handle(K_BACK);
  assert(qr_pill_active == 0);
 

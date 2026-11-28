@@ -269,7 +269,7 @@ static void clp3_signed(char*out,unsigned cap,const char*body){
 }
 static void clp3_link_checks(void){
  reset(44100);avrcpfd=30;avrcp_state=2;mock_avrcp_tx_n=0;
- /* Suppress both legacy ClioPlay Send and new ClioPlay Link fallback titles. */
+ /* Suppress ClioPlay Link fallback title while silent transport activates. */
  feed_avrcp_meta("ClioPlay Link","","");
  assert(meta_title[0]==0&&meta_album[0]==0);
  /* Establish real music playing prior to CLP3 transfer for smart resume. */
@@ -322,6 +322,25 @@ static void clp3_link_checks(void){
  mock_avrcp_tx_n=0;av_started=0;meta_playing=0;
  mock_now+=950;nav_ack_service(mock_now);
  assert(mock_avrcp_tx_n==2&&mock_avrcp_tx[0][6]==0x44&&mock_avrcp_tx[1][6]==(0x44|0x80)&&!nav_resume_music);
+ /* Active QR sync (Q:S / Q:A) enables fast metadata polling and defers Smart Music Resume until Q:D. */
+ meta_playing=1;feed_avrcp_meta("Midnight City","M83","Hurry Up");
+ assert(real_media_was_playing&&!nav_qr_active);
+ clp3_signed(pkt,sizeof(pkt),"CLP3:Q:S:010D");
+ feed_avrcp_meta(pkt,"QR Sync","CLIOPLAY-NAV");
+ assert(nav_qr_active&&!nav_resume_music);
+ snprintf(mock_nav_ack,sizeof(mock_nav_ack),"SEQ=%u\nRES=OK\nCHIME=0\n",0x010Du);
+ mock_now+=40;nav_ack_service(mock_now);
+ mock_avrcp_tx_n=0;av_started=0;meta_playing=0;
+ mock_now+=1200;nav_ack_service(mock_now);
+ assert(mock_avrcp_tx_n==0&&nav_qr_active); /* Must NOT fire PLAY during active QR scan! */
+ clp3_signed(pkt,sizeof(pkt),"CLP3:Q:D:010E");
+ feed_avrcp_meta(pkt,"QR Done","CLIOPLAY-NAV");
+ assert(!nav_qr_active&&nav_resume_music);
+ snprintf(mock_nav_ack,sizeof(mock_nav_ack),"SEQ=%u\nRES=OK\nCHIME=3\n",0x010Eu);
+ mock_now+=40;nav_ack_service(mock_now);
+ mock_avrcp_tx_n=0;av_started=0;meta_playing=0;
+ mock_now+=950;nav_ack_service(mock_now);
+ assert(mock_avrcp_tx_n==2&&mock_avrcp_tx[0][6]==0x44&&!nav_resume_music);
  /* Legacy CLP2 must never arm AVRCP ACK. */
  mock_avrcp_tx_n=0;clp3_signed(pkt,sizeof(pkt),"CLP2:N:5497032:-160208:010C");
  feed_avrcp_meta(pkt,"Legacy Send","CLIOPLAY-NAV");

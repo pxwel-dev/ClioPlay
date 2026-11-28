@@ -259,7 +259,7 @@ V300_MULTILEG_SAMPLES = sorted({0} | {at+step for at,_ in V300_MULTILEG_EVENTS f
 
 V300_QR_SYNC_EVENTS = (
     (2100, 'btui.connected=1;copystr(btui.status,sizeof(btui.status),"BT CONNECTED");copystr(btui.device,sizeof(btui.device),"Pawel iPhone");menu_sync(hud_now_ms());assert(sheet_page==P_PAIR&&menu_pair_connected);'),
-    (4100, 'preview_clp3_ping(10);menu_sync(hud_now_ms());assert(sheet_page!=P_PAIR);menu_close(hud_now_ms());assert(screen==SCR_MAP);'),
+    (4100, 'preview_clp3_ping(10);menu_sync(hud_now_ms());assert(sheet_page!=P_PAIR);menu_close(hud_now_ms());assert(screen==SCR_MAP);demo_v30_restore_manchester(1);gps.mph10=260;manual_zoom=6;roadctx.valid=1;roadctx.speed=30;roadctx.speed_flags=2;'),
     (5300, 'preview_clp3_qr(11,\'S\',0);assert(qr_pill_active==1&&qr_pill_total>=2);'),
     (6800, 'preview_clp3_qr(12,\'A\',1);assert(qr_pill_active==1&&qr_pill_idx==(1%qr_pill_total));'),
     (7800, 'preview_clp3_qr(13,\'A\',2);assert(qr_pill_active==1);'),

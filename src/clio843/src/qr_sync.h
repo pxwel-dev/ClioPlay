@@ -9,8 +9,8 @@
 #define CLIO_QR_SYNC_H
 
 #define QR_SYNC_MAX_BYTES 1400
-#define QR_SYNC_CHUNK_BYTES 96
-#define QR_SYNC_MAX_FRAMES 15
+#define QR_SYNC_CHUNK_BYTES 69
+#define QR_SYNC_MAX_FRAMES 24
 
 static struct QrMatrix qr_connect_mat;
 static char qr_connect_url[112];
@@ -590,13 +590,14 @@ static void qr_pill_service(u32 now){
   if(now - qr_pill_done_ms >= 900u) qr_pill_dismiss();
   return;
  }
- if(now - qr_pill_activity_ms >= 20000u){
+ if(now - qr_pill_activity_ms >= 35000u){
   qr_pill_dismiss();
   return;
  }
- /* Auto-cycle fallback when BT ACK is unavailable (e.g. legacy link or BT drop). */
- if(!qr_pill_bt_ack && qr_pill_total > 1 &&
-    now - qr_pill_started_ms >= 1500u && now - qr_pill_frame_ms >= 1100u){
+ /* Hold Frame 0 completely still until ClioPlay Link confirms the first scan
+  * via CLP3:Q:A:<idx>. Once BT-ACK scanning has started, step gently only if
+  * a subsequent ACK drops for >= 2.2 s so a transient BT glitch never stalls. */
+ if(qr_pill_bt_ack && qr_pill_total > 1 && now - qr_pill_frame_ms >= 2200u){
   int next = (qr_pill_idx + 1) % qr_pill_total;
   if(qr_pill_encode_frame(next)){
    qr_pill_frame_ms = now;
@@ -612,6 +613,14 @@ static int qr_pill_animating(u32 now){
  return 0;
 }
 
+static struct HudBox qr_pill_box(int q){
+ /* Place on the opposite side from active Turn / Next-Turn HUD cards and keep
+  * clear above HUD_BOTTOM_Y (220) so active turn directions and speed stay visible. */
+ int pw = 166, ph = 172;
+ int px = pref.bottom_swap ? (W - pw - 8) : 8;
+ return (struct HudBox){px, 43, pw, ph, q};
+}
+
 static void qr_pill_draw(u32 now){
  if(!qr_pill_active || screen != SCR_MAP || modal != MOD_NONE) return;
  int q = frame_ease(now - qr_pill_started_ms, 180);
@@ -619,17 +628,17 @@ static void qr_pill_draw(u32 now){
  int alpha = (q * 16 + 128) / 256;
  if(alpha < 1) alpha = 1;
  if(alpha > 16) alpha = 16;
- struct HudBox b = {W - 180 - 10, 44, 180, 188, q};
+ struct HudBox b = qr_pill_box(q);
  hud_glass(b, 0);
  int ox = clip_x, oy = clip_y, orr = clip_right, ob = clip_bottom, oa = hud_ink_alpha;
  clip_x = b.x + 2; clip_y = b.y + 2; clip_right = b.x + b.w - 2; clip_bottom = b.y + b.h - 2;
  hud_ink_alpha = alpha;
  if(qr_pill_active == 1){
-  box_text(b.x + 8, b.y + 4, b.w - 16, 16, 0, ui_tr("Sync to phone"), C_WHITE);
-  qr_draw_matrix(&qr_pill_mat, b.x + b.w / 2, b.y + 98, 153, alpha);
-  /* Bottom progress dots (or compact counter when > 9 frames). */
-  int dy = b.y + b.h - 11;
-  if(qr_pill_total <= 9){
+  box_text(b.x + 8, b.y + 4, b.w - 16, 15, 0, ui_tr("Sync to phone"), C_WHITE);
+  qr_draw_matrix(&qr_pill_mat, b.x + b.w / 2, b.y + 88, 136, alpha);
+  /* Bottom progress dots (or compact counter when > 12 frames). */
+  int dy = b.y + b.h - 10;
+  if(qr_pill_total <= 12){
    int span = qr_pill_total * 10 - 4;
    int sx = b.x + (b.w - span) / 2;
    for(int i = 0; i < qr_pill_total; i++){

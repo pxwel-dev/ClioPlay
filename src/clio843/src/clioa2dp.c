@@ -447,8 +447,8 @@ static void avrcp_passthrough(u8 op);
 static u32 alert_now_ms(void);
 static u16 nav_last_seq=0,nav_ack_seq=0,nav_last_ack_seq=0;
 static int nav_last_seq_valid=0,nav_ack_pending=0,nav_last_ack_valid=0,nav_last_ack_ok=0;
-static u32 nav_ack_deadline=0,nav_last_activity_ms=0,real_media_playing_at=0;
-static int real_media_was_playing=0,nav_resume_music=0;
+static u32 nav_ack_deadline=0,nav_last_activity_ms=0,real_media_playing_at=0,nav_qr_until=0;
+static int real_media_was_playing=0,nav_resume_music=0,nav_qr_active=0;
 static void nav_publish_ex(const struct NavPacket*p,const char*name){
  u32 now=alert_now_ms();
  if(nav_last_seq_valid&&nav_last_seq==p->seq){
@@ -475,7 +475,16 @@ static void nav_publish_ex(const struct NavPacket*p,const char*name){
  nav_last_seq=p->seq;nav_last_seq_valid=1;nav_last_activity_ms=now;
  if(p->ver>=3){
   nav_ack_pending=1;nav_ack_seq=p->seq;nav_ack_deadline=now+1800u;
-  if(real_media_was_playing&&(u32)(now-real_media_playing_at)<=6000u)nav_resume_music=1;
+  if(p->action=='Q'&&p->sub!='D'){
+   /* Keep AVRCP metadata polling snappy (200 ms) while scanning QR frames and
+    * defer Smart Music Resume until Q:D so Spotify/Apple Music cannot steal
+    * MediaSession away from ClioPlay Link mid-scan. */
+   nav_qr_active=1;nav_qr_until=now+35000u;nav_resume_music=0;
+   if(real_media_was_playing)real_media_playing_at=now;
+  }else{
+   if(p->action=='Q'&&p->sub=='D'){nav_qr_active=0;nav_qr_until=0;}
+   if(real_media_was_playing&&(u32)(now-real_media_playing_at)<=6000u)nav_resume_music=1;
+  }
  }
  bt_log_append(p->ver>=3?"NAV RX CLP3 ACCEPTED\n":"NAV RX ACCEPTED\n");
 }
@@ -500,9 +509,9 @@ static int audio_profile_on=0;static u32 audio_maintenance_runs=0,audio_packet_m
 static void meta_text(char*d,u32 cap,const u8*s,u32 n){u32 at=0,out=0;while(at<n&&out+1<cap){unsigned c=s[at],bytes=c<128?1:c>=0xc2&&c<=0xdf?2:c>=0xe0&&c<=0xef?3:c>=0xf0&&c<=0xf4?4:0;if(!bytes||bytes>n-at){at++;continue;}char tmp[5];for(unsigned i=0;i<bytes;i++)tmp[i]=(char)s[at+i];tmp[bytes]=0;if(!utf8_span(tmp)){at++;continue;}if(c<32||c==127){at+=bytes;continue;}if(out+bytes>=cap)break;for(unsigned i=0;i<bytes;i++)d[out++]=(char)s[at++];}d[out]=0;}
 static void meta_clear_track(void){meta_title[0]=meta_artist[0]=meta_album[0]=0;meta_pos=meta_dur=0;meta_playing=0;meta_dirty=1;}
 /* Mobile browsers can briefly expose the PWA/document title as AVRCP metadata
- * while the silent ClioPlay Link (or legacy ClioPlay Send) transport session is being activated.  That
+ * while the silent ClioPlay Link transport session is being activated.  That
  * title is transport plumbing, not user media, so never publish it to clio040. */
-static int nav_sender_fallback_meta(void){return streq(meta_title,"ClioPlay Send")||streq(meta_title,"ClioPlay Link");}
+static int nav_sender_fallback_meta(void){return streq(meta_title,"ClioPlay Link");}
 static void meta_hide_track(void){meta_title[0]=meta_artist[0]=meta_album[0]=0;meta_pos=meta_dur=0;meta_dirty=1;}
 /* Publish complete IPC snapshots, never partially rewritten records. */
 static int bt_publish_snapshot(const char*path,const char*tmp,const char*data){
@@ -1046,7 +1055,7 @@ static void auto_boot_service(u32 tick){
   status_set("BT RECONNECTING");
   hci_log(auto_attempts==1?"AUTO RECONNECT PROFILE-FIRST":"AUTO RECONNECT SECOND TRY",saved_peer,-1);
 }
-static void session_close(int keep_status){snd_close();avrcp_close();avrcp_delay_ticks=-1;reconnect_profile_ticks=-1;reconnect_wait_ticks=-1;if(mediafd>=0)s_close(mediafd);if(sigfd>=0)s_close(sigfd);mediafd=sigfd=-1;av_reset_stream();live_peer_valid=0;meta_connected=0;meta_playing=0;nav_ack_pending=0;nav_resume_music=0;real_media_was_playing=0;if(saved_peer_valid)meta_device_set_addr(saved_peer);else meta_device_addr[0]=meta_device[0]=0;meta_dirty=1;if(!keep_status)status_set("BT WAIT PHONE");}
+static void session_close(int keep_status){snd_close();avrcp_close();avrcp_delay_ticks=-1;reconnect_profile_ticks=-1;reconnect_wait_ticks=-1;if(mediafd>=0)s_close(mediafd);if(sigfd>=0)s_close(sigfd);mediafd=sigfd=-1;av_reset_stream();live_peer_valid=0;meta_connected=0;meta_playing=0;nav_ack_pending=0;nav_resume_music=0;real_media_was_playing=0;nav_qr_active=0;nav_qr_until=0;if(saved_peer_valid)meta_device_set_addr(saved_peer);else meta_device_addr[0]=meta_device[0]=0;meta_dirty=1;if(!keep_status)status_set("BT WAIT PHONE");}
 static int shutdown_requested(void){return auto_path_exists(SHUTDOWN_PATH);}
 static void audio_shutdown_cleanup(void){
  session_close(1);
@@ -1136,9 +1145,10 @@ static void serve(void){long prio=s_audio_priority();bt_log_append("CLIOPLAY " C
     else if(avrcp_delay_ticks<0&&meta_connected&&avrcp_state==0&&av_started&&!manual_block&&tick>=avrcp_retry_at)avrcp_open(tick);
     audio_source_refresh();
     alert_service();audio_playback_service(now);
+    if(nav_qr_active&&(s32)(now-nav_qr_until)>=0){nav_qr_active=0;nav_qr_until=0;}
     if(meta_connected&&avrcp_state==2){
       if(audio_periodic(&status_poll,now,1000u))avrcp_get_status();
-      if(audio_periodic(&metadata_poll,now,3000u))avrcp_get_meta();
+      if(audio_periodic(&metadata_poll,now,nav_qr_active?200u:3000u))avrcp_get_meta();
     }else{status_poll.initialized=metadata_poll.initialized=0;}
     if(meta_dirty)meta_write();
     device_list_service();

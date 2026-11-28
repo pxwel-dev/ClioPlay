@@ -1,30 +1,30 @@
 {
   "machine": "ARM7TDMI / ARMv4T",
   "abi": "ELF32 EABI5 soft-float; Linux OABI syscalls",
-  "entry": "0x2142c",
-  "bytes": 71944,
-  "sha256": "bb3e400c7bb1528e7237992ac1ccd480a44077111fc67feaf37d6208e8e98710",
+  "entry": "0x2146c",
+  "bytes": 72504,
+  "sha256": "d7ad51bc5a6e1f9433bdd00bfaad2c92ae24860e600a8a4fc297d9da5c3ed24d",
   "sections": {
     ".text": {
-      "address": "0x213f0",
-      "bytes": 53124
+      "address": "0x213e4",
+      "bytes": 53320
     },
     ".rodata": {
       "address": "0x10104",
-      "bytes": 4844
+      "bytes": 4832
     },
     ".data": {
-      "address": "0x3e374",
+      "address": "0x3e42c",
       "bytes": 64
     },
     ".bss": {
-      "address": "0x3e3b4",
-      "bytes": 5704
+      "address": "0x3e46c",
+      "bytes": 5712
     }
   },
-  "version": "3.0.0",
+  "version": "3.0.1",
   "source": "clio843/src/clioa2dp.c",
-  "source_tree_sha256": "81ae6839d63cf4d3aa8edae17d31aaa2223cd7251eb453497b65c0a6a49836cd",
+  "source_tree_sha256": "20a4df7fd44b1157a260503a71e7c318637d1262891b6f66782b55d4d9248b62",
   "inputs": {
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
     "clio843/src/atlas_catalog.h": "7c1c5599a121e702a0fe7ac89fc957e07086e27f20aaf1511971d197de3a39a0",
@@ -38,7 +38,7 @@
     "clio843/src/boot_transition.h": "8ea391927a52cf8eaa9f010a70b8f8e012b768346ca9cd297110e40e6a850007",
     "clio843/src/camera_icons.h": "19a560ac05e8e769659da5d7ba3c138ca600bf057c21664e9da31a03d9f5ac2c",
     "clio843/src/clio040.c": "a0122941df81bb56aca43cc8516b4b5698b937de4edad38511c513bbe04f02fc",
-    "clio843/src/clioa2dp.c": "76788adb38eb66e4e47749e18a38e3119f2c647bd2935ec93b0b61d230cceebd",
+    "clio843/src/clioa2dp.c": "92981a13a59faecb1100e36811d6a72108aab82073a23ba194287a7b5d53f854",
     "clio843/src/cliospl.c": "523530da194e4a859de29b448926f347d70c6c6c243d08d9b048fb68e08e3d33",
     "clio843/src/coordinates.h": "303c229e4c186fab01b092a770a434fca622047b792515df940ddec1983109ef",
     "clio843/src/cswd.c": "707aa0a1fdcd8048d2fa252a14ce32176fae347d512e11869f2905a69380530c",
@@ -76,8 +76,8 @@
     "clio843/src/poi_icons.h": "4d9ae8f57e3fdf141dc21ad2e06ba9d90c7c5e4058b584fa47d614fdc265b4c8",
     "clio843/src/popups.h": "b16c75163580e2fbbe17a9359bc473d368a57c3c8c2347b5d5f56ce73295f61d",
     "clio843/src/qr_encode.h": "978a2d4bd23c9059d8814e201226e8433700dd4586196b8269fb6fae78aa3841",
-    "clio843/src/qr_sync.h": "2118a476e8c06dc510d7cbe3a327c8c3a9257ea2e09c868e84aa1015ca9cfe7b",
-    "clio843/src/release_version.h": "67b19ffec050bac87ef8e800a0324dd721fbd73d8351b5e64af5fea1253e2ab9",
+    "clio843/src/qr_sync.h": "6ae0987e95243a6be250e784e5043db1bff206b96b156d12235919a9a0f85230",
+    "clio843/src/release_version.h": "a9e8d18d31ddb2e4b6efd9dfbc5682254d041580731cb8398fdafa7d57b8d934",
     "clio843/src/road_layout.h": "a80fe8f1a22c65331ef0b2ded1473b080145a938f7cabbd655ce0f5f1c016935",
     "clio843/src/speed_estimates.h": "557ced1d687e781032ccc5356b6c1f360f67aa2b4084ea8f1105ef1b32abe283",
     "clio843/src/splash_icon.h": "1c0cb3bf3be97ce49cdf626bc0184b0736b49fee877a92f5bf2e5cb2d0ec17eb",
@@ -1049,7 +1049,7 @@
     "clio843/src/vendor/sheenbidi/Source/UBA/StatusStack.h": "348774283d029f4afa64b95ba9fe04240d754587b483a8bcc345e1d6e78c6261",
     "clio843/src/vstatd.c": "a359d214853cdd511fb79e905fafc52f5413b635bb3288b268d04c15724a666f",
     "tools/build_ui.py": "b5874193f7b1903d2da65043e329011c3df07a4b5fcfedd9e424814a905c5c05",
-    "VERSION": "2985be8b28d3ade858e8d8fb4bc22f565b1bf6020dff982dce141f7721b9999c",
+    "VERSION": "06e3fe4a7a1884d20d81cc7065ca8cfd4c394ec602c4d180ddc39bbd4f7da521",
     "tools/release_version.py": "60af5fa9cfbd5fac724ae4f97d2b360517e37c365a966e5cbe789eb437e5871f",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
     "tools/build_translations.py": "f0970483186937bbbc3b86f4bab877a2a6fe244830e99ee9ac82c2f58858e6f0",

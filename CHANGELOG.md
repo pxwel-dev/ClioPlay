@@ -3,6 +3,20 @@
 This history records implemented changes for each release.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
 
+## Version 3.0.1 - Optical QR Sync & ClioPlay Link Fixes
+
+Bug-fix release for **ClioPlay 3.0** and **ClioPlay Link** — **100% compatible with existing `2.1.8–3.0.0` maps (`CPM5`, `CPR2 v5`, `QAD7`, `CPC1`)** and saved user data:
+
+- **Non-overlapping Sync from Car QR pill (`qr_sync.h`):**
+  - Repositioned the floating frosted-glass QR pill to the opposite side from the active Turn & Next-Turn cards (`x = 8..174, y = 43..215`, mirrored automatically when `Bottom Swap` is enabled), staying clear above `HUD_BOTTOM_Y` (`220`) so active trip turn directions, `Then` secondary turns, speed, and camera cards remain 100% visible during sync.
+- **Wait for first scan before stepping (`qr_sync.h`):**
+  - Frame 0 now stays completely still until ClioPlay Link confirms the first scan via `CLP3:Q:A:<idx>` (with a 35 s idle timeout), eliminating premature self-cycling when no phone is scanning yet; once confirmed, a gentle 2.2 s BT-drop fallback keeps transfers resilient if a later ACK is missed.
+- **Crisper V5 QR frames & reliable multi-frame BT-ACK sync (`qr_sync.h`, `clioa2dp.c`):**
+  - Lowered `QR_SYNC_CHUNK_BYTES` from `96` to `69` (`QR_SYNC_MAX_FRAMES = 24`) so every sync frame encodes cleanly as **Version 5 (`37×37` modules, 3 px/module, 26 RS EC codewords)** instead of dense Version 7 (`45×45`).
+  - Added fast `200 ms` AVRCP metadata polling while optical QR sync is active (`nav_qr_active`) and deferred Smart Music Resume (`0x44 PLAY`) until `CLP3:Q:D` finishes, preventing background music apps from stealing phone `MediaSession` focus mid-scan.
+- **Unified ClioPlay Link branding (`clioa2dp.c`, `changelog.md`, `audio-runtime.c`):**
+  - Standardised all remaining legacy companion app names, URLs and metadata references to **ClioPlay Link** across source, tests, and documentation.
+
 ## Version 3.0.0 - ClioPlay Link Ecosystem, All-Legs Multi-Stop CH & Zero-Menu Optical QR Sync
 
 Major ecosystem release unifying **ClioPlay** on Carminat TomTom with the redesigned **ClioPlay Link** companion web app — **100% compatible with existing `2.1.8–2.2.8` maps (`CPM5`, `CPR2 v5`, `QAD7`, `CPC1`)** and saved user data (`faves.dat`, `recent.dat`, `trip.dat`, `prefs.ini`, `mobility.dat`, `mobility-ml.dat` — zero map rebuilds required):
@@ -168,7 +182,7 @@ Software-only routing and close-up map bug-fix release, 100% compatible with exi
 - Added **Offline Nearby POIs** as a fourth Trip tab (**Itinerary → Recents → Favourites → Nearby**) and as a source inside **Add stop** and **Change destination**. Scans installed map tiles completely offline (two-pass Z5 3 × 3 inner tiles plus expanding Z3 rings) for **Fuel**, **Parking** and **Hospital** POIs, sorted by distance with 16 × 16 antialiased category badges and route, add-stop and save-to-favourites actions.
 - Added a **secondary ("Then …") manoeuvre cue** (`HC_TURN_NEXT`): when a follow-up turn or roundabout occurs within 250 m of the next manoeuvre, a compact frosted-glass pill with a precomputed 17 × 17 antialiased icon docks above the Turn card and smoothly promotes as you complete the current manoeuvre.
 - Added a **View diversion** third button to the **Take diversion?** confirmation popup. Selecting it closes the popup and opens north-up Explore framed around the proposed diversion split, bypass and rejoin points for inspection; pressing **MAP** returns to the driving view and re-opens the same confirmation popup (or reports **Diversion unavailable** if the offer expired).
-- Added **AVRCP 1.3 `RegisterNotification`** support (`EVENT_PLAYBACK_STATUS_CHANGED` and `EVENT_TRACK_CHANGED`) in `clioa2dp` for immediate track, playback-status and ClioPlay Send destination updates, with automatic fallback to periodic polling for phones that reject notifications.
+- Added **AVRCP 1.3 `RegisterNotification`** support (`EVENT_PLAYBACK_STATUS_CHANGED` and `EVENT_TRACK_CHANGED`) in `clioa2dp` for immediate track, playback-status and ClioPlay Link destination updates, with automatic fallback to periodic polling for phones that reject notifications.
 - Deferred regional `atlas.cpa` graph validation until routing actually opens an atlas (`atlas_validate_graph()`), avoiding eager cold-boot scans of large multi-region atlases while preserving full structural validation before routing.
 - Fixed scrollable Itinerary layout and connector lines: itineraries that exceed one page now display whole, vertically centred stops and draw vertical connector lines strictly between consecutive visible circles on the same page, preventing a stray vertical line from appearing above the top stop while scrolling.
 - Added Debug-only `RSS_KB` and `FREE_KB` memory telemetry to five-second `FRAME 5S` summaries in `clio843/state.log`.

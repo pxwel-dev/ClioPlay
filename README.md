@@ -1,6 +1,6 @@
 <!-- Generated from src/docs/repository-readme.md by src/tools/refresh_latest.py. -->
 
-<h1 align="center">ClioPlay 3.0.0</h1>
+<h1 align="center">ClioPlay 3.0.1</h1>
 <p align="center">Offline navigation and Bluetooth audio for the original Carminat TomTom screen.</p>
 <p align="center">
   Created and maintained by <a href="https://github.com/pxwel-dev">Pawel (pxwel-dev)</a>.
@@ -9,13 +9,14 @@
 
 <p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Link/">ClioPlay Link companion app</a></p>
 
-## Version 3.0.0
+## Version 3.0.1
 
-Version **3.0.0** unifies ClioPlay on Carminat TomTom with the redesigned **ClioPlay Link** companion web app while keeping **100% compatibility with existing `2.1.8–2.2.8` maps (`CPM5`, `CPR2 v5`, `QAD7`, `CPC1`)** and saved user data (no map rebuild required):
+Version **3.0.1** refines the **ClioPlay 3.0** & **ClioPlay Link** ecosystem while keeping **100% compatibility with existing `2.1.8–3.0.0` maps (`CPM5`, `CPR2 v5`, `QAD7`, `CPC1`)** and saved user data (no map rebuild required):
 
+- **Optical QR Sync v3.0.1 fixes:** Floating Sync from Car QR pill now sits clear of active Turn and Next-Turn HUD directions (mirrored automatically with `Bottom Swap`), Frame 0 holds completely still until ClioPlay Link confirms the first scan over Bluetooth, every frame uses crisp **V5 (`37×37`)** 3 px/module QR codes, and `clioa2dp` polls AVRCP metadata at `200 ms` while deferring Smart Music Resume until sync completes.
 - **Instant bidirectional `CLP3` Bluetooth Link:** ~0.3 s confirmed destination, atomic multi-stop trip, favourites, 18-field car settings (`prefs.ini`), remote Cancel/Skip and Clock/TZ sync over AVRCP `ACK`/`NACK`, with automatic Smart Music Resume, warm Link/Turn/Arrival navigation chimes, non-disruptive incoming route handoff (`OK: Add stop / BACK: Undo`), and automatic fallback for legacy `CLP2` senders.
 - **All-legs multi-stop CH routing & `Z7–Z9` on-road turn chevrons:** Cooperatively calculates every remaining leg of a multi-stop itinerary reusing the idle CH search arena, rendering active Leg 0 in magenta and future legs in soft lavender, with **Next + Total** ETAs in **Trip** and crisp perspective-scaled white directional chevrons on the carriageway at `Z7–Z9`.
-- **Zero-menu optical QR sync & Driving Insights:** Tapping **Sync from Car** in ClioPlay Link pops up a floating frosted-glass QR pill on ClioPlay's map screen to transfer favourites, active trip, recents, car settings, map coverage and opt-in `mobility.h` Driving Insights in ~2 seconds via closed-loop BT-ACK stepping — plus built-in Connect QRs right inside **Bluetooth → Pair new phone** and connected phone cards.
+- **Zero-menu optical QR sync & Driving Insights:** Tapping **Sync from Car** in ClioPlay Link pops up a floating frosted-glass QR pill on ClioPlay's map screen to transfer favourites, active trip, recents, car settings, map coverage and opt-in `mobility.h` Driving Insights via closed-loop BT-ACK stepping — plus built-in Connect QRs right inside **Bluetooth → Pair new phone** and connected phone cards.
 - **18 languages & ARMv4T polish:** Complete 18-language parity across both ClioPlay and ClioPlay Link (including RTL Arabic and Hebrew) and 32-bit `Q12` road-layout hot-path optimisation.
 
 See [CHANGELOG.md](CHANGELOG.md) for all prior releases, [intelligent navigation](src/docs/intelligent-navigation.md) for local ML behaviour and privacy, and the [zoom & controls guide](src/README.md#auto-zoom-and-close-up-street-names).
