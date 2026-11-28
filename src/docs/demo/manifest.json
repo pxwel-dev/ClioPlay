@@ -49,7 +49,7 @@
     "clio843/src/global_cameras.h": "3fc1b2aab42a5c72905f4be5a72e0f022a1190d7ca8a910903bb8dadb32ecb52",
     "clio843/src/urban_speed_defaults.h": "a719a3d065f16bc39727b01d7ed73f412beeb4d8703b5bde73a8c6ff1c35ac10",
     "clio843/src/cswd.c": "707aa0a1fdcd8048d2fa252a14ce32176fae347d512e11869f2905a69380530c",
-    "clio843/src/clio040.c": "4b4aaff214b411d6322962d118646bb07127293ae79c48fa154362b21150396c",
+    "clio843/src/clio040.c": "a0122941df81bb56aca43cc8516b4b5698b937de4edad38511c513bbe04f02fc",
     "clio843/src/road_layout.h": "a80fe8f1a22c65331ef0b2ded1473b080145a938f7cabbd655ce0f5f1c016935",
     "clio843/src/qr_sync.h": "a55d8bfb5e36d8689c5918bd0e3abcf3d763e9b164bd4f74bb74eb1bcd532bf0",
     "clio843/src/arm_runtime.h": "d29e9228583e93e3007b37d42554b916ebef5c9c00c91db71310cd89eaf28bb8",
@@ -522,8 +522,8 @@
     "clioa2dp": "bb3e400c7bb1528e7237992ac1ccd480a44077111fc67feaf37d6208e8e98710"
   },
   "generator_inputs": {
-    "tools/render_previews.py": "77eac15cdaf05baa510106692a93828f1ce2b24fb79e1a3124e15b07e552f943",
-    "tools/render_gallery.py": "36c04871c87b6496ab397b9ad0934810ade1aaa69a249959feebc101f1c9283e",
+    "tools/render_previews.py": "e2db343661c60c28131971713d05d6403801ee9a3e11a4387dd6118e2bd8ddb5",
+    "tools/render_gallery.py": "ab49cc60c3ee153d68c9b72d951d8534bcb895f9026c7674226bf4077f9f5751",
     "tools/text_engine.py": "27a244e41899759de3ba647490d7e8d1971b2bf003a9ae608bbc3fb748910360",
     "tools/mobility_stories.py": "b7e7d0d4b9e819a91339eb0cadf7d845e517af44e388f909268d18fe54315541",
     "tests/native.c": "f125852e4e0c57f557417c378d8168db0eb36efa7e29938adcaf40528d660b37",
@@ -7930,9 +7930,9 @@
       ]
     },
     "phone-destination.gif": {
-      "sha256": "892bb1fdc0023fb47b8489beb5986dc8f65ed288798d832883b4f00a0ed7ae4f",
-      "frames": 11,
-      "duration_ms": 7200,
+      "sha256": "fb4c7213d19090da1c47550eef0799a60d82b6d6f320981b43630b011c81b45e",
+      "frames": 36,
+      "duration_ms": 8800,
       "reserved_pointer_colours": [
         [
           239,
@@ -7956,117 +7956,189 @@
         ]
       ],
       "browser_capture": {
-        "kind": "browser panel retained from published composite",
+        "kind": "local browser capture",
         "transport": "simulated",
         "website": "https://pxwel-dev.github.io/ClioPlay-Send/",
         "screenshots": {
-          "transfer-000.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-001.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-002.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-003.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-004.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-005.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-006.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-007.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-008.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-009.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-010.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-011.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-012.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-013.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-014.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-015.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-016.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-017.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-018.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-019.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-020.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-021.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-022.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-023.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-024.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-025.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-026.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-027.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-028.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-029.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-030.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-031.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-032.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-033.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-034.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-035.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-036.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-037.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-038.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-039.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-040.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-041.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-042.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-043.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-044.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-045.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-046.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-047.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-048.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-049.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-050.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-051.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-052.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-053.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-054.jpg": "0efd744964ee422f9de5fb2af0f6b38635219669bda058e814731ac7bb666ea7",
-          "transfer-055.jpg": "cc4f7803cfe10d9fdc79f69bfa2f295c06f4620023c9298943225375de30fbf7",
-          "transfer-056.jpg": "01cd1bf92bb29e65bba8e31beb96ba341b0e206a675d3970ef29cbae5f85a5fc"
+          "p0_ready.png": "e8681aa05f194190a6b27a26c30050423df1072b8dd59b28ca638685bfa76b9b",
+          "p1_sending.png": "ab44021c32d8dfa75bcdc586d7f38e3d907f9a9e0f41f5a0bc7df6d2ff6444c8",
+          "p2_sent.png": "1136aada9d6ebd2d9ce6fd59c1a258e164302413b9ec9756902a5ae36d2441f6",
+          "p3_places.png": "fade57cd13d53a1d4cd06e1fa7008130b4c1720ede30cd7efa016d52f35aae6d",
+          "p4_car.png": "8e70f38b5b9296c42c8b8a57d1b4e373c085a38f6ad3d17e2508cd72063a66cf"
         },
-        "ready_sha256": "93bc757770a4188a9de3234f4f0d4a60d8c77855b80e625fb949db06a93ee37c",
-        "previous_gif_sha256": "718c60cdebe9fe1a1fe618314a8f05f3fd0b17885418d89dd86f031550c0f791"
+        "ready_sha256": "590e090059df1f61de9bd505b15ae67edcfecc80623795cc278e31f9b9c3ad8c"
       },
       "source_frames": [
         {
-          "frame": "night/empty-receive.png",
-          "rgb565_sha256": "8b26a8d7ac77f7f5c0cd51eca5956574b382050c94c1c4145b2539192e7b3cf4"
+          "frame": "night/preview-v300-phone-link-0000.png",
+          "rgb565_sha256": "fcce13d75e59cc1997fd4a2a1c98eeb6ab4e1d023387dff1f513a8483b240f6f"
         },
         {
-          "frame": "night/empty-receive.png",
-          "rgb565_sha256": "8b26a8d7ac77f7f5c0cd51eca5956574b382050c94c1c4145b2539192e7b3cf4"
+          "frame": "night/preview-v300-phone-link-0900.png",
+          "rgb565_sha256": "fcce13d75e59cc1997fd4a2a1c98eeb6ab4e1d023387dff1f513a8483b240f6f"
         },
         {
-          "frame": "night/phone-preview-calculating-0000.png",
-          "rgb565_sha256": "cbfb3bf3417be49c5fde8a4f8a0749065427451cb35f57e4d1c83cc5520e0f00"
+          "frame": "night/preview-v300-phone-link-0950.png",
+          "rgb565_sha256": "e00789025f3fc3c9b608909d20f01292277832a9d11247a752595f570e6c4417"
         },
         {
-          "frame": "night/phone-preview-calculating-0200.png",
-          "rgb565_sha256": "ba8f7c33c191914b1c06aad96f3cac43188d540f29a0d7ce1f9a7602a0020577"
+          "frame": "night/preview-v300-phone-link-1000.png",
+          "rgb565_sha256": "450a5a532bf31d906388063704baef2f5d3923ac25ef97d1075ac32db923313f"
         },
         {
-          "frame": "night/phone-preview-calculating-0400.png",
-          "rgb565_sha256": "02d91f1b4e622b1cd5b5994dcc461fbd34af5ac4e32b8ca65cad6bc4adbb9d40"
+          "frame": "night/preview-v300-phone-link-1050.png",
+          "rgb565_sha256": "093880b1ea6fddc0d05a8d82002f56eb58cda16a52bef3cd4fe05ebb39f7824c"
         },
         {
-          "frame": "night/phone-preview-calculating-0600.png",
-          "rgb565_sha256": "e1426ea3ea26203d9624683f6cd929105117e7825482b89531fa6a66a075c6f2"
+          "frame": "night/preview-v300-phone-link-1100.png",
+          "rgb565_sha256": "d48bb66e9b99f433095d4b6d861d63adbc91af00856c478cd86af873afdeb704"
         },
         {
-          "frame": "night/phone-preview-calculating-0800.png",
-          "rgb565_sha256": "1a4548ddc8df812acf72191efff47edff98eaaf05a76aba26896321a512fc6f7"
+          "frame": "night/preview-v300-phone-link-1150.png",
+          "rgb565_sha256": "b531a09dabf25c64c0ddbfd0d79b0f0b1bbcc6f2e48e2a369edacae83042831d"
         },
         {
-          "frame": "night/phone-preview-calculating-1000.png",
-          "rgb565_sha256": "dc527087ed5ee7b540addd6d390754e164445fa96a56ef8fdf2035ad14a21acf"
+          "frame": "night/preview-v300-phone-link-1200.png",
+          "rgb565_sha256": "34f2a16876ea7f099cdee9a855e3158605bacf337fc7c0b1101597a3b6814c0d"
         },
         {
-          "frame": "night/phone-preview-calculating-1200.png",
-          "rgb565_sha256": "37f7719b267d2b57743bde762192473dbc7995e99a8ec454484dc2e87b724fa9"
+          "frame": "night/preview-v300-phone-link-1250.png",
+          "rgb565_sha256": "93e76a9480ab541f6a26f7cd78e44bdc3f07c393517815f695c33c25f774d209"
         },
         {
-          "frame": "night/phone-preview-trip.png",
-          "rgb565_sha256": "db71133042e89bfa44f6cf9073feaa33896dd8b6be82cf64dd877b82c4337c91"
+          "frame": "night/preview-v300-phone-link-1600.png",
+          "rgb565_sha256": "93e76a9480ab541f6a26f7cd78e44bdc3f07c393517815f695c33c25f774d209"
         },
         {
-          "frame": "night/phone-preview-trip.png",
-          "rgb565_sha256": "db71133042e89bfa44f6cf9073feaa33896dd8b6be82cf64dd877b82c4337c91"
+          "frame": "night/preview-v300-phone-link-1650.png",
+          "rgb565_sha256": "8612ff81982aa332e11c0527d60dd3480bcea8c98596e4f8ce159972b904b168"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-1700.png",
+          "rgb565_sha256": "2e94bb8859a36c81568742aa387c9408a0b7d60280d10ed4f35cfa40db46ee20"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-1750.png",
+          "rgb565_sha256": "acaf8897613e24fa588161d976005d8f4dda8b3d4751706668a8d07d6211a496"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-1800.png",
+          "rgb565_sha256": "ba16f8e60ab78b8b2053aa862c70443528a2f48e2b07afe2ba793bb8143c785a"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-1850.png",
+          "rgb565_sha256": "c9aeaa7a7f9694c64427d909622bbafb7c761a335ed02a8a5dd75dda6c63d151"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-1900.png",
+          "rgb565_sha256": "c9aeaa7a7f9694c64427d909622bbafb7c761a335ed02a8a5dd75dda6c63d151"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-1950.png",
+          "rgb565_sha256": "c9aeaa7a7f9694c64427d909622bbafb7c761a335ed02a8a5dd75dda6c63d151"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-2300.png",
+          "rgb565_sha256": "73dde7b83001aceeeaffd4dd0a89f44a7336681081e3b8423a353a68f94b16e0"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-2350.png",
+          "rgb565_sha256": "2f0ec7238b9412ef5fade7929fd65a7b9cdca304a60785609191439dbf31bf06"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-2400.png",
+          "rgb565_sha256": "8669f5498567b3b00a60f581b21beb145c72ab94671bb9a04342438dbdeaf687"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-2450.png",
+          "rgb565_sha256": "e11360f869598331a6052b0d4e43c6e2e63cd57943aabbdd80c6c5377aa43184"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-2500.png",
+          "rgb565_sha256": "4ee8695eafa927f97c4ebabcf842e9ebb3ea21f6aa8485a0116566808248ccad"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-2550.png",
+          "rgb565_sha256": "61eaa27caa5b2de968a9557b9286acd5b70fc5cd2a33dabd7f97d8b4bacaacff"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-2600.png",
+          "rgb565_sha256": "466c00310e659498d942453510e9a6b3ac3c2744d0ac5abd1356c5d86cb41c2d"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-2650.png",
+          "rgb565_sha256": "466c00310e659498d942453510e9a6b3ac3c2744d0ac5abd1356c5d86cb41c2d"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-4800.png",
+          "rgb565_sha256": "466c00310e659498d942453510e9a6b3ac3c2744d0ac5abd1356c5d86cb41c2d"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-4850.png",
+          "rgb565_sha256": "40cd0bcea6edbdeb3161369829d9a63111095fb1e0b30a7041b12178506583a3"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-4900.png",
+          "rgb565_sha256": "234ebc2eb69dcf1fe12f681bbc31f8afdcb5deb2464d66a6e37ef644624d6491"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-4950.png",
+          "rgb565_sha256": "bb9d68320a1dfa6c295276c0eaafb453c7d07d8d1f2c00f15bd02135a368c3e2"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-5000.png",
+          "rgb565_sha256": "950a1e526f2e4aea3d67213553328bbfddbdce0185e2d1923a8d448e610b1339"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-5050.png",
+          "rgb565_sha256": "7c8f6ce999b9c426427ae1bc8a3b5ec4ec6387444f920da60cdee3c0e02e7df7"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-5100.png",
+          "rgb565_sha256": "2da4c6ce9ea74394254032546c5390c5c0c3ad943196c4c18f1fd8796732d469"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-5150.png",
+          "rgb565_sha256": "9a0f5e68879d740e311b62c1b2ce5499e231e289fa7a5ce43afe72a8737e681a"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-6600.png",
+          "rgb565_sha256": "9a0f5e68879d740e311b62c1b2ce5499e231e289fa7a5ce43afe72a8737e681a"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-6650.png",
+          "rgb565_sha256": "99c3820ccedabc905f0f9d544eda4262824a67f307a18b66d02a2db6f4be6260"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-6700.png",
+          "rgb565_sha256": "dbd6756b30e6871ff54e5c30086d918ab4b3f28240e2004fd68fe20164e52c48"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-6750.png",
+          "rgb565_sha256": "0da3a15ae1c829f7d9d4b0e5a8a6d77776687a09ae29c8c780dbabfa8787bf8d"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-6800.png",
+          "rgb565_sha256": "591c322a6243615bacf0f71703442fb967d00859dfda7fb6dd1a0ae105f47aa4"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-6850.png",
+          "rgb565_sha256": "34ce26dc97404d322a8d54c7a45bc337ca73e459e4975017052963c594868256"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-6900.png",
+          "rgb565_sha256": "d1937f58990c2ce3f767668950b60cf235a5c7a028d719a535d0768aea540a8b"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-6950.png",
+          "rgb565_sha256": "d1937f58990c2ce3f767668950b60cf235a5c7a028d719a535d0768aea540a8b"
+        },
+        {
+          "frame": "night/preview-v300-phone-link-8700.png",
+          "rgb565_sha256": "d1937f58990c2ce3f767668950b60cf235a5c7a028d719a535d0768aea540a8b"
         }
-      ]
+      ],
+      "routing_provenance": "Side-by-side composite pairing Retina captures of live ClioPlay Link v3.0 with production ClioPlay v3.0 framebuffer frames on the real Manchester CPR2 graph: 3-stop CLP3:T burst (Receiving trip capsule progress -> atomic multi-leg magenta+lavender route), Trip sheet with Next + Total ETAs, Places sync, Driving Insights, and live CLP3:P car settings update."
     },
     "speed-warning.gif": {
       "sha256": "926c4315dacd9e0fd42f339be83c1d0a9991491a70629acd997a9bcbcb878fc0",
@@ -9128,6 +9200,434 @@
           "rgb565_sha256": "3be8cf8fb3018405475cf23b42036fb168e50266325d650f1474acb3b6b8a3b4"
         }
       ]
+    },
+    "v300-multileg-and-chevron.gif": {
+      "sha256": "4b22eeddfa2f372e2915f0192e16d2bd79e0b95436e7a305250bf433e1bccdd7",
+      "frames": 29,
+      "duration_ms": 10600,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
+      "source_frames": [
+        {
+          "frame": "night/preview-v300-multileg-0000.png",
+          "rgb565_sha256": "f25292a300d6894bb9d64b30ebeecf8b4a9e60d255404d48636de76759f85c0c"
+        },
+        {
+          "frame": "night/preview-v300-multileg-1300.png",
+          "rgb565_sha256": "f25292a300d6894bb9d64b30ebeecf8b4a9e60d255404d48636de76759f85c0c"
+        },
+        {
+          "frame": "night/preview-v300-multileg-1350.png",
+          "rgb565_sha256": "5452bf04e1ce2360e68146563604e1384400b8b29c0b9c0fdf4f75b0ab9fe8fa"
+        },
+        {
+          "frame": "night/preview-v300-multileg-1400.png",
+          "rgb565_sha256": "ddf232e30d1357719e284206c53c0aeb91fe7aba4b863fa1359827a5cffe238f"
+        },
+        {
+          "frame": "night/preview-v300-multileg-1450.png",
+          "rgb565_sha256": "8edceccf650be57b61c14183eed728d1bb082731bc0e4fe148152e394dcf0308"
+        },
+        {
+          "frame": "night/preview-v300-multileg-1500.png",
+          "rgb565_sha256": "a44bef7063a0d4eb6d78fc6ff8c6d9d09e95735d29ce33d213791ef6feeed343"
+        },
+        {
+          "frame": "night/preview-v300-multileg-1550.png",
+          "rgb565_sha256": "783dc4fef566d7b8a11bc883b4d573493b2889d462522f12f8b38bc214b64760"
+        },
+        {
+          "frame": "night/preview-v300-multileg-1600.png",
+          "rgb565_sha256": "4351e5d6d7324f61f0dc8c9da72665f95f347e79e7b3e0a5bd09b849cf4a17cb"
+        },
+        {
+          "frame": "night/preview-v300-multileg-1650.png",
+          "rgb565_sha256": "4351e5d6d7324f61f0dc8c9da72665f95f347e79e7b3e0a5bd09b849cf4a17cb"
+        },
+        {
+          "frame": "night/preview-v300-multileg-3100.png",
+          "rgb565_sha256": "49962462b6b94a6653ed7ad313e09e90ac625f804d74a5c2e7db1d45577c78e3"
+        },
+        {
+          "frame": "night/preview-v300-multileg-3150.png",
+          "rgb565_sha256": "a001a8342920d8d1057bc77e3e168734b997c5d946c2c0305a5e2d11b3f02363"
+        },
+        {
+          "frame": "night/preview-v300-multileg-3200.png",
+          "rgb565_sha256": "07eb5780a371b19e8aa246317300039100eb63df0891a576c45749cdd1e4be1a"
+        },
+        {
+          "frame": "night/preview-v300-multileg-3250.png",
+          "rgb565_sha256": "ef297666902f0d82690f7898201e7b2b45830a58c7fea8567d823f6cf03252c5"
+        },
+        {
+          "frame": "night/preview-v300-multileg-3300.png",
+          "rgb565_sha256": "6032dd9c3ed65e17b592024a055263ecfc9f0a7e8baf00aebcd687bf587b8540"
+        },
+        {
+          "frame": "night/preview-v300-multileg-3350.png",
+          "rgb565_sha256": "b04d810ba48443bfb893518dcae545f07190626e11fa82e6c54e60d14e71e054"
+        },
+        {
+          "frame": "night/preview-v300-multileg-3400.png",
+          "rgb565_sha256": "551e8b7630e1c4a1abc85b4abbcafda18f4bfc719b7a793790f09b16ada379cc"
+        },
+        {
+          "frame": "night/preview-v300-multileg-3450.png",
+          "rgb565_sha256": "551e8b7630e1c4a1abc85b4abbcafda18f4bfc719b7a793790f09b16ada379cc"
+        },
+        {
+          "frame": "night/preview-v300-multileg-5800.png",
+          "rgb565_sha256": "55b6b10160a563ae68c4e12fc2521c4661df7c6f0dd5a50a71b1c34d7746390a"
+        },
+        {
+          "frame": "night/preview-v300-multileg-5850.png",
+          "rgb565_sha256": "f58f192019f4f9a82329baa71607f81b39df0db7ff8c281566c4f0c28555dd1b"
+        },
+        {
+          "frame": "night/preview-v300-multileg-5900.png",
+          "rgb565_sha256": "751ce97e05ffa6ef044ad8e1ae456772ecd933e3877cb4da5690e6fb6fd56305"
+        },
+        {
+          "frame": "night/preview-v300-multileg-5950.png",
+          "rgb565_sha256": "04a1c41211a81d833f22b84c679fef9b7bba0c7a1bc3b1358df6e7b88cacf3e7"
+        },
+        {
+          "frame": "night/preview-v300-multileg-6000.png",
+          "rgb565_sha256": "9edc31eb6f82eae86e928a54522da65bba6b411105267a5b324d7769ca06896f"
+        },
+        {
+          "frame": "night/preview-v300-multileg-6050.png",
+          "rgb565_sha256": "1a68fe11831afd068dd8fc27120cf2455be6df2b00bf36fc3d7792259504b600"
+        },
+        {
+          "frame": "night/preview-v300-multileg-6100.png",
+          "rgb565_sha256": "21f88a81a9be16746a151fc36130215a09174f9a56b16167a9193822ff024dba"
+        },
+        {
+          "frame": "night/preview-v300-multileg-6150.png",
+          "rgb565_sha256": "4dc66ef88aaa00715c642a98c32349e943d805cc0d0127e46d547e70c817ebda"
+        },
+        {
+          "frame": "night/preview-v300-multileg-8900.png",
+          "rgb565_sha256": "6b63c07d47ae62ac78d4a59dc954a26ff00cc28abb58c9af749a7c7ac378176b"
+        },
+        {
+          "frame": "night/preview-v300-multileg-8950.png",
+          "rgb565_sha256": "c4d7b0cc227cd5828bc865a81e779672a20463849b3e5ae0de1a0bb5f710525c"
+        },
+        {
+          "frame": "night/preview-v300-multileg-9000.png",
+          "rgb565_sha256": "d78a11cfa94ec842fa755cbf896bf0c7834e935d7657ed740a5a58ce8b69a221"
+        },
+        {
+          "frame": "night/preview-v300-multileg-9050.png",
+          "rgb565_sha256": "f4ec63ce8118d204ed73a40e0acdec48bd445ed6bead30b93ceceb1f42921f39"
+        },
+        {
+          "frame": "night/preview-v300-multileg-9100.png",
+          "rgb565_sha256": "8d1abe510a7a2a84e32c7d1dffb0b576d6e9c9c56a1cda4f05bc6329219e68ef"
+        },
+        {
+          "frame": "night/preview-v300-multileg-9150.png",
+          "rgb565_sha256": "7d93b1e04cba7f50a010d7a17c54514d105740bad8385ed2d48d7c841e16dbbc"
+        },
+        {
+          "frame": "night/preview-v300-multileg-9200.png",
+          "rgb565_sha256": "f25292a300d6894bb9d64b30ebeecf8b4a9e60d255404d48636de76759f85c0c"
+        },
+        {
+          "frame": "night/preview-v300-multileg-9250.png",
+          "rgb565_sha256": "f25292a300d6894bb9d64b30ebeecf8b4a9e60d255404d48636de76759f85c0c"
+        },
+        {
+          "frame": "night/preview-v300-multileg-10500.png",
+          "rgb565_sha256": "f25292a300d6894bb9d64b30ebeecf8b4a9e60d255404d48636de76759f85c0c"
+        }
+      ],
+      "routing_provenance": "Real Manchester 3-stop itinerary (Northern Quarter -> Shell Deansgate -> Manchester Piccadilly -> MediaCityUK) calculated against the UK CPR2 routing graph by production route_start() and trip_plan_service_until(): Z8 driving approaching a real turn with perspective-scaled white on-carriageway turn chevron (draw_route_turn_chevron) and Option B next-stop HUD, Z5 overview with active Leg 0 in magenta (C_ROUTE) and future Legs 1-2 in lavender (C_ROUTE_FUTURE), and Menu -> Trip showing both Next and Total journey ETAs and per-stop arrival times."
+    },
+    "v300-qr-sync-and-connect.gif": {
+      "sha256": "ae9f7aea41539d9c85d6736c9cfcda40fd010c0f0e91b6785b04b56b0ce6f91f",
+      "frames": 34,
+      "duration_ms": 11100,
+      "reserved_pointer_colours": [
+        [
+          239,
+          113,
+          24
+        ],
+        [
+          247,
+          138,
+          49
+        ],
+        [
+          247,
+          158,
+          66
+        ],
+        [
+          247,
+          174,
+          90
+        ]
+      ],
+      "source_frames": [
+        {
+          "frame": "night/preview-v300-qr-sync-0000.png",
+          "rgb565_sha256": "d571d4c5c9cd7ba08450eb2f3bed7466e1d96bc64fad9e4023d294c069168b56"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-2100.png",
+          "rgb565_sha256": "618cf3912a649f7014a41eef0d03957669682b0cd3eb0e1543e75aabd024051a"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-2150.png",
+          "rgb565_sha256": "618cf3912a649f7014a41eef0d03957669682b0cd3eb0e1543e75aabd024051a"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-2200.png",
+          "rgb565_sha256": "618cf3912a649f7014a41eef0d03957669682b0cd3eb0e1543e75aabd024051a"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-2250.png",
+          "rgb565_sha256": "618cf3912a649f7014a41eef0d03957669682b0cd3eb0e1543e75aabd024051a"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-2300.png",
+          "rgb565_sha256": "618cf3912a649f7014a41eef0d03957669682b0cd3eb0e1543e75aabd024051a"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-2350.png",
+          "rgb565_sha256": "618cf3912a649f7014a41eef0d03957669682b0cd3eb0e1543e75aabd024051a"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-2400.png",
+          "rgb565_sha256": "618cf3912a649f7014a41eef0d03957669682b0cd3eb0e1543e75aabd024051a"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-2450.png",
+          "rgb565_sha256": "618cf3912a649f7014a41eef0d03957669682b0cd3eb0e1543e75aabd024051a"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-4100.png",
+          "rgb565_sha256": "51dd94d03c7517a9df64f3062503706663b177518137d36ed26bd2b2a5c8a554"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-4150.png",
+          "rgb565_sha256": "5281c859f78c3cab597ab30c8fceec4cb266365d32ebbc4c7f8aae7b2eccfe11"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-4200.png",
+          "rgb565_sha256": "d4a3e5fae87a0ed8a6b2a135f426dd2c52969dc4e1f10cbda91dcf2bfd2b1a04"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-4250.png",
+          "rgb565_sha256": "31212a0f1a17d3e67669069b267eb14ac418b283484289e9582f3a78a961cdb6"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-4300.png",
+          "rgb565_sha256": "0eacbac82895110ba12a27f565c235f5205e5a9b150a812ea2ab7c27993de01b"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-4350.png",
+          "rgb565_sha256": "3487a4ab986dfc01753af853871c7c4758daaebb677aea484d04b78627864b07"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-4400.png",
+          "rgb565_sha256": "5ea69ffcbc953ce4efca14f18e1d9af421439377ffaef95e13e2adc3d4dcbe8e"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-4450.png",
+          "rgb565_sha256": "5ea69ffcbc953ce4efca14f18e1d9af421439377ffaef95e13e2adc3d4dcbe8e"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-5300.png",
+          "rgb565_sha256": "5ea69ffcbc953ce4efca14f18e1d9af421439377ffaef95e13e2adc3d4dcbe8e"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-5350.png",
+          "rgb565_sha256": "beb159d5a3aa18aaf94fb892083d5d70e26ae868ff7789806b0eb18bd407e3f8"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-5400.png",
+          "rgb565_sha256": "459ed5e5717c3636c55afdfbd7e44ea5bd0f546891007df0eff2de3ecd1c878a"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-5450.png",
+          "rgb565_sha256": "b4e0d49445c075ed4f069d4750b3d1b6dec1fd844f5f5a46ad2b6bf508114aed"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-5500.png",
+          "rgb565_sha256": "b311b1a56ec20509ad47d1ec845575e7a58d2fe414eb6eb9de54555436b4fb38"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-5550.png",
+          "rgb565_sha256": "0e3aefe8608a6adc2b7d3cd3a3f2e40977c5cb1ba55f62ed11dfc20586e5b893"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-5600.png",
+          "rgb565_sha256": "c60fcbc057d8fe1ab4ebe09fee7e6f3534c0ec1d56426034e5c910fa2322d63e"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-5650.png",
+          "rgb565_sha256": "3777b586fe9020c2d5b599a4842d797d362d9cc3b2b2655585ce824f90a03a14"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-6800.png",
+          "rgb565_sha256": "ba5ea7e8eb32a34c37e9b2168c786e3c21997b455a0d4be5c32ebeb49135df4c"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-6850.png",
+          "rgb565_sha256": "6ab1e2d9bf7e265a2f7e135712ed03e9c7d1b987ed5e31703768ad66be4a52fa"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-6900.png",
+          "rgb565_sha256": "0862ecadaf499d2f4a9dee5f70b5d3f4ab921d6b6327ef9df68667f08bd63129"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-6950.png",
+          "rgb565_sha256": "e5d61abc2cf88652491283969045525de9b898ae9df027350672f64245ddff95"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-7000.png",
+          "rgb565_sha256": "995ce447cc2168f66cf388922860c3f5b796c397ced53b2405c3d57b83dca3d7"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-7050.png",
+          "rgb565_sha256": "407e317a80183ca4a08813018af9424630953f0563265f6717407593aa123d7e"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-7100.png",
+          "rgb565_sha256": "88c37884a759e6c18a867a0f97ad74b904d62bfed0ab820202891833b85aef30"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-7150.png",
+          "rgb565_sha256": "4703153e7bca1257d9bfc3efdd81af48e0b7f6666f1cbb20aaaf571120aabd36"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-7800.png",
+          "rgb565_sha256": "fa1a02a72200b4f6cba62772c2e5a5e281606a20383035d539b90828aea3b247"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-7850.png",
+          "rgb565_sha256": "5c6ac26957e8b7b9fd3fc2571ca079d923d1a7f4f5f1d08dead9c179ff30a678"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-7900.png",
+          "rgb565_sha256": "ea015bfc5a62cf0df7c97fe5d014a11e21aa8391d57e64f7b17dd40ce84c8d26"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-7950.png",
+          "rgb565_sha256": "0001828fd76a7eb2cbca239bea38048f0d99d289bcad8d4ba0afa4d0271b9da7"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-8000.png",
+          "rgb565_sha256": "1febd99438b569d87acf66352cd9a778d5d4ff72806214f69d2381dd7389cdc1"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-8050.png",
+          "rgb565_sha256": "5709c9362dd815d2ed051c5239445e284e1600b80cee777e276d42764125831d"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-8100.png",
+          "rgb565_sha256": "d6d9359bc186fb16faff2afb01a1114d7f1c4bd2b1f001ad070bceffa8288be1"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-8150.png",
+          "rgb565_sha256": "0cc92e4ffd035718b34370f1b64283bc00f814a933db4b14a467c1a1cd3cad46"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-8800.png",
+          "rgb565_sha256": "58278528256213b9578e8cf2bfcfabd9be1c8115ca1f4b9f6ea95ed28eb190e6"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-8850.png",
+          "rgb565_sha256": "58278528256213b9578e8cf2bfcfabd9be1c8115ca1f4b9f6ea95ed28eb190e6"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-8900.png",
+          "rgb565_sha256": "58278528256213b9578e8cf2bfcfabd9be1c8115ca1f4b9f6ea95ed28eb190e6"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-8950.png",
+          "rgb565_sha256": "58278528256213b9578e8cf2bfcfabd9be1c8115ca1f4b9f6ea95ed28eb190e6"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-9000.png",
+          "rgb565_sha256": "58278528256213b9578e8cf2bfcfabd9be1c8115ca1f4b9f6ea95ed28eb190e6"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-9050.png",
+          "rgb565_sha256": "58278528256213b9578e8cf2bfcfabd9be1c8115ca1f4b9f6ea95ed28eb190e6"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-9100.png",
+          "rgb565_sha256": "58278528256213b9578e8cf2bfcfabd9be1c8115ca1f4b9f6ea95ed28eb190e6"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-9150.png",
+          "rgb565_sha256": "58278528256213b9578e8cf2bfcfabd9be1c8115ca1f4b9f6ea95ed28eb190e6"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-10000.png",
+          "rgb565_sha256": "16360cdcdbfbbdb5f9da414b8f6d2d8a00d784d61c63b881d5edb062374aeacc"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-10050.png",
+          "rgb565_sha256": "16360cdcdbfbbdb5f9da414b8f6d2d8a00d784d61c63b881d5edb062374aeacc"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-10100.png",
+          "rgb565_sha256": "16360cdcdbfbbdb5f9da414b8f6d2d8a00d784d61c63b881d5edb062374aeacc"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-10150.png",
+          "rgb565_sha256": "16360cdcdbfbbdb5f9da414b8f6d2d8a00d784d61c63b881d5edb062374aeacc"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-10200.png",
+          "rgb565_sha256": "16360cdcdbfbbdb5f9da414b8f6d2d8a00d784d61c63b881d5edb062374aeacc"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-10250.png",
+          "rgb565_sha256": "16360cdcdbfbbdb5f9da414b8f6d2d8a00d784d61c63b881d5edb062374aeacc"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-10300.png",
+          "rgb565_sha256": "16360cdcdbfbbdb5f9da414b8f6d2d8a00d784d61c63b881d5edb062374aeacc"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-10350.png",
+          "rgb565_sha256": "16360cdcdbfbbdb5f9da414b8f6d2d8a00d784d61c63b881d5edb062374aeacc"
+        },
+        {
+          "frame": "night/preview-v300-qr-sync-11000.png",
+          "rgb565_sha256": "16360cdcdbfbbdb5f9da414b8f6d2d8a00d784d61c63b881d5edb062374aeacc"
+        }
+      ],
+      "routing_provenance": "Real Manchester map and production qr_encode.h / qr_sync.h optical pipeline: Bluetooth -> Pair new phone with built-in Connect QR staying open upon pairing (Connected + Done button) until CLP3:H Link Ping auto-closes it, followed by CLP3:Q:S popping up the frosted-glass floating map QR pill, stepping stacked CS1 frames on CLP3:Q:A ACKs, flashing Synced on CLP3:Q:D, and auto-dismissing back to the map."
     }
   }
 }

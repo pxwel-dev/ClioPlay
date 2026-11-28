@@ -4587,7 +4587,7 @@ static void draw(void){
  u32 now=hud_now_ms();freecam_orientation_anim_update(now);clock_service();region_service();camera_service();refresh_theme();
  hud_prepare(active_zoom(),now,1);hud_driver_prepare(now);menu_prepare(now);draw_map_background();
  hud_glass_background_changed();
- hud_glass_frame_begin();menu_draw(hud_now_ms());draw_modal();hud_glass_frame_end();boot_fade_apply(hud_now_ms());fb_flush();
+ hud_glass_frame_begin();menu_draw(hud_now_ms());draw_modal();qr_pill_draw(hud_now_ms());hud_glass_frame_end();boot_fade_apply(hud_now_ms());fb_flush();
 }
 
 struct input_event16 {s32 sec,usec;u16 type,code;s32 value;};
