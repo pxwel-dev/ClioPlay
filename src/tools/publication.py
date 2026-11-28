@@ -14,7 +14,7 @@ EXCLUDED_NAMES = {
     'mobility-ml.dat', 'mobility-ml.tmp',
     'gpslast.dat', 'prepare_minimal_release.py'
 }
-PREVIEW_GIFS = ('boot-day.gif', 'boot-night.gif', 'popups.gif', 'driving.gif', 'menus.gif', 'bluetooth.gif', 'phone-destination.gif',
+PREVIEW_GIFS = ('boot-day.gif', 'boot-night.gif', 'popups.gif', 'driving.gif', 'menus.gif', 'bluetooth.gif', 'v300-clioplay-link.gif',
                 'speed-warning.gif', 'map-browsing.gif', 'roundabout-eta.gif', 'add-stop.gif', 'status-notifications.gif', 'metadata-updates.gif', 'coordinates.gif', 'coordinate-route.gif', 'map-point-route.gif',
                 'v216-coordinates.gif', 'v216-hud-settings.gif', 'v216-bluetooth-hidden.gif', 'v216-itinerary.gif',
                 'trips-layout.gif', 'trips-empty-layout.gif', 'popups-layout.gif',

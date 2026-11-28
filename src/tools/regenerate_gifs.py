@@ -11,7 +11,7 @@ With your existing Newcastle/UK map bundle (all published GIFs, or selected ones
     python3 tools/regenerate_gifs.py --maps /path/to/clio843/maps --list
 
 You can optionally specify --phone-capture /path/to/browser/captures for a fresh
-ClioPlay Send browser panel; otherwise the existing published panel is reused.
+ClioPlay Link browser panel; otherwise the existing published panel is reused.
 
 Requires Pillow, a C compiler (cc), and, for full map-backed generation, the
 project's native text-engine dependencies plus the existing maps/ bundle.
@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--maps', type=Path, help='Existing map bundle, containing build.json, fonts.cpf, etc.')
-    parser.add_argument('--phone-capture', type=Path, help='Optional fresh browser capture for ClioPlay Send')
+    parser.add_argument('--phone-capture', type=Path, help='Optional fresh browser capture for ClioPlay Link')
     parser.add_argument('--only', '--gif', dest='only', nargs='+', metavar='GIF',
                         help='Regenerate only the named GIF(s), with or without .gif suffix')
     parser.add_argument('--list', action='store_true', help='List available GIF names and exit')

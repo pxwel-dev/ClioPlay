@@ -743,9 +743,9 @@ def catalog(sender_receipts=None):
     for receipt in sender_receipts or []:
         name=receipt['id'];mode='DEST_PICK_ADD_STOP' if receipt['action']=='S' else 'DEST_PICK_NONE'
         setup=f'screen=SCR_TRIP;modal=MOD_NONE;'
-        add('ClioPlay Send integration',f'sender-{name}-wait','Wait for '+name+' from ClioPlay Send',setup)
+        add('ClioPlay Link integration',f'sender-{name}-wait','Wait for '+name+' from ClioPlay Link',setup)
         payload=json.dumps(receipt['name'],ensure_ascii=False)
-        add('ClioPlay Send integration',f'sender-{name}-result','Receive '+name+' from ClioPlay Send',
+        add('ClioPlay Link integration',f'sender-{name}-result','Receive '+name+' from ClioPlay Link',
             setup+f'incoming_sender({payload},{receipt["seq"]},\'{receipt["action"]}\',{receipt["lat"]},{receipt["lon"]});',
             check='assert(modal==MOD_NONE);',note='Actual browser MediaSession packet decoded by the production daemon parser and received through production poll_phone_destination()/phone_destination_apply(); radio transport simulated.')
     modern_menus()

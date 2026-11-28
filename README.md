@@ -7,7 +7,7 @@
 </p>
 
 
-<p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Link companion app</a></p>
+<p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Link/">ClioPlay Link companion app</a></p>
 
 ## Version 3.0.0
 
@@ -28,9 +28,9 @@ All previews below are captured from ClioPlay's native `480 × 272` renderer acr
 | --- | --- |
 | ![Real Manchester 3-stop itinerary showing Z8 driving with crisp white on-carriageway turn chevron and Option B next-stop HUD, Z5 overview with active Leg 0 in magenta and future Legs 1-2 in lavender, and Menu Trip with Next and Total journey ETAs](src/docs/demo/v300-multileg-and-chevron.gif) | ![Pair new phone sheet keeping its built-in Connect QR open until ClioPlay Link sends a CLP3 Ping, followed by the frosted-glass floating map QR pill stepping stacked CS1 frames on BT ACKs, flashing Synced and auto-closing](src/docs/demo/v300-qr-sync-and-connect.gif) |
 
-| Bidirectional CLP3 sync ([ClioPlay Link](https://pxwel-dev.github.io/ClioPlay-Send/)) | Bluetooth A2DP phone audio & playback controls |
+| Bidirectional CLP3 sync ([ClioPlay Link](https://pxwel-dev.github.io/ClioPlay-Link/)) | Bluetooth A2DP phone audio & playback controls |
 | --- | --- |
-| <img src="src/docs/demo/phone-destination.gif" width="391"> | <img src="src/docs/demo/bluetooth.gif" width="391"> |
+| <img src="src/docs/demo/v300-clioplay-link.gif" width="391"> | <img src="src/docs/demo/bluetooth.gif" width="391"> |
 
 | Offline traffic diversions & Explore preview | Learned usual routes & calibrated ETA ranges |
 | --- | --- |
@@ -71,7 +71,7 @@ Focus temperature readings take priority when valid. See the
 [console setup and controls](src/README.md#physical-console-and-temperature-sources).
 The hardware protocol was contributed from a tested Scénic 3.
 
-ClioPlay automatically discovers Bluetooth hardware on the Carminat; for Bluetooth, the Carminat must have: (`hw_bluetooth=1`). If no Bluetooth hardware is discovered, ClioPlay hides all Bluetooth-related UI features (Bluetooth audio and bidirectional phone sync via <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Link</a>).
+ClioPlay automatically discovers Bluetooth hardware on the Carminat; for Bluetooth, the Carminat must have: (`hw_bluetooth=1`). If no Bluetooth hardware is discovered, ClioPlay hides all Bluetooth-related UI features (Bluetooth audio and bidirectional phone sync via <a href="https://pxwel-dev.github.io/ClioPlay-Link/">ClioPlay Link</a>).
 
 ClioPlay handles the audio source as follows:
 
@@ -97,7 +97,7 @@ BT CTRL also requires a connected phone. Unavailable radio/volume readings stay 
 - Day/Night themes with custom daily switch times in Auto, automatic units and time zones, and 18 interface languages.
 - Mapped speed limits and camera alerts where the bundled country policy allows them.
 
-For new stops/destinations, enter **Coordinates** on the head unit, choose **Next** on the keypad to validate both fields and proceed to naming, or use the [ClioPlay Link companion web app](https://pxwel-dev.github.io/ClioPlay-Send/) to send destinations, multi-stop trips, saved places and car settings over Bluetooth (and sync back from ClioPlay via optical QR). For ease of use, add the web app to your Home Screen.
+For new stops/destinations, enter **Coordinates** on the head unit, choose **Next** on the keypad to validate both fields and proceed to naming, or use the [ClioPlay Link companion web app](https://pxwel-dev.github.io/ClioPlay-Link/) to send destinations, multi-stop trips, saved places and car settings over Bluetooth (and sync back from ClioPlay via optical QR). For ease of use, add the web app to your Home Screen.
 
 ## Install
 
@@ -196,7 +196,7 @@ Original ClioPlay development includes:
 - Offline OpenStreetMap rendering, routing and navigation engine.
 - Custom map format and navigation data generation pipeline.
 - Bluetooth A2DP audio receiver and media playback integration.
-- AVRCP-based destination transfer and the companion [ClioPlay Send](https://github.com/pxwel-dev/ClioPlay-Send) web application.
+- AVRCP-based destination transfer and the companion [ClioPlay Link](https://github.com/pxwel-dev/ClioPlay-Link) web application.
 - Factory radio and vehicle data integration.
 - SD card installation, configuration and release tooling.
 

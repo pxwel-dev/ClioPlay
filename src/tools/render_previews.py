@@ -75,7 +75,7 @@ def previews():
         'menus.gif': timeline('night', timed_scenes('preview-menu-tour', sorted(
             {at+step for at in (0,700,1500,2300,3100,3800,4600,5400,6200,7000,7800,8600,9400) for step in TWEEN_STEPS}|{9800}), 9900)),
         'bluetooth.gif': timeline('night', timed_scenes('hud-bluetooth', BLUETOOTH_SAMPLES, 4750)),
-        'phone-destination.gif': timeline('night', timed_scenes('preview-v300-phone-link', V300_PHONE_LINK_SAMPLES, 8800)),
+        'v300-clioplay-link.gif': timeline('night', timed_scenes('preview-v300-phone-link', V300_PHONE_LINK_SAMPLES, 8800)),
         'speed-warning.gif': timeline('night', timed_scenes('hud-speed-warning', SPEED_WARNING_SAMPLES, 3650)),
         'map-browsing.gif': timeline('night', timed_scenes('preview-zoom-modes', ZOOM_MODE_SAMPLES, 6500)),
         'roundabout-eta.gif': timeline('night', timed_scenes('preview-roundabout-eta', ROUNDABOUT_ETA_SAMPLES, 5600)),
@@ -173,7 +173,7 @@ def compose_phone(captures, output, sequence, supplied, previous):
     if supplied:
         shots=json.loads((supplied/'frames.json').read_text())
         provenance={'kind':'local browser capture','transport':'simulated',
-                    'website':'https://pxwel-dev.github.io/ClioPlay-Send/',
+                    'website':'https://pxwel-dev.github.io/ClioPlay-Link/',
                     'screenshots':{Path(s['file']).name:sha(supplied/Path(s['file']).name) for s in shots},
                     'ready_sha256':sha(supplied/'ready.jpg')}
     else:
@@ -184,9 +184,9 @@ def compose_phone(captures, output, sequence, supplied, previous):
             for i in range(image.n_frames):
                 image.seek(i);frames.append((at,image.convert('RGB').crop((16,40,416,484))))
                 at+=image.info['duration']
-        prior=json.loads((ROOT/'docs/demo/manifest.json').read_text())['previews']['phone-destination.gif'].get('browser_capture',{})
+        prior=json.loads((ROOT/'docs/demo/manifest.json').read_text())['previews']['v300-clioplay-link.gif'].get('browser_capture',{})
         provenance={**prior,'kind':'browser panel retained from published composite','previous_gif_sha256':sha(previous),
-                    'website':'https://pxwel-dev.github.io/ClioPlay-Send/','transport':'simulated'}
+                    'website':'https://pxwel-dev.github.io/ClioPlay-Link/','transport':'simulated'}
     font=ImageFont.truetype(str(ROOT/'fonts/Vera.ttf'),16)
     timeline_out=[];at=0
     for index,(native,ms) in enumerate(sequence):
@@ -269,7 +269,7 @@ def main():
         reports = {}
         for name, sequence in plans.items():
             encoded_sequence=sequence;image_root=captures;browser_report=None
-            if name=='phone-destination.gif':
+            if name=='v300-clioplay-link.gif':
                 image_root=work/'phone-composite'
                 encoded_sequence,browser_report=compose_phone(captures,image_root,sequence,args.phone_capture,output/name)
             result = encode_gif(image_root, work / name, encoded_sequence)
@@ -376,7 +376,7 @@ def main():
                 'auto-closes it, followed by CLP3:Q:S popping up the frosted-glass '
                 'floating map QR pill, stepping stacked CS1 frames on CLP3:Q:A ACKs, '
                 'flashing Synced on CLP3:Q:D, and auto-dismissing back to the map.'),
-            'phone-destination.gif': (
+            'v300-clioplay-link.gif': (
                 'Side-by-side composite pairing Retina captures of live ClioPlay Link v3.0 '
                 'with production ClioPlay v3.0 framebuffer frames on the real Manchester '
                 'CPR2 graph: 3-stop CLP3:T burst (Receiving trip capsule progress -> '
@@ -391,7 +391,8 @@ def main():
         merged_previews = {}
         manifest_path = output / 'manifest.json'
         if args.only and manifest_path.is_file():
-            merged_previews = json.loads(manifest_path.read_text()).get('previews', {})
+            prior_previews = json.loads(manifest_path.read_text()).get('previews', {})
+            merged_previews = {k: v for k, v in prior_previews.items() if k in all_plans}
         merged_previews.update(reports)
         manifest = {
             'schema': 'clioplay-readme-previews-1',

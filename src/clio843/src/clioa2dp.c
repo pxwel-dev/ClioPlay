@@ -500,7 +500,7 @@ static int audio_profile_on=0;static u32 audio_maintenance_runs=0,audio_packet_m
 static void meta_text(char*d,u32 cap,const u8*s,u32 n){u32 at=0,out=0;while(at<n&&out+1<cap){unsigned c=s[at],bytes=c<128?1:c>=0xc2&&c<=0xdf?2:c>=0xe0&&c<=0xef?3:c>=0xf0&&c<=0xf4?4:0;if(!bytes||bytes>n-at){at++;continue;}char tmp[5];for(unsigned i=0;i<bytes;i++)tmp[i]=(char)s[at+i];tmp[bytes]=0;if(!utf8_span(tmp)){at++;continue;}if(c<32||c==127){at+=bytes;continue;}if(out+bytes>=cap)break;for(unsigned i=0;i<bytes;i++)d[out++]=(char)s[at++];}d[out]=0;}
 static void meta_clear_track(void){meta_title[0]=meta_artist[0]=meta_album[0]=0;meta_pos=meta_dur=0;meta_playing=0;meta_dirty=1;}
 /* Mobile browsers can briefly expose the PWA/document title as AVRCP metadata
- * while the silent ClioPlay Send transport session is being activated.  That
+ * while the silent ClioPlay Link (or legacy ClioPlay Send) transport session is being activated.  That
  * title is transport plumbing, not user media, so never publish it to clio040. */
 static int nav_sender_fallback_meta(void){return streq(meta_title,"ClioPlay Send")||streq(meta_title,"ClioPlay Link");}
 static void meta_hide_track(void){meta_title[0]=meta_artist[0]=meta_album[0]=0;meta_pos=meta_dur=0;meta_dirty=1;}

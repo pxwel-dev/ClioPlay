@@ -344,9 +344,9 @@
       "Envoyer une destination",
       "Envía un destino"
     ],
-    "from ClioPlay Send": [
-      "avec ClioPlay Send",
-      "con ClioPlay Send"
+    "from ClioPlay Link": [
+      "avec ClioPlay Link",
+      "con ClioPlay Link"
     ],
     "Add point as stop?": [
       "Ajouter ce point comme étape ?",
@@ -727,10 +727,6 @@
     "Where would you like to go?": [
       "Où souhaitez-vous aller ?",
       "¿Adónde quieres ir?"
-    ],
-    "Browse Recents/Favourites, use ClioPlay Send": [
-      "Récents/Favoris, ClioPlay Send",
-      "Recientes/Favoritos, ClioPlay Send"
     ],
     "or enter coordinates": [
       "ou saisir des coordonnées",

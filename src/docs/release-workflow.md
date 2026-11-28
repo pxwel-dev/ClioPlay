@@ -167,7 +167,7 @@ build or ordinary local testing. Do not build or download maps solely to
 compile ClioPlay.
 
 Optionally supply `--phone-capture /path/to/browser/captures` alongside
-`--maps` to replace the browser panel in the ClioPlay Send demo. Otherwise the
+`--maps` to replace the browser panel in the ClioPlay Link demo. Otherwise the
 existing published panel is reused. Keep private captures outside the checkout
 and check the resulting images for personal information.
 

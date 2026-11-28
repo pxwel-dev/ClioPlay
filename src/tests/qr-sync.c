@@ -79,7 +79,7 @@ int main(void){
  /* 1. Connect QR URL & Version check (must fit <= V5). */
  assert(qr_connect_ensure());
  assert(qr_connect_mat.version >= 4 && qr_connect_mat.version <= 5);
- assert(strstr(qr_connect_url, "https://pxwel-dev.github.io/ClioPlay-Send/#q=C1.") == qr_connect_url);
+ assert(strstr(qr_connect_url, "https://pxwel-dev.github.io/ClioPlay-Link/#q=C1.") == qr_connect_url);
  assert(strstr(qr_connect_url, ".GB.21.5000.5880.-620.180") != 0);
 
  /* 2. Populate rich Favourites, Active Multi-Stop Trip, Recents, and Mobility/ML data. */

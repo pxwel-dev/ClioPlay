@@ -95,7 +95,7 @@ static void qr_connect_build_url(char* out, unsigned cap){
  unitpair[1] = display_imperial() ? '1' : '0';
  unitpair[2] = 0;
  out[0] = 0;
- appendstr(out, cap, "https://pxwel-dev.github.io/ClioPlay-Send/#q=C1.");
+ appendstr(out, cap, "https://pxwel-dev.github.io/ClioPlay-Link/#q=C1.");
  append_int(out, cap, maj); appendstr(out, cap, ".");
  append_int(out, cap, min); appendstr(out, cap, ".");
  append_int(out, cap, pat); appendstr(out, cap, ".");
