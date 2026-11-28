@@ -258,5 +258,22 @@
   "Usual route selected": "تم اختيار المسار المعتاد",
   "Route unavailable": "المسار غير متاح",
   "Limit ": "الحد ",
-  "Overspeed audio": "صوت التجاوز"
+  "Overspeed audio": "صوت التجاوز",
+  "Browse Recents/Favourites, use ClioPlay Link": "الأخيرة/المفضلة أو ClioPlay Link",
+  "Navigation chimes": "نغمات الملاحة",
+  "Link only": "الرابط فقط",
+  "All cues": "كل التنبيهات",
+  "Previous route restored": "تمت استعادة المسار السابق",
+  "Settings updated": "تم تحديث الإعدادات",
+  "Trip ready": "الرحلة جاهزة",
+  "Stop skipped": "تم تخطي المحطة",
+  "Queued - waiting for GPS": "بالانتظار - إشارة GPS",
+  "Receiving trip": "جاري استلام الرحلة",
+  "Route replaced": "تم استبدال المسار",
+  "OK: Add stop / BACK: Undo": "موافق: محطة / رجوع: تراجع",
+  "BACK: Undo": "رجوع: تراجع",
+  "Scan for ClioPlay Link": "امسح لـ ClioPlay Link",
+  "Total: ": "الإجمالي: ",
+  "Sync to phone": "مزامنة مع الهاتف",
+  "Synced": "تمت المزامنة"
 }

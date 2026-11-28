@@ -11,8 +11,9 @@ static int mock_running,mock_source=1,mock_debug=0,mock_alert=0,mock_shutdown=0;
 static unsigned mock_alert_words[4];
 static unsigned char mock_ring[65536] __attribute__((aligned(4)));
 static char mock_nav[512];
-static unsigned char mock_avrcp_tx[16][80];
-static unsigned mock_avrcp_tx_len[16],mock_avrcp_tx_n;
+static char mock_nav_ack[128];
+static unsigned char mock_avrcp_tx[32][80];
+static unsigned mock_avrcp_tx_len[32],mock_avrcp_tx_n;
 static struct MockFile{const char*path;unsigned char data[1280];unsigned size;} mock_files[]={
  {"./clio843/btnames.dat",{0},0},{"./clio843/btbonds.dat",{0},0},
  {"/tmp/clbtdevices",{0},0},{"/tmp/clbtdevices.tmp",{0},0},
@@ -32,6 +33,7 @@ static long s_open(const char*p,int flags,int mode){
  if(!strcmp(p,"/tmp/cldebug"))return 5;
  if(!strcmp(p,"/tmp/clalert"))return mock_alert?6:-2;
  if(!strcmp(p,"/tmp/clshutdown"))return mock_shutdown?7:-2;
+ if(!strcmp(p,"/tmp/clnav_ack"))return mock_nav_ack[0]?12:-2;
  if(flags&64)return !strcmp(p,"/media/sdcard/clio843/bt.log")?11:!strcmp(p,"/tmp/clnav.tmp")?9:8;
  return -2;
 }
@@ -39,11 +41,12 @@ static long s_read(int fd,void*p,unsigned n){
  if(fd>=20&&fd<26){struct MockFile*f=&mock_files[fd-20];if(n>f->size)n=f->size;memcpy(p,f->data,n);return n;}
  if(fd==4||fd==5){if(n)((char*)p)[0]=(fd==4?mock_source:mock_debug)?'1':'0';return n?1:0;}
  if(fd==6){unsigned size=sizeof(mock_alert_words);if(n<size)size=n;memcpy(p,mock_alert_words,size);return size;}
+ if(fd==12){unsigned len=(unsigned)strlen(mock_nav_ack);if(n>len)n=len;memcpy(p,mock_nav_ack,n);return n;}
  return -2;
 }
 static long s_write(int fd,const void*p,unsigned n){
  if(fd>=20&&fd<26){struct MockFile*f=&mock_files[fd-20];assert(n<sizeof(f->data));memcpy(f->data,p,n);f->data[n]=0;f->size=n;return n;}
- if(fd==30){assert(mock_avrcp_tx_n<16&&n<=sizeof(mock_avrcp_tx[0]));memcpy(mock_avrcp_tx[mock_avrcp_tx_n],p,n);mock_avrcp_tx_len[mock_avrcp_tx_n]=n;mock_avrcp_tx_n++;return n;}
+ if(fd==30){assert(mock_avrcp_tx_n<32&&n<=sizeof(mock_avrcp_tx[0]));memcpy(mock_avrcp_tx[mock_avrcp_tx_n],p,n);mock_avrcp_tx_len[mock_avrcp_tx_n]=n;mock_avrcp_tx_n++;return n;}
  if(fd==9){unsigned size=n<sizeof(mock_nav)-1?n:sizeof(mock_nav)-1;memcpy(mock_nav,p,size);mock_nav[size]=0;}
  if(fd==11)mock_logs++;
  return n;
@@ -80,10 +83,11 @@ static long s_socketcall(int n,unsigned long*a){(void)n;(void)a;return -97;}
 
 static void reset(unsigned rate){
  snd_close();mock_now=10000;mock_rate_cap=rate;mock_running=mock_alert=mock_debug=0;mock_source=1;
- mock_starts=mock_pauses=mock_closes=mock_formats=mock_logs=0;mock_nav[0]=0;
+ mock_starts=mock_pauses=mock_closes=mock_formats=mock_logs=0;mock_nav[0]=0;mock_nav_ack[0]=0;
  source_active=0;av_reset_stream();cfg_ok=av_opened=av_started=1;
  meta_connected=meta_playing=1;meta_dirty=0;meta_title[0]=meta_artist[0]=meta_album[0]=0;
- nav_last_seq_valid=0;camera_chime.total=0;alert_idle_until=alert_last_media=alert_seq=0;
+ nav_last_seq_valid=0;nav_ack_pending=0;nav_last_ack_valid=0;nav_resume_music=0;real_media_was_playing=0;nav_last_activity_ms=0;
+ camera_chime.total=0;alert_idle_until=alert_last_media=alert_seq=0;
  snd_underruns=snd_pcm_drops=0;status_last[0]=0;
  audio_source_refresh();
 }
@@ -252,4 +256,75 @@ static void shutdown_checks(void){
  assert(listenfd<0&&ctrllistenfd<0&&avr_sdpfd<0&&hcifd<0&&sigfd<0&&mediafd<0&&avrcpfd<0);
  mock_shutdown=0;
 }
-int main(void){bluetooth_identity_checks();avrcp_notify_checks();rate_checks();source_checks();idle_checks();cue_checks();copy_checks();shutdown_checks();snd_close();puts("Playback: three rates, gated decode/fresh resume, AVRCP notifications/destination handoff, bounded idle drain, transport suspend, paused cues, cooperative shutdown cleanup and PCM copies passed.");return 0;}
+static void feed_avrcp_meta(const char*title,const char*artist,const char*album){
+ u8 meta[384]={2,0x11,0x0e,0x0c,0x48,0,0,0x19,0x58,0x20};int off=14;meta[13]=3;
+ const char*values[]={title,artist,album};
+ const unsigned ids[]={1,2,3};
+ for(int i=0;i<3;i++){unsigned len=(unsigned)strlen(values[i]);put_be32(meta+off,ids[i]);meta[off+4]=0;meta[off+5]=106;meta[off+6]=(u8)(len>>8);meta[off+7]=(u8)len;memcpy(meta+off+8,values[i],len);off+=8+(int)len;}
+ meta[11]=(u8)((off-13)>>8);meta[12]=(u8)(off-13);avrcp_parse(meta,off);
+}
+static void clp3_signed(char*out,unsigned cap,const char*body){
+ u16 crc=crc16_ccitt_text(body,(u32)strlen(body));
+ snprintf(out,cap,"%s:%04X",body,crc);
+}
+static void clp3_link_checks(void){
+ reset(44100);avrcpfd=30;avrcp_state=2;mock_avrcp_tx_n=0;
+ /* Suppress both legacy ClioPlay Send and new ClioPlay Link fallback titles. */
+ feed_avrcp_meta("ClioPlay Link","","");
+ assert(meta_title[0]==0&&meta_album[0]==0);
+ /* Establish real music playing prior to CLP3 transfer for smart resume. */
+ meta_playing=1;feed_avrcp_meta("Midnight City","M83","Hurry Up");
+ assert(real_media_was_playing&&!nav_resume_music);
+ /* Atomic trip stop 0 of 3 with instant ACK + chime kind=3. */
+ char pkt[128];clp3_signed(pkt,sizeof(pkt),"CLP3:T:0:3:2A:5497032:-160208:0101");
+ feed_avrcp_meta(pkt,"Tesco Extra","CLIOPLAY-NAV");
+ assert(nav_ack_pending&&nav_ack_seq==0x0101&&nav_resume_music);
+ assert(strstr(mock_nav,"VER=3\n")&&strstr(mock_nav,"ACTION=T\n")&&strstr(mock_nav,"A=0\n")&&strstr(mock_nav,"B=3\n")&&strstr(mock_nav,"C=42\n"));
+ snprintf(mock_nav_ack,sizeof(mock_nav_ack),"SEQ=%u\nRES=OK\nCHIME=3\n",0x0101u);
+ mock_now+=50;nav_ack_service(mock_now);
+ assert(!nav_ack_pending&&mock_avrcp_tx_n==2);
+ assert(mock_avrcp_tx[0][5]==0x7c&&mock_avrcp_tx[0][6]==0x4b&&mock_avrcp_tx[1][6]==(0x4b|0x80));
+ assert(camera_chime.kind==3u&&chime_active(&camera_chime));
+ /* Retry with same seq immediately re-emits cached ACK without re-publishing. */
+ mock_avrcp_tx_n=0;feed_avrcp_meta(pkt,"Tesco Extra","CLIOPLAY-NAV");
+ assert(mock_avrcp_tx_n==2&&mock_avrcp_tx[0][6]==0x4b);
+ /* NACK returns 0x4c PREV pass-through. */
+ mock_avrcp_tx_n=0;clp3_signed(pkt,sizeof(pkt),"CLP3:N:5150740:-12780:0102");
+ feed_avrcp_meta(pkt,"Outside Map","CLIOPLAY-NAV");
+ assert(nav_ack_pending&&nav_ack_seq==0x0102);
+ snprintf(mock_nav_ack,sizeof(mock_nav_ack),"SEQ=%u\nRES=NACK\nCHIME=0\n",0x0102u);
+ mock_now+=40;nav_ack_service(mock_now);
+ assert(!nav_ack_pending&&mock_avrcp_tx_n==2&&mock_avrcp_tx[0][6]==0x4c&&mock_avrcp_tx[1][6]==(0x4c|0x80));
+ /* Parse every remaining CLP3 packet kind: F, P, C(X/K/T), Q(S/A/D), H. */
+ struct NavPacket np;
+ clp3_signed(pkt,sizeof(pkt),"CLP3:F:1:5497032:-160208:0103");
+ assert(nav_packet_parse_ex(pkt,&np)&&np.ver==3&&np.action=='F'&&np.a==1);
+ clp3_signed(pkt,sizeof(pkt),"CLP3:P:013209030200A40174043C00:0104");
+ assert(nav_packet_parse_ex(pkt,&np)&&np.action=='P'&&streq(np.hex,"013209030200A40174043C00"));
+ clp3_signed(pkt,sizeof(pkt),"CLP3:C:X:0105");
+ assert(nav_packet_parse_ex(pkt,&np)&&np.action=='C'&&np.sub=='X');
+ clp3_signed(pkt,sizeof(pkt),"CLP3:C:K:0106");
+ assert(nav_packet_parse_ex(pkt,&np)&&np.action=='C'&&np.sub=='K');
+ clp3_signed(pkt,sizeof(pkt),"CLP3:C:T:69F01234:60:0107");
+ assert(nav_packet_parse_ex(pkt,&np)&&np.action=='C'&&np.sub=='T'&&np.a==0x69f01234u&&np.b==60);
+ clp3_signed(pkt,sizeof(pkt),"CLP3:Q:S:0108");
+ assert(nav_packet_parse_ex(pkt,&np)&&np.action=='Q'&&np.sub=='S');
+ clp3_signed(pkt,sizeof(pkt),"CLP3:Q:A:3:0109");
+ assert(nav_packet_parse_ex(pkt,&np)&&np.action=='Q'&&np.sub=='A'&&np.a==3);
+ clp3_signed(pkt,sizeof(pkt),"CLP3:Q:D:010A");
+ assert(nav_packet_parse_ex(pkt,&np)&&np.action=='Q'&&np.sub=='D');
+ clp3_signed(pkt,sizeof(pkt),"CLP3:H:3:010B");
+ assert(nav_packet_parse_ex(pkt,&np)&&np.action=='H'&&np.a==3);
+ /* Bad CRC must be rejected. */
+ pkt[strlen(pkt)-1]^=1;
+ assert(!nav_packet_parse_ex(pkt,&np));
+ /* Smart Music Resume fires 0x44 PLAY once silent transfer finishes and settles. */
+ mock_avrcp_tx_n=0;av_started=0;meta_playing=0;
+ mock_now+=950;nav_ack_service(mock_now);
+ assert(mock_avrcp_tx_n==2&&mock_avrcp_tx[0][6]==0x44&&mock_avrcp_tx[1][6]==(0x44|0x80)&&!nav_resume_music);
+ /* Legacy CLP2 must never arm AVRCP ACK. */
+ mock_avrcp_tx_n=0;clp3_signed(pkt,sizeof(pkt),"CLP2:N:5497032:-160208:010C");
+ feed_avrcp_meta(pkt,"Legacy Send","CLIOPLAY-NAV");
+ assert(!nav_ack_pending&&mock_avrcp_tx_n==0);
+}
+int main(void){bluetooth_identity_checks();avrcp_notify_checks();clp3_link_checks();rate_checks();source_checks();idle_checks();cue_checks();copy_checks();shutdown_checks();snd_close();puts("Playback: three rates, gated decode/fresh resume, AVRCP notifications/CLP3 bidirectional ACK+NACK+resume, bounded idle drain, transport suspend, paused cues, cooperative shutdown cleanup and PCM copies passed.");return 0;}

@@ -258,5 +258,22 @@
   "Usual route selected": "Alışılmış rota seçildi",
   "Route unavailable": "Rota mevcut değil",
   "Limit ": "Limit ",
-  "Overspeed audio": "Hız aşımı sesi"
+  "Overspeed audio": "Hız aşımı sesi",
+  "Browse Recents/Favourites, use ClioPlay Link": "Son yerler/Favoriler, ClioPlay Link",
+  "Navigation chimes": "Navigasyon sesleri",
+  "Link only": "Yalnızca Link",
+  "All cues": "Tüm uyarılar",
+  "Previous route restored": "Önceki rota geri yüklendi",
+  "Settings updated": "Ayarlar güncellendi",
+  "Trip ready": "Yolculuk hazır",
+  "Stop skipped": "Durak atlandı",
+  "Queued - waiting for GPS": "Sırada - GPS bekleniyor",
+  "Receiving trip": "Yolculuk alınıyor",
+  "Route replaced": "Rota değiştirildi",
+  "OK: Add stop / BACK: Undo": "OK: Durak / GERİ: Geri al",
+  "BACK: Undo": "GERİ: Geri al",
+  "Scan for ClioPlay Link": "ClioPlay Link için tara",
+  "Total: ": "Toplam: ",
+  "Sync to phone": "Telefona aktar",
+  "Synced": "Eşitlendi"
 }

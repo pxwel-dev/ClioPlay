@@ -129,7 +129,7 @@ static int render_same_scene(const struct RenderMapScene*a,const struct RenderMa
 #include "explore_frames.h"
 
 static int render_transition_active(u32 now){
- if(boot_fade.image||renderer.camera_pending||hud_menu_animating(now)||popup_animating(now)||menu_animating(now))return 1;
+ if(boot_fade.image||renderer.camera_pending||hud_menu_animating(now)||popup_animating(now)||menu_animating(now)||qr_pill_animating(now))return 1;
  if(screen==SCR_MAP||bottom_pose(now)>0){
   for(int id=HC_SPEED;id<HC_COUNT;id++){
    struct HudTween*t=&hud_tween[id];if(!t->seen||(!t->from.a&&!t->target.box.a))continue;

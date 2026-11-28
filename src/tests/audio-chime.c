@@ -5,7 +5,7 @@ static unsigned udiv32(unsigned n,unsigned d){return d?n/d:0;}
 #include "../clio843/src/audio_chime.h"
 int main(int argc,char**argv){
  for(unsigned rate=11025;rate<=44100;rate*=2){
-  for(unsigned kind=1;kind<=2;kind++){
+  for(unsigned kind=1;kind<=5;kind++){
    struct AudioChime c={0};
    if(kind==1)chime_start(&c,rate);
    else chime_start_kind(&c,rate,kind);
@@ -22,12 +22,14 @@ int main(int argc,char**argv){
     count++;
    }
    if(f)fclose(f);
-   unsigned expected=kind==2?(rate*3u)/5u:rate/2u;
+   unsigned expected=kind==2?(rate*3u)/5u:kind==3?(rate*34u)/100u:kind==4?(rate*28u)/100u:kind==5?(rate*48u)/100u:rate/2u;
    assert(count==expected);assert(previous==0);
-   assert(peak>3000&&peak<4097);assert(maxstep<3000);
+   if(kind<=2)assert(peak>3000&&peak<4097);
+   else assert(peak>2000&&peak<3200);
+   assert(maxstep<3000);
    int gain;assert(chime_sample(&c,&gain)==0&&gain==256);
   }
  }
- puts("PCM camera cue: approach/overspeed kinds, duration, envelopes, bounded ducking, clipping and 11/22/44kHz passed.");
+ puts("PCM cues (camera + link/turn/arrival): kinds 1-5, envelopes, bounded ducking, clipping and 11/22/44kHz passed.");
  return 0;
 }

@@ -22,7 +22,8 @@ PREVIEW_GIFS = ('boot-day.gif', 'boot-night.gif', 'popups.gif', 'driving.gif', '
                 'v223-nearby-pois.gif', 'v223-secondary-manoeuvre.gif', 'v223-view-diversion.gif',
                 'v224-ml-eta-and-habits.gif', 'v224-ml-slowdowns.gif',
                 'v224-ml-parking-and-pois.gif', 'v224-ml-adaptive-hud.gif',
-                'v225-gps-panel.gif', 'v227-camera-alerts.gif')
+                'v225-gps-panel.gif', 'v227-camera-alerts.gif',
+                'v300-multileg-and-chevron.gif', 'v300-qr-sync-and-connect.gif')
 
 def source_files(root, reports):
     files = {}

@@ -258,5 +258,22 @@
   "Usual route selected": "נבחר המסלול הקבוע",
   "Route unavailable": "המסלול אינו זמין",
   "Limit ": "מגבלה ",
-  "Overspeed audio": "שמע בחריגה"
+  "Overspeed audio": "שמע בחריגה",
+  "Browse Recents/Favourites, use ClioPlay Link": "אחרונים/מועדפים, ClioPlay Link",
+  "Navigation chimes": "צלילי ניווט",
+  "Link only": "קישור בלבד",
+  "All cues": "כל ההתראות",
+  "Previous route restored": "המסלול הקודם שוחזר",
+  "Settings updated": "ההגדרות עודכנו",
+  "Trip ready": "הנסיעה מוכנה",
+  "Stop skipped": "דילוג על עצירה",
+  "Queued - waiting for GPS": "ממתין לאות GPS",
+  "Receiving trip": "מקבל נסיעה",
+  "Route replaced": "המסלול הוחלף",
+  "OK: Add stop / BACK: Undo": "אישור: הוסף עצירה / חזור: בטל",
+  "BACK: Undo": "חזור: בטל",
+  "Scan for ClioPlay Link": "סרוק עבור ClioPlay Link",
+  "Total: ": "סה״כ: ",
+  "Sync to phone": "סנכרן לטלפון",
+  "Synced": "סונכרן"
 }

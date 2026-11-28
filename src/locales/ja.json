@@ -258,5 +258,22 @@
   "Usual route selected": "いつものルートを選択",
   "Route unavailable": "ルートを利用できません",
   "Limit ": "制限 ",
-  "Overspeed audio": "超過時のみ音声"
+  "Overspeed audio": "超過時のみ音声",
+  "Browse Recents/Favourites, use ClioPlay Link": "履歴・お気に入り、ClioPlay Link",
+  "Navigation chimes": "ナビ通知音",
+  "Link only": "連携のみ",
+  "All cues": "すべて",
+  "Previous route restored": "前のルートを復元しました",
+  "Settings updated": "設定を更新しました",
+  "Trip ready": "ルート準備完了",
+  "Stop skipped": "経由地をスキップ",
+  "Queued - waiting for GPS": "待機中 - GPS受信待ち",
+  "Receiving trip": "ルート受信中",
+  "Route replaced": "ルートを変更しました",
+  "OK: Add stop / BACK: Undo": "OK: 経由追加 / 戻る: 元に戻す",
+  "BACK: Undo": "戻る: 元に戻す",
+  "Scan for ClioPlay Link": "ClioPlay Link をスキャン",
+  "Total: ": "合計: ",
+  "Sync to phone": "スマホへ同期",
+  "Synced": "同期完了"
 }

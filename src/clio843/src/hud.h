@@ -141,7 +141,7 @@ static void hud_source_text(char*b,unsigned cap){
  else if(reading_present(car.source)&&!streq(car.source,af.band))copystr(b,cap,car.source);
 }
 
-enum {HUD_KEYS=1, HUD_PROGRESS=2, HUD_PLAYBACK=8};
+enum {HUD_KEYS=1, HUD_PROGRESS=2, HUD_PROGRESS_FILL=4, HUD_PLAYBACK=8};
 enum {HUD_STATUS_TITLE,HUD_STATUS_BODY,HUD_STATUS_DETAIL,HUD_STATUS_CONNECTION,
  HUD_STATUS_FEEDBACK,HUD_STATUS_TRANSPORT,HUD_STATUS_TRAFFIC_TITLE,HUD_STATUS_TRAFFIC_DETAIL,HUD_STATUS_LAYOUT_COUNT};
 static struct {
@@ -340,7 +340,16 @@ static void hud_prepare(int z,u32 now,int map){
   copystr(c.tag,sizeof(c.tag),"BT ");appendstr(c.tag,sizeof(c.tag),ui_tr("CTRL"));
   c.flags|=HUD_KEYS;if(hud_playback.valid)c.flags|=HUD_PLAYBACK;c.value=bt_transport_playing(now);
  }
- if(urgent){
+ if(trip_stage.active){
+  c.kind=HUD_CALC;
+  copystr(c.title,sizeof(c.title),ui_tr("Receiving trip"));
+  appendstr(c.title,sizeof(c.title)," ");
+  append_int(c.title,sizeof(c.title),(int)trip_stage.received);
+  appendstr(c.title,sizeof(c.title),"/");
+  append_int(c.title,sizeof(c.title),(int)trip_stage.total);
+  c.flags|=HUD_PROGRESS|HUD_PROGRESS_FILL;
+  c.value=trip_stage.total?(int)((trip_stage.received*256u)/trip_stage.total):0;
+ }else if(urgent){
   c.kind=urgent;hud_nav_text(&c,z,urgent,!media);
   if(urgent==HUD_FAILURE)c.ink|=HUD_ERROR;
   if(hud_source.kind){copystr(c.detail,sizeof(c.detail),hud_audio_tag());appendstr(c.detail,sizeof(c.detail),"  ");char source[96];hud_source_text(source,sizeof(source));appendstr(c.detail,sizeof(c.detail),source);}
@@ -385,11 +394,19 @@ static void hud_prepare(int z,u32 now,int map){
  }
  hud_status_observe(map,now);
  hud_status_compose(&c,now);
- hud_traffic_compose(&c,map,media);
- if(!c.traffic_serial&&!c.traffic_title[0]&&c.kind!=HUD_TRAFFIC){
-  hud_parking_compose(&c,map,media);
-  if(!c.parking_serial)hud_stop_compose(&c,map,media);
-  if(!c.parking_serial&&!c.stop_serial)hud_suggestion_compose(&c,map,media);
+ if(map&&screen==SCR_MAP&&!freecam&&modal==MOD_NONE&&!media&&!trip_stage.active&&phone_undo_active(now)){
+  const char*title=ui_tr("Route replaced");
+  const char*hint=ui_tr(phone_undo_can_add?"OK: Add stop / BACK: Undo":"BACK: Undo");
+  if(!c.kind){c.kind=HUD_SYSTEM;copystr(c.title,sizeof(c.title),title);c.ink|=HUD_SUCCESS;}
+  else copystr(c.traffic_title,sizeof(c.traffic_title),title);
+  copystr(c.traffic_detail,sizeof(c.traffic_detail),hint);
+ }else{
+  hud_traffic_compose(&c,map,media);
+  if(!c.traffic_serial&&!c.traffic_title[0]&&c.kind!=HUD_TRAFFIC){
+   hud_parking_compose(&c,map,media);
+   if(!c.parking_serial)hud_stop_compose(&c,map,media);
+   if(!c.parking_serial&&!c.stop_serial)hud_suggestion_compose(&c,map,media);
+  }
  }
  if(!c.suggestion_serial||media||hud_suggestion_invited!=c.suggestion_serial)hud_suggestion_invited=0;
  if(!c.traffic_serial||media||hud_diversion_invited!=c.traffic_serial)hud_diversion_invited=0;
@@ -765,12 +782,20 @@ static void hud_draw_status(struct HudBox b,const struct HudCard*c,u32 now){
   row+=height;
  }
  if(c->flags&HUD_PROGRESS){
-  int track=w-20,travel=track-28;if(travel<1)return;
+  int track=w-20;if(track<8)return;
   hud_ink_alpha=hud_status_row_ink(changed_flags&HUD_PROGRESS?fade:full,bottom-row-5);
-  u32 p=((now-hud_progress_at)/22u)%(u32)(travel*2);
-  int off=p<=(u32)travel?(int)p:2*travel-(int)p;
   int py=b.y+b.h-5;
-  hud_rect_ink(x+10,py,track,2,C_BORDER);hud_rect_ink(x+10+off,py,28,2,C_CYAN);
+  hud_rect_ink(x+10,py,track,2,C_BORDER);
+  if(c->flags&HUD_PROGRESS_FILL){
+   int v=c->value<0?0:c->value>256?256:c->value;
+   int fw=(track*v+128)>>8;if(fw<4&&v>0)fw=4;if(fw>track)fw=track;
+   if(fw>0)hud_rect_ink(x+10,py,fw,2,C_CYAN);
+  }else{
+   int travel=track-28;if(travel<1)return;
+   u32 p=((now-hud_progress_at)/22u)%(u32)(travel*2);
+   int off=p<=(u32)travel?(int)p:2*travel-(int)p;
+   hud_rect_ink(x+10+off,py,28,2,C_CYAN);
+  }
  }
 }
 static void hud_draw_camera_icon(int ox,int oy,int kind,int over,u16 ink){

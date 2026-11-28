@@ -258,5 +258,22 @@
   "Usual route selected": "Επιλέχθηκε συνήθης διαδρομή",
   "Route unavailable": "Μη διαθέσιμη διαδρομή",
   "Limit ": "Όριο ",
-  "Overspeed audio": "Ήχος υπέρβασης"
+  "Overspeed audio": "Ήχος υπέρβασης",
+  "Browse Recents/Favourites, use ClioPlay Link": "Πρόσφατα/Αγαπημένα, ClioPlay Link",
+  "Navigation chimes": "Ήχοι πλοήγησης",
+  "Link only": "Μόνο Link",
+  "All cues": "Όλες οι ειδοπ.",
+  "Previous route restored": "Επαναφορά προηγ. διαδρομής",
+  "Settings updated": "Οι ρυθμίσεις ενημερώθηκαν",
+  "Trip ready": "Διαδρομή έτοιμη",
+  "Stop skipped": "Παράλειψη στάσης",
+  "Queued - waiting for GPS": "Σε αναμονή - GPS",
+  "Receiving trip": "Λήψη διαδρομής",
+  "Route replaced": "Η διαδρομή άλλαξε",
+  "OK: Add stop / BACK: Undo": "OK: Στάση / ΠΙΣΩ: Αναίρεση",
+  "BACK: Undo": "ΠΙΣΩ: Αναίρεση",
+  "Scan for ClioPlay Link": "Σάρωση για ClioPlay Link",
+  "Total: ": "Σύνολο: ",
+  "Sync to phone": "Συγχρ. με τηλέφωνο",
+  "Synced": "Συγχρονίστηκε"
 }

@@ -19,7 +19,9 @@ from render_gallery import (ANIMATION_SAMPLE_MS, BLUETOOTH_SAMPLES, MENU_ENTRY_S
                             V223_NEARBY_SAMPLES, V223_SECONDARY_MANOEUVRE_SAMPLES, V223_VIEW_DIVERSION_SAMPLES,
                             V224_ML_ETA_HABITS_SAMPLES, V224_ML_SLOWDOWNS_SAMPLES,
                             V224_ML_PARKING_POIS_SAMPLES, V224_ML_ADAPTIVE_HUD_SAMPLES,
-                            V225_GPS_PANEL_SAMPLES, V227_CAMERA_ALERTS_SAMPLES, ROOT, sha)
+                            V225_GPS_PANEL_SAMPLES, V227_CAMERA_ALERTS_SAMPLES,
+                            V300_MULTILEG_SAMPLES, V300_QR_SYNC_SAMPLES, V300_PHONE_LINK_SAMPLES,
+                            ROOT, sha)
 
 
 
@@ -49,6 +51,8 @@ def previews():
         'v224-ml-adaptive-hud.gif': timeline('day', timed_scenes('preview-v224-ml-adaptive-hud', V224_ML_ADAPTIVE_HUD_SAMPLES, 10100)),
         'v225-gps-panel.gif': timeline('night', timed_scenes('preview-v225-gps-panel', V225_GPS_PANEL_SAMPLES, 8700)),
         'v227-camera-alerts.gif': timeline('night', timed_scenes('preview-v227-camera-alerts', V227_CAMERA_ALERTS_SAMPLES, 8600)),
+        'v300-multileg-and-chevron.gif': timeline('night', timed_scenes('preview-v300-multileg', V300_MULTILEG_SAMPLES, 10600)),
+        'v300-qr-sync-and-connect.gif': timeline('night', timed_scenes('preview-v300-qr-sync', V300_QR_SYNC_SAMPLES, 11100)),
         'v220-frequent-place.gif': timeline('night', timed_scenes('preview-v220-frequent-place', V220_FREQUENT_PLACE_SAMPLES, 5900)),
         'v220-destination-prediction.gif': timeline('night', timed_scenes('preview-v220-destination-prediction', V220_DESTINATION_SAMPLES, 6500)),
         'v220-intelligent-diversions.gif': timeline('night', timed_scenes('preview-v220-intelligent-diversions', V220_DIVERSION_SAMPLES, 6200)),
@@ -71,11 +75,7 @@ def previews():
         'menus.gif': timeline('night', timed_scenes('preview-menu-tour', sorted(
             {at+step for at in (0,700,1500,2300,3100,3800,4600,5400,6200,7000,7800,8600,9400) for step in TWEEN_STEPS}|{9800}), 9900)),
         'bluetooth.gif': timeline('night', timed_scenes('hud-bluetooth', BLUETOOTH_SAMPLES, 4750)),
-        'phone-destination.gif': timeline('night', [
-            ('empty-receive',1000),('empty-receive',500),
-            *timed_scenes('phone-preview-calculating', list(PHONE_CALC_SAMPLES),1400),
-            ('phone-preview-trip',2100),('phone-preview-trip',2200),
-        ]),
+        'phone-destination.gif': timeline('night', timed_scenes('preview-v300-phone-link', V300_PHONE_LINK_SAMPLES, 8800)),
         'speed-warning.gif': timeline('night', timed_scenes('hud-speed-warning', SPEED_WARNING_SAMPLES, 3650)),
         'map-browsing.gif': timeline('night', timed_scenes('preview-zoom-modes', ZOOM_MODE_SAMPLES, 6500)),
         'roundabout-eta.gif': timeline('night', timed_scenes('preview-roundabout-eta', ROUNDABOUT_ETA_SAMPLES, 5600)),
@@ -191,16 +191,31 @@ def compose_phone(captures, output, sequence, supplied, previous):
     timeline_out=[];at=0
     for index,(native,ms) in enumerate(sequence):
         if supplied:
-            source=supplied/'ready.jpg' if at<1000 else supplied/Path(min(shots,key=lambda x:abs(x['ms']-max(0,at-1000)))['file']).name
-            with Image.open(source) as image:panel=image.convert('RGB').crop((342,252,938,914)).resize((400,444),Image.Resampling.LANCZOS)
+            use_direct = any(s.get('direct_panel') for s in shots)
+            if use_direct:
+                picked = max((s for s in shots if s['ms'] <= at), key=lambda s: s['ms'], default=shots[0])
+                source = supplied / Path(picked['file']).name
+                with Image.open(source) as image:
+                    panel = image.convert('RGB')
+                    if panel.size != (400, 444):
+                        panel = panel.resize((400, 444), Image.Resampling.LANCZOS)
+            else:
+                source=supplied/'ready.jpg' if at<1000 else supplied/Path(min(shots,key=lambda x:abs(x['ms']-max(0,at-1000)))['file']).name
+                with Image.open(source) as image:panel=image.convert('RGB').crop((342,252,938,914)).resize((400,444),Image.Resampling.LANCZOS)
         else:panel=max((f for f in frames if f[0]<=at),key=lambda f:f[0])[1]
         image=Image.new('RGB',(936,510),(12,18,26));draw=ImageDraw.Draw(image)
-        draw.text((16,12),'ClioPlay Send',font=font,fill='white');draw.text((440,12),'ClioPlay',font=font,fill='white')
+        draw.text((16,12),'ClioPlay Link',font=font,fill='white');draw.text((440,12),'ClioPlay',font=font,fill='white')
         image.paste(panel,(16,40))
         with Image.open(captures/native) as head:image.paste(head.convert('RGB'),(440,110))
-        caption='Send without opening a receive screen' if at<1500 else 'Calculating route' if at<2900 else 'Destination received'
+        caption=(
+            'Send multi-stop trip without a receive screen' if at<900
+            else 'Receiving 3 stops via CLP3' if at<2300
+            else 'Trip ready · active leg + future legs' if at<4800
+            else 'Next + Total ETAs & Places sync' if at<6600
+            else 'Car settings & Driving Insights synced'
+        )
         draw.text((440,402),caption,font=font,fill='white')
-        draw.text((440,432),'Browser + native UI; transport simulated',font=font,fill=(151,166,185))
+        draw.text((440,432),'ClioPlay Link + native UI; transport simulated',font=font,fill=(151,166,185))
         name=f'{index:03d}.png';image.save(output/name);timeline_out.append((name,ms));at+=ms
     return timeline_out,provenance
 
@@ -345,6 +360,28 @@ def main():
                 'BT-CTRL-style capsule progress bar, synced red overspeed rim and red '
                 'map badge, clean centred red-light alert, and active average-speed '
                 'zone progress with twin-camera exit marker.'),
+            'v300-multileg-and-chevron.gif': (
+                'Real Manchester 3-stop itinerary (Northern Quarter -> Shell Deansgate -> '
+                'Manchester Piccadilly -> MediaCityUK) calculated against the UK CPR2 '
+                'routing graph by production route_start() and trip_plan_service_until(): '
+                'Z8 driving approaching a real turn with perspective-scaled white '
+                'on-carriageway turn chevron (draw_route_turn_chevron) and Option B '
+                'next-stop HUD, Z5 overview with active Leg 0 in magenta (C_ROUTE) and '
+                'future Legs 1-2 in lavender (C_ROUTE_FUTURE), and Menu -> Trip showing '
+                'both Next and Total journey ETAs and per-stop arrival times.'),
+            'v300-qr-sync-and-connect.gif': (
+                'Real Manchester map and production qr_encode.h / qr_sync.h optical '
+                'pipeline: Bluetooth -> Pair new phone with built-in Connect QR staying '
+                'open upon pairing (Connected + Done button) until CLP3:H Link Ping '
+                'auto-closes it, followed by CLP3:Q:S popping up the frosted-glass '
+                'floating map QR pill, stepping stacked CS1 frames on CLP3:Q:A ACKs, '
+                'flashing Synced on CLP3:Q:D, and auto-dismissing back to the map.'),
+            'phone-destination.gif': (
+                'Side-by-side composite pairing Retina captures of live ClioPlay Link v3.0 '
+                'with production ClioPlay v3.0 framebuffer frames on the real Manchester '
+                'CPR2 graph: 3-stop CLP3:T burst (Receiving trip capsule progress -> '
+                'atomic multi-leg magenta+lavender route), Trip sheet with Next + Total '
+                'ETAs, Places sync, Driving Insights, and live CLP3:P car settings update.'),
         }
         for name, note in provenance.items():
             if name in reports:

@@ -258,5 +258,22 @@
   "Usual route selected": "Vaste route gekozen",
   "Route unavailable": "Route niet beschikbaar",
   "Limit ": "Limiet ",
-  "Overspeed audio": "Audio te snel"
+  "Overspeed audio": "Audio te snel",
+  "Browse Recents/Favourites, use ClioPlay Link": "Recent/Favorieten, ClioPlay Link",
+  "Navigation chimes": "Navigatiegeluiden",
+  "Link only": "Alleen Link",
+  "All cues": "Alle signalen",
+  "Previous route restored": "Vorige route hersteld",
+  "Settings updated": "Instellingen bijgewerkt",
+  "Trip ready": "Rit gereed",
+  "Stop skipped": "Stop overgeslagen",
+  "Queued - waiting for GPS": "In wachtrij - wacht op GPS",
+  "Receiving trip": "Rit ontvangen",
+  "Route replaced": "Route vervangen",
+  "OK: Add stop / BACK: Undo": "OK: Stop / TERUG: Ongedaan",
+  "BACK: Undo": "TERUG: Ongedaan",
+  "Scan for ClioPlay Link": "Scan voor ClioPlay Link",
+  "Total: ": "Totaal: ",
+  "Sync to phone": "Sync met telefoon",
+  "Synced": "Gesynchroniseerd"
 }

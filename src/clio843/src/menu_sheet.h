@@ -4,7 +4,7 @@ enum {P_CLOSED,P_HOME,P_SETTINGS,P_TRIP,P_PLACES,P_NEARBY,P_NEARBY_LIST,P_STOP,P
  P_NAME,P_COORD,P_REVIEW,P_LANG,P_PHONE,P_PHONE_ACTIONS,P_PAIR,P_CONFIRM,P_SOURCE,P_SET_DISPLAY,P_SET_HUD,P_SET_NAV,P_SET_HISTORY,P_SET_SYSTEM};
 /* Settings IDs remain stable; categories only control navigation and presentation. */
 static const struct {const char*title;int count,rows[4];} settings_groups[]={
- {"Display",4,{0,1,8,9}}, {"HUD layout",2,{10,11}}, {"Navigation",3,{2,3,4}},
+ {"Display",4,{0,1,8,9}}, {"HUD layout",2,{10,11}}, {"Navigation",4,{2,3,4,16}},
  {"Driving history",4,{12,13,14,15}}, {"System",3,{7,5,6}}
 };
 enum {SETTINGS_GROUP_COUNT=sizeof(settings_groups)/sizeof(settings_groups[0])};
@@ -47,7 +47,8 @@ static char context_name[161];
 static int menu_pending;
 static u32 menu_at,focus_at,bottom_at,menu_presented_at,menu_interaction_at;
 static u32 menu_paint_at;
-static int sheet_old_tab,menu_pair_waited,menu_pair_before;
+static int sheet_old_tab,menu_pair_waited,menu_pair_before,menu_pair_connected;
+static u32 menu_pair_link_seen;
 static char menu_pair_name[33];
 static int menu_screen(int p){return p==P_CLOSED?SCR_MAP:p==P_HOME?SCR_MENU:(p==P_SETTINGS||settings_group(p)>=0)||(p==P_LANG&&!language_keyboard)?SCR_SET:p==P_PHONE||p==P_PHONE_ACTIONS||p==P_PAIR?SCR_BT:p==P_NAME||p==P_LANG?SCR_KEY:p==P_COORD||p==P_REVIEW?SCR_COORDINATES:SCR_TRIP;}
 static int bottom_from=256,bottom_to=256;
@@ -91,8 +92,8 @@ static struct HudBox menu_box_at_top(int p,int top){
  if(p==P_REVIEW){w=416;h=220;}
  if(p==P_LANG){w=364;h=220;}
  if(p==P_STOP||p==P_DEST||p==P_PLACE){w=356;h=p==P_PLACE?174:154;}
- if(p==P_PHONE_ACTIONS){w=324;h=136;}
- if(p==P_PAIR){w=316;h=128;}
+ if(p==P_PHONE_ACTIONS){int idx=-1;for(int i=0;i<nbtdev;i++)if(streq(btdev[i].addr,phone_addr)){idx=i;break;}if(idx>=0&&btdev[idx].connected){w=384;h=166;}else{w=324;h=136;}}
+ if(p==P_PAIR){w=384;h=166;}
  if(p==P_CONFIRM){w=280;h=confirm_has_view()?122:92;
   if(confirm_kind==4&&width(place_display_name(confirm_suggestion.name),0)>252){w=356;h=106;}
   if(confirm_kind==6||confirm_kind==7){w=312;h=96;}
@@ -185,7 +186,7 @@ static int place_count(void){return places_tab?nfaves:nrecents;}
 static int menu_count(int p){
  return p==P_HOME?(hw_bluetooth_enabled?3:2):p==P_SOURCE?4:p==P_SETTINGS?SETTINGS_GROUP_COUNT:settings_group(p)>=0?settings_groups[settings_group(p)].count:p==P_TRIP?(trip.count?trip.count+2+traffic_offer_valid():1):p==P_PLACES?place_count():p==P_NEARBY?NEARBY_CAT_COUNT:p==P_NEARBY_LIST?nearby_count:
  p==P_STOP?3:p==P_DEST?3:p==P_PLACE?((!place_from_nearby&&places_tab)?4:3):p==P_PHONE?nbtdev+1:
- p==P_PHONE_ACTIONS?2:p==P_REVIEW?4:p==P_CONFIRM?(confirm_has_view()?3:2):0;
+ p==P_PHONE_ACTIONS?2:p==P_PAIR?(menu_pair_connected?1:0):p==P_REVIEW?4:p==P_CONFIRM?(confirm_has_view()?3:2):0;
 }
 static void selected_focus(int next,u32 now){if(next!=sheet_focus){sheet_old_focus=sheet_focus;sheet_focus=next;focus_at=menu_interaction_at=now;}}
 static void open_sources(int action,u32 now){source_action=flow_action=action;places_picker=review_from_place=0;menu_push(P_SOURCE,0,now);}
@@ -254,7 +255,8 @@ static void start_name(int origin,u32 now){
 static int menu_phone_index(void){for(int i=0;i<nbtdev;i++)if(streq(btdev[i].addr,phone_addr))return i;return -1;}
 static void menu_pair(u32 now){
  if(!bt_command("PAIR")){notice_fail(ui_tr("Bluetooth unavailable"));return;}
- menu_pair_before=btui.connected;menu_pair_waited=0;copystr(menu_pair_name,sizeof(menu_pair_name),btui.device);menu_push(P_PAIR,0,now);
+ menu_pair_before=btui.connected;menu_pair_waited=0;menu_pair_connected=0;menu_pair_link_seen=phone_link_seen_ms;
+ copystr(menu_pair_name,sizeof(menu_pair_name),btui.device);menu_push(P_PAIR,0,now);
 }
 static void setting_adjust(int code,u32 now){
  (void)now;int row=settings_row(sheet_page,sheet_focus);if(row>=0){set_focus=row;settings_key(code);}
@@ -447,6 +449,7 @@ static void menu_key(int code,u32 now){
   }return;
  }
  if(sheet_page==P_PHONE){if(sheet_focus==0)menu_pair(now);else if(sheet_focus<=nbtdev){phone_index=sheet_focus-1;copystr(phone_addr,sizeof(phone_addr),btdev[phone_index].addr);menu_push(P_PHONE_ACTIONS,0,now);}return;}
+ if(sheet_page==P_PAIR){if(menu_pair_connected){menu_back(now);sheet_focus=bt_connected_idx()+1;}return;}
  if(sheet_page==P_PHONE_ACTIONS){
   int index=menu_phone_index();if(index<0){menu_back(now);return;}
   if(sheet_focus==0)bt_command_arg(btdev[index].connected?"DISCONNECT":"CONNECT",phone_addr);
@@ -568,14 +571,25 @@ static void trip_content(struct HudBox b,int selected,int opacity){
   if(b.y+actions_y-3<clip_bottom)clip_bottom=b.y+actions_y-3;
   hud_ink_alpha=opacity;
   box_text(b.x+18,b.y+title_y,b.w-36,16,1,ui_tr("Where would you like to go?"),C_WHITE);
-  text_value(b.x+18,b.y+help_y,b.w-36,hw_bluetooth_enabled?ui_tr("Browse Recents/Favourites, use ClioPlay Send"):ui_tr("Browse Recents/Favourites"),opacity);
+  text_value(b.x+18,b.y+help_y,b.w-36,hw_bluetooth_enabled?ui_tr("Browse Recents/Favourites, use ClioPlay Link"):ui_tr("Browse Recents/Favourites"),opacity);
   text_value(b.x+18,b.y+last_y,b.w-36,ui_tr("or enter coordinates"),opacity);
   clip_bottom=bottom;
   row_text(b,b.y+actions_y,0,selected,ui_tr("Coordinates"),"",opacity,1,row_h);
   return;
  }
  appendstr(total,sizeof(total),ui_tr(trip.active_idx==trip.count-1?"Destination: ":"Next: "));append_miles(total,sizeof(total),route_path_m());appendstr(total,sizeof(total),"  ~");append_eta_range(total,sizeof(total),sat_add32(traffic_remaining_cost(),atlas_future_cost),ml_route_var_ds);
- int remaining=(int)trip.count-1-(int)trip.active_idx;if(remaining>0){appendstr(total,sizeof(total),"  /  ");append_int(total,sizeof(total),remaining);appendstr(total,sizeof(total),ui_tr(" stops left"));}
+ int remaining=(int)trip.count-1-(int)trip.active_idx;
+ if(remaining>0){
+  u32 fcost=trip_plan_future_cost_ds();
+  if(fcost!=ROUTE_INF&&route_status==R_READY){
+   u32 tot_m=sat_add32(route_path_m(),trip_plan_future_dist_m());
+   u32 tot_ds=sat_add32(sat_add32(traffic_remaining_cost(),atlas_future_cost),fcost);
+   appendstr(total,sizeof(total),"  /  ");appendstr(total,sizeof(total),ui_tr("Total: "));
+   append_miles(total,sizeof(total),tot_m);appendstr(total,sizeof(total)," ~");append_eta(total,sizeof(total),tot_ds);
+  }else{
+   appendstr(total,sizeof(total),"  /  ");append_int(total,sizeof(total),remaining);appendstr(total,sizeof(total),ui_tr(" stops left"));
+  }
+ }
  /* Reserve a full target row before making room for the route summary. */
  int summary=b.h-100;
  if(summary<0)summary=0;if(summary>20)summary=20;
@@ -604,7 +618,16 @@ static void trip_content(struct HudBox b,int selected,int opacity){
    round_rect(b.x+23,cy+5,1,step-9,0,C_BORDER,10);
   round_rect(b.x+19,cy-4,9,9,i==trip.count-1?2:4,active?C_ACTIVE_TEXT:i==trip.active_idx?C_CYAN:C_MUTED,15);
   if(active&&i==trip.active_idx)round_rect(b.x+22,cy-1,3,3,i==trip.count-1?0:1,C_ACTIVE,15);
+  char state_buf[32]="";
   const char*state=ui_tr(i<trip.active_idx?"Done":i==trip.active_idx?"Next":i==trip.count-1?"Destination":"Stop");
+  if(i>=trip.active_idx&&route_status==R_READY){
+   u32 cum=trip_plan_stop_cum_cost_ds(i);
+   if(cum!=ROUTE_INF){
+    if(local_clock_minutes()>=0){append_arrival_clock(state_buf,sizeof(state_buf),cum);}
+    else{appendstr(state_buf,sizeof(state_buf),"~");append_eta(state_buf,sizeof(state_buf),cum);}
+    state=state_buf;
+   }
+  }
   int text_cy=pair_text(b,y,step-1,1,place_display_name(trip.target[i].name),state,active?C_ACTIVE_TEXT:i<trip.active_idx?C_MUTED:C_WHITE,active?C_ACTIVE_TEXT:i==trip.active_idx?C_CYAN:C_MUTED);
   disclosure(b,text_cy,active?C_ACTIVE_TEXT:C_MUTED);
  }
@@ -808,6 +831,43 @@ static void menu_contents(int p,int selected,struct HudBox b,int opacity,u32 now
  if(p==P_REVIEW){review_content(b,selected,opacity);return;}
  if(p==P_SETTINGS||settings_group(p)>=0){settings_content(p,b,selected,opacity,now);return;}
  if(p==P_PHONE){phone_content(b,selected,opacity);return;}
+ if(p==P_PAIR){
+  int lw=b.w-156;
+  hud_ink_alpha=opacity;
+  if(menu_pair_connected){
+   box_text(b.x+14,b.y+10,lw-14,22,title_face,ui_tr("Connected"),C_CYAN);
+   box_text(b.x+14,b.y+38,lw-14,18,1,btui.device[0]?btui.device:ui_tr("Phone"),C_WHITE);
+   box_text(b.x+14,b.y+66,lw-14,16,0,ui_tr("Scan for ClioPlay Link"),C_MUTED);
+   int bx=b.x+16,by=b.y+b.h-40,bw=lw-20,bh=26;
+   menu_tile(bx,by,bw,bh,1,opacity);hud_ink_alpha=opacity;
+   box_text(bx,by,bw,bh,1,ui_tr("Done"),C_ACTIVE_TEXT);
+  }else{
+   box_text(b.x+14,b.y+10,lw-14,22,title_face,ui_tr("Pair new phone"),C_WHITE);
+   text_value(b.x+14,b.y+44,lw-14,bt_status_text(),opacity);
+   text_value(b.x+14,b.y+68,lw-14,ui_tr("Waiting for phone"),opacity);
+   box_text(b.x+14,b.y+102,lw-14,16,0,ui_tr("Scan for ClioPlay Link"),C_CYAN);
+  }
+  if(qr_connect_ensure())qr_draw_matrix(&qr_connect_mat,b.x+lw+(b.w-lw)/2,b.y+b.h/2,b.h-24,opacity);
+  return;
+ }
+ if(p==P_PHONE_ACTIONS){
+  int index=menu_phone_index();if(index<0)return;
+  if(btdev[index].connected){
+   int lw=b.w-156;
+   hud_ink_alpha=opacity;
+   box_text(b.x+14,b.y+10,lw-14,22,title_face,ui_tr("Phone"),C_WHITE);
+   text_value(b.x+14,b.y+36,lw-14,bt_display_name(index),opacity);
+   const char*acts[2]={"Disconnect","Forget"};
+   for(int i=0;i<2;i++){
+    int ry=b.y+62+i*32;
+    menu_tile(b.x+16,ry,lw-20,26,selected==i,opacity);hud_ink_alpha=opacity;
+    box_text(b.x+16,ry,lw-20,26,1,ui_tr(acts[i]),selected==i?C_ACTIVE_TEXT:C_WHITE);
+   }
+   box_text(b.x+14,b.y+b.h-24,lw-14,14,0,ui_tr("Scan for ClioPlay Link"),C_MUTED);
+   if(qr_connect_ensure())qr_draw_matrix(&qr_connect_mat,b.x+lw+(b.w-lw)/2,b.y+b.h/2,b.h-24,opacity);
+   return;
+  }
+ }
  if(p==P_CONFIRM)box_text(b.x+14,b.y+4,b.w-28,22,CONFIRMATION_FACE,ui_tr(menu_title(p)),C_WHITE);
  else title_draw(b,menu_title(p));
  const char*options[6]={0};int count=0;
@@ -857,7 +917,6 @@ static void menu_contents(int p,int selected,struct HudBox b,int opacity,u32 now
   }
   return;
  }
- if(p==P_PAIR){text_value(b.x+18,b.y+42,b.w-36,bt_status_text(),opacity);text_value(b.x+18,b.y+64,b.w-36,ui_tr("Waiting for phone"),opacity);return;}
  if(p==P_LANG){
   int selected_lang=language_keyboard?kbd_pick:selected;
   struct MenuRows rows=menu_rows(b.y+32,b.h-36,24,UI_LANGUAGE_COUNT,selected_lang);
@@ -910,8 +969,11 @@ static void menu_sync(u32 now){
  if(sheet_page&&menu_screen(sheet_page)==screen){
   if(sheet_page==P_PHONE_ACTIONS){int i=menu_phone_index();if(i<0){menu_back(now);return;}phone_index=i;}
   if(sheet_page==P_PAIR){
-   if(!btui.connected||starts(btui.status,"BT PAIR")||starts(btui.status,"BT WAIT"))menu_pair_waited=1;
-   if(btui.connected&&(menu_pair_waited||!menu_pair_before||!streq(menu_pair_name,btui.device))){menu_back(now);sheet_focus=bt_connected_idx()+1;}
+   if(!btui.connected||starts(btui.status,"BT PAIR")||starts(btui.status,"BT WAIT")){menu_pair_waited=1;menu_pair_connected=0;}
+   if(btui.connected&&(menu_pair_waited||!menu_pair_before||!streq(menu_pair_name,btui.device))){
+    menu_pair_connected=1;
+    if(phone_link_seen_ms!=menu_pair_link_seen){menu_back(now);sheet_focus=bt_connected_idx()+1;}
+   }
   }
   if(sheet_page==P_STOP&&(!trip.active||stop_index>=trip.count-1))menu_return_trip(trip.active_idx,now);
   if(sheet_page==P_DEST&&(!trip.active||!trip.count))menu_return_trip(0,now);

@@ -7,23 +7,30 @@
 </p>
 
 
-<p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">Send a destination from your phone</a></p>
+<p align="center"><a href="https://github.com/pxwel-dev/ClioPlay/releases">Download latest release</a> · <a href="#install">Fresh install</a> · <a href="src/docs/updating.md">Update existing installation</a> · <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Link companion app</a></p>
 
 ## Version @@VERSION@@
 
-Version **2.2.8** is a software-only cartographic road overhaul plus close-zoom tracking and early-shutdown reliability release (**100% compatible with existing `2.1.8–2.2.7` maps** and saved user data; no map rebuild required):
+Version **3.0.0** unifies ClioPlay on Carminat TomTom with the redesigned **ClioPlay Link** companion web app while keeping **100% compatibility with existing `2.1.8–2.2.8` maps (`CPM5`, `CPR2 v5`, `QAD7`, `CPC1`)** and saved user data (no map rebuild required):
 
-- **Cartographic road rendering across all zooms (`Z0–Z9`):** Continuous sub-pixel (`Q4`) carriageway widths scaling proportionally up to `Z9`, true tapered capsules for 3D perspective driving view, zero-blob Day & Night kerb casings, elevated motorway flyovers, and scaled cased route overlays.
-- **Non-overlapping priority road expansion & seamless end-to-end transitions:** When roads run closely alongside one another, main carriageways expand first without encroaching on parallel neighbours, dual carriageways preserve crisp central reservations, and adjacent minor/service roads expand **outwards** on their open side so every road stays wide and visually distinct — while wide main roads joining narrower roads end-to-end glide smoothly down in both width and colour via a tangent-continuous S-curve funnel with zero abrupt step or bulbous end-cap.
-- **Stable, road-anchored street names:** Active road labels lock to a fixed world coordinate on the road with competition hysteresis, re-entry debounce, orientation/side deadbands and Schmitt-trigger spacing margins so street names glide calmly with the tarmac instead of flickering between competing roads or jumping along the same street while driving.
-- **Accurate close-zoom (`Z7–Z9`) junction positioning:** Paired proportional street widths with `Q4` track smoothing, bounded 1 Hz inter-fix dead-reckoning and post-stop settling so stopping at junctions converges cleanly onto the stop line instead of lagging behind.
-- **Reliable early ignition-off shutdown:** Cooperative `/tmp/clshutdown` signalling and hardware-init locks across `ttn`, `btstart.sh`, `clio040` and `clioa2dp` abort pending background startup cleanly when the ignition is turned off immediately after boot (such as during `"Acquiring GPS"`).
+- **Instant bidirectional `CLP3` Bluetooth Link:** ~0.3 s confirmed destination, atomic multi-stop trip, favourites, 18-field car settings (`prefs.ini`), remote Cancel/Skip and Clock/TZ sync over AVRCP `ACK`/`NACK`, with automatic Smart Music Resume, warm Link/Turn/Arrival navigation chimes, non-disruptive incoming route handoff (`OK: Add stop / BACK: Undo`), and automatic fallback for legacy `CLP2` senders.
+- **All-legs multi-stop CH routing & `Z7–Z9` on-road turn chevrons:** Cooperatively calculates every remaining leg of a multi-stop itinerary reusing the idle CH search arena, rendering active Leg 0 in magenta and future legs in soft lavender, with **Next + Total** ETAs in **Trip** and crisp perspective-scaled white directional chevrons on the carriageway at `Z7–Z9`.
+- **Zero-menu optical QR sync & Driving Insights:** Tapping **Sync from Car** in ClioPlay Link pops up a floating frosted-glass QR pill on ClioPlay's map screen to transfer favourites, active trip, recents, car settings, map coverage and opt-in `mobility.h` Driving Insights in ~2 seconds via closed-loop BT-ACK stepping — plus built-in Connect QRs right inside **Bluetooth → Pair new phone** and connected phone cards.
+- **18 languages & ARMv4T polish:** Complete 18-language parity across both ClioPlay and ClioPlay Link (including RTL Arabic and Hebrew) and 32-bit `Q12` road-layout hot-path optimisation.
 
 See [CHANGELOG.md](CHANGELOG.md) for all prior releases, [intelligent navigation](src/docs/intelligent-navigation.md) for local ML behaviour and privacy, and the [zoom & controls guide](src/README.md#auto-zoom-and-close-up-street-names).
 
 ## UI previews
 
 All previews below are captured from ClioPlay's native `480 × 272` renderer across real offline UK map regions (**Central London**, **Liverpool**, **Leeds**, **Edinburgh**, **Newcastle** and **Manchester**). See the [preview notes and full capture index](src/docs/demo/README.md) for methodology and regression archives.
+
+| Multi-leg future routing & on-road turn chevrons | Zero-menu optical QR sync & built-in Connect QR |
+| --- | --- |
+| ![Real Manchester 3-stop itinerary showing Z8 driving with crisp white on-carriageway turn chevron and Option B next-stop HUD, Z5 overview with active Leg 0 in magenta and future Legs 1-2 in lavender, and Menu Trip with Next and Total journey ETAs](src/docs/demo/v300-multileg-and-chevron.gif) | ![Pair new phone sheet keeping its built-in Connect QR open until ClioPlay Link sends a CLP3 Ping, followed by the frosted-glass floating map QR pill stepping stacked CS1 frames on BT ACKs, flashing Synced and auto-closing](src/docs/demo/v300-qr-sync-and-connect.gif) |
+
+| Bidirectional CLP3 sync ([ClioPlay Link](https://pxwel-dev.github.io/ClioPlay-Send/)) | Bluetooth A2DP phone audio & playback controls |
+| --- | --- |
+| <img src="src/docs/demo/phone-destination.gif" width="391"> | <img src="src/docs/demo/bluetooth.gif" width="391"> |
 
 | Offline traffic diversions & Explore preview | Learned usual routes & calibrated ETA ranges |
 | --- | --- |
@@ -36,10 +43,6 @@ All previews below are captured from ClioPlay's native `480 × 272` renderer acr
 | On-device destination prediction | Day/Night themes, learned brightness & adaptive Auto-zoom |
 | --- | --- |
 | ![Offline destination prediction in the driving HUD and BT CTRL from local journey history with explicit Yes/No confirmation](src/docs/demo/v220-destination-prediction.gif) | ![Day theme driving in Edinburgh showing learned Auto-zoom speed-band preferences and automatic Day-to-Night transition applying learned per-theme brightness](src/docs/demo/v224-ml-adaptive-hud.gif) |
-
-| Send destinations over Bluetooth ([ClioPlay Send](https://pxwel-dev.github.io/ClioPlay-Send/)) | Bluetooth A2DP phone audio & playback controls |
-| --- | --- |
-| <img src="src/docs/demo/phone-destination.gif" width="391"> | <img src="src/docs/demo/bluetooth.gif" width="391"> |
 
 | Offline camera warnings, map badges & overspeed alerts | Live expandable GPS telemetry HUD |
 | --- | --- |
@@ -68,7 +71,7 @@ Focus temperature readings take priority when valid. See the
 [console setup and controls](src/README.md#physical-console-and-temperature-sources).
 The hardware protocol was contributed from a tested Scénic 3.
 
-ClioPlay automatically discovers Bluetooth hardware on the Carminat; for Bluetooth, the Carminat must have: (`hw_bluetooth=1`). If no Bluetooth hardware is discovered, ClioPlay hides all Bluetooth-related UI features (Bluetooth audio and sending destinations by phone via <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Send</a>).
+ClioPlay automatically discovers Bluetooth hardware on the Carminat; for Bluetooth, the Carminat must have: (`hw_bluetooth=1`). If no Bluetooth hardware is discovered, ClioPlay hides all Bluetooth-related UI features (Bluetooth audio and bidirectional phone sync via <a href="https://pxwel-dev.github.io/ClioPlay-Send/">ClioPlay Link</a>).
 
 ClioPlay handles the audio source as follows:
 
@@ -94,7 +97,7 @@ BT CTRL also requires a connected phone. Unavailable radio/volume readings stay 
 - Day/Night themes with custom daily switch times in Auto, automatic units and time zones, and 18 interface languages.
 - Mapped speed limits and camera alerts where the bundled country policy allows them.
 
-For new stops/destinations, enter **Coordinates** on the head unit, choose **Next** on the keypad to validate both fields and proceed to naming, or use the separate [ClioPlay Send website](https://pxwel-dev.github.io/ClioPlay-Send/) to send the new route to ClioPlay from your phone via Bluetooth. For ease of use, add the website to your Home Screen as a web app.
+For new stops/destinations, enter **Coordinates** on the head unit, choose **Next** on the keypad to validate both fields and proceed to naming, or use the [ClioPlay Link companion web app](https://pxwel-dev.github.io/ClioPlay-Send/) to send destinations, multi-stop trips, saved places and car settings over Bluetooth (and sync back from ClioPlay via optical QR). For ease of use, add the web app to your Home Screen.
 
 ## Install
 

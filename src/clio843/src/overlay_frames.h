@@ -21,6 +21,7 @@ static void render_paint_overlay(u32 now,u8*rows){
  hud_glass_frame_begin();
  menu_paint(now);
  popup_paint(now);
+ qr_pill_draw(now);
  hud_glass_frame_end();
  overlay_rows=0;
 }
@@ -33,10 +34,10 @@ static u32 overlay_model(void){
   bt_control_mode,bt_controls_available(),hud_speed_over,hud_speed_from,
   traffic_offer_valid(),mob_suggest_valid,ml_park_valid,ml_stop_valid,ml_offer_kind,hw_bluetooth_enabled,
   sheet_page,sheet_old_page,sheet_focus,sheet_old_focus,places_tab,sheet_old_tab,
-  bottom_from,bottom_to,modal,modal_choice};
+  bottom_from,bottom_to,modal,modal_choice,qr_pill_active,qr_pill_idx,qr_pill_total,menu_pair_connected};
  hash=mob_hash(hash,context,sizeof(context));
 #define OVERLAY_HASH(value) hash=mob_hash(hash,&(value),sizeof(value))
- OVERLAY_HASH(overlay_input_serial);OVERLAY_HASH(hud_glass_background);
+ OVERLAY_HASH(overlay_input_serial);OVERLAY_HASH(hud_glass_background);OVERLAY_HASH(qr_pill_serial);
  OVERLAY_HASH(hud_tween);OVERLAY_HASH(hud_status_layout);OVERLAY_HASH(hud_progress_at);
  OVERLAY_HASH(hud_playback);OVERLAY_HASH(bt_transport_press);OVERLAY_HASH(hud_speed_at);
  OVERLAY_HASH(traffic_offer_serial);OVERLAY_HASH(mob_suggest_serial);

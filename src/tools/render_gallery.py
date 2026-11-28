@@ -249,6 +249,34 @@ V227_CAMERA_ALERTS_EVENTS = (
 )
 V227_CAMERA_ALERTS_SAMPLES = sorted({0} | {at+step for at,_ in V227_CAMERA_ALERTS_EVENTS for step in TWEEN_STEPS} | {8500})
 
+V300_MULTILEG_EVENTS = (
+    (1300, 'key_handle(K_ENTER);assert(screen==SCR_MAP&&hud_navigation.kind==HUD_JOURNEY);'),
+    (3100, 'freecam=1;cam_lat=5347650;cam_lon=-226400;freecam_zoom=4;freecam_course_valid=0;freecam_anim_mode=FC_ANIM_NONE;map_tilt_q8=0;render_background_dirty=1;'),
+    (5800, 'freecam=0;map_tilt_q8=256;manual_zoom=4;menu_open(P_TRIP,0,hud_now_ms());assert(sheet_page==P_TRIP&&trip.count==3);'),
+    (8900, 'manual_zoom=8;key_handle(K_MAP);assert(screen==SCR_MAP);render_background_dirty=1;'),
+)
+V300_MULTILEG_SAMPLES = sorted({0} | {at+step for at,_ in V300_MULTILEG_EVENTS for step in TWEEN_STEPS} | {10500})
+
+V300_QR_SYNC_EVENTS = (
+    (2100, 'btui.connected=1;copystr(btui.status,sizeof(btui.status),"BT CONNECTED");copystr(btui.device,sizeof(btui.device),"Pawel iPhone");menu_sync(hud_now_ms());assert(sheet_page==P_PAIR&&menu_pair_connected);'),
+    (4100, 'preview_clp3_ping(10);menu_sync(hud_now_ms());assert(sheet_page!=P_PAIR);menu_close(hud_now_ms());assert(screen==SCR_MAP);'),
+    (5300, 'preview_clp3_qr(11,\'S\',0);assert(qr_pill_active==1&&qr_pill_total>=2);'),
+    (6800, 'preview_clp3_qr(12,\'A\',1);assert(qr_pill_active==1&&qr_pill_idx==(1%qr_pill_total));'),
+    (7800, 'preview_clp3_qr(13,\'A\',2);assert(qr_pill_active==1);'),
+    (8800, 'preview_clp3_qr(14,\'D\',0);assert(qr_pill_active==2);'),
+    (10000,'qr_pill_service(hud_now_ms());assert(qr_pill_active==0);'),
+)
+V300_QR_SYNC_SAMPLES = sorted({0} | {at+step for at,_ in V300_QR_SYNC_EVENTS for step in TWEEN_STEPS} | {11000})
+
+V300_PHONE_LINK_EVENTS = (
+    (900,  'preview_clp3_trip_stop(1,0,3,7,"Shell Deansgate",5347420,-225120);assert(trip_stage.active&&trip_stage.received==1);'),
+    (1600, 'preview_clp3_trip_stop(2,1,3,7,"Manchester Piccadilly",5347740,-223090);assert(trip_stage.active&&trip_stage.received==2);'),
+    (2300, 'preview_clp3_trip_stop(3,2,3,7,"MediaCityUK",5347220,-229900);assert(!trip_stage.active&&trip.active&&trip.count==3);preview_v300_finish_trip_routes();assert(route_status==R_READY);'),
+    (4800, 'menu_open(P_TRIP,0,hud_now_ms());assert(sheet_page==P_TRIP&&trip.count==3);'),
+    (6600, 'key_handle(K_MAP);assert(screen==SCR_MAP);preview_clp3_prefs(4);'),
+)
+V300_PHONE_LINK_SAMPLES = sorted({0} | {at+step for at,_ in V300_PHONE_LINK_EVENTS for step in TWEEN_STEPS} | {8700})
+
 
 
 def add(group, name, title, setup='', action='', check='', note=''):
@@ -863,6 +891,30 @@ def modern_menus():
         'preview_v227_cameras_seed();settle();',
         V227_CAMERA_ALERTS_EVENTS,
         V227_CAMERA_ALERTS_SAMPLES
+    )
+    motion(
+        'Version 3.0',
+        'preview-v300-multileg',
+        'Full multi-leg future routes in lavender, Z7-Z9 on-carriageway turn chevron, Option B next-stop HUD and Next + Total journey ETAs',
+        'preview_v300_multileg_seed();settle();',
+        V300_MULTILEG_EVENTS,
+        V300_MULTILEG_SAMPLES
+    )
+    motion(
+        'Version 3.0',
+        'preview-v300-qr-sync',
+        'Built-in Connect QR staying open until Link Ping plus zero-menu floating map QR pill with BT ACK frame stepping and Synced flash',
+        'preview_v300_qr_sync_seed();settle();',
+        V300_QR_SYNC_EVENTS,
+        V300_QR_SYNC_SAMPLES
+    )
+    motion(
+        'Version 3.0',
+        'preview-v300-phone-link',
+        'Live CLP3 multi-stop trip burst with Receiving trip progress capsule, automatic multi-leg routing, Trip ETAs and car settings sync',
+        'preview_v300_phone_link_seed();settle();',
+        V300_PHONE_LINK_EVENTS,
+        V300_PHONE_LINK_SAMPLES
     )
     add('Menu sheets','empty-receive','Empty itinerary receives phone destinations automatically','gps.lat=track_lat=5498800;gps.lon=track_lon=-160400;display_course=track_course=gps.course=210;copystr(roadctx.street,sizeof(roadctx.street),"Osborne Road");gps.mph10=0;auto_zoom_level=-1;trip.active=trip.count=0;menu_open(P_TRIP,0,hud_now_ms());')
     add_stop='gps.mph10=0;auto_zoom_level=-1;key_handle(K_MENU);key_handle(K_ENTER);key_handle(K_DOWN);key_handle(K_DOWN);'
@@ -2075,6 +2127,193 @@ static void preview_cam_state(int kind,int avg,u32 dist,u32 span,u32 avg_m,int a
  camera_last_gps_ms=gps_fix_ms;
  render_background_dirty=1;
 }
+static int demo_v30_n, demo_v30_region, demo_v30_head, demo_v30_course;
+static u32 demo_v30_m, demo_v30_cost;
+static s32 demo_v30_lat[ROUTE_PATH_MAX], demo_v30_lon[ROUTE_PATH_MAX];
+static u32 demo_v30_node[ROUTE_PATH_MAX], demo_v30_arc[ROUTE_PATH_MAX], demo_v30_phys[ROUTE_PATH_MAX];
+static u32 demo_v30_seg_m[ROUTE_PATH_MAX], demo_v30_seg_cost[ROUTE_PATH_MAX];
+static struct TripLeg demo_v30_legs[TRIP_MAX_TARGETS];
+static s32 demo_v30_fut_lat[TRIP_FUTURE_MAX_PTS], demo_v30_fut_lon[TRIP_FUTURE_MAX_PTS];
+static u16 demo_v30_fut_used;
+static void demo_v30_solve_manchester(void){
+ if(demo_v30_n)return;
+ gps.lat=track_lat=5348390;gps.lon=track_lon=-224460;
+ gps.fix=1;track_valid=1;display_course_valid=1;
+ gps.course=track_course=display_course=210;
+ region_resolve(gps.lat,gps.lon);
+ memzero(&trip,sizeof(trip));
+ trip.active=1;trip.paused=0;trip.count=3;trip.active_idx=0;
+ trip.target[0].lat=5347420;trip.target[0].lon=-225120;copystr(trip.target[0].name,sizeof(trip.target[0].name),"Shell Deansgate");
+ trip.target[1].lat=5347740;trip.target[1].lon=-223090;copystr(trip.target[1].name,sizeof(trip.target[1].name),"Manchester Piccadilly");
+ trip.target[2].lat=5347220;trip.target[2].lon=-229900;copystr(trip.target[2].name,sizeof(trip.target[2].name),"MediaCityUK");
+ assert(route_start(trip.target[0].lat,trip.target[0].lon));
+ u32 dl=s_now_ms()+15000u;
+ while(route_status==R_CALC&&time_before_u32(s_now_ms(),dl))route_service_until(s_now_ms()+15u);
+ assert(route_status==R_READY&&route_n>8);
+ trip_plan_reset();
+ dl=s_now_ms()+15000u;
+ while(time_before_u32(s_now_ms(),dl)&&(trip_legs[1].status!=TLEG_READY||trip_legs[2].status!=TLEG_READY)){
+  trip_plan_service_until(s_now_ms()+15u);
+ }
+ assert(trip_legs[1].status==TLEG_READY&&trip_legs[2].status==TLEG_READY);
+ int best_head=0;
+ for(int h=0;h+4<route_n;h++){
+  route_head=h;nav_maneuver_find();
+  if((nav_man_type==MAN_LEFT||nav_man_type==MAN_RIGHT||nav_man_type==MAN_SHARP_LEFT||nav_man_type==MAN_SHARP_RIGHT)
+     &&nav_man_m>=55u&&nav_man_m<=145u){best_head=h;break;}
+ }
+ if(!best_head){
+  for(int h=0;h+4<route_n;h++){
+   route_head=h;nav_maneuver_find();
+   if(nav_man_type!=MAN_NONE&&nav_man_m>=40u&&nav_man_m<=240u){best_head=h;break;}
+  }
+ }
+ demo_v30_head=best_head;
+ int nxt=best_head+1<route_n?best_head+1:best_head;
+ int c=nav_heading10(route_lat[best_head],route_lon[best_head],route_lat[nxt],route_lon[nxt]);
+ demo_v30_course=c>=0?c:210;
+ demo_v30_n=route_n;demo_v30_region=atlas_route_region;
+ demo_v30_m=route_result_m;demo_v30_cost=route_result_cost;
+ memcpy(demo_v30_lat,route_lat,sizeof(demo_v30_lat));
+ memcpy(demo_v30_lon,route_lon,sizeof(demo_v30_lon));
+ memcpy(demo_v30_node,route_node,sizeof(demo_v30_node));
+ memcpy(demo_v30_arc,route_seg_arc,sizeof(demo_v30_arc));
+ memcpy(demo_v30_phys,route_seg_phys,sizeof(demo_v30_phys));
+ memcpy(demo_v30_seg_m,route_seg_m,sizeof(demo_v30_seg_m));
+ memcpy(demo_v30_seg_cost,route_seg_cost,sizeof(demo_v30_seg_cost));
+ memcpy(demo_v30_legs,trip_legs,sizeof(demo_v30_legs));
+ memcpy(demo_v30_fut_lat,trip_future_lat,sizeof(demo_v30_fut_lat));
+ memcpy(demo_v30_fut_lon,trip_future_lon,sizeof(demo_v30_fut_lon));
+ demo_v30_fut_used=trip_future_used;
+}
+static void demo_v30_restore_manchester(int use_turn_head){
+ demo_v30_solve_manchester();
+ if(atlas_ready&&demo_v30_region>=0)assert(atlas_open_route(demo_v30_region));
+ atlas_active=0;atlas_future_m=atlas_future_cost=0;
+ route_n=demo_v30_n;route_head=use_turn_head?demo_v30_head:0;
+ route_result_m=demo_v30_m;route_result_cost=demo_v30_cost;
+ route_status=R_READY;
+ memcpy(route_lat,demo_v30_lat,sizeof(demo_v30_lat));
+ memcpy(route_lon,demo_v30_lon,sizeof(demo_v30_lon));
+ memcpy(route_node,demo_v30_node,sizeof(demo_v30_node));
+ memcpy(route_seg_arc,demo_v30_arc,sizeof(demo_v30_arc));
+ memcpy(route_seg_phys,demo_v30_phys,sizeof(demo_v30_phys));
+ memcpy(route_seg_m,demo_v30_seg_m,sizeof(demo_v30_seg_m));
+ memcpy(route_seg_cost,demo_v30_seg_cost,sizeof(demo_v30_seg_cost));
+ trip_plan_reset();
+ memcpy(trip_legs,demo_v30_legs,sizeof(demo_v30_legs));
+ memcpy(trip_future_lat,demo_v30_fut_lat,sizeof(demo_v30_fut_lat));
+ memcpy(trip_future_lon,demo_v30_fut_lon,sizeof(demo_v30_fut_lon));
+ trip_future_used=demo_v30_fut_used;
+ trip.active=1;trip.paused=0;trip.count=3;trip.active_idx=0;
+ trip.target[0].lat=route_target_lat=5347420;trip.target[0].lon=route_target_lon=-225120;copystr(trip.target[0].name,sizeof(trip.target[0].name),"Shell Deansgate");
+ trip.target[1].lat=5347740;trip.target[1].lon=-223090;copystr(trip.target[1].name,sizeof(trip.target[1].name),"Manchester Piccadilly");
+ trip.target[2].lat=5347220;trip.target[2].lon=-229900;copystr(trip.target[2].name,sizeof(trip.target[2].name),"MediaCityUK");
+ gps.lat=track_lat=route_lat[route_head];
+ gps.lon=track_lon=route_lon[route_head];
+ int nxt=route_head+1<route_n?route_head+1:route_head;
+ int c=use_turn_head?demo_v30_course:nav_heading10(route_lat[route_head],route_lon[route_head],route_lat[nxt],route_lon[nxt]);
+ gps.course=track_course=display_course=(c>=0?c:210);
+ track_valid=display_course_valid=1;gps.fix=1;
+ region_resolve(gps.lat,gps.lon);
+ nav_maneuver_find();
+ render_background_dirty=1;
+}
+static void preview_v300_multileg_seed(void){
+ demo_v30_restore_manchester(1);
+ gps.mph10=260;auto_zoom_level=-1;pref.autozoom=0;manual_zoom=8;
+ roadctx.valid=1;roadctx.speed=30;roadctx.speed_flags=2;
+ copystr(roadctx.street,sizeof(roadctx.street),"Deansgate");
+ copystr(hud_last_road,sizeof(hud_last_road),"Deansgate");hud_road_live=0;
+}
+static void preview_clp3_write_and_apply(const char*packet){
+ long fd=s_open(BT_NAV_PATH,O_WRONLY_|O_CREAT_|O_TRUNC_,0666);
+ assert(fd>=0);
+ long len=(long)slen(packet);
+ assert(s_write((int)fd,packet,len)==len);
+ s_close((int)fd);
+ poll_phone_destination();
+ assert(phone_dest.valid);
+ phone_destination_apply();
+}
+static void preview_clp3_ping(int seq){
+ char pkt[128];
+ snprintf(pkt,sizeof(pkt),"VER=3\nSEQ=%d\nACTION=H\n",seq);
+ preview_clp3_write_and_apply(pkt);
+}
+static void preview_clp3_qr(int seq,char sub,u32 arg){
+ char pkt[160];
+ snprintf(pkt,sizeof(pkt),"VER=3\nSEQ=%d\nACTION=Q\nSUB=%c\nA=%u\n",seq,sub,(unsigned)arg);
+ preview_clp3_write_and_apply(pkt);
+}
+static void preview_clp3_trip_stop(int seq,int idx,int tot,int batch,const char*name,s32 lat,s32 lon){
+ char pkt[384];
+ snprintf(pkt,sizeof(pkt),"VER=3\nSEQ=%d\nACTION=T\nLAT=%d\nLON=%d\nA=%d\nB=%d\nC=%d\nNAME=%s\n",
+          seq,(int)lat,(int)lon,idx,tot,batch,name);
+ preview_clp3_write_and_apply(pkt);
+}
+static void preview_clp3_prefs(int seq){
+ u8 raw[12];
+ int old_b=pref.bright;
+ pref.bright=65;
+ clio_prefs_pack(raw);
+ pref.bright=old_b;
+ static const char hx[17]="0123456789ABCDEF";
+ char hex[25];
+ for(int i=0;i<12;i++){hex[i*2]=hx[(raw[i]>>4)&15];hex[i*2+1]=hx[raw[i]&15];}
+ hex[24]=0;
+ char pkt[160];
+ snprintf(pkt,sizeof(pkt),"VER=3\nSEQ=%d\nACTION=P\nHEX=%s\n",seq,hex);
+ preview_clp3_write_and_apply(pkt);
+}
+static void preview_v300_qr_sync_seed(void){
+ route_cancel();trip.active=0;trip.count=0;trip_plan_reset();
+ gps.lat=track_lat=5347850;gps.lon=track_lon=-224450;
+ gps.course=track_course=display_course=215;
+ track_valid=display_course_valid=1;gps.fix=1;gps.mph10=0;
+ auto_zoom_level=-1;pref.autozoom=0;manual_zoom=6;
+ region_resolve(gps.lat,gps.lon);
+ copystr(roadctx.street,sizeof(roadctx.street),"Deansgate");
+ copystr(hud_last_road,sizeof(hud_last_road),"Deansgate");
+ nfaves=3;
+ copystr(faves[0].name,sizeof(faves[0].name),"Home");faves[0].lat=5348390;faves[0].lon=-224460;
+ copystr(faves[1].name,sizeof(faves[1].name),"MediaCityUK");faves[1].lat=5347220;faves[1].lon=-229900;
+ copystr(faves[2].name,sizeof(faves[2].name),"Manchester Piccadilly");faves[2].lat=5347740;faves[2].lon=-223090;
+ /* Seed realistic journeys so qr_sync_build() produces a crisp 3+ frame CS1 bundle. */
+ mob_model_reset();
+ u32 base_ep=mob_epoch(2026,10,12,8,15,0);
+ for(int i=0;i<14;i++){
+  struct MobJourney*j=&mob.journey[i];
+  j->depart=base_ep+(u32)i*43200u;
+  j->origin=(struct MobPoint){5348390,-224460};
+  j->dest=(i&1)?(struct MobPoint){5347220,-229900}:(struct MobPoint){5347740,-223090};
+  j->distance=6800u+(u32)(i*450);
+  j->duration=920u+(u32)(i*40);
+ }
+ mob.n=14;mob.head=14;
+ nbtdev=0;btui.connected=0;btui.device[0]=0;
+ copystr(btui.status,sizeof(btui.status),"BT PAIR");
+ menu_open(P_PHONE,0,hud_now_ms());
+ menu_pair_before=0;menu_pair_waited=1;menu_pair_connected=0;menu_pair_link_seen=phone_link_seen_ms;
+ menu_push(P_PAIR,0,hud_now_ms());
+ render_background_dirty=1;
+}
+static void preview_v300_phone_link_seed(void){
+ route_cancel();trip.active=0;trip.count=0;trip_plan_reset();trip_stage_clear();
+ gps.lat=track_lat=5348390;gps.lon=track_lon=-224460;
+ gps.course=track_course=display_course=210;
+ track_valid=display_course_valid=1;gps.fix=1;gps.mph10=0;
+ auto_zoom_level=-1;pref.autozoom=0;manual_zoom=5;
+ region_resolve(gps.lat,gps.lon);
+ copystr(roadctx.street,sizeof(roadctx.street),"Northern Quarter");
+ copystr(hud_last_road,sizeof(hud_last_road),"Northern Quarter");
+ screen=SCR_MAP;
+ render_background_dirty=1;
+}
+static void preview_v300_finish_trip_routes(void){
+ demo_v30_restore_manchester(0);
+ manual_zoom=4;gps.mph10=0;
+}
 static void show_camera(int kind,int avg){
  camera_visible=1;camera_average=avg;camera_current.id=(u32)(900+kind*10+avg);
  camera_current.kind=(u8)kind;camera_current.speed=30;camera_current.flags=2;
@@ -2124,6 +2363,7 @@ static void boot_preview(unsigned elapsed){
 }
 static void gallery_reset(int night){
  hud_capture_clock=1;hud_capture_ms=s_now_ms();gallery_motion=0;diversion_preview_clear();ml_reset();
+ qr_pill_dismiss();trip_plan_reset();trip_stage_clear();phone_undo_clear();
  bt_hud_link=0;bt_hud_peer[0]=0;bt_active_written=-1;coordinates_active=0;memzero(&coordinates,sizeof(coordinates));
  route_cancel();fixture();restore_route();atlas_active=0;atlas_future_m=atlas_future_cost=0;
  pref=(struct Prefs){50,1,0,1,0,night?THEME_NIGHT:THEME_DAY,0,1,0,0,CLIO_DAY_START,CLIO_NIGHT_START};apply_palette(night);

@@ -3,6 +3,26 @@
 This history records implemented changes for each release.
 Release dates are added when a version is published; older versions are not reconstructed from incomplete notes.
 
+## Version 3.0.0 - ClioPlay Link Ecosystem, All-Legs Multi-Stop CH & Zero-Menu Optical QR Sync
+
+Major ecosystem release unifying **ClioPlay** on Carminat TomTom with the redesigned **ClioPlay Link** companion web app — **100% compatible with existing `2.1.8–2.2.8` maps (`CPM5`, `CPR2 v5`, `QAD7`, `CPC1`)** and saved user data (`faves.dat`, `recent.dat`, `trip.dat`, `prefs.ini`, `mobility.dat`, `mobility-ml.dat` — zero map rebuilds required):
+
+- **Bidirectional `CLP3` Bluetooth Link (`clioa2dp.c`, `clio040.c`, `hud.h`, `audio_chime.h`):**
+  - **Instant AVRCP `ACK`/`NACK` confirmation (~0.3 s per packet):** `clioa2dp` parses `CLP3` frames (`N`, `S`, `T`, `F`, `P`, `C`, `Q`, `H`) alongside legacy `CLP2` packets, polls `/tmp/clnav_ack` at 20 ms, replies over AVRCP (`0x4b NEXT` = `ACK`, `0x4c PREV` = `NACK`, with cached retry), and validates map coverage so out-of-map sends report immediately on the phone.
+  - **Atomic multi-stop trip staging (`CLP3:T`), 2-way favourites sync (`CLP3:F`), 12-byte `prefs.ini` sync (`CLP3:P`), remote Cancel/Skip/Clock (`CLP3:C`) and silent Link Ping (`CLP3:H`):** with a proportional capsule progress bar in the top HUD during multi-stop receipt, pre-GPS phone clock fallback, cold-GPS `"Queued - waiting for GPS"` handling, and non-disruptive incoming-route handoff (`OK: Add stop / BACK: Undo` for 6.5 s).
+  - **Smart Music Resume & warm navigation chimes (`audio_chime.h`):** resumes Bluetooth music automatically if real media was playing prior to a `CLP3` burst; adds `Navigation chimes` (`Off` / `Link only` / `All cues`) in **Settings → Navigation** with distinct ascending link (`kind=3`), subtle turn (`kind=4`), and resolving 3-note arrival (`kind=5`) chimes.
+- **All-Legs Multi-Stop CH Planner & `Z7–Z9` Turn Chevrons (`trip_plan.h`, `map_raster.h`, `road_layout.h`, `clio040.c`, `menu_sheet.h`):**
+  - **All-legs cooperative CH calculation (`trip_plan.h`):** after Leg 0 reaches `R_READY`, cooperatively solves all future legs (`k = active_idx+1 .. count-1`) reusing the idle CH search arena (zero extra CH RAM, ~64.5 KB polyline pool) with Atlas cross-region fallback, smart partial invalidation on off-route recalculation, and in-place pool compaction on stop advance.
+  - **Dual-tone route overlay & `Z7–Z9` on-carriageway turn chevrons:** draws active Leg 0 in signature magenta (`C_ROUTE`) and future legs in soft lavender (`C_ROUTE_FUTURE`), plus a perspective-scaled white directional chevron directly on the wide carriageway within 380 m of upcoming turns at `Z7–Z9`.
+  - **Next + Total multi-stop ETAs:** keeps the driving HUD pill focused on the **Next stop**, while **Menu → Trip** shows both **Next** and **Total** journey ETA/distance plus individual per-stop arrival times.
+  - **ARMv4T hot-path optimisation (`road_layout.h`):** replaced 64-bit divisions in `road_smoothstep_q8`, `road_solve_transitions`, `road_draw_taper_span` and `road_draw_poly_pass` with 32-bit `Q12` integer ratios and added `render_checkpoint()` yields.
+- **Zero-Menu Optical QR Sync & `mobility.h` Exporter (`qr_encode.h`, `qr_sync.h`, `menu_sheet.h`, `overlay_frames.h`):**
+  - **Freestanding ISO/IEC 18004 QR encoder (`qr_encode.h`, Versions 1–8, ECC L):** pure integer C, zero heap, verified against Apple CoreImage (`CIDetectorTypeQRCode`) and offline pure-JS decoding.
+  - **Floating frosted-glass map QR pill (`CLP3:Q:S/A/D`):** tapping **Sync from Car** in ClioPlay Link pops up a sleek compact QR pill on the map screen streaming a CRC-protected binary bundle (car identity, map coverage bbox, 12-byte `prefs.ini`, favourites, active trip with real multi-leg ETAs, recents, and opt-in `mobility.h`/`mobility_ml.h` Driving Insights) via closed-loop BT-ACK stepped frames (with auto-cycle fallback), flashing `Synced ✓` and auto-closing back to the map.
+  - **Built-in Connect QR (`P_PAIR` & connected `P_PHONE_ACTIONS`):** zero extra menus — `Pair new phone` stays open after Bluetooth connect with `Connected ✓`, a focused `Done` button, and a crisp Connect QR card, auto-closing once ClioPlay Link sends its initial Ping.
+- **All 18 Languages & Verification:**
+  - Updated all 18 interface locales (`ui.json` + 15 language JSON files) and `ui_translations.h`; added UBSan host test suites `src/tests/clp3-link.c`, `src/tests/trip-multileg.c`, and `src/tests/qr-sync.c` into `src/tools/verify_ci.py`.
+
 ## Version 2.2.8 - Cartographic road overhaul & reliability fixes
 
 Software-only map rendering overhaul plus close-zoom tracking and early-shutdown fixes — **100% compatible with existing `2.1.8–2.2.7` maps (`CPM5`, `CPR2 v5`, `QAD7`, `CPC1`)** and saved user data (no map rebuild required):
